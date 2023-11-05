@@ -6,7 +6,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon.util.deprecation import DeprecatedWarning
-from falcon.util.misc import utcnow
+from falcon.util.misc import _utcnow
 
 from _util import create_app  # NOQA
 
@@ -33,7 +33,7 @@ class HeaderHelpersResource:
         if last_modified is not None:
             self.last_modified = last_modified
         else:
-            self.last_modified = utcnow()
+            self.last_modified = _utcnow()
 
     def _overwrite_headers(self, req, resp):
         resp.content_type = 'x-falcon/peregrine'
