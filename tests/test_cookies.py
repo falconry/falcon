@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, timedelta, timezone, tzinfo
 from http import cookies as http_cookies
 import re
 
@@ -26,6 +26,10 @@ class TimezoneGMTPlus1(tzinfo):
 
 
 GMT_PLUS_ONE = TimezoneGMTPlus1()
+
+
+def utcnow_naive():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class CookieResource:
@@ -171,7 +175,7 @@ def test_response_complex_case(client):
     assert cookie.domain is None
     assert cookie.same_site == 'Lax'
 
-    assert cookie.expires < datetime.utcnow()
+    assert cookie.expires < utcnow_naive()
 
     # NOTE(kgriffs): I know accessing a private attr like this is
     # naughty of me, but we just need to sanity-check that the
@@ -193,7 +197,7 @@ def test_unset_cookies(client):
         assert cookie.domain == domain
         assert cookie.path == path
         assert cookie.same_site == samesite
-        assert cookie.expires < datetime.utcnow()
+        assert cookie.expires < utcnow_naive()
 
     test(result.cookies['foo'], path=None, domain=None)
     test(result.cookies['bar'], path='/bar', domain=None)
@@ -231,7 +235,7 @@ def test_unset_cookies_samesite(client):
     def test_unset(cookie, samesite='Lax'):
         assert cookie.value == ''  # An unset cookie has an empty value
         assert cookie.same_site == samesite
-        assert cookie.expires < datetime.utcnow()
+        assert cookie.expires < utcnow_naive()
 
     test_unset(result_unset.cookies['foo'], samesite='Strict')
     # default: bar is unset with no samesite param, so should go to Lax
@@ -325,7 +329,7 @@ def test_response_unset_cookie(client):
     assert match
 
     expiration = http_date_to_dt(match.group(1), obs_date=True)
-    assert expiration < datetime.utcnow()
+    assert expiration < utcnow_naive()
 
 
 def test_cookie_timezone(client):
