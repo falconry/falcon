@@ -15,11 +15,11 @@
 """Inspect utilities for falcon applications."""
 from functools import partial
 import inspect
-from typing import Callable
-from typing import Dict
+from typing import Callable  # NOQA: F401
+from typing import Dict  # NOQA: F401
 from typing import List
 from typing import Optional
-from typing import Type
+from typing import Type  # NOQA: F401
 
 from falcon import app_helpers
 from falcon.app import App

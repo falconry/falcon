@@ -29,7 +29,8 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
-          - "3.11.0-rc - 3.11"
+          - "3.11"
+          - "3.12"
         architecture:
           - x64
 
@@ -99,6 +100,7 @@ jobs:
           - cp39-cp39
           - cp310-cp310
           - cp311-cp311
+          - cp312-cp312
         architecture:
           - x64
 
@@ -230,6 +232,7 @@ jobs:
           - cp39-cp39
           - cp310-cp310
           - cp311-cp311
+          - cp312-cp312
         architecture:
           - aarch64
           - s390x

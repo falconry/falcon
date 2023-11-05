@@ -28,6 +28,7 @@ import functools
 import http
 import inspect
 import re
+from typing import Callable
 import unicodedata
 
 from falcon import status_codes
@@ -70,8 +71,20 @@ _DEFAULT_HTTP_REASON = 'Unknown'
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
-strptime = datetime.datetime.strptime
-utcnow = datetime.datetime.utcnow
+_strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
+_utcnow: Callable[[], datetime.datetime] = functools.partial(
+    datetime.datetime.now, datetime.timezone.utc
+)
+
+# The above aliases were not underscored prior to Falcon 3.1.2.
+strptime: Callable[[str, str], datetime.datetime] = deprecated(
+    'This was a private alias local to this module; '
+    'please reference datetime.strptime() directly.'
+)(datetime.datetime.strptime)
+utcnow: Callable[[], datetime.datetime] = deprecated(
+    'This was a private alias local to this module; '
+    'please reference datetime.utcnow() directly.'
+)(datetime.datetime.utcnow)
 
 
 # NOTE(kgriffs): This is tested in the gate but we do not want devs to
@@ -135,7 +148,7 @@ def http_now():
         e.g., 'Tue, 15 Nov 1994 12:45:26 GMT'.
     """
 
-    return dt_to_http(utcnow())
+    return dt_to_http(_utcnow())
 
 
 def dt_to_http(dt):
@@ -179,7 +192,7 @@ def http_date_to_dt(http_date, obs_date=False):
         #   over it, and setting up exception handling blocks each
         #   time around the loop, in the case that we don't actually
         #   need to check for multiple formats.
-        return strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
 
     time_formats = (
         '%a, %d %b %Y %H:%M:%S %Z',
@@ -191,7 +204,7 @@ def http_date_to_dt(http_date, obs_date=False):
     # Loop through the formats and return the first that matches
     for time_format in time_formats:
         try:
-            return strptime(http_date, time_format)
+            return _strptime(http_date, time_format)
         except ValueError:
             continue
 
