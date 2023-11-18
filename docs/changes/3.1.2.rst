@@ -5,7 +5,7 @@ Summary
 -------
 
 This is a minor point release fixing a couple of high impact bugs,
-as well as publishing binary wheels for the recently released CPython 3.11.
+as well as publishing binary wheels for the recently released CPython 3.12.
 
 
 Changes to Supported Platforms
