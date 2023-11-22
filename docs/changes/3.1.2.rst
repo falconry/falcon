@@ -1,0 +1,35 @@
+Changelog for Falcon 3.1.1
+==========================
+
+Summary
+-------
+
+This is a minor point release fixing a couple of high impact bugs,
+as well as publishing binary wheels for the recently released CPython 3.12.
+
+
+Changes to Supported Platforms
+------------------------------
+
+- Falcon is now supported (including binary wheels) on CPython 3.12.
+  A couple of remaining stdlib deprecations from 3.11 and 3.12 will be
+  addressed in Falcon 4.0.
+- As with the previous release, Python 3.5 & 3.6 remain deprecated and
+  will no longer be supported in Falcon 4.0.
+- EOL Python 3.7 will no longer be actively supported in 4.0, but the framework
+  should still continue to install from source. We may remove the support for
+  3.7 altogether later in the 4.x series if we are faced with incompatible
+  ecosystem changes in typing, Cython, etc.
+
+
+.. towncrier release notes start
+
+Contributors to this Release
+----------------------------
+
+Many thanks to those who contributed to this bugfix release:
+
+- `CaselIT <https://github.com/CaselIT>`__
+- `kgriffs <https://github.com/kgriffs>`__
+- `liborjelinek <https://github.com/liborjelinek>`__
+- `vytas7 <https://github.com/vytas7>`__
