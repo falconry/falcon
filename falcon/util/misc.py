@@ -71,9 +71,7 @@ _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
 _strptime = datetime.datetime.strptime
-_utcnow = functools.partial(
-    datetime.datetime.now, datetime.timezone.utc
-)
+_utcnow = functools.partial(datetime.datetime.now, datetime.timezone.utc)
 
 # The above aliases were not underscored prior to Falcon 3.1.2.
 strptime = deprecated(

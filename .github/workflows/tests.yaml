@@ -138,14 +138,14 @@ jobs:
         run: tox -e ${{ matrix.toxenv }}
 
       - name: Combine coverage
-        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
         run: |
           coverage --version
           coverage combine
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
-        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true
