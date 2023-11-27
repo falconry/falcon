@@ -28,7 +28,6 @@ import functools
 import http
 import inspect
 import re
-from typing import Callable
 import unicodedata
 
 from falcon import status_codes
@@ -71,17 +70,17 @@ _DEFAULT_HTTP_REASON = 'Unknown'
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
-_strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
-_utcnow: Callable[[], datetime.datetime] = functools.partial(
+_strptime = datetime.datetime.strptime
+_utcnow = functools.partial(
     datetime.datetime.now, datetime.timezone.utc
 )
 
 # The above aliases were not underscored prior to Falcon 3.1.2.
-strptime: Callable[[str, str], datetime.datetime] = deprecated(
+strptime = deprecated(
     'This was a private alias local to this module; '
     'please reference datetime.strptime() directly.'
 )(datetime.datetime.strptime)
-utcnow: Callable[[], datetime.datetime] = deprecated(
+utcnow = deprecated(
     'This was a private alias local to this module; '
     'please reference datetime.utcnow() directly.'
 )(datetime.datetime.utcnow)
