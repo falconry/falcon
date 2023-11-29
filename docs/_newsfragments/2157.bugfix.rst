@@ -1,7 +1,0 @@
-Falcon's :class:`~falcon.testing.TestClient` mimics the behavior of real WSGI
-servers (and the WSGI spec) by presenting the ``PATH_INFO`` CGI variable
-already in the percent-decoded form. However, the client also used to
-indiscriminately set the non-standard ``RAW_URI`` CGI variable to ``/``, which
-made writing tests for apps :ref:`decoding raw URL path <raw_url_path_recipe>`
-cumbersome. This has been fixed, and the raw path of a simulated request is now
-preserved in ``RAW_URI``.

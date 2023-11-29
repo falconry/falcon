@@ -22,7 +22,26 @@ Changes to Supported Platforms
   ecosystem changes in typing, Cython, etc.
 
 
-.. towncrier release notes start
+Fixed
+-----
+
+- Some essential files were unintentionally omitted from the source distribution
+  archive, rendering it unsuitable to run the test suite off.
+  This has been fixed, and the ``sdist`` tarball should now be usable as a base
+  for packaging Falcon in OS distributions. (`#2051 <https://github.com/falconry/falcon/issues/2051>`__)
+- :ref:`WebSocket <ws>` implementation has been fixed to properly handle
+  :class:`~falcon.HTTPError` and :class:`~falcon.HTTPStatus` exceptions raised by
+  custom :func:`error handlers <falcon.asgi.App.add_error_handler>`.
+  The WebSocket connection is now correctly closed with an appropriate code
+  instead of bubbling up an unhandled error to the application server. (`#2146 <https://github.com/falconry/falcon/issues/2146>`__)
+- Falcon's :class:`~falcon.testing.TestClient` mimics the behavior of real WSGI
+  servers (and the WSGI spec) by presenting the ``PATH_INFO`` CGI variable
+  already in the percent-decoded form. However, the client also used to
+  indiscriminately set the non-standard ``RAW_URI`` CGI variable to ``/``, which
+  made writing tests for apps :ref:`decoding raw URL path <raw_url_path_recipe>`
+  cumbersome. This has been fixed, and the raw path of a simulated request is now
+  preserved in ``RAW_URI``. (`#2157 <https://github.com/falconry/falcon/issues/2157>`__)
+
 
 Contributors to this Release
 ----------------------------
