@@ -168,7 +168,7 @@ html_theme_options = {
     'github_user': 'falconry',
     'github_repo': 'falcon',
     'github_button': False,
-    'github_banner': not dash_build,
+    'github_banner': False,
     'fixed_sidebar': False,
     'show_powered_by': False,
     'extra_nav_links': OrderedDict(
