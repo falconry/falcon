@@ -1,0 +1,11 @@
+Changelog for Falcon 3.1.3
+==========================
+
+Summary
+-------
+
+This is a minor bugfix release that only pins the ``pytest-asyncio`` test
+dependency in order to prevent an incompatible version from interfering with
+the build workflow.
+
+This release is otherwise identical to :doc:`Falcon 3.1.2 <3.1.2>`.
