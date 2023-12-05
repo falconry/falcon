@@ -13,7 +13,12 @@ Changes to Supported Platforms
 ------------------------------
 
 - CPython 3.11 is now fully supported. (`#2072 <https://github.com/falconry/falcon/issues/2072>`__)
+- CPython 3.12 will be fully supported. (`#2196 <https://github.com/falconry/falcon/issues/2196>`__)
 - End-of-life Python 3.5 & 3.6 are no longer supported. (`#2074 <https://github.com/falconry/falcon/pull/2074>`__)
+- Python 3.7 is no longer actively supported, but the framework should still
+  continue to install from source. We may remove the support for 3.7 altogether
+  later in the 4.x series if we are faced with incompatible ecosystem changes
+  in typing, Cython, etc.
 
 
 .. towncrier release notes start
