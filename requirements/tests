@@ -7,7 +7,8 @@ requests
 testtools; python_version < '3.10'
 
 # ASGI Specific (daphne is installed on a its own tox env)
-pytest-asyncio
+# TODO(vytas): Some ASGI tests hang with pytest-asyncio-0.23 on 3.8 & 3.9.
+pytest-asyncio < 0.22.0
 aiofiles
 httpx
 uvicorn >= 0.17.0
@@ -24,3 +25,6 @@ python-rapidjson; platform_machine != 's390x' and platform_machine != 'aarch64'
 
 # wheels are missing some EoL interpreters and non-x86 platforms; build would fail unless rust is available
 orjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
+
+# Images for 3.7 on emulated architectures seem to only have OpenSSL 1.0.2
+urllib3 < 2.0; python_version <= '3.7'
