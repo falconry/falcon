@@ -20,6 +20,7 @@ import pathlib
 import re
 import traceback
 from typing import Callable, Iterable, Optional, Tuple, Type, Union
+import warnings
 
 from falcon import app_helpers as helpers
 from falcon import constants
@@ -828,6 +829,12 @@ class App:
             ('ex',),
             ('exception',),
         ) or arg_names[1:3] in (('req', 'resp'), ('request', 'response')):
+            warnings.warn(
+                f'handler is using a deprecated signature; please order its '
+                f'arguments as {handler.__qualname__}(req, resp, ex, params). '
+                f'This compatibility shim will be removed in Falcon 5.0.',
+                deprecation.DeprecatedWarning,
+            )
             handler = wrap_old_handler(handler)
 
         exception_tuple: tuple
