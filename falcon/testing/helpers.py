@@ -451,12 +451,11 @@ class ASGIWebSocketSimulator:
             await asyncio.wait_for(self._event_handshake_complete.wait(), timeout)
         except asyncio.TimeoutError:
             msg = (
-                'Timed out after waiting {} seconds for '
-                'the WebSocket handshake to complete. Check the '
-                'on_websocket responder and '
-                'any middleware for any conditions that may be stalling the '
-                'request flow.'
-            ).format(timeout)
+                f'Timed out after waiting {timeout} seconds for the WebSocket '
+                f'handshake to complete. Check the on_websocket responder and '
+                f'any middleware for any conditions that may be stalling the '
+                f'request flow.'
+            )
             raise asyncio.TimeoutError(msg)
 
         self._require_accepted()
