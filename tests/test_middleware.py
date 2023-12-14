@@ -9,6 +9,7 @@ import pytest
 import falcon
 import falcon.errors
 import falcon.testing as testing
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _utcnow
 
 from _util import create_app  # NOQA
@@ -900,14 +901,19 @@ class TestErrorHandling(TestMiddleware):
         def _http_error_handler(error, req, resp, params):
             raise falcon.HTTPStatus(falcon.HTTP_201)
 
-        async def _http_error_handler_async(error, req, resp, params):
+        async def _http_error_handler_async(req, resp, error, params):
             raise falcon.HTTPStatus(falcon.HTTP_201)
 
         h = _http_error_handler_async if asgi else _http_error_handler
 
         # NOTE(kgriffs): This will take precedence over the default
         # handler for facon.HTTPError.
-        app.add_error_handler(falcon.HTTPError, h)
+        if asgi:
+            # NOTE(vytas): The ASGI flavour supports no reordering shim.
+            app.add_error_handler(falcon.HTTPError, h)
+        else:
+            with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+                app.add_error_handler(falcon.HTTPError, h)
 
         response = client.simulate_request(path='/', method='POST')
         assert response.status == falcon.HTTP_201
