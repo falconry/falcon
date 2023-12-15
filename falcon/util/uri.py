@@ -337,7 +337,7 @@ def decode(encoded_uri: str, unquote_plus: bool = True) -> str:
 
 
 def parse_query_string(
-    query_string: str, keep_blank: bool = False, csv: bool = True
+    query_string: str, keep_blank: bool = False, csv: bool = False
 ) -> Dict[str, Union[str, List[str]]]:
     """Parse a query string into a dict.
 
@@ -365,12 +365,13 @@ def parse_query_string(
             they do not have a value (default ``False``). For comma-separated
             values, this option also determines whether or not empty elements
             in the parsed list are retained.
-        csv: Set to ``False`` in order to disable splitting query
-            parameters on ``,`` (default ``True``). Depending on the user agent,
-            encoding lists as multiple occurrences of the same parameter might
-            be preferable. In this case, setting `parse_qs_csv` to ``False``
-            will cause the framework to treat commas as literal characters in
-            each occurring parameter value.
+        csv: Set to ``True`` in order to enable splitting query
+            parameters on ``,`` (default ``False``).
+            Depending on the user agent, encoding lists as multiple occurrences
+            of the same parameter might be preferable. In this case, keeping
+            `parse_qs_csv` at its default value (``False``) will cause the
+            framework to treat commas as literal characters in each occurring
+            parameter value.
 
     Returns:
         dict: A dictionary of (*name*, *value*) pairs, one per query

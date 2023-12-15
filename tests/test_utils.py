@@ -380,18 +380,18 @@ class TestFalconUtils:
         result = uri.parse_query_string(query_string)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
-        assert result['c'] == ['1', '2', '3']
+        assert result['c'] == '1,2,3'
         assert result['d'] == 'test'
-        assert result['e'] == ['a', '&=,']
+        assert result['e'] == 'a,,&=,'
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
         result = uri.parse_query_string(query_string, True)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
-        assert result['c'] == ['1', '2', '3']
+        assert result['c'] == '1,2,3'
         assert result['d'] == 'test'
-        assert result['e'] == ['a', '', '&=,']
+        assert result['e'] == 'a,,&=,'
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
