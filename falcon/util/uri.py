@@ -343,7 +343,7 @@ def parse_query_string(
 
     Query string parameters are assumed to use standard form-encoding. Only
     parameters with values are returned. For example, given 'foo=bar&flag',
-    this function would ignore 'flag' unless the `keep_blank_qs_values` option
+    this function would ignore 'flag' unless the `keep_blank` option
     is set.
 
     Note:
@@ -351,6 +351,8 @@ def parse_query_string(
         lists by repeating a given param multiple times, Falcon supports
         a more compact form in which the param may be given a single time
         but set to a ``list`` of comma-separated elements (e.g., 'foo=a,b,c').
+        This comma-separated format can be enabled by setting the `csv`
+        option (see below) to ``True``.
 
         When using this format, all commas uri-encoded will not be treated by
         Falcon as a delimiter. If the client wants to send a value as a list,
