@@ -1000,20 +1000,28 @@ class TestShortCircuiting(TestMiddleware):
 
 class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
     @pytest.mark.parametrize(
-        'mw',
+        'mw,allowed',
         [
-            CaptureResponseMiddleware(),
-            [CaptureResponseMiddleware()],
-            (CaptureResponseMiddleware(),),
-            iter([CaptureResponseMiddleware()]),
+            (CaptureResponseMiddleware(), True),
+            ([CaptureResponseMiddleware()], True),
+            ((CaptureResponseMiddleware(),), True),
+            (iter([CaptureResponseMiddleware()]), True),
+            (falcon.CORSMiddleware(), False),
+            ([falcon.CORSMiddleware()], False),
         ],
     )
-    def test_api_initialization_with_cors_enabled_and_middleware_param(self, mw, asgi):
-        app = create_app(asgi, middleware=mw, cors_enable=True)
-        app.add_route('/', TestCorsResource())
-        client = testing.TestClient(app)
-        result = client.simulate_get(headers={'Origin': 'localhost'})
-        assert result.headers['Access-Control-Allow-Origin'] == '*'
+    def test_api_initialization_with_cors_enabled_and_middleware_param(
+        self, mw, asgi, allowed
+    ):
+        if allowed:
+            app = create_app(asgi, middleware=mw, cors_enable=True)
+            app.add_route('/', TestCorsResource())
+            client = testing.TestClient(app)
+            result = client.simulate_get(headers={'Origin': 'localhost'})
+            assert result.headers['Access-Control-Allow-Origin'] == '*'
+        else:
+            with pytest.raises(ValueError, match='CORSMiddleware'):
+                app = create_app(asgi, middleware=mw, cors_enable=True)
 
 
 @pytest.mark.skipif(cython, reason='Cythonized coroutine functions cannot be detected')
