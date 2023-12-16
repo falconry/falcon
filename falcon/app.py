@@ -448,7 +448,7 @@ class App:
     def router_options(self):
         return self._router.options
 
-    def add_middleware(self, middleware: object) -> None:
+    def add_middleware(self, middleware: Union[object, Iterable]) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -462,7 +462,7 @@ class App:
         #   the chance that middleware may be None.
         if middleware:
             try:
-                middleware = list(middleware)
+                middleware = list(middleware)  # type: ignore
             except TypeError:
                 # middleware is not iterable; assume it is just one bare component
                 middleware = [middleware]
