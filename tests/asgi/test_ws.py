@@ -10,6 +10,7 @@ import falcon
 from falcon import media, testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
+from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 
@@ -1086,6 +1087,34 @@ async def test_ws_simulator_collect_edge_cases(conductor):
         m = 'websocket.disconnect event has already been emitted'
         with pytest.raises(falcon.OperationNotAllowed, match=m):
             event = await ws._emit()
+
+
+@pytest.mark.asyncio
+async def test_ws_responder_never_ready(conductor, monkeypatch):
+    async def noop_close(obj, code=None):
+        pass
+
+    class SleepyResource:
+        async def on_websocket(self, req, ws):
+            for i in range(10):
+                await asyncio.sleep(0.001)
+
+    conductor.app.add_route('/', SleepyResource())
+
+    # NOTE(vytas): It seems that it is hard to impossible to hit the second
+    #   `await ready_waiter` of the _WSContextManager on CPython 3.12 due to
+    #   different async code optimizations, so we mock away WebSocket.close.
+    monkeypatch.setattr(WebSocket, 'close', noop_close)
+
+    # NOTE(vytas): Shorten the timeout so that we do not wait for 5 seconds.
+    monkeypatch.setattr(
+        testing.ASGIWebSocketSimulator, '_DEFAULT_WAIT_READY_TIMEOUT', 0.5
+    )
+
+    async with conductor as c:
+        with pytest.raises(asyncio.TimeoutError):
+            async with c.simulate_ws():
+                pass
 
 
 @pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')

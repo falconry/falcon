@@ -88,7 +88,7 @@ copyright = '{year} Falcon Contributors'.format(year=datetime.now().year)
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-cfg = configparser.SafeConfigParser()
+cfg = configparser.ConfigParser()
 cfg.read('../setup.cfg')
 tag = cfg.get('egg_info', 'tag_build')
 
