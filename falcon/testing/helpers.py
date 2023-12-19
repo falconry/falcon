@@ -402,6 +402,8 @@ class ASGIWebSocketSimulator:
             ``None`` if the connection has not been accepted.
     """
 
+    _DEFAULT_WAIT_READY_TIMEOUT = 5
+
     def __init__(self):
         self.__msgpack = None
 
@@ -435,7 +437,7 @@ class ASGIWebSocketSimulator:
     def headers(self) -> Iterable[Iterable[bytes]]:
         return self._accepted_headers
 
-    async def wait_ready(self, timeout: Optional[int] = 5):
+    async def wait_ready(self, timeout: Optional[int] = None):
         """Wait until the connection has been accepted or denied.
 
         This coroutine can be awaited in order to pause execution until the
@@ -447,16 +449,17 @@ class ASGIWebSocketSimulator:
                 raising an error (default: ``5``).
         """
 
+        timeout = timeout or self._DEFAULT_WAIT_READY_TIMEOUT
+
         try:
             await asyncio.wait_for(self._event_handshake_complete.wait(), timeout)
         except asyncio.TimeoutError:
             msg = (
-                'Timed out after waiting {} seconds for '
-                'the WebSocket handshake to complete. Check the '
-                'on_websocket responder and '
-                'any middleware for any conditions that may be stalling the '
-                'request flow.'
-            ).format(timeout)
+                f'Timed out after waiting {timeout} seconds for the WebSocket '
+                f'handshake to complete. Check the on_websocket responder and '
+                f'any middleware for any conditions that may be stalling the '
+                f'request flow.'
+            )
             raise asyncio.TimeoutError(msg)
 
         self._require_accepted()
