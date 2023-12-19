@@ -244,6 +244,7 @@ class App:
         cors_enable=False,
         sink_before_static_route=True,
     ):
+        self._cors_enable = cors_enable
         self._sink_before_static_route = sink_before_static_route
         self._sinks = []
         self._static_routes = []
@@ -447,7 +448,7 @@ class App:
     def router_options(self):
         return self._router.options
 
-    def add_middleware(self, middleware: object) -> None:
+    def add_middleware(self, middleware: Union[object, Iterable]) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -461,10 +462,28 @@ class App:
         #   the chance that middleware may be None.
         if middleware:
             try:
-                self._unprepared_middleware += middleware
+                middleware = list(middleware)  # type: ignore
             except TypeError:
                 # middleware is not iterable; assume it is just one bare component
-                self._unprepared_middleware.append(middleware)
+                middleware = [middleware]
+
+            if (
+                self._cors_enable
+                and len(
+                    [
+                        mc
+                        for mc in self._unprepared_middleware + middleware
+                        if isinstance(mc, CORSMiddleware)
+                    ]
+                )
+                > 1
+            ):
+                raise ValueError(
+                    'CORSMiddleware is not allowed in conjunction with '
+                    'cors_enable (which already constructs one instance)'
+                )
+
+            self._unprepared_middleware += middleware
 
         # NOTE(kgriffs): Even if middleware is None or an empty list, we still
         #   need to make sure self._middleware is initialized if this is the
