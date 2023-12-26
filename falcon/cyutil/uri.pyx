@@ -251,7 +251,7 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
 
 
 def parse_query_string(unicode query_string not None, bint keep_blank=False,
-                       bint csv=True):
+                       bint csv=False):
     cdef bytes byte_string = query_string.encode('utf-8')
     cdef unsigned char* data = byte_string
     return cy_parse_query_string(data, len(byte_string), keep_blank, csv)
