@@ -8,7 +8,6 @@
 
 [tool.mypy]
     exclude = "falcon/bench/|falcon/cmd/"
-
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
@@ -33,6 +32,13 @@
             "falcon.cyutil.uri"
         ]
         ignore_missing_imports = true
+
+    [[tool.mypy.overrides]]
+        module = [
+            "falcon.stream",
+            "falcon.util.*"
+        ]
+        disallow_untyped_defs = true
 
 [tool.towncrier]
     package = "falcon"
@@ -90,6 +96,8 @@ filterwarnings = [
     "ignore:inspect.getargspec\\(\\) is deprecated:DeprecationWarning",
     "ignore:.cgi. is deprecated and slated for removal:DeprecationWarning",
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
+    "ignore:This process \\(.+\\) is multi-threaded",
+    "ignore:There is no current event loop",
 ]
 testpaths = [
     "tests"

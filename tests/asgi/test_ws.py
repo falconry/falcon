@@ -10,6 +10,7 @@ import falcon
 from falcon import media, testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
+from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 
@@ -369,6 +370,13 @@ async def test_client_disconnect_early(  # noqa: C901
                     await ws.send_data(sample_data)
                     await resource.data_received.wait()
                     assert resource.data == sample_data
+
+                # NOTE(vytas): When testing the case where the server
+                #   explicitly closes the connection, try to receive some data
+                #   before closing from the client side (and potentially
+                #   winning the async race of which side closes first).
+                if explicit_close_server:
+                    await ws.receive_data()
 
                 if explicit_close_client:
                     await ws.close(4042)
@@ -1081,6 +1089,34 @@ async def test_ws_simulator_collect_edge_cases(conductor):
             event = await ws._emit()
 
 
+@pytest.mark.asyncio
+async def test_ws_responder_never_ready(conductor, monkeypatch):
+    async def noop_close(obj, code=None):
+        pass
+
+    class SleepyResource:
+        async def on_websocket(self, req, ws):
+            for i in range(10):
+                await asyncio.sleep(0.001)
+
+    conductor.app.add_route('/', SleepyResource())
+
+    # NOTE(vytas): It seems that it is hard to impossible to hit the second
+    #   `await ready_waiter` of the _WSContextManager on CPython 3.12 due to
+    #   different async code optimizations, so we mock away WebSocket.close.
+    monkeypatch.setattr(WebSocket, 'close', noop_close)
+
+    # NOTE(vytas): Shorten the timeout so that we do not wait for 5 seconds.
+    monkeypatch.setattr(
+        testing.ASGIWebSocketSimulator, '_DEFAULT_WAIT_READY_TIMEOUT', 0.5
+    )
+
+    async with conductor as c:
+        with pytest.raises(asyncio.TimeoutError):
+            async with c.simulate_ws():
+                pass
+
+
 @pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
 def test_msgpack_missing():
 
@@ -1111,6 +1147,9 @@ async def test_ws_http_error_or_status_response(conductor, status, thing, accept
     async with conductor as c:
         if accept:
             async with c.simulate_ws() as ws:
+                # Make sure the responder has a chance to reach the raise point
+                for _ in range(3):
+                    await asyncio.sleep(0)
                 assert ws.closed
                 assert ws.close_code == exp_code
         else:
@@ -1208,6 +1247,9 @@ async def test_ws_http_error_or_status_error_handler(
     async with conductor as c:
         if place == 'ws_after_accept':
             async with c.simulate_ws() as ws:
+                # Make sure the responder has a chance to reach the raise point
+                for _ in range(3):
+                    await asyncio.sleep(0)
                 assert ws.closed
                 assert ws.close_code == exp_code
         else:

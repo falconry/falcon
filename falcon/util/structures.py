@@ -25,9 +25,19 @@ for convenience::
 
     things = falcon.CaseInsensitiveDict()
 """
+from __future__ import annotations
 
 from collections.abc import Mapping
 from collections.abc import MutableMapping
+from typing import Any
+from typing import Dict
+from typing import ItemsView
+from typing import Iterable
+from typing import Iterator
+from typing import KeysView
+from typing import Optional
+from typing import Tuple
+from typing import ValuesView
 
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
@@ -61,34 +71,34 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 
     """
 
-    def __init__(self, data=None, **kwargs):
-        self._store = dict()
+    def __init__(self, data: Optional[Iterable[Tuple[str, Any]]] = None, **kwargs: Any):
+        self._store: Dict[str, Tuple[str, Any]] = dict()
         if data is None:
             data = {}
         self.update(data, **kwargs)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         # Use the lowercased key for lookups, but store the actual
         # key alongside the value.
         self._store[key.lower()] = (key, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._store[key.lower()][1]
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         del self._store[key.lower()]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return (casedkey for casedkey, mappedvalue in self._store.values())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._store)
 
-    def lower_items(self):
+    def lower_items(self) -> Iterator[Tuple[str, Any]]:
         """Like iteritems(), but with all lowercase keys."""
         return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Mapping):
             other = CaseInsensitiveDict(other)
         else:
@@ -97,10 +107,10 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
         return dict(self.lower_items()) == dict(other.lower_items())
 
     # Copy is required
-    def copy(self):
+    def copy(self) -> CaseInsensitiveDict:
         return CaseInsensitiveDict(self._store.values())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
 
@@ -131,77 +141,80 @@ class Context:
     True
     """
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         return self.__dict__.__contains__(key)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Optional[Any]:
         # PERF(vytas): On CPython, using this mapping interface (instead of a
         #   standard dict) to get, set and delete items incurs overhead
         #   approximately comparable to that of two function calls
         #   (per get/set/delete operation, that is).
         return self.__dict__.__getitem__(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         return self.__dict__.__setitem__(key, value)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         self.__dict__.__delitem__(key)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return self.__dict__.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.__dict__.__len__()
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, type(self)):
             return self.__dict__.__eq__(other.__dict__)
         return self.__dict__.__eq__(other)
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         if isinstance(other, type(self)):
             return self.__dict__.__ne__(other.__dict__)
         return self.__dict__.__ne__(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.__dict__)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}({})'.format(type(self).__name__, self.__dict__.__repr__())
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{}({})'.format(type(self).__name__, self.__dict__.__str__())
 
-    def clear(self):
+    def clear(self) -> None:
         return self.__dict__.clear()
 
-    def copy(self):
+    def copy(self) -> Context:
         ctx = type(self)()
         ctx.update(self.__dict__)
         return ctx
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
         return self.__dict__.get(key, default)
 
-    def items(self):
+    def items(self) -> ItemsView[str, Any]:
         return self.__dict__.items()
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
         return self.__dict__.keys()
 
-    def pop(self, key, default=None):
+    def pop(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
         return self.__dict__.pop(key, default)
 
-    def popitem(self):
+    def popitem(self) -> Tuple[str, Any]:
+
         return self.__dict__.popitem()
 
-    def setdefault(self, key, default_value=None):
+    def setdefault(
+        self, key: str, default_value: Optional[Any] = None
+    ) -> Optional[Any]:
         return self.__dict__.setdefault(key, default_value)
 
-    def update(self, items):
+    def update(self, items: dict[str, Any]) -> None:
         self.__dict__.update(items)
 
-    def values(self):
+    def values(self) -> ValuesView:
         return self.__dict__.values()
 
 
@@ -243,7 +256,7 @@ class ETag(str):
 
     is_weak = False
 
-    def strong_compare(self, other):
+    def strong_compare(self, other: ETag) -> bool:
         """Perform a strong entity-tag comparison.
 
         Two entity-tags are equivalent if both are not weak and their
@@ -262,7 +275,7 @@ class ETag(str):
 
         return self == other and not (self.is_weak or other.is_weak)
 
-    def dumps(self):
+    def dumps(self) -> str:
         """Serialize the ETag to a string suitable for use in a precondition header.
 
         (See also: RFC 7232, Section 2.3)
@@ -280,7 +293,7 @@ class ETag(str):
         return '"' + self + '"'
 
     @classmethod
-    def loads(cls, etag_str):
+    def loads(cls, etag_str: str) -> ETag:
         """Deserialize a single entity-tag string from a precondition header.
 
         Note:

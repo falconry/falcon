@@ -4,7 +4,12 @@ from functools import partial
 from functools import wraps
 import inspect
 import os
+from typing import Any
+from typing import Awaitable
 from typing import Callable
+from typing import Optional
+from typing import TypeVar
+from typing import Union
 
 
 __all__ = [
@@ -17,14 +22,13 @@ __all__ = [
     'wrap_sync_to_async_unsafe',
 ]
 
-
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
 create_task = asyncio.create_task
 get_running_loop = asyncio.get_running_loop
 
 
-def wrap_sync_to_async_unsafe(func) -> Callable:
+def wrap_sync_to_async_unsafe(func: Callable[..., Any]) -> Callable[..., Any]:
     """Wrap a callable in a coroutine that executes the callable directly.
 
     This helper makes it easier to use synchronous callables with ASGI
@@ -48,13 +52,15 @@ def wrap_sync_to_async_unsafe(func) -> Callable:
     """
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Callable[..., Any]:
         return func(*args, **kwargs)
 
     return wrapper
 
 
-def wrap_sync_to_async(func, threadsafe=None) -> Callable:
+def wrap_sync_to_async(
+    func: Callable[..., Any], threadsafe: Optional[bool] = None
+) -> Callable[..., Any]:
     """Wrap a callable in a coroutine that executes the callable in the background.
 
     This helper makes it easier to call functions that can not be
@@ -94,7 +100,7 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
         executor = _one_thread_to_rule_them_all
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         return await get_running_loop().run_in_executor(
             executor, partial(func, *args, **kwargs)
         )
@@ -102,7 +108,9 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
     return wrapper
 
 
-async def sync_to_async(func, *args, **kwargs):
+async def sync_to_async(
+    func: Callable[..., Any], *args: Any, **kwargs: Any
+) -> Callable[..., Awaitable[Any]]:
     """Schedule a synchronous callable on the default executor and await the result.
 
     This helper makes it easier to call functions that can not be
@@ -153,7 +161,9 @@ def _should_wrap_non_coroutines() -> bool:
     return 'FALCON_ASGI_WRAP_NON_COROUTINES' in os.environ
 
 
-def _wrap_non_coroutine_unsafe(func):
+def _wrap_non_coroutine_unsafe(
+    func: Optional[Callable[..., Any]]
+) -> Union[Callable[..., Awaitable[Any]], Callable[..., Any], None]:
     """Wrap a coroutine using ``wrap_sync_to_async_unsafe()`` for internal test cases.
 
     This method is intended for Falcon's own test suite and should not be
@@ -180,7 +190,12 @@ def _wrap_non_coroutine_unsafe(func):
     return wrap_sync_to_async_unsafe(func)
 
 
-def async_to_sync(coroutine, *args, **kwargs):
+Result = TypeVar('Result')
+
+
+def async_to_sync(
+    coroutine: Callable[..., Awaitable[Result]], *args: Any, **kwargs: Any
+) -> Result:
     """Invoke a coroutine function from a synchronous caller.
 
     This method can be used to invoke an asynchronous task from a synchronous
@@ -212,7 +227,7 @@ def async_to_sync(coroutine, *args, **kwargs):
     return loop.run_until_complete(coroutine(*args, **kwargs))
 
 
-def runs_sync(coroutine):
+def runs_sync(coroutine: Callable[..., Awaitable[Result]]) -> Callable[..., Result]:
     """Transform a coroutine function into a synchronous method.
 
     This is achieved by always invoking the decorated coroutine function via
@@ -234,7 +249,7 @@ def runs_sync(coroutine):
     """
 
     @wraps(coroutine)
-    def invoke(*args, **kwargs):
+    def invoke(*args: Any, **kwargs: Any) -> Any:
         return async_to_sync(coroutine, *args, **kwargs)
 
     return invoke

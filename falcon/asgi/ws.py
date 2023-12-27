@@ -530,11 +530,13 @@ class WebSocketOptions:
 
     __slots__ = ['error_close_code', 'max_receive_queue', 'media_handlers']
 
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import msgpack
         except ImportError:
             msgpack = None
+
+        bin_handler: media.BinaryBaseHandlerWS
 
         if msgpack:
             bin_handler = media.MessagePackHandlerWS()

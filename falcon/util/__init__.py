@@ -21,6 +21,7 @@ Conversely, the `uri` module must be imported explicitly::
 
 from http import cookies as http_cookies
 import sys
+from types import ModuleType
 
 # Hoist misc. utils
 from falcon.constants import PYTHON_VERSION
@@ -77,7 +78,7 @@ BufferedReader = (
 )
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> ModuleType:
     if name == 'json':
         import warnings
         import json  # NOQA
@@ -86,7 +87,6 @@ def __getattr__(name):
             'Importing json from "falcon.util" is deprecated.', DeprecatedWarning
         )
         return json
-    from types import ModuleType
 
     # fallback to the default implementation
     mod = sys.modules[__name__]
