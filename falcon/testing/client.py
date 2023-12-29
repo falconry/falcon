@@ -2238,7 +2238,7 @@ def _prepare_sim_args(
         headers = headers or {}
         headers['Content-Type'] = content_type
 
-    elif json is not None:
+    if json is not None:
         body = json_module.dumps(json, ensure_ascii=False)
         headers = headers or {}
         headers['Content-Type'] = MEDIA_JSON
