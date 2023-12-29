@@ -83,3 +83,12 @@ def test_urlencoded_form(client, body, expected):
         headers={'Content-Type': 'application/x-www-form-urlencoded'},
     )
     assert resp.json == expected
+
+
+@pytest.mark.parametrize(
+    'form', [{}, {'a': '1', 'b': '2'}, (('a', '1'), ('b', '2'), ('c', '3'))]
+)
+def test_simulate_form(client, form):
+    resp = client.simulate_post('/media', form=form)
+    assert resp.status_code == 200
+    assert resp.json == dict(form)
