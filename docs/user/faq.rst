@@ -1277,6 +1277,11 @@ thread (otherwise it may deadlock):
         print('Serving on port 8000, POST to /shutdown to stop...')
         httpd.serve_forever()
 
+.. warning::
+   While ``wsgiref.simple_server`` is handy for integration testing, it builds
+   upon :mod:`http.server`, which is not recommended for production. (See
+   :ref:`install` on how to install a production-ready WSGI or ASGI server.)
+
 How can I set cookies when simulating requests?
 -----------------------------------------------
 
