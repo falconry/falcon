@@ -12,9 +12,14 @@
 
 """Request class."""
 
+
 from datetime import datetime
 from io import BytesIO
+import sys
 from uuid import UUID
+
+if sys.version_info >= (3, 11):
+    from wsgiref.types import InputStream
 
 from falcon import errors
 from falcon import request_helpers as helpers
@@ -453,6 +458,9 @@ class Request:
 
     # Child classes may override this
     context_type = structures.Context
+
+    if sys.version_info >= (3, 11):
+        stream: InputStream
 
     _wsgi_input_type_known = False
 
