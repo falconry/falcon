@@ -12,7 +12,6 @@
 
 """Request class."""
 
-
 from datetime import datetime
 from io import BytesIO
 import sys

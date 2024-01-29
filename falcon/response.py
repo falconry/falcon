@@ -174,6 +174,9 @@ class Response:
     # Child classes may override this
     context_type = structures.Context
 
+    text: Optional[str]
+    _data: Optional[bytes]
+
     def __init__(self, options=None):
         self.status = '200 OK'
         self._headers = {}
@@ -227,7 +230,7 @@ class Response:
         return self._data
 
     @data.setter
-    def data(self, value):
+    def data(self, value: bytes):
         self._data = value
 
     @property
