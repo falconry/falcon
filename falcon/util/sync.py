@@ -8,6 +8,7 @@ from typing import Any
 from typing import Awaitable
 from typing import Callable
 from typing import Optional
+from typing import ParamSpec
 from typing import TypeVar
 from typing import Union
 
@@ -190,11 +191,14 @@ def _wrap_non_coroutine_unsafe(
     return wrap_sync_to_async_unsafe(func)
 
 
+Params = ParamSpec('Params')
 Result = TypeVar('Result')
 
 
 def async_to_sync(
-    coroutine: Callable[..., Awaitable[Result]], *args: Any, **kwargs: Any
+    coroutine: Callable[Params, Awaitable[Result]],
+    *args: Params.args,
+    **kwargs: Params.kwargs,
 ) -> Result:
     """Invoke a coroutine function from a synchronous caller.
 
