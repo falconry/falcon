@@ -8,9 +8,10 @@ from typing import Any
 from typing import Awaitable
 from typing import Callable
 from typing import Optional
-from typing import ParamSpec
 from typing import TypeVar
 from typing import Union
+
+from typing_extensions import ParamSpec
 
 
 __all__ = [
