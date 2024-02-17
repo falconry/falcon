@@ -31,7 +31,6 @@ from typing import cast
 from typing import Dict
 from typing import Generic
 from typing import Iterable
-from typing import Literal
 from typing import Mapping
 from typing import Optional
 from typing import overload
@@ -39,13 +38,14 @@ from typing import Sequence
 from typing import TextIO
 from typing import Tuple
 from typing import TYPE_CHECKING
-from typing import TypeGuard
 from typing import TypeVar
 from typing import Union
 import warnings
 import wsgiref.validate
 
+from typing_extensions import Literal
 from typing_extensions import Self
+from typing_extensions import TypeGuard
 
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
