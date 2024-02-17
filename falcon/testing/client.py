@@ -463,7 +463,7 @@ class StreamedResult(_ResultBase):
 
 
 _HeadersType = Union[None, Mapping[str, str], Iterable[Tuple[str, str]]]
-_AnyApp = Union[WSGI, ASGI]
+_AnyApp = Union['WSGI', 'ASGI']
 _AnyResult = Union[Result, StreamedResult]
 
 
