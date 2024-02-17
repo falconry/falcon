@@ -35,7 +35,6 @@ from typing import Literal
 from typing import Mapping
 from typing import Optional
 from typing import overload
-from typing import Self
 from typing import Sequence
 from typing import TextIO
 from typing import Tuple
@@ -45,6 +44,8 @@ from typing import TypeVar
 from typing import Union
 import warnings
 import wsgiref.validate
+
+from typing_extensions import Self
 
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
