@@ -2,6 +2,7 @@ import os
 import pathlib
 import uuid
 
+
 def from_url_wrapper(url):
     pool = redis.ConnectionPool.from_url(url)
     return redis.Redis.from_pool(pool)
