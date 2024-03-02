@@ -353,6 +353,20 @@ def test_json_err_no_handler(asgi, monkeypatch_resolver):
     assert result.json == falcon.HTTPForbidden().to_dict()
 
 
+def test_handlers_include_new_media_handlers_in_resolving() -> None:
+    class FakeHandler:
+        ...
+
+    handlers = media.Handlers({falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler()})
+    handler = FakeHandler()
+    handlers['application/yaml'] = handler
+    resolved, _, _ = handlers._resolve(
+        'application/yaml', 'application/json', raise_not_found=False
+    )
+    assert resolved.__class__.__name__ == handler.__class__.__name__
+    assert resolved == handler
+
+
 class TestBaseHandler:
     def test_defaultError(self):
         h = media.BaseHandler()
