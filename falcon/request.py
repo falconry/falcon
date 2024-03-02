@@ -11,7 +11,9 @@
 # limitations under the License.
 
 """Request class."""
+from __future__ import annotations
 
+from collections import UserDict
 from datetime import datetime
 from io import BytesIO
 from uuid import UUID
@@ -2090,7 +2092,7 @@ class RequestOptions:
     auto_parse_qs_csv: bool
     strip_url_path_trailing_slash: bool
     default_media_type: str
-    media_handlers: Handlers
+    media_handlers: UserDict
 
     __slots__ = (
         'keep_blank_qs_values',

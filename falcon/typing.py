@@ -11,20 +11,50 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Shorthand definitions for more complex types."""
+from __future__ import annotations
 
-from typing import Any, Callable, Pattern, Union
+import http
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import MutableMapping
+from typing import Optional
+from typing import Pattern
+from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import Union
 
-from falcon.request import Request
-from falcon.response import Response
+if TYPE_CHECKING:
+    from typing import Protocol
+
+    from falcon.request import Request
+    from falcon.response import Response
+
+    class Serializer(Protocol):
+        def serialize(
+            self,
+            media: MutableMapping[str, Union[str, int, None, Link]],
+            content_type: str,
+        ) -> bytes:
+            ...
+
+    class MediaHandlers(Protocol):
+        def _resolve(
+            self, media_type: str, default: str, raise_not_found: bool = False
+        ) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]:
+            ...
+
+
+Link = Dict[str, str]
 
 
 # Error handlers
-ErrorHandler = Callable[[Request, Response, BaseException, dict], Any]
+ErrorHandler = Callable[['Request', 'Response', BaseException, dict], Any]
 
 # Error serializers
-ErrorSerializer = Callable[[Request, Response, BaseException], Any]
+ErrorSerializer = Callable[['Request', 'Response', BaseException], Any]
 
 # Sinks
 SinkPrefix = Union[str, Pattern]
@@ -34,3 +64,6 @@ SinkPrefix = Union[str, Pattern]
 #   arguments afterwords?
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
+NormalizedHeaders = Dict[str, str]
+RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]]]
+Status = Union[http.HTTPStatus, str, int]

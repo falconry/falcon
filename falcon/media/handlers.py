@@ -1,5 +1,6 @@
 from collections import UserDict
 import functools
+import typing
 
 from falcon import errors
 from falcon.constants import MEDIA_JSON
@@ -14,6 +15,10 @@ from falcon.media.urlencoded import URLEncodedFormHandler
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.vendor import mimeparse
+
+if typing.TYPE_CHECKING:   # pragma: no cover
+    from typing import Mapping
+    from falcon.typing import Serializer
 
 
 class MissingDependencyHandler(BinaryBaseHandlerWS):
@@ -41,7 +46,7 @@ class Handlers(UserDict):
     def __init__(self, initial=None):
         self._resolve = self._create_resolver()
 
-        handlers = initial or {
+        handlers: Mapping[str, Serializer] = initial or {
             MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
             MEDIA_URLENCODED: URLEncodedFormHandler(),
