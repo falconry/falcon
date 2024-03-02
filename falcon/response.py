@@ -13,10 +13,12 @@
 # limitations under the License.
 
 """Response class."""
+from __future__ import annotations
 
 import functools
 import mimetypes
 from typing import Optional
+from typing import TYPE_CHECKING
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
@@ -38,6 +40,8 @@ from falcon.util.deprecation import AttributeRemovedError, deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
+if TYPE_CHECKING:
+    from falcon.typing import MediaHandlers
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -1236,7 +1240,7 @@ class ResponseOptions:
 
     secure_cookies_by_default: bool
     default_media_type: Optional[str]
-    media_handlers: Handlers
+    media_handlers: MediaHandlers
     static_media_types: dict
 
     __slots__ = (

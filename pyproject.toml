@@ -7,7 +7,10 @@
     ]
 
 [tool.mypy]
-    exclude = "falcon/bench/|falcon/cmd/"
+    exclude = [
+        "falcon/bench/|falcon/cmd/",
+        "falcon/vendor"
+    ]
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
@@ -35,8 +38,20 @@
 
     [[tool.mypy.overrides]]
         module = [
+            "falcon.util.*",
+            "falcon.app_helpers",
+            "falcon.asgi_spec",
+            "falcon.constants",
+            "falcon.errors",
+            "falcon.forwarded",
+            "falcon.hooks",
+            "falcon.http_error",
+            "falcon.http_status",
+            "falcon.http_status",
+            "falcon.inspect",
+            "falcon.middleware",
+            "falcon.redirects",
             "falcon.stream",
-            "falcon.util.*"
         ]
         disallow_untyped_defs = true
 
