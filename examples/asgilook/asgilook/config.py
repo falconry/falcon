@@ -1,19 +1,15 @@
 import os
 import pathlib
+import redis.asyncio
 import uuid
-
-
-def from_url_wrapper(url):
-    pool = redis.ConnectionPool.from_url(url)
-    return redis.Redis.from_pool(pool)
 
 
 class Config:
     DEFAULT_CONFIG_PATH = '/tmp/asgilook'
     DEFAULT_MIN_THUMB_SIZE = 64
+    DEFAULT_REDIS_FROM_URL = redis.asyncio.from_url
     DEFAULT_REDIS_HOST = 'redis://localhost'
     DEFAULT_UUID_GENERATOR = uuid.uuid4
-    DEFAULT_REDIS_FROM_URL = from_url_wrapper
 
     def __init__(self):
         self.storage_path = pathlib.Path(

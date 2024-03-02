@@ -859,7 +859,7 @@ any problems with importing local utility modules or checking code coverage::
   $ mkdir -p tests
   $ touch tests/__init__.py
 
-Next, let's implement fixtures to replace ``uuid`` and ``aioredis``, and inject them
+Next, let's implement fixtures to replace ``uuid`` and ``redis``, and inject them
 into our tests via ``conftest.py`` (place your code in the newly created ``tests``
 directory):
 
