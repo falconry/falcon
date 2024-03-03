@@ -1233,6 +1233,55 @@ the tutorial in the docs provides an excellent introduction to
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
 
+Can I shut my server down cleanly from the app?
+-----------------------------------------------
+
+Normally, the lifetime of an app server is controlled by other means than from
+inside the running app, and there is no standardized way for a WSGI or ASGI
+framework to shut down the server programmatically.
+
+However, if you need to spin up a real server for testing purposes (such as for
+collecting coverage while interacting with other services over the network),
+your app server of choice may offer a Python API or hooks that you can
+integrate into your app.
+
+For instance, the stdlib's :mod:`wsgiref` server inherits from
+:class:`~socketserver.TCPServer`, which can be stopped by calling its
+``shutdown()`` method. Just make sure to perform the call from a different
+thread (otherwise it may deadlock):
+
+.. code:: python
+
+    import http
+    import threading
+    import wsgiref.simple_server
+
+    import falcon
+
+
+    class Shutdown:
+        def __init__(self, httpd):
+            self._httpd = httpd
+
+        def on_post(self, req, resp):
+            thread = threading.Thread(target=self._httpd.shutdown, daemon=True)
+            thread.start()
+
+            resp.content_type = falcon.MEDIA_TEXT
+            resp.text = 'Shutting down...\n'
+            resp.status = http.HTTPStatus.ACCEPTED
+
+
+    with wsgiref.simple_server.make_server('', 8000, app := falcon.App()) as httpd:
+        app.add_route('/shutdown', Shutdown(httpd))
+        print('Serving on port 8000, POST to /shutdown to stop...')
+        httpd.serve_forever()
+
+.. warning::
+   While ``wsgiref.simple_server`` is handy for integration testing, it builds
+   upon :mod:`http.server`, which is not recommended for production. (See
+   :ref:`install` on how to install a production-ready WSGI or ASGI server.)
+
 How can I set cookies when simulating requests?
 -----------------------------------------------
 
