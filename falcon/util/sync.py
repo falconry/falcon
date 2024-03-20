@@ -236,11 +236,12 @@ def async_to_sync(
     Keyword Args:
         **kwargs: Additional args are passed through to the coroutine function.
     """
+    global _runner
     # NOTE(vytas): Sometimes our runner's loop can get picked and consumed by
     #   other utilities and test methods. If that happens, recreate the runner.
-    global _runner
     if _runner.get_loop().is_closed():
-        _runner = _runner_cls()
+        # NOTE(vytas): This condition is never hit on _DummyRunner.
+        _runner = _runner_cls()  # pragma: nocover
     return _runner.run(coroutine(*args, **kwargs))
 
 
