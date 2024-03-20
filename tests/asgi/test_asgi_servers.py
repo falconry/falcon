@@ -4,6 +4,7 @@ import hashlib
 import os
 import platform
 import random
+import signal
 import subprocess
 import sys
 import time
@@ -620,7 +621,10 @@ def server_base_url(request):
 
             yield base_url
 
-        assert server.returncode == 0
+        # NOTE(vytas): Starting with 0.29.0, Uvicorn will propagate signal
+        #   values into the return code (which is a good practice in Unix);
+        #   see also https://github.com/encode/uvicorn/pull/1600
+        assert server.returncode in (0, -signal.SIGTERM)
 
         break
 
