@@ -624,7 +624,10 @@ def server_base_url(request):
         # NOTE(vytas): Starting with 0.29.0, Uvicorn will propagate signal
         #   values into the return code (which is a good practice in Unix);
         #   see also https://github.com/encode/uvicorn/pull/1600
-        assert server.returncode in (0, -signal.SIGTERM)
+        # TODO(vytas): Return codes are bananas on Windows, skip for now;
+        #   is there a reliable way to know which code to expect?
+        if not _WIN32:
+            assert server.returncode in (0, -signal.SIGTERM)
 
         break
 
