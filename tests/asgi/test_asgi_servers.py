@@ -28,7 +28,9 @@ _WIN32 = sys.platform.startswith('win')
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
 _SIZE_1_MB = _SIZE_1_KB**2
-
+# NOTE(vytas): Windows specific: {Application Exit by CTRL+C}.
+#   The application terminated as a result of a CTRL+C.
+_STATUS_CONTROL_C_EXIT = 0xC000013A
 
 _REQUEST_TIMEOUT = 10
 
@@ -624,10 +626,7 @@ def server_base_url(request):
         # NOTE(vytas): Starting with 0.29.0, Uvicorn will propagate signal
         #   values into the return code (which is a good practice in Unix);
         #   see also https://github.com/encode/uvicorn/pull/1600
-        # TODO(vytas): Return codes are bananas on Windows, skip for now;
-        #   is there a reliable way to know which code to expect?
-        if not _WIN32:
-            assert server.returncode in (0, -signal.SIGTERM)
+        assert server.returncode in (0, -signal.SIGTERM, _STATUS_CONTROL_C_EXIT)
 
         break
 
