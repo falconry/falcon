@@ -40,9 +40,25 @@ class _DummyRunner:
         pass
 
 
+class _ActiveRunner:
+    def __init__(self, runner_cls: type):
+        self._runner_cls = runner_cls
+        self._runner = runner_cls()
+
+    # TODO(vytas): This typing is wrong on py311+, but mypy accepts it.
+    #   It doesn't, OTOH, accept any of my ostensibly valid attempts to
+    #   describe it.
+    def __call__(self) -> _DummyRunner:
+        # NOTE(vytas): Sometimes our runner's loop can get picked and consumed
+        #   by other utilities and test methods. If that happens, recreate the runner.
+        if self._runner.get_loop().is_closed():
+            # NOTE(vytas): This condition is never hit on _DummyRunner.
+            self._runner = self._runner_cls()  # pragma: nocover
+        return self._runner
+
+
+_active_runner = _ActiveRunner(getattr(asyncio, 'Runner', _DummyRunner))
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
-_runner_cls = getattr(asyncio, 'Runner', _DummyRunner)
-_runner = _runner_cls()
 
 create_task = asyncio.create_task
 get_running_loop = asyncio.get_running_loop
@@ -236,13 +252,7 @@ def async_to_sync(
     Keyword Args:
         **kwargs: Additional args are passed through to the coroutine function.
     """
-    global _runner
-    # NOTE(vytas): Sometimes our runner's loop can get picked and consumed by
-    #   other utilities and test methods. If that happens, recreate the runner.
-    if _runner.get_loop().is_closed():
-        # NOTE(vytas): This condition is never hit on _DummyRunner.
-        _runner = _runner_cls()  # pragma: nocover
-    return _runner.run(coroutine(*args, **kwargs))
+    return _active_runner().run(coroutine(*args, **kwargs))
 
 
 def runs_sync(coroutine: Callable[..., Awaitable[Result]]) -> Callable[..., Result]:
