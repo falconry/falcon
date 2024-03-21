@@ -34,6 +34,11 @@ HTTP Status
 .. autofunction:: falcon.code_to_http_status
 .. autofunction:: falcon.get_http_status
 
+Media types
+-----------
+
+.. autofunction:: falcon.parse_header
+
 Async
 -----
 

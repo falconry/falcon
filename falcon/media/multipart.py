@@ -14,7 +14,6 @@
 
 """Multipart form media handler."""
 
-import cgi
 import re
 from urllib.parse import unquote_to_bytes
 
@@ -24,6 +23,7 @@ from falcon.media.base import BaseHandler
 from falcon.stream import BoundedStream
 from falcon.util import BufferedReader
 from falcon.util import misc
+from falcon.util.mediatypes import parse_header
 
 
 # TODO(vytas):
@@ -249,7 +249,7 @@ class BodyPart:
             str: The part decoded as a text string provided the part is
             encoded as ``text/plain``, ``None`` otherwise.
         """
-        content_type, options = cgi.parse_header(self.content_type)
+        content_type, options = parse_header(self.content_type)
         if content_type != 'text/plain':
             return None
 
@@ -275,7 +275,7 @@ class BodyPart:
 
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
-                self._content_disposition = cgi.parse_header(value.decode())
+                self._content_disposition = parse_header(value.decode())
 
             _, params = self._content_disposition
 
@@ -311,7 +311,7 @@ class BodyPart:
 
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
-                self._content_disposition = cgi.parse_header(value.decode())
+                self._content_disposition = parse_header(value.decode())
 
             _, params = self._content_disposition
             self._name = params.get('name')
@@ -493,7 +493,7 @@ class MultipartFormHandler(BaseHandler):
     def _deserialize_form(
         self, stream, content_type, content_length, form_cls=MultipartForm
     ):
-        _, options = cgi.parse_header(content_type)
+        _, options = parse_header(content_type)
         try:
             boundary = options['boundary']
         except KeyError:

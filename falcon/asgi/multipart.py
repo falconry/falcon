@@ -14,11 +14,10 @@
 
 """ASGI multipart form media handler components."""
 
-import cgi
-
 from falcon.asgi.reader import BufferedReader
 from falcon.errors import DelimiterError
 from falcon.media import multipart
+from falcon.util.mediatypes import parse_header
 
 _ALLOWED_CONTENT_HEADERS = multipart._ALLOWED_CONTENT_HEADERS
 _CRLF = multipart._CRLF
@@ -54,7 +53,7 @@ class BodyPart(multipart.BodyPart):
         return self._media
 
     async def get_text(self):
-        content_type, options = cgi.parse_header(self.content_type)
+        content_type, options = parse_header(self.content_type)
         if content_type != 'text/plain':
             return None
 
