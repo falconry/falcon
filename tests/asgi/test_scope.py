@@ -70,7 +70,7 @@ def test_supported_asgi_version(version, supported):
     resp_event_collector = testing.ASGIResponseEventCollector()
 
     async def task():
-        coro = asyncio.get_event_loop().create_task(
+        coro = asyncio.get_running_loop().create_task(
             app(scope, req_event_emitter, resp_event_collector)
         )
 
@@ -142,7 +142,7 @@ def test_lifespan_scope_default_version():
     scope = {'type': 'lifespan'}
 
     async def t():
-        t = asyncio.get_event_loop().create_task(
+        t = asyncio.get_running_loop().create_task(
             app(scope, req_event_emitter, resp_event_collector)
         )
 
@@ -196,7 +196,7 @@ def test_lifespan_scope_version(spec_version, supported):
         return
 
     async def t():
-        t = asyncio.get_event_loop().create_task(
+        t = asyncio.get_running_loop().create_task(
             app(scope, req_event_emitter, resp_event_collector)
         )
 
