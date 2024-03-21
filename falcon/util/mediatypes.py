@@ -17,6 +17,19 @@
 import typing
 
 
+def _parse_param_old_stdlib(s):  # type: ignore
+    while s[:1] == ';':
+        s = s[1:]
+        end = s.find(';')
+        while end > 0 and (s.count('"', 0, end) - s.count('\\"', 0, end)) % 2:
+            end = s.find(';', end + 1)
+        if end < 0:
+            end = len(s)
+        f = s[:end]
+        yield f.strip()
+        s = s[end:]
+
+
 def _parse_header_old_stdlib(line):  # type: ignore
     """Parse a Content-type like header.
 
@@ -26,20 +39,7 @@ def _parse_header_old_stdlib(line):  # type: ignore
         This method has been copied (almost) verbatim from CPython 3.8 stdlib.
         It is slated for removal from the stdlib in 3.13.
     """
-
-    def _parseparam(s):  # type: ignore
-        while s[:1] == ';':
-            s = s[1:]
-            end = s.find(';')
-            while end > 0 and (s.count('"', 0, end) - s.count('\\"', 0, end)) % 2:
-                end = s.find(';', end + 1)
-            if end < 0:
-                end = len(s)
-            f = s[:end]
-            yield f.strip()
-            s = s[end:]
-
-    parts = _parseparam(';' + line)
+    parts = _parse_param_old_stdlib(';' + line)
     key = parts.__next__()
     pdict = {}
     for p in parts:
@@ -63,7 +63,7 @@ def parse_header(line: str) -> typing.Tuple[str, dict]:
         line: A header value to parse.
 
     Returns:
-        A tuple containing the main content-type and a dictionary of options.
+        tuple: (the main content-type, dictionary of options).
 
     Note:
         This function replaces an equivalent method previously available in the
