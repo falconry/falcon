@@ -17,6 +17,14 @@ from falcon.util import mediatypes
             'falcon/peregrine;  key1; key2=value; key3',
             ('falcon/peregrine', {'key2': 'value'}),
         ),
+        (
+            'audio/pcm;rate=48000;encoding=float;bits=32',
+            ('audio/pcm', {'bits': '32', 'encoding': 'float', 'rate': '48000'}),
+        ),
+        (
+            'falcon/*; genus=falco; family=falconidae; class=aves; ',
+            ('falcon/*', {'class': 'aves', 'family': 'falconidae', 'genus': 'falco'}),
+        ),
         ('"falcon/peregrine" ; key="value"', ('"falcon/peregrine"', {'key': 'value'})),
         ('falcon/peregrine; empty=""', ('falcon/peregrine', {'empty': ''})),
         ('falcon/peregrine; quote="', ('falcon/peregrine', {'quote': '"'})),
