@@ -1,4 +1,4 @@
-import cgi
+from falcon.util.mediatypes import parse_header
 
 __version__ = '1.6.0'
 __author__ = 'Joe Gregorio'
@@ -23,7 +23,7 @@ def parse_mime_type(mime_type):
 
     :rtype: (str,str,dict)
     """
-    full_type, params = cgi.parse_header(mime_type)
+    full_type, params = parse_header(mime_type)
     # Java URLConnection class sends an Accept header that includes a
     # single '*'. Turn it into a legal wildcard.
     if full_type == '*':

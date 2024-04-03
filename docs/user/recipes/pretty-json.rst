@@ -52,7 +52,6 @@ implemented with a :ref:`custom media handler <custom-media-handler-type>`:
 
 .. code:: python
 
-    import cgi
     import json
 
     import falcon
@@ -66,7 +65,7 @@ implemented with a :ref:`custom media handler <custom-media-handler-type>`:
             return json.loads(data.decode())
 
         def serialize(self, media, content_type):
-            _, params = cgi.parse_header(content_type)
+            _, params = falcon.parse_header(content_type)
             indent = params.get('indent')
             if indent is not None:
                 try:
