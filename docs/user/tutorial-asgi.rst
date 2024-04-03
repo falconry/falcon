@@ -967,6 +967,47 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
 
+Debugging ASGI Applications
+---------------------------
+
+While developing and testing ASGI applications, understanding how to configure and utilize logging can be helpful, especially when you encounter unexpected issues or behaviors.
+
+By default, Falcon does not set up logging for you, but Python's built-in `logging` module provides a flexible framework for emitting and capturing log messages. Here's how you can set up basic logging in your ASGI Falcon application:
+
+.. code:: python
+
+    import logging
+
+    logging.basicConfig(
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        level=logging.INFO
+    )
+
+    logger = logging.getLogger(__name__)
+
+You can now use `logger` to log messages within your application. For example:
+
+.. code:: python
+
+    logger.info('Info message')
+    logger.warning('Warning message')
+    logger.error('Error message')
+
+It's especially useful to log exceptions and error messages that can help diagnose issues:
+
+.. code:: python
+
+    try:
+        # Some operation...
+    except Exception as e:
+        logger.exception('An error occurred: %s', str(e))
+
+
+For more sophisticated logging setups (e.g., different log levels or formats for development and production), you can configure multiple handlers and formatters, as described in the Python logging documentation.
+
+.. note::
+   While logging is helpful for development and debugging, be mindful of logging sensitive information. Ensure that log files are stored securely and are not accessible to unauthorized users.
+
 What Now?
 ---------
 
