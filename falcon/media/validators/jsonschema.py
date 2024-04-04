@@ -1,7 +1,8 @@
-from functools import wraps
-from inspect import iscoroutinefunction
+from __future__ import annotations
 
-import falcon
+from typing import Any
+
+from . import base as _base
 
 try:
     import jsonschema
@@ -9,7 +10,7 @@ except ImportError:  # pragma: nocover
     pass
 
 
-def validate(req_schema=None, resp_schema=None, is_async=False):
+def validate(req_schema: Any = None, resp_schema: Any = None, is_async: bool = False):
     """Validate ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
@@ -99,78 +100,24 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
 
     """
 
-    def decorator(func):
-        if iscoroutinefunction(func) or is_async:
-            return _validate_async(func, req_schema, resp_schema)
-
-        return _validate(func, req_schema, resp_schema)
-
-    return decorator
+    return _base.validator_factory(
+        JsonSchemaValidator, req_schema, resp_schema, is_async
+    )
 
 
-def _validate(func, req_schema=None, resp_schema=None):
-    @wraps(func)
-    def wrapper(self, req, resp, *args, **kwargs):
-        if req_schema is not None:
-            try:
-                jsonschema.validate(
-                    req.media, req_schema, format_checker=jsonschema.FormatChecker()
-                )
-            except jsonschema.ValidationError as ex:
-                raise falcon.MediaValidationError(
-                    title='Request data failed validation', description=ex.message
-                ) from ex
+class JsonSchemaValidator(_base.Validator):
+    def __init__(self, schema: Any) -> None:
+        self.schema = schema
+        self.exceptions = jsonschema.ValidationError
 
-        result = func(self, req, resp, *args, **kwargs)
+    @classmethod
+    def from_schema(cls, schema: Any) -> JsonSchemaValidator:
+        return cls(schema)
 
-        if resp_schema is not None:
-            try:
-                jsonschema.validate(
-                    resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
-                )
-            except jsonschema.ValidationError as ex:
-                raise falcon.HTTPInternalServerError(
-                    title='Response data failed validation'
-                    # Do not return 'e.message' in the response to
-                    # prevent info about possible internal response
-                    # formatting bugs from leaking out to users.
-                ) from ex
+    def validate(self, media: Any) -> None:
+        jsonschema.validate(
+            media, self.schema, format_checker=jsonschema.FormatChecker()
+        )
 
-        return result
-
-    return wrapper
-
-
-def _validate_async(func, req_schema=None, resp_schema=None):
-    @wraps(func)
-    async def wrapper(self, req, resp, *args, **kwargs):
-        if req_schema is not None:
-            m = await req.get_media()
-
-            try:
-                jsonschema.validate(
-                    m, req_schema, format_checker=jsonschema.FormatChecker()
-                )
-            except jsonschema.ValidationError as ex:
-                raise falcon.MediaValidationError(
-                    title='Request data failed validation', description=ex.message
-                ) from ex
-
-        result = await func(self, req, resp, *args, **kwargs)
-
-        if resp_schema is not None:
-            try:
-                jsonschema.validate(
-                    resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
-                )
-            except jsonschema.ValidationError as ex:
-                raise falcon.HTTPInternalServerError(
-                    title='Response data failed validation'
-                    # Do not return 'e.message' in the response to
-                    # prevent info about possible internal response
-                    # formatting bugs from leaking out to users.
-                ) from ex
-
-        return result
-
-    return wrapper
+    def get_exception_message(self, exception: jsonschema.ValidationError):
+        return exception.message
