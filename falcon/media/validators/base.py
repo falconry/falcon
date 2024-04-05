@@ -21,11 +21,11 @@ class Validator:
 
     @abstractmethod
     def validate(self, media: Any) -> None:
-        """Validates the input media."""
+        """Validate the input media."""
 
     @abstractmethod
     def get_exception_message(self, exception: Exception) -> Optional[str]:
-        """Returns a message from an exception."""
+        """Return a message from an exception."""
 
 
 _T = TypeVar('_T')
@@ -34,7 +34,7 @@ _T = TypeVar('_T')
 def validator_factory(
     validator: Type[Validator], req_schema: Any, resp_schema: Any, is_async: bool
 ) -> Callable[[_T], _T]:
-    """Creates a validator decorator for that uses the specified ``Validator`` class.
+    """Create a validator decorator for that uses the specified ``Validator`` class.
 
     Args:
         validator (Type[Validator]): The validator class.
