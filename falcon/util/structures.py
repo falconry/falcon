@@ -147,19 +147,13 @@ class Context:
     if TYPE_CHECKING:
 
         def __getattr__(self, name: str) -> Any:
-            try:
-                return self.__dict__[name]
-            except KeyError:
-                raise AttributeError(name) from None
+            ...
 
         def __setattr__(self, name: str, value: Any) -> None:
-            self.__dict__[name] = value
+            ...
 
         def __delattr__(self, name: str) -> None:
-            try:
-                del self.__dict__[name]
-            except KeyError:
-                raise AttributeError(name) from None
+            ...
 
     def __contains__(self, key: str) -> bool:
         return self.__dict__.__contains__(key)
