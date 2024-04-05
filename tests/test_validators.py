@@ -3,11 +3,11 @@ import typing
 try:
     import jsonschema
 except ImportError:
-    jsonschema = None
+    jsonschema = None  # type: ignore
 try:
     import jsonschema_rs
 except ImportError:
-    jsonschema_rs = None
+    jsonschema_rs = None  # type: ignore
 import pytest
 
 import falcon
