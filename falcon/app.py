@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Falcon App class."""
-
 from functools import wraps
 from inspect import iscoroutinefunction
 import pathlib
@@ -41,7 +40,6 @@ from falcon.typing import ErrorHandler, ErrorSerializer, SinkPrefix
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
-
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
 # reference via module global is faster than going via self
@@ -673,7 +671,7 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/'):
+    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/') -> None:
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
