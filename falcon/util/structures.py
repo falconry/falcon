@@ -37,6 +37,7 @@ from typing import Iterator
 from typing import KeysView
 from typing import Optional
 from typing import Tuple
+from typing import TYPE_CHECKING
 from typing import ValuesView
 
 
@@ -140,6 +141,19 @@ class Context:
     >>> 'cache_strategy' in context
     True
     """
+
+    # NOTE(vytas): Define synthetic attr access methods (under TYPE_CHECKING)
+    #   merely to let mypy know this is a namespace object.
+    if TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> Any:
+            ...
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            ...
+
+        def __delattr__(self, name: str) -> None:
+            ...
 
     def __contains__(self, key: str) -> bool:
         return self.__dict__.__contains__(key)
