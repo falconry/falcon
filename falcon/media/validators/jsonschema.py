@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional, TYPE_CHECKING
 
 from . import base as _base
 
@@ -119,5 +119,7 @@ class JsonSchemaValidator(_base.Validator):
             media, self.schema, format_checker=jsonschema.FormatChecker()
         )
 
-    def get_exception_message(self, exception: jsonschema.ValidationError):
+    def get_exception_message(self, exception: Exception) -> Optional[str]:
+        if TYPE_CHECKING:
+            assert isinstance(exception, jsonschema.ValidationError)
         return exception.message

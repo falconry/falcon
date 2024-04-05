@@ -1,8 +1,9 @@
 from __future__ import annotations
+
+from abc import abstractmethod
 from functools import wraps
 from inspect import iscoroutinefunction
-from abc import abstractmethod
-from typing import Any, Tuple, Type, Union, Optional
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
 import falcon
 
@@ -20,17 +21,33 @@ class Validator:
 
     @abstractmethod
     def validate(self, media: Any) -> None:
-        """Validates the input media"""
+        """Validates the input media."""
 
     @abstractmethod
     def get_exception_message(self, exception: Exception) -> Optional[str]:
-        """Returns a message from an exception"""
+        """Returns a message from an exception."""
+
+
+_T = TypeVar('_T')
 
 
 def validator_factory(
     validator: Type[Validator], req_schema: Any, resp_schema: Any, is_async: bool
-):
-    def decorator(func):
+) -> Callable[[_T], _T]:
+    """Creates a validator decorator for that uses the specified ``Validator`` class.
+
+    Args:
+        validator (Type[Validator]): The validator class.
+        req_schema (Any): The schema used in the request body. Type will depend on
+            what is accepted by ``Validator.from_schema``.
+            When ``None`` validation will be skipped.
+        resp_schema (Any): The schema used in the response body. Type will depend
+            on what is accepted by ``Validator.from_schema``.
+            When ``None`` validation will be skipped.
+        is_async (bool): Set to ``True`` to force use of the async validator.
+    """
+
+    def decorator(func: _T) -> _T:
         if iscoroutinefunction(func) or is_async:
             return _validate_async(validator, func, req_schema, resp_schema)
 
@@ -39,7 +56,9 @@ def validator_factory(
     return decorator
 
 
-def _validate(validator: Type[Validator], func, req_schema: Any, resp_schema: Any):
+def _validate(
+    validator: Type[Validator], func, req_schema: Any, resp_schema: Any
+) -> Any:
     req_validator = None if req_schema is None else validator.from_schema(req_schema)
     resp_validator = None if resp_schema is None else validator.from_schema(resp_schema)
 
@@ -74,7 +93,7 @@ def _validate(validator: Type[Validator], func, req_schema: Any, resp_schema: An
 
 def _validate_async(
     validator: Type[Validator], func, req_schema: Any, resp_schema: Any
-):
+) -> Any:
     req_validator = None if req_schema is None else validator.from_schema(req_schema)
     resp_validator = None if resp_schema is None else validator.from_schema(resp_schema)
 
