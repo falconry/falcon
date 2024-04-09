@@ -969,6 +969,7 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
 
 Debugging ASGI Applications
 ---------------------------
+(This section also applies to WSGI applications)
 
 While developing and testing ASGI applications, understanding how to configure and utilize logging can be helpful, especially when you encounter unexpected issues or behaviors.
 
@@ -1003,7 +1004,8 @@ It's especially useful to log exceptions and error messages that can help diagno
         logger.exception('An error occurred: %s', str(e))
 
 
-For more sophisticated logging setups (e.g., different log levels or formats for development and production), you can configure multiple handlers and formatters, as described in the Python logging documentation.
+For more sophisticated logging setups (e.g., different log levels or formats for development and production), you can configure multiple handlers and formatters, as described in the Python logging `documentation <https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`__.
+
 
 .. note::
    While logging is helpful for development and debugging, be mindful of logging sensitive information. Ensure that log files are stored securely and are not accessible to unauthorized users.
