@@ -94,10 +94,8 @@ filterwarnings = [
     "ignore:Using or importing the ABCs:DeprecationWarning",
     "ignore:cannot collect test class 'TestClient':pytest.PytestCollectionWarning",
     "ignore:inspect.getargspec\\(\\) is deprecated:DeprecationWarning",
-    "ignore:.cgi. is deprecated and slated for removal:DeprecationWarning",
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
     "ignore:This process \\(.+\\) is multi-threaded",
-    "ignore:There is no current event loop",
 ]
 testpaths = [
     "tests"

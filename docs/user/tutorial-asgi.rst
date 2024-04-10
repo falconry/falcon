@@ -685,10 +685,10 @@ small files littering our storage, it consumes CPU resources, and we would
 soon find our application crumbling under load.
 
 Let's mitigate this problem with response caching. We'll use Redis, taking
-advantage of `aioredis <https://github.com/aio-libs/aioredis>`_ for async
+advantage of `redis <https://redis.readthedocs.io/en/stable/examples/asyncio_examples.html>`_ for async
 support::
 
-  pip install aioredis
+  pip install redis
 
 We will also need to serialize response data (the ``Content-Type`` header and
 the body in the first version); ``msgpack`` should do::
@@ -700,7 +700,7 @@ installing Redis server on your machine, one could also:
 
 * Spin up Redis in Docker, eg::
 
-    docker run -p 6379:6379 redis
+    docker run -p 6379:6379 redis/redis-stack:latest
 
 * Assuming Redis is installed on the machine, one could also try
   `pifpaf <https://github.com/jd/pifpaf>`_ for spinning up Redis just
@@ -747,9 +747,8 @@ implementations for production and testing.
     ``self.redis_host``. Such a design might prove helpful for apps that
     need to create client connections in more than one place.
 
-Assuming we call our new :ref:`configuration <asgi_tutorial_config>` items
-``redis_host`` and ``redis_from_url()``, respectively, the final version of
-``config.py`` now reads:
+Assuming we call our new :ref:`configuration <asgi_tutorial_config>` item
+``redis_host`` the final version of ``config.py`` now reads:
 
 .. literalinclude:: ../../examples/asgilook/asgilook/config.py
     :language: python
@@ -860,7 +859,7 @@ any problems with importing local utility modules or checking code coverage::
   $ mkdir -p tests
   $ touch tests/__init__.py
 
-Next, let's implement fixtures to replace ``uuid`` and ``aioredis``, and inject them
+Next, let's implement fixtures to replace ``uuid`` and ``redis``, and inject them
 into our tests via ``conftest.py`` (place your code in the newly created ``tests``
 directory):
 
