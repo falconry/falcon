@@ -139,7 +139,7 @@ jobs:
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         if: ${{ matrix.toxenv == 'py312' || matrix.toxenv == 'py312_sans_msgpack' }}
         with:
           env_vars: PYTHON
