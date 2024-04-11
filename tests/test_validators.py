@@ -1,3 +1,4 @@
+import json
 import typing
 
 try:
@@ -52,40 +53,50 @@ _TEST_SCHEMA = {
                 jsonschema_rs is None, reason='jsonschema_rs dependency not found'
             ),
         ),
+        pytest.param(
+            'jsonschema_rs_string',
+            marks=pytest.mark.skipif(
+                jsonschema_rs is None, reason='jsonschema_rs dependency not found'
+            ),
+        ),
     ]
 )
 def resources(request):
+    the_schema = _TEST_SCHEMA
     if request.param == 'jsonschema':
         validate = validators.jsonschema.validate
     elif request.param == 'jsonschema_rs':
         validate = validators.jsonschema_rs.validate
+    elif request.param == 'jsonschema_rs_string':
+        validate = validators.jsonschema_rs.validate
+        the_schema = json.dumps(_TEST_SCHEMA)
     else:
         pytest.fail(request.param)
 
     class Resource:
-        @validate(req_schema=_TEST_SCHEMA)
+        @validate(req_schema=the_schema)
         def request_validated(self, req, resp):
             assert req.media is not None
             return resp
 
-        @validate(resp_schema=_TEST_SCHEMA)
+        @validate(resp_schema=the_schema)
         def response_validated(self, req, resp):
             assert resp.media is not None
             return resp
 
-        @validate(req_schema=_TEST_SCHEMA, resp_schema=_TEST_SCHEMA)
+        @validate(req_schema=the_schema, resp_schema=the_schema)
         def both_validated(self, req, resp):
             assert req.media is not None
             assert resp.media is not None
             return req, resp
 
-        @validate(req_schema=_TEST_SCHEMA, resp_schema=_TEST_SCHEMA)
+        @validate(req_schema=the_schema, resp_schema=the_schema)
         def on_put(self, req, resp):
             assert req.media is not None
             resp.media = _VALID_MEDIA
 
     class ResourceAsync:
-        @validate(req_schema=_TEST_SCHEMA)
+        @validate(req_schema=the_schema)
         async def request_validated(self, req, resp):
             # NOTE(kgriffs): Verify that we can await req.get_media() multiple times
             for i in range(3):
@@ -95,12 +106,12 @@ def resources(request):
             assert m is not None
             return resp
 
-        @validate(resp_schema=_TEST_SCHEMA)
+        @validate(resp_schema=the_schema)
         async def response_validated(self, req, resp):
             assert resp.media is not None
             return resp
 
-        @validate(req_schema=_TEST_SCHEMA, resp_schema=_TEST_SCHEMA)
+        @validate(req_schema=the_schema, resp_schema=the_schema)
         async def both_validated(self, req, resp):
             m = await req.get_media()
             assert m is not None
@@ -109,7 +120,7 @@ def resources(request):
 
             return req, resp
 
-        @validate(req_schema=_TEST_SCHEMA, resp_schema=_TEST_SCHEMA)
+        @validate(req_schema=the_schema, resp_schema=the_schema)
         async def on_put(self, req, resp):
             m = await req.get_media()
             assert m is not None
