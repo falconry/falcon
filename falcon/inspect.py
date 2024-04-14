@@ -90,7 +90,7 @@ def register_router(router_class):
     def wraps(fn):
         if router_class in _supported_routers:
             raise ValueError(
-                'Another function is already registered' ' for the router {}'.format(
+                'Another function is already registered for the router {}'.format(
                     router_class
                 )
             )
