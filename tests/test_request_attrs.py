@@ -709,7 +709,6 @@ class TestRequestAttributes:
         ],
     )
     def test_date_invalid(self, asgi, header, attr):
-
         # Date formats don't conform to RFC 1123
         headers = {header: 'Thu, 04 Apr 2013'}
         expected_desc = (

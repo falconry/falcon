@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Inspect utilities for falcon applications."""
+
 from functools import partial
 import inspect
 from typing import Callable  # NOQA: F401
@@ -89,8 +90,9 @@ def register_router(router_class):
     def wraps(fn):
         if router_class in _supported_routers:
             raise ValueError(
-                'Another function is already registered'
-                ' for the router {}'.format(router_class)
+                'Another function is already registered' ' for the router {}'.format(
+                    router_class
+                )
             )
         _supported_routers[router_class] = fn
         return fn

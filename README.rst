@@ -8,7 +8,7 @@
     >
     </a>
 
-|Build Status| |Docs| |codecov.io| |Blue|
+|Build Status| |Docs| |codecov.io|
 
 The Falcon Web Framework
 ========================
@@ -1049,6 +1049,3 @@ limitations under the License.
    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
    :target: http://codecov.io/gh/falconry/falcon
-.. |Blue| image:: https://img.shields.io/badge/code%20style-blue-blue.svg
-    :target: https://blue.readthedocs.io/
-    :alt: code style: blue

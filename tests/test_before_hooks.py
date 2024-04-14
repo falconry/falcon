@@ -130,7 +130,6 @@ class WrappedRespondersBodyParserResource:
 
 @falcon.before(bunnies)
 class WrappedClassResource:
-
     _some_fish = Fish()
 
     # Test non-callable should be skipped by decorator

@@ -11,9 +11,9 @@ from falcon import asgi, testing
     [
         b'',
         b'\x00',
-        b'\x00\xFF',
+        b'\x00\xff',
         b'catsup',
-        b'\xDE\xAD\xBE\xEF' * 512,
+        b'\xde\xad\xbe\xef' * 512,
         testing.rand_string(1, 2048),
         os.urandom(100 * 2**20),
     ],
@@ -193,9 +193,9 @@ async def test_iterate_streaming_request():
     [
         b'',
         b'\x00',
-        b'\x00\xFF',
+        b'\x00\xff',
         b'catsup',
-        b'\xDE\xAD\xBE\xEF' * 512,
+        b'\xde\xad\xbe\xef' * 512,
         testing.rand_string(1, 2048).encode(),
     ],
     ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random'],

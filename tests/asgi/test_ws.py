@@ -442,7 +442,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
                 for __ in range(3):
                     try:
                         await ws.receive_media()
-                    except (ValueError):
+                    except ValueError:
                         self.deserialize_error_count += 1
             finally:
                 self.finished.set()
@@ -467,9 +467,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: str) -> object:
                 return rapidjson.loads(payload)
 
-        app.ws_options.media_handlers[
-            falcon.WebSocketPayloadType.TEXT
-        ] = RapidJSONHandler()
+        app.ws_options.media_handlers[falcon.WebSocketPayloadType.TEXT] = (
+            RapidJSONHandler()
+        )
 
     if custom_data:
 
@@ -481,9 +481,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: bytes) -> object:
                 return cbor2.loads(payload)
 
-        app.ws_options.media_handlers[
-            falcon.WebSocketPayloadType.BINARY
-        ] = CBORHandler()
+        app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = (
+            CBORHandler()
+        )
 
     async with conductor as c:
         async with c.simulate_ws() as ws:
@@ -503,7 +503,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             #    ensure we aren't getting any false-positives.
             await ws.send_text('"DEADBEEF"')
             await ws.send_text('DEADBEEF')
-            await ws.send_data(b'\xDE\xAD\xBE\xEF')
+            await ws.send_data(b'\xde\xad\xbe\xef')
 
             await resource.finished.wait()
 
@@ -1119,7 +1119,6 @@ async def test_ws_responder_never_ready(conductor, monkeypatch):
 
 @pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
 def test_msgpack_missing():
-
     options = WebSocketOptions()
     handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]
 
@@ -1231,7 +1230,7 @@ async def test_ws_http_error_or_status_error_handler(
 
     if handler_has_ws:
 
-        async def handle_foobar(req, resp, ex, param, ws=None):   # type: ignore
+        async def handle_foobar(req, resp, ex, param, ws=None):  # type: ignore
             raise thing(status)
 
     else:

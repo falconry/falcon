@@ -25,7 +25,6 @@ class StorageError(Exception):
 
 
 class SinkAdapter:
-
     engines = {
         'ddg': 'https://duckduckgo.com',
         'y': 'https://search.yahoo.com/search',

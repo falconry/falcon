@@ -190,7 +190,6 @@ def test_forwarded_quote_escaping(asgi):
     ],
 )
 def test_escape_malformed_requests(forwarded, expected_dest, asgi):
-
     req = create_req(
         asgi,
         host='suchproxy02.suchtesting.com',
