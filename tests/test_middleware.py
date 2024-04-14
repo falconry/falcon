@@ -9,6 +9,7 @@ import pytest
 import falcon
 import falcon.errors
 import falcon.testing as testing
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _utcnow
 
 from _util import create_app  # NOQA
@@ -900,14 +901,19 @@ class TestErrorHandling(TestMiddleware):
         def _http_error_handler(error, req, resp, params):
             raise falcon.HTTPStatus(falcon.HTTP_201)
 
-        async def _http_error_handler_async(error, req, resp, params):
+        async def _http_error_handler_async(req, resp, error, params):
             raise falcon.HTTPStatus(falcon.HTTP_201)
 
         h = _http_error_handler_async if asgi else _http_error_handler
 
         # NOTE(kgriffs): This will take precedence over the default
         # handler for facon.HTTPError.
-        app.add_error_handler(falcon.HTTPError, h)
+        if asgi:
+            # NOTE(vytas): The ASGI flavour supports no reordering shim.
+            app.add_error_handler(falcon.HTTPError, h)
+        else:
+            with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+                app.add_error_handler(falcon.HTTPError, h)
 
         response = client.simulate_request(path='/', method='POST')
         assert response.status == falcon.HTTP_201
@@ -994,20 +1000,28 @@ class TestShortCircuiting(TestMiddleware):
 
 class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
     @pytest.mark.parametrize(
-        'mw',
+        'mw,allowed',
         [
-            CaptureResponseMiddleware(),
-            [CaptureResponseMiddleware()],
-            (CaptureResponseMiddleware(),),
-            iter([CaptureResponseMiddleware()]),
+            (CaptureResponseMiddleware(), True),
+            ([CaptureResponseMiddleware()], True),
+            ((CaptureResponseMiddleware(),), True),
+            (iter([CaptureResponseMiddleware()]), True),
+            (falcon.CORSMiddleware(), False),
+            ([falcon.CORSMiddleware()], False),
         ],
     )
-    def test_api_initialization_with_cors_enabled_and_middleware_param(self, mw, asgi):
-        app = create_app(asgi, middleware=mw, cors_enable=True)
-        app.add_route('/', TestCorsResource())
-        client = testing.TestClient(app)
-        result = client.simulate_get(headers={'Origin': 'localhost'})
-        assert result.headers['Access-Control-Allow-Origin'] == '*'
+    def test_api_initialization_with_cors_enabled_and_middleware_param(
+        self, mw, asgi, allowed
+    ):
+        if allowed:
+            app = create_app(asgi, middleware=mw, cors_enable=True)
+            app.add_route('/', TestCorsResource())
+            client = testing.TestClient(app)
+            result = client.simulate_get(headers={'Origin': 'localhost'})
+            assert result.headers['Access-Control-Allow-Origin'] == '*'
+        else:
+            with pytest.raises(ValueError, match='CORSMiddleware'):
+                app = create_app(asgi, middleware=mw, cors_enable=True)
 
 
 @pytest.mark.skipif(cython, reason='Cythonized coroutine functions cannot be detected')

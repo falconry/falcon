@@ -23,5 +23,5 @@ async def app(scope, receive, send):
         }
     )
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     loop.create_task(_say_hi())

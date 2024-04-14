@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.10"
+          - "3.12"
         os:
           - "ubuntu-latest"
         toxenv:
@@ -28,9 +28,9 @@ jobs:
           - "pep8-docstrings"
           - "mypy"
           - "mypy_tests"
-          - "py310"
-          - "py310_sans_msgpack"
-          - "py310_cython"
+          - "py312"
+          - "py312_sans_msgpack"
+          - "py312_cython"
           - "docs"
           - "towncrier"
           - "look"
@@ -82,12 +82,12 @@ jobs:
           - python-version: "3.12"
             os: ubuntu-latest
             toxenv: py312_cython
-          - python-version: "3.10"
+          - python-version: "3.12"
             os: macos-latest
-            toxenv: py310_nocover
-          - python-version: "3.10"
+            toxenv: py312_nocover
+          - python-version: "3.12"
             os: windows-latest
-            toxenv: py310_nocover
+            toxenv: py312_nocover
           # These env require 3.8 and 20.04, see tox.ini
           - python-version: "3.8"
             os: ubuntu-20.04
@@ -133,14 +133,15 @@ jobs:
         run: tox -e ${{ matrix.toxenv }}
 
       - name: Combine coverage
-        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py312' || matrix.toxenv == 'py312_sans_msgpack' }}
         run: |
           coverage --version
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
+        uses: codecov/codecov-action@v4
+        if: ${{ matrix.toxenv == 'py312' || matrix.toxenv == 'py312_sans_msgpack' }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
