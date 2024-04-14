@@ -82,7 +82,7 @@
     extend-exclude = "falcon/vendor"
 
 [tool.blue]
-    # NOTE(vytas): Before switching to Ruff, Falcon use the Blue formatter.
+    # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
     #   With the below settings, accidentally running blue should yield
     #   only minor cosmetic changes in a handful of files.
     target-version = ["py37"]
