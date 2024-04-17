@@ -66,7 +66,6 @@ def deprecated(
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[[Callable[..., Any]], Any]:
-
         object_name = 'property' if is_property else 'function'
         post_name = '' if is_property else '(...)'
         message = 'Call to deprecated {} {}{}. {}'.format(

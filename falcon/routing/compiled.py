@@ -651,8 +651,7 @@ class CompiledRouter:
 
         src_lines.append(
             # PERF(kgriffs): Explicit return of None is faster than implicit
-            _TAB_STR
-            + 'return None'
+            _TAB_STR + 'return None'
         )
 
         self._finder_src = '\n'.join(src_lines)

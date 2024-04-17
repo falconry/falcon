@@ -15,6 +15,7 @@
 """
 Script that prints out the routes of an App instance.
 """
+
 import argparse
 import importlib
 import os
@@ -59,7 +60,6 @@ def make_parser():
 
 
 def load_app(parser, args):
-
     try:
         module, instance = args.app_module.split(':', 1)
     except ValueError:

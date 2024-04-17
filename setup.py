@@ -139,7 +139,6 @@ def load_description():
 
     # NOTE(kgriffs): PyPI does not support the raw directive
     for readme_line in io.open('README.rst', 'r', encoding='utf-8'):
-
         # NOTE(vytas): The patron list largely builds upon raw sections
         if readme_line.startswith('.. Patron list starts'):
             in_patron_list = True

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Buffered stream reader."""
+
 from __future__ import annotations
 
 import functools
@@ -189,7 +190,6 @@ class BufferedReader:
         next_chunk: Optional[bytes] = None,
         next_chunk_len: int = 0,
     ) -> bytes:
-
         if delimiter_pos < 0 and delimiter is not None:
             delimiter_pos = self._buffer.find(delimiter, self._buffer_pos)
 

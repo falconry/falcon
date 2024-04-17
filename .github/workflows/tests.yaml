@@ -23,9 +23,9 @@ jobs:
           - "ubuntu-latest"
         toxenv:
           - "pep8"
-          - "blue"
-          - "pep8-examples"
           - "pep8-docstrings"
+          - "pep8-examples"
+          - "ruff"
           - "mypy"
           - "mypy_tests"
           - "py312"

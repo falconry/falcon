@@ -864,7 +864,6 @@ def create_scope(
     include_server=True,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -1002,7 +1001,6 @@ def create_scope_ws(
     subprotocols=None,
     spec_version='2.1',
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1089,7 +1087,6 @@ def create_environ(
     root_path=None,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:

@@ -28,13 +28,13 @@ Please note that all contributors and maintainers of this project are subject to
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate,
 and that all existing tests still pass with your changes.
-Please also ensure that your coding style follows PEP 8 and the ``blue`` formatting style.
+Please also ensure that your coding style follows PEP 8 and the ``ruff`` formatting style.
 
-In order to reformat your code with ``blue``, simply issue:
+In order to reformat your code with ``ruff``, simply issue:
 
 ```bash
-$ pip install -U blue
-$ blue .
+$ pip install -U ruff
+$ ruff format
 ```
 
 You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8, 3.10, 3.11 or 3.12:
