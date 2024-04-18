@@ -198,7 +198,7 @@ def _should_wrap_non_coroutines() -> bool:
 
 
 def _wrap_non_coroutine_unsafe(
-    func: Optional[Callable[..., Any]]
+    func: Optional[Callable[..., Any]],
 ) -> Union[Callable[..., Awaitable[Any]], Callable[..., Any], None]:
     """Wrap a coroutine using ``wrap_sync_to_async_unsafe()`` for internal test cases.
 

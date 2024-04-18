@@ -272,7 +272,6 @@ class BodyPart:
     @property
     def filename(self):
         if self._filename is None:
-
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -308,7 +307,6 @@ class BodyPart:
     @property
     def name(self):
         if self._name is None:
-
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
