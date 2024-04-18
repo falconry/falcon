@@ -971,44 +971,49 @@ Debugging ASGI Applications
 ---------------------------
 (This section also applies to WSGI applications)
 
-While developing and testing ASGI applications, understanding how to configure and utilize logging can be helpful, especially when you encounter unexpected issues or behaviors.
+While developing and testing ASGI applications, understanding how to configure
+and utilize logging can be helpful, especially when you encounter unexpected
+issues or behaviors.
 
-By default, Falcon does not set up logging for you, but Python's built-in `logging` module provides a flexible framework for emitting and capturing log messages. Here's how you can set up basic logging in your ASGI Falcon application:
+By default, Falcon does not set up logging for you,
+but Python's built-in :mod:`logging` module provides a flexible framework for
+emitting and capturing log messages. Here's how you can set up basic logging in
+your ASGI Falcon application:
 
 .. code:: python
 
+    import falcon
     import logging
 
-    logging.basicConfig(
-        format='%(asctime)s [%(levelname)s] %(message)s',
-        level=logging.INFO
-    )
+    logging.basicConfig(level=logging.INFO)
 
-    logger = logging.getLogger(__name__)
+    class ErrorResource:
+        def on_get(self, req, resp):
+            raise Exception("Something went wrong!")
 
-You can now use `logger` to log messages within your application. For example:
-
-.. code:: python
-
-    logger.info('Info message')
-    logger.warning('Warning message')
-    logger.error('Error message')
-
-It's especially useful to log exceptions and error messages that can help diagnose issues:
-
-.. code:: python
-
-    try:
-        # Some operation...
-    except Exception as e:
-        logger.exception('An error occurred: %s', str(e))
+    app = falcon.App()
+    app.add_route('/error', ErrorResource())
 
 
-For more sophisticated logging setups (e.g., different log levels or formats for development and production), you can configure multiple handlers and formatters, as described in the Python logging `documentation <https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`__.
+When the above route is accessed, Falcon will catch the unhandled exception and
+automatically log an error message. Below is an example of what the log output
+might look like:
+
+.. code-block:: none
+
+    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
+    Traceback (most recent call last):
+      File "path/to/falcon/app.py", line 123, in __call__
+        resp = resource.on_get(req, resp)
+      File "/path/to/your/app.py", line 7, in on_get
+        raise Exception("Something went wrong!")
+    Exception: Something went wrong!
 
 
 .. note::
-   While logging is helpful for development and debugging, be mindful of logging sensitive information. Ensure that log files are stored securely and are not accessible to unauthorized users.
+   While logging is helpful for development and debugging, be mindful of logging
+   sensitive information. Ensure that log files are stored securely and are not
+   accessible to unauthorized users.
 
 What Now?
 ---------
