@@ -384,7 +384,6 @@ class Request(request.Request):
     _wsgi_errors = None
 
     def __init__(self, scope, receive, first_event=None, options=None):
-
         # =====================================================================
         # Prepare headers
         # =====================================================================

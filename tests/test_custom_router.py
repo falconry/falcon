@@ -79,7 +79,6 @@ def test_custom_router_find_should_be_used(asgi):
 
 @pytest.mark.parametrize('asgi', [True, False])
 def test_can_pass_additional_params_to_add_route(asgi):
-
     check = []
 
     class CustomRouter:

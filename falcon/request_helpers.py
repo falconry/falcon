@@ -30,7 +30,7 @@ from falcon.util import ETag
 #   (see also: https://www.python.org/dev/peps/pep-3333/#unicode-issues)
 #
 _COOKIE_NAME_RESERVED_CHARS = re.compile(
-    '[\x00-\x1F\x7F-\xFF()<>@,;:\\\\"/[\\]?={} \x09]'
+    '[\x00-\x1f\x7f-\xff()<>@,;:\\\\"/[\\]?={} \x09]'
 )
 
 # NOTE(kgriffs): strictly speaking, the weakness indicator is

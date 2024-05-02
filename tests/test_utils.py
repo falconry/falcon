@@ -645,8 +645,8 @@ class TestFalconUtils:
             ('/api', True),
             ('/data/items/something?query=apples%20and%20oranges', True),
             ('/food?item=ð\x9f\x8d\x94', False),
-            ('\x00\x00\x7F\x00\x00\x7F\x00', True),
-            ('\x00\x00\x7F\x00\x00\x80\x00', False),
+            ('\x00\x00\x7f\x00\x00\x7f\x00', True),
+            ('\x00\x00\x7f\x00\x00\x80\x00', False),
         ],
     )
     @pytest.mark.parametrize('method', ['isascii', '_isascii'])
@@ -952,7 +952,7 @@ class TestFalconTestingUtils:
             '',
             'I am a \u1d0a\ua731\u1d0f\u0274 string.',
             [1, 3, 3, 7],
-            {'message': '\xa1Hello Unicode! \U0001F638'},
+            {'message': '\xa1Hello Unicode! \U0001f638'},
             {
                 'count': 4,
                 'items': [

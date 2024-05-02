@@ -233,7 +233,7 @@ class TestInspectApp:
         mi = inspect.inspect_middleware(make_app_async() if asgi else make_app())
 
         def test(tl, names, cls):
-            for (t, n, c) in zip(tl, names, cls):
+            for t, n, c in zip(tl, names, cls):
                 assert isinstance(t, inspect.MiddlewareTreeItemInfo)
                 assert t.name == n
                 assert t.class_name == c
