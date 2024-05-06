@@ -989,7 +989,7 @@ your ASGI Falcon application:
 
     class ErrorResource:
         def on_get(self, req, resp):
-            raise Exception("Something went wrong!")
+            raise Exception('Something went wrong!')
 
     app = falcon.App()
     app.add_route('/error', ErrorResource())
