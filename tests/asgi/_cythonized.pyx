@@ -4,26 +4,33 @@ from collections import Counter
 import time
 
 import falcon
-from falcon.media.validators.jsonschema import validate
-
+from falcon.media import validators
+try:
+    import jsonschema
+except ImportError:
+    jsonschema = None
+try:
+    import jsonschema_rs
+except ImportError:
+    jsonschema_rs = None
 
 _MESSAGE_SCHEMA = {
-	'definitions': {},
-	'$schema': 'http://json-schema.org/draft-07/schema#',
-	'$id': 'http://example.com/root.json',
-	'type': 'object',
-	'title': 'The Root Schema',
-	'required': ['message'],
-	'properties': {
-		'message': {
-			'$id': '#/properties/message',
-			'type': 'string',
-			'title': 'The Message Schema',
-			'default': '',
-			'examples': ['hello world'],
-			'pattern': '^(.*)$'
-		}
-	}
+    'definitions': {},
+    '$schema': 'http://json-schema.org/draft-07/schema#',
+    '$id': 'http://example.com/root.json',
+    'type': 'object',
+    'title': 'The Root Schema',
+    'required': ['message'],
+    'properties': {
+        'message': {
+            '$id': '#/properties/message',
+            'type': 'string',
+            'title': 'The Message Schema',
+            'default': '',
+            'examples': ['hello world'],
+            'pattern': '^(.*)$'
+        }
+    }
 }
 
 
@@ -43,20 +50,37 @@ class NOPClass:
         pass
 
 
-class TestResourceWithValidation:
-    @validate(resp_schema=_MESSAGE_SCHEMA, is_async=True)
-    async def on_get(self, req, resp):
-        resp.media = {
-  			'message': 'hello world'
-		}
+if jsonschema:
+    class TestResourceWithValidation:
+        @validators.jsonschema.validate(resp_schema=_MESSAGE_SCHEMA, is_async=True)
+        async def on_get(self, req, resp):
+            resp.media = {
+                'message': 'hello world'
+            }
 
 
-class TestResourceWithValidationNoHint:
-    @validate(resp_schema=_MESSAGE_SCHEMA)
-    async def on_get(self, req, resp):
-        resp.media = {
-  			'message': 'hello world'
-		}
+    class TestResourceWithValidationNoHint:
+        @validators.jsonschema.validate(resp_schema=_MESSAGE_SCHEMA)
+        async def on_get(self, req, resp):
+            resp.media = {
+                'message': 'hello world'
+            }
+
+if jsonschema_rs:
+    class TestResourceWithValidationRs:
+        @validators.jsonschema_rs.validate(resp_schema=_MESSAGE_SCHEMA, is_async=True)
+        async def on_get(self, req, resp):
+            resp.media = {
+                'message': 'hello world'
+            }
+
+
+    class TestResourceWithValidationNoHintRs:
+        @validators.jsonschema_rs.validate(resp_schema=_MESSAGE_SCHEMA)
+        async def on_get(self, req, resp):
+            resp.media = {
+                'message': 'hello world'
+            }
 
 
 class TestResourceWithScheduledJobs:
@@ -85,7 +109,7 @@ class TestResourceWithScheduledJobsAsyncRequired:
             pass
 
         # NOTE(kgriffs): This will fail later since we can't detect
-        #	up front that it isn't a coroutine function.
+        #    up front that it isn't a coroutine function.
         resp.schedule(background_job_sync)
 
 
