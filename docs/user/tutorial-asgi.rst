@@ -180,13 +180,12 @@ We can now implement a basic async image store. Save the following code as
 
 
     class Image:
-
         def __init__(self, config, image_id, size):
             self._config = config
 
             self.image_id = image_id
             self.size = size
-            self.modified = datetime.datetime.utcnow()
+            self.modified = datetime.datetime.now(datetime.timezone.utc)
 
         @property
         def path(self):
@@ -206,7 +205,6 @@ We can now implement a basic async image store. Save the following code as
 
 
     class Store:
-
         def __init__(self, config):
             self._config = config
             self._images = {}
@@ -272,7 +270,6 @@ of images. Place the code below in a file named ``images.py``:
 
 
     class Images:
-
         def __init__(self, config, store):
             self._config = config
             self._store = store
