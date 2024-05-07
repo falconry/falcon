@@ -1,5 +1,8 @@
 coverage >= 4.1
-pytest
+# TODO(vytas): Our use of testtools breaks under pytest 8.2 along the lines of
+#   https://github.com/pytest-dev/pytest/issues/12263, unpin when fixed
+#   (or drop support for testtools altogether?)
+pytest >= 7.0, < 8.2
 pyyaml
 requests
 # TODO(vytas): Check if testtools still brings anything to the table, and

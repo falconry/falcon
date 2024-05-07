@@ -23,7 +23,6 @@ directly from the `testing` package::
 """
 
 import asyncio
-import cgi
 from collections import defaultdict
 from collections import deque
 import contextlib
@@ -51,6 +50,7 @@ from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
 from falcon.util import uri
+from falcon.util.mediatypes import parse_header
 
 # NOTE(kgriffs): Changed in 3.0 from 'curl/7.24.0 (x86_64-apple-darwin12.0)'
 DEFAULT_UA = 'falcon-client/' + falcon.__version__
@@ -802,7 +802,7 @@ def get_encoding_from_headers(headers):
     if not content_type:
         return None
 
-    content_type, params = cgi.parse_header(content_type)
+    content_type, params = parse_header(content_type)
 
     if 'charset' in params:
         return params['charset'].strip('\'"')
@@ -864,7 +864,6 @@ def create_scope(
     include_server=True,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -1002,7 +1001,6 @@ def create_scope_ws(
     subprotocols=None,
     spec_version='2.1',
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1089,7 +1087,6 @@ def create_environ(
     root_path=None,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:

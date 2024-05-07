@@ -20,7 +20,6 @@ class TestRequestContext:
         assert req.context.get('note') == req.context['note']
 
     def test_custom_request_context(self):
-
         # Define a Request-alike with a custom context type
         class MyCustomContextType:
             pass
@@ -33,7 +32,6 @@ class TestRequestContext:
         assert isinstance(req.context, MyCustomContextType)
 
     def test_custom_request_context_failure(self):
-
         # Define a Request-alike with a non-callable custom context type
         class MyCustomRequest(Request):
             context_type = False

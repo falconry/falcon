@@ -31,7 +31,6 @@ class Resource:
 
 
 class ImageStore:
-
     _CHUNK_SIZE_BYTES = 4096
 
     # Note the use of dependency injection for standard library

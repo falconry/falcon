@@ -22,6 +22,7 @@ in the `falcon` module, and so must be explicitly imported::
 
     name, port = uri.parse_host('example.org:8080')
 """
+
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -57,7 +58,6 @@ _HEX_TO_BYTE = {
 
 
 def _create_char_encoder(allowed_chars: str) -> Callable[[int], str]:
-
     lookup = {}
 
     for code_point in range(256):
@@ -74,7 +74,6 @@ def _create_char_encoder(allowed_chars: str) -> Callable[[int], str]:
 def _create_str_encoder(
     is_value: bool, check_is_escaped: bool = False
 ) -> Callable[[str], str]:
-
     allowed_chars = _UNRESERVED if is_value else _ALL_ALLOWED
     allowed_chars_plus_percent = allowed_chars + '%'
     encode_char = _create_char_encoder(allowed_chars)

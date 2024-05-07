@@ -147,7 +147,6 @@ class WrappedRespondersResourceAsync:
 @falcon.after(cuteness, 'fluffy', postfix=' and innocent')
 @falcon.after(fluffiness, 'kitten')
 class WrappedClassResource:
-
     # Test that the decorator skips non-callables
     on_post = False
 
@@ -196,7 +195,6 @@ class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
 # at once for the sake of simplicity
 @falcon.after(resource_aware_cuteness)
 class ClassResourceWithAwareHooks:
-
     # Test that the decorator skips non-callables
     on_delete = False
 
@@ -342,7 +340,6 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_resource_
 
 
 class ResourceAwareGameHook:
-
     VALUES = ('rock', 'scissors', 'paper')
 
     @classmethod

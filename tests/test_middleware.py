@@ -122,7 +122,6 @@ class RemoveBasePathMiddleware:
 
 
 class ResponseCacheMiddlware:
-
     PROCESS_REQUEST_CACHED_BODY = {'cached': True}
     PROCESS_RESOURCE_CACHED_BODY = {'cached': True, 'resource': True}
 
