@@ -850,3 +850,42 @@ def test_deserialize_custom_media(custom_client):
 
     assert resp.status_code == 200
     assert resp.json == ['', '0x48']
+
+
+def test_simulate_form(client):
+    resp = client.simulate_post(
+        '/submit',
+        form={
+            'checked': 'true',
+            'file': ('test.txt', b'Hello, World!\n', 'text/plain'),
+            'another': ('test.dat', io.BytesIO(b'1\n2\n3\n')),
+        },
+    )
+
+    assert resp.status_code == 200
+    assert resp.json == [
+        {
+            'content_type': 'text/plain',
+            'data': 'true',
+            'filename': None,
+            'name': 'checked',
+            'secure_filename': None,
+            'text': 'true',
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'Hello, World!\n',
+            'filename': 'test.txt',
+            'name': 'file',
+            'secure_filename': 'test.txt',
+            'text': 'Hello, World!\n',
+        },
+        {
+            'content_type': 'application/octet-stream',
+            'data': '1\n2\n3\n',
+            'filename': 'test.dat',
+            'name': 'another',
+            'secure_filename': 'test.dat',
+            'text': None,
+        },
+    ]
