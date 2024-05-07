@@ -180,13 +180,12 @@ We can now implement a basic async image store. Save the following code as
 
 
     class Image:
-
         def __init__(self, config, image_id, size):
             self._config = config
 
             self.image_id = image_id
             self.size = size
-            self.modified = datetime.datetime.utcnow()
+            self.modified = datetime.datetime.now(datetime.timezone.utc)
 
         @property
         def path(self):
@@ -206,7 +205,6 @@ We can now implement a basic async image store. Save the following code as
 
 
     class Store:
-
         def __init__(self, config):
             self._config = config
             self._images = {}
@@ -272,7 +270,6 @@ of images. Place the code below in a file named ``images.py``:
 
 
     class Images:
-
         def __init__(self, config, store):
             self._config = config
             self._store = store
@@ -966,6 +963,54 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     strategies such as blending different types of tests and/or running the same
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
+
+Debugging ASGI Applications
+---------------------------
+(This section also applies to WSGI applications)
+
+While developing and testing ASGI applications, understanding how to configure
+and utilize logging can be helpful, especially when you encounter unexpected
+issues or behaviors.
+
+By default, Falcon does not set up logging for you,
+but Python's built-in :mod:`logging` module provides a flexible framework for
+emitting and capturing log messages. Here's how you can set up basic logging in
+your ASGI Falcon application:
+
+.. code:: python
+
+    import falcon
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
+    class ErrorResource:
+        def on_get(self, req, resp):
+            raise Exception('Something went wrong!')
+
+    app = falcon.App()
+    app.add_route('/error', ErrorResource())
+
+
+When the above route is accessed, Falcon will catch the unhandled exception and
+automatically log an error message. Below is an example of what the log output
+might look like:
+
+.. code-block:: none
+
+    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
+    Traceback (most recent call last):
+      File "path/to/falcon/app.py", line 123, in __call__
+        resp = resource.on_get(req, resp)
+      File "/path/to/your/app.py", line 7, in on_get
+        raise Exception("Something went wrong!")
+    Exception: Something went wrong!
+
+
+.. note::
+   While logging is helpful for development and debugging, be mindful of logging
+   sensitive information. Ensure that log files are stored securely and are not
+   accessible to unauthorized users.
 
 What Now?
 ---------
