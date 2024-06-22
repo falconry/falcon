@@ -15,21 +15,33 @@
 """Hook decorators."""
 
 from functools import wraps
-from inspect import getmembers
-from inspect import iscoroutinefunction
+from inspect import getmembers, iscoroutinefunction
 import re
 
+import typing_extensions as te
+
 from falcon.constants import COMBINED_METHODS
+from falcon.request import Request
+from falcon.response import Response
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
-
 
 _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
 )
 
 
-def before(action, *args, is_async=False, **kwargs):
+P = te.ParamSpec('P')
+R = te.TypeVar('R', bound=Request)
+S = te.TypeVar('S', bound=Response)
+
+
+def before(
+    action: te.Callable[te.Concatenate[R, S, te.Any, te.Dict[str, te.Any], P], None],
+    *args: P.args,
+    is_async: bool = False,  # type: ignore
+    **kwargs: P.kwargs,
+) -> te.Callable[[te.Any], te.Any]:
     """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
@@ -78,6 +90,8 @@ def before(action, *args, is_async=False, **kwargs):
         **kwargs: Any additional keyword arguments will be passed through to
             *action*.
     """
+
+    is_async = kwargs.get('is_async', False)
 
     def _before(responder_or_resource):
         if isinstance(responder_or_resource, type):
