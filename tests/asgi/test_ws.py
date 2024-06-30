@@ -18,13 +18,13 @@ from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 try:
     import rapidjson  # type: ignore
 except ImportError:
-    rapidjson = None
+    rapidjson = None  # type: ignore
 
 
 try:
     import msgpack  # type: ignore
 except ImportError:
-    msgpack = None
+    msgpack = None  # type: ignore
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
