@@ -76,6 +76,7 @@ from falcon.util import http_now
 from falcon.util import http_status_to_code
 from falcon.util import IS_64_BITS
 from falcon.util import is_python_func
+from falcon.util import mediatypes
 from falcon.util import misc
 from falcon.util import parse_header
 from falcon.util import reader

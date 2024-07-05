@@ -86,4 +86,20 @@ def parse_header(line: str) -> typing.Tuple[str, dict]:
     return _parse_header_old_stdlib(line)
 
 
-__all__ = ['parse_header']
+def best_match(media_types: typing.Iterable[str], header: str) -> str:
+    """Choose media type with the highest quality from a list of candidates.
+
+    Args:
+        media_types: An iterable over one or more Internet media types
+            to match against the provided header value.
+        header: The value of a header that conforms to the format of the
+            HTTP ``Accept`` header.
+
+    Returns:
+        Best match from the supported candidates, or ``None`` if the provided
+        ``Accept`` header value does not match any of the given types.
+    """
+    return ''
+
+
+__all__ = ['best_match', 'parse_header']
