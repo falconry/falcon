@@ -94,6 +94,42 @@
     format.quote-style = "single"
     line-length = 88
     extend-exclude = ["falcon/vendor"]
+    builtins = [
+        "ignore",
+        "attr",
+        "defined",
+    ]
+    exclude = [
+        ".ecosystem",
+        ".eggs",
+        ".git",
+        ".tox",
+        ".venv",
+        "build",
+        "dist",
+        "docs",
+        "examples",
+        "falcon/bench/nuts",
+    ]
+
+[tool.ruff.lint]
+    ignore = ["F403"]
+    select = [
+        "C9",
+        "E",
+        "F",
+        "W",
+    ]
+
+[tool.ruff.lint.mccabe]
+    max-complexity = 15
+
+[tool.ruff.lint.per-file-ignores]
+    "**/__init__.py" = [
+        "F401",
+        "E402",
+    ]
+    "falcon/uri.py" = ["F401"]
 
 [tool.pytest.ini_options]
 filterwarnings = [

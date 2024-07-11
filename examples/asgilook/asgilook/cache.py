@@ -1,6 +1,4 @@
 import msgpack
-import redis.asyncio as redis
-
 
 class RedisCache:
     PREFIX = 'asgilook:'

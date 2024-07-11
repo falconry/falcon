@@ -63,7 +63,7 @@ _TYPELESS_STATUS_CODES = frozenset(
 
 
 class App:
-    """This class is the main entry point into a Falcon-based WSGI app.
+    """The main entry point into a Falcon-based WSGI app.
 
     Each App instance provides a callable
     `WSGI <https://www.python.org/dev/peps/pep-3333/>`_ interface
@@ -1152,8 +1152,7 @@ class App:
 # TODO(myusko): This class is a compatibility alias, and should be removed
 # in the next major release (4.0).
 class API(App):
-    """
-    This class is a compatibility alias of :class:`falcon.App`.
+    """Compatibility alias of :class:`falcon.App`.
 
     ``API`` was renamed to :class:`App <falcon.App>` in Falcon 3.0 in order to
     reflect the breadth of applications that :class:`App <falcon.App>`, and its

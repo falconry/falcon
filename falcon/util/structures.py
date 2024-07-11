@@ -45,8 +45,7 @@ from typing import ValuesView
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
 # then we will need write tests and remove the "no cover" pragma.
 class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
-    """
-    A case-insensitive ``dict``-like object.
+    """A case-insensitive ``dict``-like object.
 
     Implements all methods and operations of
     ``collections.abc.MutableMapping`` as well as dict's `copy`. Also
@@ -121,8 +120,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 #   Context is, by design, a bare class, and the mapping interface may be
 #   removed in a future Falcon release.
 class Context:
-    """
-    Convenience class to hold contextual information in its attributes.
+    """Convenience class to hold contextual information in its attributes.
 
     This class is used as the default :class:`~.Request` and :class:`~Response`
     context type (see

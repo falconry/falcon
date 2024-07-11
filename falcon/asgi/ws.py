@@ -635,13 +635,13 @@ class _BufferedReceiver:
         # NOTE(kgriffs): Wait for a message if none are available. This pattern
         #   was borrowed from the websockets.protocol module.
         while not self._messages:
-            # -------------------------------------------------------------------------------------
+            # --------------------------------------------------------------------------
             # NOTE(kgriffs): The pattern below was borrowed from the websockets.protocol
             #   module under the BSD 3-Clause "New" or "Revised" License.
             #
             #   Ref: https://github.com/aaugustin/websockets/blob/master/src/websockets/protocol.py  # noqa E501
             #
-            # -------------------------------------------------------------------------------------
+            # --------------------------------------------------------------------------
 
             # PERF(kgriffs): Using a bare future like this seems to be
             #   slightly more efficient vs. something like asyncio.Event
@@ -683,13 +683,13 @@ class _BufferedReceiver:
                     'code', WSCloseCode.NORMAL
                 )
 
-            # -------------------------------------------------------------------------------------
+            # --------------------------------------------------------------------------
             # NOTE(kgriffs): The pattern below was borrowed from the websockets.protocol
             #   module under the BSD 3-Clause "New" or "Revised" License.
             #
             #   Ref: https://github.com/aaugustin/websockets/blob/master/src/websockets/protocol.py # noqa E501
             #
-            # -------------------------------------------------------------------------------------
+            # --------------------------------------------------------------------------
             while len(self._messages) >= self._max_queue:
                 self._put_message_waiter = self._loop.create_future()
                 try:

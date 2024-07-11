@@ -67,7 +67,7 @@ _FALLBACK_WS_ERROR_CODE = 3011
 
 
 class App(falcon.app.App):
-    """This class is the main entry point into a Falcon-based ASGI app.
+    """The main entry point into a Falcon-based ASGI app.
 
     Each App instance provides a callable
     `ASGI <https://asgi.readthedocs.io/en/latest/>`_ interface
