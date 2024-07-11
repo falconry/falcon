@@ -3,7 +3,7 @@ import typing  # NOQA: F401
 try:
     import jsonschema
 except ImportError:
-    jsonschema = None  # NOQA
+    jsonschema = None  # type: ignore
 import pytest
 
 import falcon
