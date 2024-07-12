@@ -4,14 +4,13 @@ try:
     import jsonschema
 except ImportError:
     jsonschema = None  # type: ignore
+from _util import create_app  # NOQA
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
 from falcon.media import validators
-
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
-
 
 _VALID_MEDIA = {'message': 'something'}
 _INVALID_MEDIA = {}  # type: typing.Dict[str, str]

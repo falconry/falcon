@@ -1,15 +1,17 @@
 import asyncio
 import collections
 from enum import Enum
-from typing import Any
-from typing import Awaitable
-from typing import Callable
-from typing import Deque
-from typing import Dict
-from typing import Iterable
-from typing import Mapping
-from typing import Optional
-from typing import Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Deque,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Union,
+)
 
 import falcon
 from falcon import errors
@@ -17,7 +19,6 @@ from falcon import media
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
-
 
 _WebSocketState = Enum('_WebSocketState', 'HANDSHAKE ACCEPTED CLOSED')
 

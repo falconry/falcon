@@ -23,20 +23,13 @@ in the `falcon` module, and so must be explicitly imported::
     name, port = uri.parse_host('example.org:8080')
 """
 
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple, TYPE_CHECKING
-from typing import Union
+from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 from falcon.constants import PYPY
 
 try:
-    from falcon.cyutil.uri import (
-        decode as _cy_decode,
-        parse_query_string as _cy_parse_query_string,
-    )
+    from falcon.cyutil.uri import decode as _cy_decode
+    from falcon.cyutil.uri import parse_query_string as _cy_parse_query_string
 except ImportError:
     _cy_decode = None
     _cy_parse_query_string = None

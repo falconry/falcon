@@ -34,12 +34,14 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
-from falcon.typing import ErrorHandler, SinkPrefix
+from falcon.typing import ErrorHandler
+from falcon.typing import SinkPrefix
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 from falcon.util.sync import get_running_loop
 from falcon.util.sync import wrap_sync_to_async
+
 from ._asgi_helpers import _validate_asgi_scope
 from ._asgi_helpers import _wrap_asgi_coroutine_func
 from .multipart import MultipartForm
@@ -49,7 +51,6 @@ from .structures import SSEvent
 from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
-
 
 __all__ = ['App']
 

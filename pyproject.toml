@@ -113,12 +113,12 @@
     ]
 
 [tool.ruff.lint]
-    ignore = ["F403"]
     select = [
         "C9",
         "E",
         "F",
         "W",
+        "I"
     ]
 
 [tool.ruff.lint.mccabe]
@@ -128,8 +128,18 @@
     "**/__init__.py" = [
         "F401",
         "E402",
+        "F403"
     ]
     "falcon/uri.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+    case-sensitive = false
+    force-single-line = true
+    order-by-type = false
+    single-line-exclusions = [
+        "typing"
+    ]
+    force-sort-within-sections = true
 
 [tool.pytest.ini_options]
 filterwarnings = [

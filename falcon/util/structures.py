@@ -30,16 +30,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from collections.abc import MutableMapping
-from typing import Any
-from typing import Dict
-from typing import ItemsView
-from typing import Iterable
-from typing import Iterator
-from typing import KeysView
-from typing import Optional
-from typing import Tuple
-from typing import TYPE_CHECKING
-from typing import ValuesView
+from typing import (
+    Any,
+    Dict,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Optional,
+    Tuple,
+    TYPE_CHECKING,
+    ValuesView,
+)
 
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,

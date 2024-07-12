@@ -1,7 +1,8 @@
 import pytest
 
 import falcon
-from falcon import media, testing
+from falcon import media
+from falcon import testing
 
 
 class MediaResource:

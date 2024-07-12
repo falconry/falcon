@@ -5,7 +5,8 @@ import pytest
 import falcon
 from falcon import testing
 from falcon.asgi import App
-from falcon.errors import UnsupportedError, UnsupportedScopeError
+from falcon.errors import UnsupportedError
+from falcon.errors import UnsupportedScopeError
 
 
 class CustomCookies:

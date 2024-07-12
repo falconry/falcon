@@ -1,6 +1,5 @@
 from falcon.vendor import mimeparse
 
-
 # TODO(vytas): Remove this test since it makes little sense now that
 #   we have vendored python-mimeparse?
 

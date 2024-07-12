@@ -37,11 +37,12 @@ from falcon.request import RequestOptions
 from falcon.response import Response
 from falcon.response import ResponseOptions
 import falcon.status_codes as status
-from falcon.typing import ErrorHandler, ErrorSerializer, SinkPrefix
+from falcon.typing import ErrorHandler
+from falcon.typing import ErrorSerializer
+from falcon.typing import SinkPrefix
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
-
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
 # reference via module global is faster than going via self

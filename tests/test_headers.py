@@ -1,15 +1,13 @@
 from collections import defaultdict
 from datetime import datetime
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
 from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _utcnow
-
-from _util import create_app  # NOQA
-
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 

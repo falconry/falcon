@@ -15,7 +15,8 @@
 import functools
 import inspect
 
-from falcon.errors import UnsupportedError, UnsupportedScopeError
+from falcon.errors import UnsupportedError
+from falcon.errors import UnsupportedScopeError
 
 
 @functools.lru_cache(maxsize=16)
