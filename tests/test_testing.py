@@ -164,6 +164,13 @@ def test_create_environ_default_ua_override():
     assert req.user_agent == ua
 
 
+def test_create_environ_preserve_raw_uri():
+    uri = '/cache/http%3A%2F%2Ffalconframework.org/status'
+    environ = testing.create_environ(path=uri)
+    assert environ['PATH_INFO'] == '/cache/http://falconframework.org/status'
+    assert environ['RAW_URI'] == uri
+
+
 def test_missing_header_is_none():
     req = testing.create_req()
     assert req.auth is None

@@ -6,6 +6,40 @@
         "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
     ]
 
+[tool.mypy]
+    exclude = "falcon/bench/|falcon/cmd/"
+    [[tool.mypy.overrides]]
+        module = [
+            "cbor2",
+            "cython",
+            "daphne",
+            "gunicorn",
+            "hypercorn",
+            "meinheld",
+            "msgpack",
+            "mujson",
+            "pyximport",
+            "testtools",
+            "uvicorn"
+        ]
+        ignore_missing_imports = true
+
+    [[tool.mypy.overrides]]
+        # Pure Cython modules
+        module = [
+            "falcon.cyutil.misc",
+            "falcon.cyutil.reader",
+            "falcon.cyutil.uri"
+        ]
+        ignore_missing_imports = true
+
+    [[tool.mypy.overrides]]
+        module = [
+            "falcon.stream",
+            "falcon.util.*"
+        ]
+        disallow_untyped_defs = true
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
@@ -48,9 +82,18 @@
     extend-exclude = "falcon/vendor"
 
 [tool.blue]
+    # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
+    #   With the below settings, accidentally running blue should yield
+    #   only minor cosmetic changes in a handful of files.
     target-version = ["py37"]
     line-length = 88
     extend-exclude = "falcon/vendor"
+
+[tool.ruff]
+    target-version = "py37"
+    format.quote-style = "single"
+    line-length = 88
+    extend-exclude = ["falcon/vendor"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
@@ -60,8 +103,8 @@ filterwarnings = [
     "ignore:Using or importing the ABCs:DeprecationWarning",
     "ignore:cannot collect test class 'TestClient':pytest.PytestCollectionWarning",
     "ignore:inspect.getargspec\\(\\) is deprecated:DeprecationWarning",
-    "ignore:.cgi. is deprecated and slated for removal:DeprecationWarning",
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
+    "ignore:This process \\(.+\\) is multi-threaded",
 ]
 testpaths = [
     "tests"

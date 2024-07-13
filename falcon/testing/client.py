@@ -452,7 +452,6 @@ def simulate_request(
     asgi_chunk_size=4096,
     asgi_disconnect_ttl=300,
 ) -> _ResultBase:
-
     """Simulate a request to a WSGI or ASGI application.
 
     Performs a request against a WSGI or ASGI application. In the case of
@@ -671,7 +670,6 @@ async def _simulate_request_asgi(
     _one_shot=True,
     _stream_result=False,
 ) -> _ResultBase:
-
     """Simulate a request to an ASGI application.
 
     Keyword Args:
@@ -1969,6 +1967,9 @@ class TestClient:
         app: The app that this client instance was configured to use.
 
     """
+
+    # NOTE(aryaniyaps): Prevent pytest from collecting tests on the class.
+    __test__ = False
 
     def __init__(self, app, headers=None):
         self.app = app

@@ -6,6 +6,8 @@ import pytest
 import falcon
 from falcon import testing
 from falcon.util.deprecation import DeprecatedWarning
+from falcon.util.misc import _utcnow
+
 from _util import create_app  # NOQA
 
 
@@ -31,7 +33,7 @@ class HeaderHelpersResource:
         if last_modified is not None:
             self.last_modified = last_modified
         else:
-            self.last_modified = datetime.utcnow()
+            self.last_modified = _utcnow()
 
     def _overwrite_headers(self, req, resp):
         resp.content_type = 'x-falcon/peregrine'
@@ -117,7 +119,6 @@ class HeaderHelpersResource:
 
 
 class LocationHeaderUnicodeResource:
-
     URL1 = '/\u00e7runchy/bacon'
     URL2 = 'ab\u00e7'
 
@@ -154,14 +155,14 @@ class UnicodeHeaderResource:
     def on_post(self, req, resp):
         resp.set_headers(
             [
-                ('X-symb\u00F6l', 'thing'),
+                ('X-symb\u00f6l', 'thing'),
             ]
         )
 
     def on_put(self, req, resp):
         resp.set_headers(
             [
-                ('X-Thing', '\u00FF'),
+                ('X-Thing', '\u00ff'),
             ]
         )
 
@@ -496,7 +497,7 @@ class TestHeaders:
     @pytest.mark.parametrize(
         'content_type,body',
         [
-            ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
+            ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001f638'),
             # NOTE(kgriffs): This only works because the client defaults to
             # ISO-8859-1 IFF the media type is 'text'.
             ('text/plain', 'Hello ISO-8859-1!'),
@@ -512,7 +513,7 @@ class TestHeaders:
 
     @pytest.mark.parametrize('asgi', [True, False])
     def test_override_default_media_type_missing_encoding(self, asgi, client):
-        body = '{"msg": "Hello Unicode! \U0001F638"}'
+        body = '{"msg": "Hello Unicode! \U0001f638"}'
 
         client.app = create_app(asgi=asgi, media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
@@ -521,7 +522,7 @@ class TestHeaders:
         assert result.content == body.encode('utf-8')
         assert isinstance(result.text, str)
         assert result.text == body
-        assert result.json == {'msg': 'Hello Unicode! \U0001F638'}
+        assert result.json == {'msg': 'Hello Unicode! \U0001f638'}
 
     def test_response_header_helpers_on_get(self, client):
         last_modified = datetime(2013, 1, 1, 10, 30, 30)

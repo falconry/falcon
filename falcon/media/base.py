@@ -1,6 +1,6 @@
 import abc
 import io
-from typing import Union
+from typing import IO, Optional, Union
 
 from falcon.constants import MEDIA_JSON
 
@@ -22,7 +22,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
     """Override to provide a synchronous deserialization method that
     takes a byte string."""
 
-    def serialize(self, media, content_type) -> bytes:
+    def serialize(self, media: object, content_type: str) -> bytes:
         """Serialize the media object on a :any:`falcon.Response`.
 
         By default, this method raises an instance of
@@ -54,7 +54,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         else:
             raise NotImplementedError()
 
-    async def serialize_async(self, media, content_type) -> bytes:
+    async def serialize_async(self, media: object, content_type: str) -> bytes:
         """Serialize the media object on a :any:`falcon.Response`.
 
         This method is similar to :py:meth:`~.BaseHandler.serialize`
@@ -81,7 +81,9 @@ class BaseHandler(metaclass=abc.ABCMeta):
         """
         return self.serialize(media, content_type)
 
-    def deserialize(self, stream, content_type, content_length) -> object:
+    def deserialize(
+        self, stream: IO, content_type: str, content_length: Optional[int]
+    ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
         By default, this method raises an instance of
@@ -114,7 +116,9 @@ class BaseHandler(metaclass=abc.ABCMeta):
         else:
             raise NotImplementedError()
 
-    async def deserialize_async(self, stream, content_type, content_length) -> object:
+    async def deserialize_async(
+        self, stream: IO, content_type: str, content_length: Optional[int]
+    ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
         This method is similar to :py:meth:`~.BaseHandler.deserialize` except
@@ -134,7 +138,8 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Args:
             stream (object): Asynchronous file-like object to deserialize.
             content_type (str): Type of request content.
-            content_length (int): Length of request content.
+            content_length (int): Length of request content, or ``None`` if the
+                Content-Length header is missing.
 
         Returns:
             object: A deserialized object.

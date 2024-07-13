@@ -1,0 +1,54 @@
+Changelog for Falcon 3.1.2
+==========================
+
+Summary
+-------
+
+This is a minor point release fixing a couple of high impact bugs,
+as well as publishing binary wheels for the recently released CPython 3.12.
+
+
+Changes to Supported Platforms
+------------------------------
+
+- Falcon is now supported (including binary wheels) on CPython 3.12.
+  A couple of remaining stdlib deprecations from 3.11 and 3.12 will be
+  addressed in Falcon 4.0.
+- As with the previous release, Python 3.5 & 3.6 remain deprecated and
+  will no longer be supported in Falcon 4.0.
+- EOL Python 3.7 will no longer be actively supported in 4.0, but the framework
+  should still continue to install from source. We may remove the support for
+  3.7 altogether later in the 4.x series if we are faced with incompatible
+  ecosystem changes in typing, Cython, etc.
+
+
+Fixed
+-----
+
+- Some essential files were unintentionally omitted from the source distribution
+  archive, rendering it unsuitable to run the test suite off.
+  This has been fixed, and the ``sdist`` tarball should now be usable as a base
+  for packaging Falcon in OS distributions. (`#2051 <https://github.com/falconry/falcon/issues/2051>`__)
+- :ref:`WebSocket <ws>` implementation has been fixed to properly handle
+  :class:`~falcon.HTTPError` and :class:`~falcon.HTTPStatus` exceptions raised by
+  custom :func:`error handlers <falcon.asgi.App.add_error_handler>`.
+  The WebSocket connection is now correctly closed with an appropriate code
+  instead of bubbling up an unhandled error to the application server. (`#2146 <https://github.com/falconry/falcon/issues/2146>`__)
+- Falcon's :class:`~falcon.testing.TestClient` mimics the behavior of real WSGI
+  servers (and the WSGI spec) by presenting the ``PATH_INFO`` CGI variable
+  already in the percent-decoded form. However, the client also used to
+  indiscriminately set the non-standard ``RAW_URI`` CGI variable to ``/``, which
+  made writing tests for apps :ref:`decoding raw URL path <raw_url_path_recipe>`
+  cumbersome. This has been fixed, and the raw path of a simulated request is now
+  preserved in ``RAW_URI``. (`#2157 <https://github.com/falconry/falcon/issues/2157>`__)
+
+
+Contributors to this Release
+----------------------------
+
+Many thanks to those who contributed to this bugfix release:
+
+- `CaselIT <https://github.com/CaselIT>`__
+- `kgriffs <https://github.com/kgriffs>`__
+- `liborjelinek <https://github.com/liborjelinek>`__
+- `vytas7 <https://github.com/vytas7>`__

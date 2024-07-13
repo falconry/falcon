@@ -105,13 +105,8 @@ class TestResourceWithHooks:
         pass
 
 
-class TestResourceWithHooksNoHintBefore:
+class TestResourceWithHooksNoHint:
     @falcon.before(my_before_hook)
-    async def on_get(self, req, resp):
-        pass
-
-
-class TestResourceWithHooksNoHintBefore:
-    @falcon.after(my_before_hook)
+    @falcon.after(my_after_hook)
     async def on_get(self, req, resp):
         pass

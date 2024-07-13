@@ -184,7 +184,7 @@ def test_invalid_json(asgi):
     try:
         json.loads(expected_body)
     except Exception as e:
-        assert type(client.resource.captured_error.value.__cause__) == type(e)
+        assert type(client.resource.captured_error.value.__cause__) is type(e)
         assert str(client.resource.captured_error.value.__cause__) == str(e)
 
 
@@ -210,7 +210,7 @@ def test_invalid_msgpack(asgi):
     try:
         msgpack.unpackb(expected_body.encode('utf-8'))
     except Exception as e:
-        assert type(client.resource.captured_error.value.__cause__) == type(e)
+        assert type(client.resource.captured_error.value.__cause__) is type(e)
         assert str(client.resource.captured_error.value.__cause__) == str(e)
 
 

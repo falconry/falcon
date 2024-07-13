@@ -13,7 +13,7 @@ class Image:
 
         self.image_id = image_id
         self.size = size
-        self.modified = datetime.datetime.utcnow()
+        self.modified = datetime.datetime.now(datetime.timezone.utc)
 
     @property
     def path(self):

@@ -18,6 +18,7 @@ import asyncio
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
 import traceback
+from typing import Awaitable, Callable, Iterable, Optional, Type, Union
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware
@@ -33,6 +34,7 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
+from falcon.typing import ErrorHandler, SinkPrefix
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -45,6 +47,7 @@ from .request import Request
 from .response import Response
 from .structures import SSEvent
 from .ws import check_support_reason
+from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
 
@@ -279,7 +282,12 @@ class App(falcon.app.App):
         )
 
     @_wrap_asgi_coroutine_func
-    async def __call__(self, scope, receive, send):  # noqa: C901
+    async def __call__(  # noqa: C901
+        self,
+        scope: dict,
+        receive: Callable[[], Awaitable[dict]],
+        send: Callable[[dict], Awaitable[None]],
+    ) -> None:
         # NOTE(kgriffs): The ASGI spec requires the 'type' key to be present.
         scope_type = scope['type']
 
@@ -339,10 +347,10 @@ class App(falcon.app.App):
         resp = self._response_type(options=self.resp_options)
 
         resource = None
-        responder = None
-        params = {}
+        responder: Optional[Callable] = None
+        params: dict = {}
 
-        dependent_mw_resp_stack = []
+        dependent_mw_resp_stack: list = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -402,7 +410,7 @@ class App(falcon.app.App):
                             break
 
                 if not resp.complete:
-                    await responder(req, resp, **params)
+                    await responder(req, resp, **params)  # type: ignore
 
                 req_succeeded = True
 
@@ -716,7 +724,7 @@ class App(falcon.app.App):
         if resp._registered_callbacks:
             self._schedule_callbacks(resp)
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template: str, resource: object, **kwargs):
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
         #   will know to validate the responder methods to make sure they
         #   are async coroutines.
@@ -725,7 +733,7 @@ class App(falcon.app.App):
 
     add_route.__doc__ = falcon.app.App.add_route.__doc__
 
-    def add_sink(self, sink, prefix=r'/'):
+    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/'):
         if not iscoroutinefunction(sink) and is_python_func(sink):
             if _should_wrap_non_coroutines():
                 sink = wrap_sync_to_async(sink)
@@ -739,7 +747,11 @@ class App(falcon.app.App):
 
     add_sink.__doc__ = falcon.app.App.add_sink.__doc__
 
-    def add_error_handler(self, exception, handler=None):
+    def add_error_handler(
+        self,
+        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        handler: Optional[ErrorHandler] = None,
+    ):
         """Register a handler for one or more exception types.
 
         Error handlers may be registered for any exception type, including
@@ -840,7 +852,7 @@ class App(falcon.app.App):
 
         if handler is None:
             try:
-                handler = exception.handle
+                handler = exception.handle  # type: ignore
             except AttributeError:
                 raise AttributeError(
                     'handler must either be specified '
@@ -870,8 +882,9 @@ class App(falcon.app.App):
                 'to be used safely with an ASGI app.'
             )
 
+        exception_tuple: tuple
         try:
-            exception_tuple = tuple(exception)
+            exception_tuple = tuple(exception)  # type: ignore
         except TypeError:
             exception_tuple = (exception,)
 
@@ -1031,30 +1044,45 @@ class App(falcon.app.App):
             asgi=True,
         )
 
-    async def _http_status_handler(self, req, resp, status, params):
-        self._compose_status_response(req, resp, status)
+    async def _http_status_handler(self, req, resp, status, params, ws=None):
+        if resp:
+            self._compose_status_response(req, resp, status)
+        elif ws:
+            code = http_status_to_ws_code(status.status)
+            falcon._logger.error(
+                '[FALCON] HTTPStatus %s raised while handling WebSocket. '
+                'Closing with code %s',
+                status,
+                code,
+            )
+            await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _http_error_handler(self, req, resp, error, params, ws=None):
         if resp:
             self._compose_error_response(req, resp, error)
-
-        if ws:
+        elif ws:
+            code = http_status_to_ws_code(error.status_code)
             falcon._logger.error(
-                '[FALCON] WebSocket handshake rejected due to raised HTTP error: %s',
+                '[FALCON] HTTPError %s raised while handling WebSocket. '
+                'Closing with code %s',
                 error,
+                code,
             )
-
-            code = 3000 + error.status_code
             await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _python_error_handler(self, req, resp, error, params, ws=None):
         falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
         if resp:
             self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
-
-        if ws:
+        elif ws:
             await self._ws_cleanup_on_error(ws)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _ws_disconnected_error_handler(self, req, resp, error, params, ws):
         falcon._logger.debug(
@@ -1099,9 +1127,9 @@ class App(falcon.app.App):
                 await err_handler(req, resp, ex, params, **kwargs)
 
             except HTTPStatus as status:
-                self._compose_status_response(req, resp, status)
+                await self._http_status_handler(req, resp, status, params, ws=ws)
             except HTTPError as error:
-                self._compose_error_response(req, resp, error)
+                await self._http_error_handler(req, resp, error, params, ws=ws)
 
             return True
 

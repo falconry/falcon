@@ -6,6 +6,7 @@ from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MULTIPART
 from falcon.constants import MEDIA_URLENCODED
 from falcon.constants import PYPY
+from falcon.media.base import BinaryBaseHandlerWS
 from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
 from falcon.media.multipart import MultipartParseOptions
@@ -15,7 +16,7 @@ from falcon.util import misc
 from falcon.vendor import mimeparse
 
 
-class MissingDependencyHandler:
+class MissingDependencyHandler(BinaryBaseHandlerWS):
     """Placeholder handler that always raises an error.
 
     This handler is used by the framework for media types that require an

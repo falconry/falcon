@@ -547,11 +547,13 @@ class WebSocketOptions:
         'media_handlers',
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import msgpack
         except ImportError:
             msgpack = None
+
+        bin_handler: media.BinaryBaseHandlerWS
 
         if msgpack:
             bin_handler = media.MessagePackHandlerWS()
@@ -727,6 +729,7 @@ class _BufferedReceiver:
 
 
 def check_support_reason(asgi_ver):
+    """Checks if the websocket version support a close reason."""
     target_ver = [2, 3]
     current_ver = asgi_ver.split('.')
 
@@ -735,3 +738,8 @@ def check_support_reason(asgi_ver):
             return False
 
     return True
+
+
+def http_status_to_ws_code(http_status: int) -> int:
+    """Convert the provided http status to a websocket close code by adding 3000."""
+    return http_status + 3000

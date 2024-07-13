@@ -110,7 +110,7 @@ class TestRequestAttributes:
         # NOTE(kgriffs): Behavior for IP addresses is undefined,
         # so just make sure it doesn't blow up.
         req = create_req(asgi, host='127.0.0.1', path='/hello', headers=self.headers)
-        assert type(req.subdomain) == str
+        assert type(req.subdomain) is str
 
         # NOTE(kgriffs): Test fallback to SERVER_NAME by using
         # HTTP 1.0, which will cause .create_environ to not set
@@ -709,7 +709,6 @@ class TestRequestAttributes:
         ],
     )
     def test_date_invalid(self, asgi, header, attr):
-
         # Date formats don't conform to RFC 1123
         headers = {header: 'Thu, 04 Apr 2013'}
         expected_desc = (

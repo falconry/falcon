@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, timezone
 import functools
 import http
 import itertools
@@ -109,13 +109,12 @@ class TestFalconUtils:
         assert msg in str(warn.message)
 
     def test_http_now(self):
-        expected = datetime.utcnow()
+        expected = datetime.now(timezone.utc)
         actual = falcon.http_date_to_dt(falcon.http_now())
 
-        delta = actual - expected
-        delta_sec = abs(delta.days * 86400 + delta.seconds)
+        delta = actual.replace(tzinfo=timezone.utc) - expected
 
-        assert delta_sec <= 1
+        assert delta.total_seconds() <= 1
 
     def test_dt_to_http(self):
         assert (
@@ -381,18 +380,27 @@ class TestFalconUtils:
         result = uri.parse_query_string(query_string)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
-        assert result['c'] == ['1', '2', '3']
+        assert result['c'] == '1,2,3'
         assert result['d'] == 'test'
-        assert result['e'] == ['a', '&=,']
+        assert result['e'] == 'a,,&=,'
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
-        result = uri.parse_query_string(query_string, True)
+        result = uri.parse_query_string(query_string, True, True)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
         assert result['c'] == ['1', '2', '3']
         assert result['d'] == 'test'
         assert result['e'] == ['a', '', '&=,']
+        assert result['f'] == ['a', 'a=b']
+        assert result['é'] == 'a=b'
+
+        result = uri.parse_query_string(query_string, csv=True)
+        assert result['a'] == decoded_url
+        assert result['b'] == decoded_json
+        assert result['c'] == ['1', '2', '3']
+        assert result['d'] == 'test'
+        assert result['e'] == ['a', '&=,']
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
@@ -522,7 +530,23 @@ class TestFalconUtils:
     def test_code_to_http_status(self, v_in, v_out):
         assert falcon.code_to_http_status(v_in) == v_out
 
-    @pytest.mark.parametrize('v', [0, 13, 99, 1000, 1337.01, -99, -404.3, -404, -404.3])
+    @pytest.mark.parametrize(
+        'v',
+        [
+            0,
+            13,
+            99,
+            1000,
+            1337.01,
+            -99,
+            -404.3,
+            -404,
+            -404.3,
+            'Successful',
+            'Failed',
+            None,
+        ],
+    )
     def test_code_to_http_status_value_error(self, v):
         with pytest.raises(ValueError):
             falcon.code_to_http_status(v)
@@ -621,8 +645,8 @@ class TestFalconUtils:
             ('/api', True),
             ('/data/items/something?query=apples%20and%20oranges', True),
             ('/food?item=ð\x9f\x8d\x94', False),
-            ('\x00\x00\x7F\x00\x00\x7F\x00', True),
-            ('\x00\x00\x7F\x00\x00\x80\x00', False),
+            ('\x00\x00\x7f\x00\x00\x7f\x00', True),
+            ('\x00\x00\x7f\x00\x00\x80\x00', False),
         ],
     )
     @pytest.mark.parametrize('method', ['isascii', '_isascii'])
@@ -928,7 +952,7 @@ class TestFalconTestingUtils:
             '',
             'I am a \u1d0a\ua731\u1d0f\u0274 string.',
             [1, 3, 3, 7],
-            {'message': '\xa1Hello Unicode! \U0001F638'},
+            {'message': '\xa1Hello Unicode! \U0001f638'},
             {
                 'count': 4,
                 'items': [

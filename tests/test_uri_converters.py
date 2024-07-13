@@ -3,6 +3,7 @@ import math
 import string
 import uuid
 
+from _util import as_params
 import pytest
 
 from falcon.routing import converters
@@ -150,7 +151,7 @@ def test_datetime_converter_default_format():
 
 @pytest.mark.parametrize(
     'value, expected',
-    [
+    as_params(
         (_TEST_UUID_STR, _TEST_UUID),
         (_TEST_UUID_STR.replace('-', '', 1), _TEST_UUID),
         (_TEST_UUID_STR_SANS_HYPHENS, _TEST_UUID),
@@ -163,7 +164,8 @@ def test_datetime_converter_default_format():
         (_TEST_UUID_STR[0], None),
         (_TEST_UUID_STR[:-1] + 'g', None),
         (_TEST_UUID_STR.replace('-', '_'), None),
-    ],
+        prefix='uuid',
+    ),
 )
 def test_uuid_converter(value, expected):
     c = converters.UUIDConverter()

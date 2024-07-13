@@ -4,7 +4,12 @@ from functools import partial
 from functools import wraps
 import inspect
 import os
+from typing import Any
+from typing import Awaitable
 from typing import Callable
+from typing import Optional
+from typing import TypeVar
+from typing import Union
 
 
 __all__ = [
@@ -17,14 +22,49 @@ __all__ = [
     'wrap_sync_to_async_unsafe',
 ]
 
+Result = TypeVar('Result')
 
+
+class _DummyRunner:
+    def run(self, coro: Awaitable[Result]) -> Result:  # pragma: nocover
+        # NOTE(vytas): Work around get_event_loop deprecation in 3.10 by going
+        #   via get_event_loop_policy(). This should be equivalent for
+        #   async_to_sync's use case as it is currently impossible to invoke
+        #   run_until_complete() from a running loop anyway.
+        return self.get_loop().run_until_complete(coro)
+
+    def get_loop(self) -> asyncio.AbstractEventLoop:  # pragma: nocover
+        return asyncio.get_event_loop_policy().get_event_loop()
+
+    def close(self) -> None:  # pragma: nocover
+        pass
+
+
+class _ActiveRunner:
+    def __init__(self, runner_cls: type):
+        self._runner_cls = runner_cls
+        self._runner = runner_cls()
+
+    # TODO(vytas): This typing is wrong on py311+, but mypy accepts it.
+    #   It doesn't, OTOH, accept any of my ostensibly valid attempts to
+    #   describe it.
+    def __call__(self) -> _DummyRunner:
+        # NOTE(vytas): Sometimes our runner's loop can get picked and consumed
+        #   by other utilities and test methods. If that happens, recreate the runner.
+        if self._runner.get_loop().is_closed():
+            # NOTE(vytas): This condition is never hit on _DummyRunner.
+            self._runner = self._runner_cls()  # pragma: nocover
+        return self._runner
+
+
+_active_runner = _ActiveRunner(getattr(asyncio, 'Runner', _DummyRunner))
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
 create_task = asyncio.create_task
 get_running_loop = asyncio.get_running_loop
 
 
-def wrap_sync_to_async_unsafe(func) -> Callable:
+def wrap_sync_to_async_unsafe(func: Callable[..., Any]) -> Callable[..., Any]:
     """Wrap a callable in a coroutine that executes the callable directly.
 
     This helper makes it easier to use synchronous callables with ASGI
@@ -48,13 +88,15 @@ def wrap_sync_to_async_unsafe(func) -> Callable:
     """
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Callable[..., Any]:
         return func(*args, **kwargs)
 
     return wrapper
 
 
-def wrap_sync_to_async(func, threadsafe=None) -> Callable:
+def wrap_sync_to_async(
+    func: Callable[..., Any], threadsafe: Optional[bool] = None
+) -> Callable[..., Any]:
     """Wrap a callable in a coroutine that executes the callable in the background.
 
     This helper makes it easier to call functions that can not be
@@ -94,7 +136,7 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
         executor = _one_thread_to_rule_them_all
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         return await get_running_loop().run_in_executor(
             executor, partial(func, *args, **kwargs)
         )
@@ -102,7 +144,9 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
     return wrapper
 
 
-async def sync_to_async(func, *args, **kwargs):
+async def sync_to_async(
+    func: Callable[..., Any], *args: Any, **kwargs: Any
+) -> Callable[..., Awaitable[Any]]:
     """Schedule a synchronous callable on the default executor and await the result.
 
     This helper makes it easier to call functions that can not be
@@ -153,7 +197,9 @@ def _should_wrap_non_coroutines() -> bool:
     return 'FALCON_ASGI_WRAP_NON_COROUTINES' in os.environ
 
 
-def _wrap_non_coroutine_unsafe(func):
+def _wrap_non_coroutine_unsafe(
+    func: Optional[Callable[..., Any]],
+) -> Union[Callable[..., Awaitable[Any]], Callable[..., Any], None]:
     """Wrap a coroutine using ``wrap_sync_to_async_unsafe()`` for internal test cases.
 
     This method is intended for Falcon's own test suite and should not be
@@ -180,7 +226,9 @@ def _wrap_non_coroutine_unsafe(func):
     return wrap_sync_to_async_unsafe(func)
 
 
-def async_to_sync(coroutine, *args, **kwargs):
+def async_to_sync(
+    coroutine: Callable[..., Awaitable[Result]], *args: Any, **kwargs: Any
+) -> Result:
     """Invoke a coroutine function from a synchronous caller.
 
     This method can be used to invoke an asynchronous task from a synchronous
@@ -189,8 +237,13 @@ def async_to_sync(coroutine, *args, **kwargs):
     one will be created.
 
     Warning:
-        This method is very inefficient and is intended primarily for testing
-        and prototyping.
+        Executing async code in this manner is inefficient since it involves
+        synchronization via threading primitives, and is intended primarily for
+        testing, prototyping or compatibility purposes.
+
+    Note:
+        On Python 3.11+, this function leverages a module-wide
+        ``asyncio.Runner``.
 
     Args:
         coroutine: A coroutine function to invoke.
@@ -199,20 +252,10 @@ def async_to_sync(coroutine, *args, **kwargs):
     Keyword Args:
         **kwargs: Additional args are passed through to the coroutine function.
     """
-
-    # TODO(vytas): The canonical way of doing this for simple use cases is
-    #   asyncio.run(), but that would be a breaking change wrt the above
-    #   documented behaviour; breaking enough to break some of our own tests.
-
-    # NOTE(vytas): Work around get_event_loop deprecation in 3.10 by going via
-    #   get_event_loop_policy(). This should be equivalent for async_to_sync's
-    #   use case as it is currently impossible to invoke run_until_complete()
-    #   from a running loop anyway.
-    loop = asyncio.get_event_loop_policy().get_event_loop()
-    return loop.run_until_complete(coroutine(*args, **kwargs))
+    return _active_runner().run(coroutine(*args, **kwargs))
 
 
-def runs_sync(coroutine):
+def runs_sync(coroutine: Callable[..., Awaitable[Result]]) -> Callable[..., Result]:
     """Transform a coroutine function into a synchronous method.
 
     This is achieved by always invoking the decorated coroutine function via
@@ -234,7 +277,7 @@ def runs_sync(coroutine):
     """
 
     @wraps(coroutine)
-    def invoke(*args, **kwargs):
+    def invoke(*args: Any, **kwargs: Any) -> Any:
         return async_to_sync(coroutine, *args, **kwargs)
 
     return invoke

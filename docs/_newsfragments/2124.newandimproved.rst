@@ -1,0 +1,1 @@
+Added kwarg samesite to :py:meth:`~falcon.Response.unset_cookie` to allow override of default ``Lax`` setting of `SameSite` on the unset cookie

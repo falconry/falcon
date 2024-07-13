@@ -29,7 +29,7 @@ from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any  # NOQA: F401
 
 _TAB_STR = ' ' * 4
 _FIELD_PATTERN = re.compile(
@@ -651,8 +651,7 @@ class CompiledRouter:
 
         src_lines.append(
             # PERF(kgriffs): Explicit return of None is faster than implicit
-            _TAB_STR
-            + 'return None'
+            _TAB_STR + 'return None'
         )
 
         self._finder_src = '\n'.join(src_lines)

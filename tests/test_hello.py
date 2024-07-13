@@ -71,7 +71,6 @@ class HelloResource:
 
 
 class ClosingBytesIO(io.BytesIO):
-
     close_called = False
 
     def close(self):
@@ -80,7 +79,6 @@ class ClosingBytesIO(io.BytesIO):
 
 
 class NonClosingBytesIO(io.BytesIO):
-
     # Not callable; test that CloseableStreamIterator ignores it
     close = False  # type: ignore
 

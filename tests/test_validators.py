@@ -1,4 +1,4 @@
-import typing
+import typing  # NOQA: F401
 
 try:
     import jsonschema as _jsonschema  # NOQA
