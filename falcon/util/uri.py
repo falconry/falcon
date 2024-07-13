@@ -28,7 +28,7 @@ from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 from falcon.constants import PYPY
 
 try:
-    from falcon.cyutil import uri as _cy_uri
+    from falcon.cyutil import uri as _cy_uri  # type: ignore
 except ImportError:
     _cy_uri = None
 
