@@ -2,8 +2,8 @@ import glob
 import io
 import os
 from os import path
-import re
 import platform
+import re
 
 from setuptools import setup
 
@@ -17,7 +17,7 @@ except ImportError:
     HAS_CYTHON = False
 
 DISABLE_EXTENSION = bool(os.environ.get('FALCON_DISABLE_CYTHON'))
-IS_CPYTHON = platform.python_implementation() == "CPython"
+IS_CPYTHON = platform.python_implementation() == 'CPython'
 
 MYDIR = path.abspath(os.path.dirname(__file__))
 
