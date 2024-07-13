@@ -157,6 +157,9 @@ class TestFalconUtils:
             'Sunday, 06-Nov-94 08:49:37 GMT', obs_date=True
         ) == datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc)
 
+        with pytest.raises(ValueError):
+            falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 EST')
+
     def test_pack_query_params_none(self):
         assert falcon.to_query_str({}) == ''
 
