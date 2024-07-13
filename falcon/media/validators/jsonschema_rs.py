@@ -5,7 +5,7 @@ from typing import Any, Optional, TYPE_CHECKING
 from . import base as _base
 
 try:
-    import jsonschema
+    import jsonschema_rs
 except ImportError:  # pragma: nocover
     pass
 
@@ -14,9 +14,7 @@ def validate(req_schema: Any = None, resp_schema: Any = None, is_async: bool = F
     """Validate ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
-    ``jsonschema`` package available from PyPI. Semantic validation via
-    the *format* keyword is enabled for the default checkers implemented
-    by ``jsonschema.FormatChecker``.
+    ``jsonschema_rs`` package available from PyPI.
 
     In the case of failed request media validation, an instance of
     :class:`~falcon.MediaValidationError` is raised by the decorator. By
@@ -27,19 +25,21 @@ def validate(req_schema: Any = None, resp_schema: Any = None, is_async: bool = F
     :class:`~falcon.MediaValidationError`.
 
     Note:
-        The ``jsonschema`` package must be installed separately in order to use
+        The ``jsonschema_rs`` package must be installed separately in order to use
         this decorator, as Falcon does not install it by default.
 
-        See `json-schema.org <http://json-schema.org/>`_ for more
+        See `jsonschema_rs PyPi <https://pypi.org/project/jsonschema-rs/>`_ for more
         information on defining a compatible dictionary.
 
     Keyword Args:
-        req_schema (dict): A dictionary that follows the JSON
+        req_schema (dict or str): A dictionary that follows the JSON
             Schema specification. The request will be validated against this
             schema.
-        resp_schema (dict): A dictionary that follows the JSON
+            Can be also a json string that will be loaded by the jsonschema_rs library
+        resp_schema (dict or str): A dictionary that follows the JSON
             Schema specification. The response will be validated against this
             schema.
+            Can be also a json string that will be loaded by the jsonschema_rs library
         is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
             the decorated responder is a coroutine function (i.e., that it
             is defined with ``async def``) or that it returns an awaitable
@@ -63,11 +63,11 @@ def validate(req_schema: Any = None, resp_schema: Any = None, is_async: bool = F
 
                 .. code:: python
 
-                    from falcon.media.validators import jsonschema
+                    from falcon.media.validators import jsonschema_rs
 
                     # -- snip --
 
-                    @jsonschema.validate(my_post_schema)
+                    @jsonschema_rs.validate(my_post_schema)
                     def on_post(self, req, resp):
 
                     # -- snip --
@@ -76,11 +76,11 @@ def validate(req_schema: Any = None, resp_schema: Any = None, is_async: bool = F
 
                 .. code:: python
 
-                    from falcon.media.validators import jsonschema
+                    from falcon.media.validators import jsonschema_rs
 
                     # -- snip --
 
-                    @jsonschema.validate(my_post_schema)
+                    @jsonschema_rs.validate(my_post_schema)
                     async def on_post(self, req, resp):
 
                     # -- snip --
@@ -89,11 +89,11 @@ def validate(req_schema: Any = None, resp_schema: Any = None, is_async: bool = F
 
                 .. code:: python
 
-                    from falcon.media.validators import jsonschema
+                    from falcon.media.validators import jsonschema_rs
 
                     # -- snip --
 
-                    @jsonschema.validate(my_post_schema, is_async=True)
+                    @jsonschema_rs.validate(my_post_schema, is_async=True)
                     async def on_post(self, req, resp):
 
                     # -- snip --
@@ -101,25 +101,27 @@ def validate(req_schema: Any = None, resp_schema: Any = None, is_async: bool = F
     """
 
     return _base.validator_factory(
-        JsonSchemaValidator, req_schema, resp_schema, is_async
+        JsonSchemaRsValidator, req_schema, resp_schema, is_async
     )
 
 
-class JsonSchemaValidator(_base.Validator):
+class JsonSchemaRsValidator(_base.Validator):
     def __init__(self, schema: Any) -> None:
         self.schema = schema
-        self.exceptions = jsonschema.ValidationError
+        if isinstance(schema, str):
+            self.validator = jsonschema_rs.JSONSchema.from_str(schema)
+        else:
+            self.validator = jsonschema_rs.JSONSchema(schema)
+        self.exceptions = jsonschema_rs.ValidationError
 
     @classmethod
-    def from_schema(cls, schema: Any) -> JsonSchemaValidator:
+    def from_schema(cls, schema: Any) -> JsonSchemaRsValidator:
         return cls(schema)
 
     def validate(self, media: Any) -> None:
-        jsonschema.validate(
-            media, self.schema, format_checker=jsonschema.FormatChecker()
-        )
+        self.validator.validate(media)
 
     def get_exception_message(self, exception: Exception) -> Optional[str]:
         if TYPE_CHECKING:
-            assert isinstance(exception, jsonschema.ValidationError)
+            assert isinstance(exception, jsonschema_rs.ValidationError)
         return exception.message

@@ -20,6 +20,9 @@ except ImportError:
 if pyximport:
     from . import _cythonized  # type: ignore
 
+    jsonschema = _cythonized.jsonschema
+    jsonschema_rs = _cythonized.jsonschema_rs
+
     _CYTHON_FUNC_TEST_TYPES = [
         _cythonized.nop_method,
         _cythonized.nop_method_async,
@@ -29,6 +32,7 @@ if pyximport:
         _cythonized.NOPClass().nop_method_async,
     ]
 else:
+    jsonschema = jsonschema_rs = None
     _CYTHON_FUNC_TEST_TYPES = []
 
 from _util import disable_asgi_non_coroutine_wrapping  # NOQA
@@ -83,6 +87,7 @@ def test_not_cython_func(func):
 
 
 @pytest.mark.skipif(not pyximport, reason='Cython not installed')
+@pytest.mark.skipif(jsonschema is None, reason='jsonschema not installed')
 def test_jsonchema_validator(client):
     with disable_asgi_non_coroutine_wrapping():
         if CYTHON_COROUTINE_HINT:
@@ -94,6 +99,23 @@ def test_jsonchema_validator(client):
                 )
 
             client.app.add_route('/', _cythonized.TestResourceWithValidation())
+
+    client.simulate_get()
+
+
+@pytest.mark.skipif(not pyximport, reason='Cython not installed')
+@pytest.mark.skipif(jsonschema_rs is None, reason='jsonschema_rs not installed')
+def test_jsonchema_rs_validator(client):
+    with disable_asgi_non_coroutine_wrapping():
+        if CYTHON_COROUTINE_HINT:
+            client.app.add_route('/', _cythonized.TestResourceWithValidationNoHintRs())
+        else:
+            with pytest.raises(TypeError):
+                client.app.add_route(
+                    '/wowsuchfail', _cythonized.TestResourceWithValidationNoHintRs()
+                )
+
+            client.app.add_route('/', _cythonized.TestResourceWithValidationRs())
 
     client.simulate_get()
 
