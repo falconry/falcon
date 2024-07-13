@@ -99,6 +99,11 @@ class Cookie:
             transmitted from the client via HTTPS.
         http_only (bool): Whether or not the cookie may only be
             included in unscripted requests from the client.
+        same_site (str): Specifies whether cookies are send in
+            cross-site requests. Possible values are 'Lax', 'Strict'
+            and 'None'. ``None`` if not specified.
+        partitioned (bool): Whether third-party cookies should be stored
+            with 2 keys.
     """
 
     def __init__(self, morsel):
@@ -113,6 +118,7 @@ class Cookie:
             'secure',
             'httponly',
             'samesite',
+            'partitioned',
         ):
             value = morsel[name.replace('_', '-')] or None
             setattr(self, '_' + name, value)
@@ -153,8 +159,12 @@ class Cookie:
         return bool(self._httponly)  # type: ignore[attr-defined]
 
     @property
-    def same_site(self) -> Optional[int]:
+    def same_site(self) -> Optional[str]:
         return self._samesite if self._samesite else None  # type: ignore[attr-defined]
+
+    @property
+    def partitioned(self) -> bool:
+        return bool(self._partitioned)  # type: ignore[attr-defined]
 
 
 class _ResultBase:
