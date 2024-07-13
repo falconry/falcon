@@ -15,7 +15,8 @@
 # limitations under the License.
 
 import argparse
-from collections import defaultdict, deque
+from collections import defaultdict
+from collections import deque
 from decimal import Decimal
 import gc
 import inspect

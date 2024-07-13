@@ -5,7 +5,6 @@ import time
 
 import requests
 
-
 LOOK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 gunicorn = None

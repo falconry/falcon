@@ -28,12 +28,7 @@ import functools
 import http
 import inspect
 import re
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Tuple
-from typing import Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 import unicodedata
 
 from falcon import status_codes

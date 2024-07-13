@@ -1,11 +1,11 @@
 import re
 
+from _util import create_app  # NOQA
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
 import falcon.testing as testing
-
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 class Proxy:

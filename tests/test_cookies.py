@@ -1,15 +1,17 @@
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from datetime import tzinfo
 from http import cookies as http_cookies
 import re
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 import falcon.testing as testing
-from falcon.util import http_date_to_dt, TimezoneGMT
-
-from _util import create_app  # NOQA
-
+from falcon.util import http_date_to_dt
+from falcon.util import TimezoneGMT
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
