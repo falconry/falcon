@@ -3,8 +3,11 @@
 Tutorial (WebSockets)
 =====================
 
-In this tutorial, we're going to build a WebSocket server using Falcon. We'll start with a simple server that echoes back any message it receives.
-We'll then add more functionality to the server, such as sending JSON data and logging messages.
+In this tutorial, we're going to build a WebSocket server using Falcon.
+We'll start with a simple server that echoes back any message it receives.
+
+We'll then add more functionality to the server, such as sending JSON data and
+logging messages.
 
 .. note::
    This tutorial covers the asynchronous flavor of Falcon using
@@ -16,7 +19,8 @@ We'll then add more functionality to the server, such as sending JSON data and l
 First Steps
 ___________
 
-We'll start with a clean working directory and create a new virtual environment using the `venv` module.:
+We'll start with a clean working directory and create a new virtual environment
+using the `venv` module.:
 
 .. code-block:: bash
 
@@ -34,13 +38,15 @@ Create the following directory structure::
       └── app.py
 
 
-And next we'll install Falcon and Uvicorn in our freshly created virtual environment:
+And next we'll install Falcon and Uvicorn in our freshly created virtual
+environment:
 
 .. code-block:: bash
 
    $ pip install falcon uvicorn
 
-Now, let's create a simple Falcon application to ensure our project is working as expected.
+Now, let's create a simple Falcon application to ensure our project is working
+as expected.
 
 .. code-block:: python
 
@@ -77,8 +83,9 @@ Awesome, it works! Now let's move on to building our WebSocket server.
 WebSockets Server
 _________________
 
-We will update our server to include a websocket route that will echo back any message it receives.
-Later we'll update the server with more logic, but for now, let's keep it simple.
+We will update our server to include a websocket route that will echo back any
+message it receives. Later we'll update the server with more logic, but for now,
+let's keep it simple.
 
 .. code-block:: python
 
@@ -116,7 +123,8 @@ Later we'll update the server with more logic, but for now, let's keep it simple
     if __name__ == '__main__':
         uvicorn.run(app, host='localhost', port=8000)
 
-We'll also need to install a websockets library. There are multiple ways to do this::
+We'll also need to install a websockets library. There are multiple ways to do
+this::
 
     $ pip install websockets
     or
@@ -124,20 +132,24 @@ We'll also need to install a websockets library. There are multiple ways to do t
     or
     $ wsproto
 
-To test the new WebSocket route, we can use the `websocat <https://github.com/vi/websocat>`__ tool::
+To test the new WebSocket route, we can use the `websocat <https://github.com/vi/websocat>`__
+tool::
 
     $ websocat ws://localhost:8000/echo
     $ hello
     Received the following text: hello
 
-Cool! We have a working WebSocket server. Now let's add some more functionality to our server.
+Cool! We have a working WebSocket server. Now let's add some more functionality
+to our server.
 
-To make this easier, we'll create a simple client that will send messages to our server.
+To make this easier, we'll create a simple client that will send messages to our
+server.
 
 Simple Client
 _____________
 
-Create a new file called `client.py` in the same directory as `app.py`. The client will ask for your input and send it to the server.:
+Create a new file called `client.py` in the same directory as `app.py`.
+The client will ask for your input and send it to the server.:
 
 .. literalinclude:: ../../examples/wslook/wslook/client.py
 
@@ -153,7 +165,8 @@ This will simplify testing our server.
 
 Now let's add some more functionality to our server.
 
-We've been working with text input/output - let's try sending sending some JSON data.
+We've been working with text input/output - let's try sending sending some JSON
+data.
 
 .. code-block:: python
 
@@ -203,7 +216,8 @@ We've been working with text input/output - let's try sending sending some JSON 
 .. note::
     By default, `send_media() <https://falcon.readthedocs.io/en/latest/api/websocket.html#falcon.asgi.WebSocket.send_media>`__ and `receive_media() <https://falcon.readthedocs.io/en/latest/api/websocket.html#falcon.asgi.WebSocket.receive_media>`__ will serialize to (and deserialize from) JSON for a TEXT payload, and to/from MessagePack for a BINARY payload (see also: `Built-in Media Handlers <https://falcon.readthedocs.io/en/latest/api/websocket.html#bimh>`__).
 
-Lets try to query for data from the server. We'll create a new resource that will return a report based on the query.
+Lets try to query for data from the server. We'll create a new resource that
+will return a report based on the query.
 
 Server side:
 
@@ -287,7 +301,8 @@ Server side:
     if __name__ == '__main__':
         uvicorn.run(app, host='localhost', port=8000)
 
-We'll also create new client app (`reports_client.py`), that will connect to the reports endpoint. :
+We'll also create new client app (`reports_client.py`), that will connect to
+the reports endpoint. :
 
 .. code-block:: python
 
@@ -308,15 +323,19 @@ We'll also create new client app (`reports_client.py`), that will connect to the
     if __name__ == "__main__":
         asyncio.run(send_message())
 
-We've added a new resource that will return a report based on the query. The client will send a query to the server, and the server will respond with the report.
+We've added a new resource that will return a report based on the query.
+The client will send a query to the server, and the server will respond with the
+report.
 If it can't find the report, it will respond with an error message.
 
-This is a simple example, but you can easily extend it to include more complex logic like fetching data from a database.
+This is a simple example, but you can easily extend it to include more complex
+logic like fetching data from a database.
 
 Middleware
 __________
 
-Falcon supports middleware, which can be used to add functionality to the application. For example, we can add a middleware that prints when a connection is established.
+Falcon supports middleware, which can be used to add functionality to the application.
+For example, we can add a middleware that prints when a connection is established.
 
 .. code-block:: python
 
@@ -412,14 +431,17 @@ Falcon supports middleware, which can be used to add functionality to the applic
     if __name__ == '__main__':
         uvicorn.run(app, host='localhost', port=8000)
 
-Now, when you run the server, you should see a message in the console when a WebSocket connection is established.
+Now, when you run the server, you should see a message in the console when a
+WebSocket connection is established.
 
 
 Authentication
 ______________
 
-Adding authentication can be done with the help of middleware as well. It checks the request headers for a token.
-If the token is valid, the request is allowed to continue. If the token is invalid, the request is rejected.
+Adding authentication can be done with the help of middleware as well.
+It checks the request headers for a token.
+If the token is valid, the request is allowed to continue.
+If the token is invalid, the request is rejected.
 
 There are some `considerations <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__ to take into account when implementing authentication in a WebSocket server.
 
@@ -431,7 +453,8 @@ Updated client code for the reports client:
 
 .. literalinclude:: ../../examples/wslook/wslook/reports_client.py
 
-If you try to query the reports endpoint now, everything works as expected. But as soon as you remove/modify the token, the connection will be closed.
+If you try to query the reports endpoint now, everything works as expected.
+But as soon as you remove/modify the token, the connection will be closed.
 
 .. code-block:: bash
 
@@ -441,11 +464,14 @@ If you try to query the reports endpoint now, everything works as expected. But 
 
 .. note::
 
-    This is a simple example of how to add authentication to a WebSocket server. In a real-world application, you would want to use a more secure method of authentication, such as JWT tokens.
+    This is a simple example of how to add authentication to a WebSocket server.
+    In a real-world application, you would want to use a more secure method of
+    authentication, such as JWT tokens.
 
 What Now
 ________
 
-This tutorial is just the beginning. You can extend the server with more complex logic. For example, you could add a database to store/retrieve the reports, or add more routes to the server.
+This tutorial is just the beginning. You can extend the server with more complex logic.
+For example, you could add a database to store/retrieve the reports, or add more routes to the server.
 
 For more information on websockets in Falcon, check out the `WebSocket API <https://falcon.readthedocs.io/en/latest/api/websocket.html>`__.
