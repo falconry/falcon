@@ -74,6 +74,10 @@ _DEFAULT_HTTP_REASON = 'Unknown'
 
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
+_ALLOWED_HTTP_TIMEZONES: Tuple[str, ...] = ('GMT', 'UTC')
+
+_UTC_TIMEZONE = datetime.timezone.utc
+
 # PERF(kgriffs): Avoid superfluous namespace lookups
 _strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
 _utcnow: Callable[[], datetime.datetime] = functools.partial(
@@ -182,6 +186,12 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
     Raises:
         ValueError: http_date doesn't match any of the available time formats
     """
+    date_timezone_str = http_date[-3:]
+    has_tz_identifier = not date_timezone_str.isdigit()
+    if date_timezone_str not in _ALLOWED_HTTP_TIMEZONES and has_tz_identifier:
+        raise ValueError(
+            'timezone information of time data %r is not allowed' % http_date
+        )
 
     if not obs_date:
         # PERF(kgriffs): This violates DRY, but we do it anyway
@@ -189,7 +199,9 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
         #   over it, and setting up exception handling blocks each
         #   time around the loop, in the case that we don't actually
         #   need to check for multiple formats.
-        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z').replace(
+            tzinfo=_UTC_TIMEZONE
+        )
 
     time_formats = (
         '%a, %d %b %Y %H:%M:%S %Z',
@@ -201,7 +213,7 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
     # Loop through the formats and return the first that matches
     for time_format in time_formats:
         try:
-            return _strptime(http_date, time_format)
+            return _strptime(http_date, time_format).replace(tzinfo=_UTC_TIMEZONE)
         except ValueError:
             continue
 
