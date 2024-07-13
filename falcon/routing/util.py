@@ -15,8 +15,9 @@
 """Routing utilities."""
 
 from __future__ import annotations
+
 import re
-from typing import Optional, Dict, Callable
+from typing import Callable, Dict, Optional
 
 from falcon import constants
 from falcon import responders

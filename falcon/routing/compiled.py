@@ -22,7 +22,6 @@ import keyword
 import re
 from threading import Lock
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -30,9 +29,10 @@ from typing import (
     Optional,
     Pattern,
     Set,
-    Union,
     Tuple,
     Type,
+    TYPE_CHECKING,
+    Union,
 )
 
 from falcon.routing import converters
@@ -43,7 +43,7 @@ from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
 
 if TYPE_CHECKING:  # TODO: switch to TYPE_CHECKING once support for py3.5 is dropped
-    from falcon.request import Request
+    from falcon import Request
 
     _CxElement = Union['_CxParent', '_CxChild']
     _MethodDict = Dict[str, Callable]
