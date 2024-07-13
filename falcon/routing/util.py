@@ -14,7 +14,9 @@
 
 """Routing utilities."""
 
+from __future__ import annotations
 import re
+from typing import Optional, Dict, Callable
 
 from falcon import constants
 from falcon import responders
@@ -99,7 +101,9 @@ def compile_uri_template(template):
     return fields, re.compile(pattern, re.IGNORECASE)
 
 
-def map_http_methods(resource, suffix=None):
+def map_http_methods(
+    resource: object, suffix: Optional[str] = None
+) -> Dict[str, Callable]:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:

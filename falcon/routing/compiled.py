@@ -14,14 +14,26 @@
 
 """Default routing engine."""
 
-
+from __future__ import annotations
 
 from collections import UserDict
 from inspect import iscoroutinefunction
 import keyword
 import re
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Pattern, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Set,
+    Union,
+    Tuple,
+    Type,
+)
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods
@@ -31,10 +43,10 @@ from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
 
 if TYPE_CHECKING:  # TODO: switch to TYPE_CHECKING once support for py3.5 is dropped
-
     from falcon.request import Request
 
     _CxElement = Union['_CxParent', '_CxChild']
+    _MethodDict = Dict[str, Callable]
 
 _TAB_STR = ' ' * 4
 _FIELD_PATTERN = re.compile(
@@ -92,21 +104,19 @@ class CompiledRouter:
     )
 
     def __init__(self) -> None:
-        self._ast: '_CxParent' = _CxParent()
-        self._converters: 'List[converters.BaseConverter]' = []
+        self._ast: _CxParent = _CxParent()
+        self._converters: List[converters.BaseConverter] = []
         self._finder_src: str = ''
 
         self._options = CompiledRouterOptions()
 
         # PERF(kgriffs): This is usually an anti-pattern, but we do it
         # here to reduce lookup time.
-        self._converter_map: 'Dict[str, converters.BaseConverter]' = (
-            self._options.converters.data
-        )
+        self._converter_map = self._options.converters.data
 
-        self._patterns: 'List[Pattern]' = []
-        self._return_values: 'List[CompiledRouterNode]' = []
-        self._roots: 'List[CompiledRouterNode]' = []
+        self._patterns: List[Pattern] = []
+        self._return_values: List[CompiledRouterNode] = []
+        self._roots: List[CompiledRouterNode] = []
 
         # NOTE(caselit): set _find to the delayed compile method to ensure that
         # compile is called when the router is first used
@@ -125,7 +135,7 @@ class CompiledRouter:
         self.find('/')
         return self._finder_src
 
-    def map_http_methods(self, resource: object, **kwargs):
+    def map_http_methods(self, resource: object, **kwargs: Any) -> _MethodDict:
         """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
         This method is called from :meth:`~.add_route` and may be overridden to
@@ -154,7 +164,9 @@ class CompiledRouter:
 
         return map_http_methods(resource, suffix=kwargs.get('suffix', None))
 
-    def add_route(self, uri_template: str, resource: object, **kwargs):  # noqa: C901
+    def add_route(  # noqa: C901
+        self, uri_template: str, resource: object, **kwargs: Any
+    ) -> None:
         """Add a route between a URI path template and a resource.
 
         This method may be overridden to customize how a route is added.
@@ -193,7 +205,7 @@ class CompiledRouter:
 
         # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
         #   only intended to be used internally.
-        asgi = kwargs.get('_asgi', False)
+        asgi: bool = kwargs.get('_asgi', False)
 
         method_map = self.map_http_methods(resource, **kwargs)
 
@@ -211,11 +223,11 @@ class CompiledRouter:
 
         path = uri_template.lstrip('/').split('/')
 
-        used_names: 'Set[str]' = set()
+        used_names: Set[str] = set()
         for segment in path:
             self._validate_template_segment(segment, used_names)
 
-        def find_cmp_converter(node):
+        def find_cmp_converter(node: CompiledRouterNode) -> Optional[Tuple[str, str]]:
             value = [
                 (field, converter)
                 for field, converter, _ in node.var_converter_map
@@ -228,7 +240,7 @@ class CompiledRouter:
             else:
                 return None
 
-        def insert(nodes: 'List[CompiledRouterNode]', path_index: int = 0):
+        def insert(nodes: List[CompiledRouterNode], path_index: int = 0):
             for node in nodes:
                 segment = path[path_index]
                 if node.matches(segment):
@@ -293,7 +305,9 @@ class CompiledRouter:
         else:
             self._find = self._compile_and_find
 
-    def find(self, uri: str, req: 'Optional[Request]' = None):
+    def find(
+        self, uri: str, req: Optional[Request] = None
+    ) -> Optional[Tuple[object, Optional[_MethodDict], Dict[str, Any], Optional[str]]]:
         """Search for a route that matches the given partial URI.
 
         Args:
@@ -312,8 +326,8 @@ class CompiledRouter:
         """
 
         path = uri.lstrip('/').split('/')
-        params: 'Dict[str, Any]' = {}
-        node: 'Optional[CompiledRouterNode]' = self._find(
+        params: Dict[str, Any] = {}
+        node: Optional[CompiledRouterNode] = self._find(
             path, self._return_values, self._patterns, self._converters, params
         )
 
@@ -326,7 +340,7 @@ class CompiledRouter:
     # Private
     # -----------------------------------------------------------------
 
-    def _require_coroutine_responders(self, method_map: dict):
+    def _require_coroutine_responders(self, method_map: _MethodDict) -> None:
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely perform relatively long blocking
@@ -350,7 +364,7 @@ class CompiledRouter:
                     msg = msg.format(responder)
                     raise TypeError(msg)
 
-    def _require_non_coroutine_responders(self, method_map: dict):
+    def _require_non_coroutine_responders(self, method_map: _MethodDict) -> None:
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely perform relatively long blocking
@@ -366,7 +380,7 @@ class CompiledRouter:
                 msg = msg.format(responder)
                 raise TypeError(msg)
 
-    def _validate_template_segment(self, segment: str, used_names: 'Set[str]'):
+    def _validate_template_segment(self, segment: str, used_names: Set[str]) -> None:
         """Validate a single path segment of a URI template.
 
         1. Ensure field names are valid Python identifiers, since they
@@ -421,14 +435,14 @@ class CompiledRouter:
 
     def _generate_ast(  # noqa: C901
         self,
-        nodes: 'List[CompiledRouterNode]',
-        parent: '_CxParent',
-        return_values: 'List[CompiledRouterNode]',
-        patterns: 'List[Pattern]',
-        params_stack: 'List[_CxElement]',
+        nodes: List[CompiledRouterNode],
+        parent: _CxParent,
+        return_values: List[CompiledRouterNode],
+        patterns: List[Pattern],
+        params_stack: List[_CxElement],
         level: int = 0,
         fast_return: bool = True,
-    ):
+    ) -> None:
         """Generate a coarse AST for the router."""
         # NOTE(caselit): setting of the parameters in the params dict is delayed until
         # a match has been found by adding them to the param_stack. This way superfluous
@@ -599,10 +613,10 @@ class CompiledRouter:
 
     def _generate_conversion_ast(
         self,
-        parent: '_CxParent',
-        node: 'CompiledRouterNode',
-        params_stack: 'List[_CxElement]',
-    ):
+        parent: _CxParent,
+        node: CompiledRouterNode,
+        params_stack: List[_CxElement],
+    ) -> _CxParent:
         # NOTE(kgriffs): Unroll the converter loop into
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
@@ -638,7 +652,7 @@ class CompiledRouter:
 
         return parent
 
-    def _compile(self) -> 'Callable':  # TODO type better
+    def _compile(self) -> Callable:
         """Generate Python code for the entire routing tree.
 
         The generated code is compiled and the resulting Python method
@@ -661,19 +675,19 @@ class CompiledRouter:
 
         src_lines.append(self._ast.src(0))
 
-        src_lines.append(
-            # PERF(kgriffs): Explicit return of None is faster than implicit
-            _TAB_STR + 'return None'
-        )
+        # PERF(kgriffs): Explicit return of None is faster than implicit
+        src_lines.append(_TAB_STR + 'return None')
 
         self._finder_src = '\n'.join(src_lines)
 
-        scope: 'Dict[str, Callable]' = {}
+        scope: _MethodDict = {}
         exec(compile(self._finder_src, '<string>', 'exec'), scope)
 
         return scope['find']
 
-    def _instantiate_converter(self, klass, argstr=None):
+    def _instantiate_converter(
+        self, klass: type, argstr: Optional[str] = None
+    ) -> converters.BaseConverter:
         if argstr is None:
             return klass()
 
@@ -681,7 +695,14 @@ class CompiledRouter:
         src = '{0}({1})'.format(klass.__name__, argstr)
         return eval(src, {klass.__name__: klass})
 
-    def _compile_and_find(self, path, _return_values, _patterns, _converters, params):
+    def _compile_and_find(
+        self,
+        path: List[str],
+        _return_values: Any,
+        _patterns: Any,
+        _converters: Any,
+        params: Any,
+    ) -> Any:
         """Compile the router, set the `_find` attribute and return its result.
 
         This method is set to the `_find` attribute to delay the compilation of the
@@ -719,11 +740,11 @@ class CompiledRouterNode:
     def __init__(
         self,
         raw_segment: str,
-        method_map: 'Optional[dict]' = None,
-        resource: 'Optional[object]' = None,
-        uri_template: 'Optional[str]' = None,
+        method_map: Optional[_MethodDict] = None,
+        resource: Optional[object] = None,
+        uri_template: Optional[str] = None,
     ):
-        self.children: 'List[CompiledRouterNode]' = []
+        self.children: List[CompiledRouterNode] = []
 
         self.raw_segment = raw_segment
         self.method_map = method_map
@@ -736,9 +757,9 @@ class CompiledRouterNode:
 
         # TODO(kgriffs): Rename these since the docs talk about "fields"
         # or "field expressions", not "vars" or "variables".
-        self.var_name: 'Optional[str]' = None
-        self.var_pattern: 'Optional[Pattern]' = None
-        self.var_converter_map: 'List[tuple]' = []
+        self.var_name: Optional[str] = None
+        self.var_pattern: Optional[Pattern] = None
+        self.var_converter_map: List[Tuple[str, str, str]] = []
 
         # NOTE(kgriffs): CompiledRouter.add_route validates field names,
         # so here we can just assume they are OK and use the simple
@@ -875,6 +896,8 @@ class CompiledRouterNode:
 class ConverterDict(UserDict):
     """A dict-like class for storing field converters."""
 
+    data: Dict[str, Type[converters.BaseConverter]]
+
     def __setitem__(self, name, converter):
         self._validate(name)
         UserDict.__setitem__(self, name, converter)
@@ -924,6 +947,8 @@ class CompiledRouterOptions:
 
     __slots__ = ('converters',)
 
+    converters: ConverterDict
+
     def __init__(self):
         object.__setattr__(
             self,
@@ -952,9 +977,9 @@ class CompiledRouterOptions:
 
 class _CxParent:
     def __init__(self):
-        self._children: 'List[_CxElement]' = []
+        self._children: List[_CxElement] = []
 
-    def append_child(self, construct: '_CxElement'):
+    def append_child(self, construct: _CxElement):
         self._children.append(construct)
 
     def src(self, indentation: int) -> str:
