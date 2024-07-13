@@ -18,6 +18,8 @@ while remaining highly effective.
 
 .. code:: python
 
+    import falcon
+
     class QuoteResource:
 
         def on_get(self, req, resp):
@@ -35,6 +37,8 @@ while remaining highly effective.
 
     app = falcon.App()
     app.add_route('/quote', QuoteResource())
+
+For a fully working example, check out the :ref:`quickstart`.
 
 Quick Links
 -----------
