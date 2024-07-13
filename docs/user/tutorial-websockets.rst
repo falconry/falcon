@@ -139,25 +139,7 @@ _____________
 
 Create a new file called `client.py` in the same directory as `app.py`. The client will ask for your input and send it to the server.:
 
-.. code-block:: python
-
-    import asyncio
-    import websockets
-
-
-    async def send_message():
-        uri = "ws://localhost:8000/echo/hello"
-
-        async with websockets.connect(uri) as websocket:
-            while True:
-                message = input("Enter a message: ")
-                await websocket.send(message)
-                response = await websocket.recv()
-                print(response)
-
-
-    if __name__ == "__main__":
-        asyncio.run(send_message())
+.. literalinclude:: ../../examples/wslook/wslook/client.py
 
 Run this client in a separate terminal:
 
@@ -443,150 +425,11 @@ There are some `considerations <https://websockets.readthedocs.io/en/stable/topi
 
 Updated server code:
 
-.. code-block:: python
-
-    from datetime import datetime
-
-    import falcon.asgi
-    import uvicorn
-    from falcon import WebSocketDisconnected
-    from falcon.asgi import Request, WebSocket
-
-    REPORTS = {
-        'report1': {
-            'title': 'Report 1',
-            'content': 'This is the content of report 1',
-        },
-        'report2': {
-            'title': 'Report 2',
-            'content': 'This is the content of report 2',
-        },
-        'report3': {
-            'title': 'Report 3',
-            'content': 'This is the content of report 3',
-        },
-        'report4': {
-            'title': 'Report 4',
-            'content': 'This is the content of report 4',
-        },
-    }
-
-    app = falcon.asgi.App()
-
-
-    class LoggerMiddleware:
-        async def process_request_ws(self, req: Request, ws: WebSocket):
-            # This will be called for the HTTP request that initiates the
-            #   WebSocket handshake before routing.
-            pass
-
-        async def process_resource_ws(self, req: Request, ws: WebSocket, resource, params):
-            # This will be called for the HTTP request that initiates the
-            #   WebSocket handshake after routing (if a route matches the
-            #   request).
-            print(f'WebSocket connection established on {req.path}')
-
-
-    # Added an authentication middleware. This middleware will check if the request is on a protected route.
-    class AuthMiddleware:
-        protected_routes = []
-
-        def __init__(self, protected_routes: list[str] | None = None):
-            if protected_routes is None:
-                protected_routes = []
-
-            self.protected_routes = protected_routes
-
-        async def process_request_ws(self, req: Request, ws: WebSocket):
-            if req.path not in self.protected_routes:
-                return
-
-            token = req.get_header('Authorization')
-            if token != 'very secure token':
-                await ws.close(1008)
-                return
-
-            print(f'Client with token {token} Authenticated')
-
-
-    class HelloWorldResource:
-        async def on_get(self, req, resp):
-            resp.media = {'hello': 'world'}
-
-
-    class EchoWebSocketResource:
-        async def on_websocket(self, req: Request, ws: WebSocket):
-            try:
-                await ws.accept()
-            except WebSocketDisconnected:
-                return
-
-            while True:
-                try:
-                    message = await ws.receive_text()
-                    await ws.send_media({'message': message, 'date': datetime.now().isoformat()})
-                except WebSocketDisconnected:
-                    return
-
-
-    class ReportsResource:
-        async def on_websocket(self, req: Request, ws: WebSocket):
-            try:
-                await ws.accept()
-            except WebSocketDisconnected:
-                return
-
-            while True:
-                try:
-                    query = await ws.receive_text()
-                    report = REPORTS.get(query, None)
-                    print(report)
-
-                    if report is None:
-                        await ws.send_media({'error': 'report not found'})
-                        continue
-
-                    await ws.send_media({'report': report["title"]})
-                except WebSocketDisconnected:
-                    return
-
-
-    app.add_route('/hello', HelloWorldResource())
-    app.add_route('/echo', EchoWebSocketResource())
-    app.add_route('/reports', ReportsResource())
-
-    app.add_middleware(LoggerMiddleware())
-
-    # Add the AuthMiddleware to the app, and specify the protected routes
-    app.add_middleware(AuthMiddleware(['/reports']))
-
-    if __name__ == '__main__':
-        uvicorn.run(app, host='localhost', port=8000)
+.. literalinclude:: ../../examples/wslook/wslook/app.py
 
 Updated client code for the reports client:
 
-.. code-block:: python
-
-    import asyncio
-    import websockets
-
-
-    async def send_message():
-        uri = "ws://localhost:8000/reports"
-        headers = {
-            'Authorization': 'very secure token'
-        }
-
-        async with websockets.connect(uri, extra_headers=headers) as websocket:
-            while True:
-                message = input("Name of the log: ")
-                await websocket.send(message)
-                response = await websocket.recv()
-                print(response)
-
-
-    if __name__ == "__main__":
-        asyncio.run(send_message())
+.. literalinclude:: ../../examples/wslook/wslook/reports_client.py
 
 If you try to query the reports endpoint now, everything works as expected. But as soon as you remove/modify the token, the connection will be closed.
 
