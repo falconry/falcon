@@ -1,5 +1,6 @@
 import msgpack
 
+
 class RedisCache:
     PREFIX = 'asgilook:'
     INVALIDATE_ON = frozenset({'DELETE', 'POST', 'PUT'})

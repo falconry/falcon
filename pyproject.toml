@@ -140,6 +140,7 @@
         "typing"
     ]
     force-sort-within-sections = true
+    known-local-folder = ["asgilook", "look"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
