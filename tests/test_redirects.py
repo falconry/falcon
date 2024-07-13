@@ -1,9 +1,8 @@
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 import falcon.testing as testing
-
-from _util import create_app  # NOQA
 
 
 @pytest.fixture

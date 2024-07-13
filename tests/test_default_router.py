@@ -1,11 +1,10 @@
 import textwrap
 
+from _util import create_app  # NOQA
 import pytest
 
 from falcon import testing
 from falcon.routing import DefaultRouter
-
-from _util import create_app  # NOQA
 
 
 def client(asgi):

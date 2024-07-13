@@ -5,7 +5,8 @@ from os import path
 import re
 import sys
 
-from setuptools import Extension, setup
+from setuptools import Extension
+from setuptools import setup
 
 MYDIR = path.abspath(os.path.dirname(__file__))
 
@@ -32,11 +33,9 @@ class BuildFailed(Exception):
 
 def get_cython_options():
     # from sqlalchemy setup.py
-    from distutils.errors import (
-        CCompilerError,
-        DistutilsExecError,
-        DistutilsPlatformError,
-    )
+    from distutils.errors import CCompilerError
+    from distutils.errors import DistutilsExecError
+    from distutils.errors import DistutilsPlatformError
 
     ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError)
     if sys.platform == 'win32':

@@ -18,7 +18,9 @@ from collections import OrderedDict
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
-from falcon.util import code_to_http_status, http_status_to_code, uri
+from falcon.util import code_to_http_status
+from falcon.util import http_status_to_code
+from falcon.util import uri
 from falcon.util.deprecation import deprecated_args
 
 

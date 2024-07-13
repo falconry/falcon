@@ -1,6 +1,5 @@
-import pytest
-
 from _util import create_req  # NOQA
+import pytest
 
 
 def test_no_forwarded_headers(asgi):

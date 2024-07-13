@@ -1,23 +1,31 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 import functools
 import http
 import itertools
 import json
 import random
-from urllib.parse import quote, unquote_plus
+from urllib.parse import quote
+from urllib.parse import unquote_plus
 
+from _util import create_app  # NOQA
+from _util import to_coroutine  # NOQA
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
 from falcon import util
-from falcon.constants import MEDIA_JSON, MEDIA_MSGPACK, MEDIA_URLENCODED, MEDIA_YAML
-from falcon.util import deprecation, misc, structures, uri
-
-from _util import create_app, to_coroutine  # NOQA
+from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_MSGPACK
+from falcon.constants import MEDIA_URLENCODED
+from falcon.constants import MEDIA_YAML
+from falcon.util import deprecation
+from falcon.util import misc
+from falcon.util import structures
+from falcon.util import uri
 
 
 @pytest.fixture
