@@ -185,6 +185,7 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
     Raises:
         ValueError: http_date doesn't match any of the available time formats
+        ValueError: http_date doesn't match allowed timezones
     """
     date_timezone_str = http_date[-3:]
     has_tz_identifier = not date_timezone_str.isdigit()
