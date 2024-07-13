@@ -5,18 +5,16 @@ import sys
 import _inspect_fixture as i_f
 import pytest
 
+import falcon
 from falcon import inspect, routing
+import falcon.asgi
 
 
 def get_app(asgi, cors=True, **kw):
     if asgi:
-        from falcon.asgi import App as AsyncApp
-
-        return AsyncApp(cors_enable=cors, **kw)
+        return falcon.asgi.App(cors_enable=cors, **kw)
     else:
-        from falcon import App
-
-        return App(cors_enable=cors, **kw)
+        return falcon.App(cors_enable=cors, **kw)
 
 
 def make_app():
@@ -235,7 +233,7 @@ class TestInspectApp:
         mi = inspect.inspect_middleware(make_app_async() if asgi else make_app())
 
         def test(tl, names, cls):
-            for (t, n, c) in zip(tl, names, cls):
+            for t, n, c in zip(tl, names, cls):
                 assert isinstance(t, inspect.MiddlewareTreeItemInfo)
                 assert t.name == n
                 assert t.class_name == c

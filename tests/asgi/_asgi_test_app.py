@@ -1,6 +1,7 @@
 import asyncio
 from collections import Counter
 import hashlib
+import platform
 import sys
 import time
 
@@ -11,6 +12,7 @@ import falcon.util
 
 SSE_TEST_MAX_DELAY_SEC = 1
 _WIN32 = sys.platform.startswith('win')
+_X86_64 = platform.machine() == 'x86_64'
 
 
 class Things:
@@ -74,7 +76,10 @@ class Things:
         loop = falcon.util.get_running_loop()
 
         # NOTE(caselit): on windows it takes more time so create less tasks
-        num_cms_tasks = 100 if _WIN32 else 1000
+        # NOTE(vytas): Tests on non-x86 platforms are run using software
+        #   emulation via single-thread QEMU Docker containers, making them
+        #   considerably slower as well.
+        num_cms_tasks = 100 if _WIN32 or not _X86_64 else 1000
 
         for i in range(num_cms_tasks):
             # NOTE(kgriffs): create_task() is used here, so that the coroutines
@@ -101,6 +106,17 @@ class Things:
 class Bucket:
     async def on_post(self, req, resp):
         resp.text = await req.stream.read()
+
+    async def on_put_drops(self, req, resp):
+        # NOTE(kgriffs): Integrity check
+        sha1 = hashlib.sha1()
+
+        drops = 0
+        async for drop in req.stream:
+            drops += 1
+            sha1.update(drop)
+
+        resp.media = {'drops': drops, 'sha1': sha1.hexdigest()}
 
 
 class Feed:
@@ -251,13 +267,17 @@ class TestJar:
 
 def create_app():
     app = falcon.asgi.App()
+    bucket = Bucket()
+    lifespan_handler = LifespanHandler()
+
     app.add_route('/', Things())
-    app.add_route('/bucket', Bucket())
+    app.add_route('/bucket', bucket)
+    app.add_route('/bucket/drops', bucket, suffix='drops')
     app.add_route('/events', Events())
     app.add_route('/forms', Multipart())
     app.add_route('/jars', TestJar())
     app.add_route('/feeds/{feed_id}', Feed())
-    lifespan_handler = LifespanHandler()
+
     app.add_middleware(lifespan_handler)
 
     async def _on_ws_error(req, resp, error, params, ws=None):

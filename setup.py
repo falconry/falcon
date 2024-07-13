@@ -121,10 +121,10 @@ def get_cython_options():
         if (package + '.' + module) not in modules_to_exclude
     ]
 
-    # NOTE(vytas): Now that all our codebase is Python 3.5+, specify the
+    # NOTE(vytas): Now that all our codebase is Python 3.7+, specify the
     #   Python 3 language level for Cython as well to avoid any surprises.
     for ext_mod in ext_modules:
-        ext_mod.cython_directives = {'language_level': '3'}
+        ext_mod.cython_directives = {'language_level': '3', 'annotation_typing': False}
 
     cmdclass = {'build_ext': ve_build_ext}
     return cmdclass, ext_modules
@@ -139,7 +139,6 @@ def load_description():
 
     # NOTE(kgriffs): PyPI does not support the raw directive
     for readme_line in io.open('README.rst', 'r', encoding='utf-8'):
-
         # NOTE(vytas): The patron list largely builds upon raw sections
         if readme_line.startswith('.. Patron list starts'):
             in_patron_list = True

@@ -14,12 +14,15 @@
 
 import abc
 from datetime import datetime
+from math import isfinite
+from typing import Optional
 import uuid
 
 __all__ = (
     'BaseConverter',
-    'IntConverter',
     'DateTimeConverter',
+    'FloatConverter',
+    'IntConverter',
     'UUIDConverter',
 )
 
@@ -31,17 +34,32 @@ strptime = datetime.strptime
 class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
+    CONSUME_MULTIPLE_SEGMENTS = False
+    """When set to ``True`` it indicates that this converter will consume
+    multiple URL path segments. Currently a converter with
+    ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the end of the URL template
+    effectively meaning that it will consume all of the remaining URL path
+    segments.
+    """
+
     @abc.abstractmethod  # pragma: no cover
     def convert(self, value):
         """Convert a URI template field value to another format or type.
 
         Args:
-            value (str): Original string to convert.
+            value (str or List[str]): Original string to convert.
+                If ``CONSUME_MULTIPLE_SEGMENTS=True`` this value is a
+                list of strings containing the path segments matched by
+                the converter.
 
         Returns:
             object: Converted field value, or ``None`` if the field
                 can not be converted.
         """
+
+
+def _consumes_multiple_segments(converter):
+    return getattr(converter, 'CONSUME_MULTIPLE_SEGMENTS', False)
 
 
 class IntConverter(BaseConverter):
@@ -61,7 +79,6 @@ class IntConverter(BaseConverter):
     def __init__(self, num_digits=None, min=None, max=None):
         if num_digits is not None and num_digits < 1:
             raise ValueError('num_digits must be at least 1')
-
         self._num_digits = num_digits
         self._min = min
         self._max = max
@@ -71,10 +88,10 @@ class IntConverter(BaseConverter):
             return None
 
         # NOTE(kgriffs): int() will accept numbers with preceding or
-        # trailing whitespace, so we need to do our own check. Using
-        # strip() is faster than either a regex or a series of or'd
-        # membership checks via "in", esp. as the length of contiguous
-        # numbers in the value grows.
+        #   trailing whitespace, so we need to do our own check. Using
+        #   strip() is faster than either a regex or a series of or'd
+        #   membership checks via "in", esp. as the length of contiguous
+        #   numbers in the value grows.
         if value.strip() != value:
             return None
 
@@ -83,13 +100,56 @@ class IntConverter(BaseConverter):
         except ValueError:
             return None
 
+        return self._validate_min_max_value(value)
+
+    def _validate_min_max_value(self, value):
         if self._min is not None and value < self._min:
             return None
-
         if self._max is not None and value > self._max:
             return None
 
         return value
+
+
+class FloatConverter(IntConverter):
+    """Converts a field value to an float.
+
+    Identifier: `float`
+
+    Keyword Args:
+        min (float): Reject the value if it is less than this number.
+        max (float): Reject the value if it is greater than this number.
+        finite (bool) : Determines whether or not to only match ordinary
+            finite numbers (default: ``True``). Set to ``False`` to match
+            nan, inf, and -inf in addition to finite numbers.
+    """
+
+    __slots__ = '_finite'
+
+    def __init__(
+        self,
+        min: Optional[float] = None,
+        max: Optional[float] = None,
+        finite: bool = True,
+    ):
+        self._min = min
+        self._max = max
+        self._finite = finite if finite is not None else True
+
+    def convert(self, value: str):
+        if value.strip() != value:
+            return None
+
+        try:
+            converted = float(value)
+
+            if self._finite and not isfinite(converted):
+                return None
+
+        except ValueError:
+            return None
+
+        return self._validate_min_max_value(converted)
 
 
 class DateTimeConverter(BaseConverter):
@@ -132,8 +192,35 @@ class UUIDConverter(BaseConverter):
             return None
 
 
+class PathConverter(BaseConverter):
+    """Field converted used to match the rest of the path.
+
+    This field converter matches the remainder of the URL path,
+    returning it as a string.
+
+    This converter is currently supported only when used at the
+    end of the URL template.
+
+    The classic routing rules of falcon apply also to this converter:
+    considering the template ``'/foo/bar/{matched_path:path}'``, the path
+    ``'/foo/bar'`` will *not* match the route; ``'/foo/bar/'`` will
+    match, producing ``matched_path=''``, when
+    :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is ``False``
+    (the default), while it will *not* match when that option is ``True``.
+
+    (See also: :ref:`trailing_slash_in_path`)
+    """
+
+    CONSUME_MULTIPLE_SEGMENTS = True
+
+    def convert(self, value):
+        return '/'.join(value)
+
+
 BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
     ('uuid', UUIDConverter),
+    ('float', FloatConverter),
+    ('path', PathConverter),
 )

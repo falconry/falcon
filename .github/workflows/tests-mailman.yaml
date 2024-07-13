@@ -1,0 +1,37 @@
+name: Run tests (GNU Mailman 3)
+
+on:
+  # Trigger the workflow on master but also allow it to run manually.
+  workflow_dispatch:
+
+  # NOTE(vytas): Disabled as it is failing as of 2023-09.
+  #   Maybe @maxking just needs to update the Docker image (?)
+  # push:
+  #   branches:
+  #     - master
+
+jobs:
+  run_tox:
+    name: tox -e falcon-nocov
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Run tox
+        uses: docker://ghcr.io/maxking/mailman-ci-runner-falcon:master
+        with:
+          # NOTE(vytas,maxking): The below hack to sed away ::1 is needed since
+          #   Mailman’s aiosmtpd isn’t able to bind to local IPv6 loopback
+          #   inside the container and raises exceptions upon teardown.
+          args: |
+            /bin/bash -c "
+            export LC_ALL=C.UTF-8 &&
+            tools/testing/fetch_mailman.sh &&
+            sed '/::1/d' /etc/hosts > /tmp/hosts && cat /tmp/hosts > /etc/hosts &&
+            python3 --version &&
+            tox --version &&
+            tox -c .ecosystem/mailman/tox.ini -e falcon-nocov"

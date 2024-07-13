@@ -18,6 +18,7 @@ import re
 
 from falcon import constants
 from falcon import responders
+from falcon.util.deprecation import deprecated
 
 
 class SuffixedMethodNotFoundError(Exception):
@@ -27,6 +28,7 @@ class SuffixedMethodNotFoundError(Exception):
 
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
+@deprecated('This method will be removed in Falcon 4.0.')
 def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.
 
@@ -48,8 +50,17 @@ def compile_uri_template(template):
         /books/{isbn}/characters
         /books/{isbn}/characters/{name}
 
-    Also, note that if the template contains a trailing slash character,
-    it will be stripped in order to normalize the routing logic.
+    Warning:
+        If the template contains a trailing slash character, it will be
+        stripped.
+
+        Note that this is **different** from :ref:`the default behavior
+        <trailing_slash_in_path>` of :func:`~falcon.App.add_route` used
+        with the default :class:`~falcon.routing.CompiledRouter`.
+
+        The :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`
+        request option is not considered by ``compile_uri_template()``.
+
 
     Args:
         template(str): The template to compile. Note that field names are
@@ -57,6 +68,8 @@ def compile_uri_template(template):
 
     Returns:
         tuple: (template_field_names, template_regex)
+
+    .. deprecated:: 3.1
     """
 
     if not isinstance(template, str):

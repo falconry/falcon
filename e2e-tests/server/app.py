@@ -10,7 +10,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 STATIC = HERE.parent / 'static'
 
 
-def create_app():
+def create_app() -> falcon.asgi.App:
     app = falcon.asgi.App()
 
     hub = Hub()
@@ -18,6 +18,6 @@ def create_app():
     app.add_route('/sse', Events(hub))
     app.add_route('/ws/{name}', Chat(hub))
 
-    app.add_static_route('/static', str(STATIC))
+    app.add_static_route('/static', STATIC)
 
     return app

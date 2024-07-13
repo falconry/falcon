@@ -34,7 +34,7 @@ class TestWSGIServer:
         assert resp.status_code == 405
 
     def test_post(self):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(_SERVER_BASE_URL, data=body)
         assert resp.status_code == 200
         assert resp.text == body
@@ -45,7 +45,7 @@ class TestWSGIServer:
         assert resp.status_code == 400
 
     def test_post_read_bounded_stream(self):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(_SERVER_BASE_URL + 'bucket', data=body)
         assert resp.status_code == 200
         assert resp.text == body

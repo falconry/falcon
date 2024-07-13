@@ -21,7 +21,6 @@ framework itself. These functions are hoisted into the front-door
     import falcon
 
     now = falcon.http_now()
-
 """
 
 import datetime
@@ -29,7 +28,12 @@ import functools
 import http
 import inspect
 import re
-import sys
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Union
 import unicodedata
 
 from falcon import status_codes
@@ -71,41 +75,45 @@ _DEFAULT_HTTP_REASON = 'Unknown'
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
-strptime = datetime.datetime.strptime
-utcnow = datetime.datetime.utcnow
+_strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
+_utcnow: Callable[[], datetime.datetime] = functools.partial(
+    datetime.datetime.now, datetime.timezone.utc
+)
+
+# The above aliases were not underscored prior to Falcon 3.1.2.
+strptime: Callable[[str, str], datetime.datetime] = deprecated(
+    'This was a private alias local to this module; '
+    'please reference datetime.strptime() directly.'
+)(datetime.datetime.strptime)
+utcnow: Callable[[], datetime.datetime] = deprecated(
+    'This was a private alias local to this module; '
+    'please reference datetime.utcnow() directly.'
+)(datetime.datetime.utcnow)
 
 
-# NOTE(kgriffs): This is tested in the gate but we do not want devs to
-#   have to install a specific version of 3.5 to check coverage on their
-#   workstations, so we use the nocover pragma here.
-def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
-    def decorator(func):
+# NOTE(kgriffs,vytas): This is tested in the PyPy gate but we do not want devs
+#   to have to install PyPy to check coverage on their workstations, so we use
+#   the nocover pragma here.
+def _lru_cache_nop(maxsize: int) -> Callable[[Callable], Callable]:  # pragma: nocover
+    def decorator(func: Callable) -> Callable:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
-        func.cache_clear = lambda: None
+        func.cache_clear = lambda: None  # type: ignore
 
         return func
 
     return decorator
 
 
-# NOTE(kgriffs): https://bugs.python.org/issue28969
-_PYVER_TRIPLET = sys.version_info[:3]
-if _PYVER_TRIPLET >= (3, 5, 4) and _PYVER_TRIPLET != (3, 6, 0):
-    _lru_cache_safe = functools.lru_cache  # type: ignore
-else:
-    _lru_cache_safe = _lru_cache_nop  # pragma: nocover
-
-
-# PERF(kgriffs): Using lru_cache is slower on pypy when the wrapped
+# PERF(kgriffs): Using lru_cache is slower on PyPy when the wrapped
 #   function is just doing a few non-IO operations.
 if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = _lru_cache_safe  # type: ignore
+    _lru_cache_for_simple_logic = functools.lru_cache  # type: ignore
 
 
-def is_python_func(func):
+def is_python_func(func: Union[Callable, Any]) -> bool:
     """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
@@ -129,7 +137,7 @@ def is_python_func(func):
     return inspect.isfunction(func)
 
 
-def http_now():
+def http_now() -> str:
     """Return the current UTC time as an IMF-fixdate.
 
     Returns:
@@ -137,10 +145,10 @@ def http_now():
         e.g., 'Tue, 15 Nov 1994 12:45:26 GMT'.
     """
 
-    return dt_to_http(utcnow())
+    return dt_to_http(_utcnow())
 
 
-def dt_to_http(dt):
+def dt_to_http(dt: datetime.datetime) -> str:
     """Convert a ``datetime`` instance to an HTTP date string.
 
     Args:
@@ -155,7 +163,7 @@ def dt_to_http(dt):
     return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
 
 
-def http_date_to_dt(http_date, obs_date=False):
+def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime:
     """Convert an HTTP date string to a datetime instance.
 
     Args:
@@ -181,7 +189,7 @@ def http_date_to_dt(http_date, obs_date=False):
         #   over it, and setting up exception handling blocks each
         #   time around the loop, in the case that we don't actually
         #   need to check for multiple formats.
-        return strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
 
     time_formats = (
         '%a, %d %b %Y %H:%M:%S %Z',
@@ -193,7 +201,7 @@ def http_date_to_dt(http_date, obs_date=False):
     # Loop through the formats and return the first that matches
     for time_format in time_formats:
         try:
-            return strptime(http_date, time_format)
+            return _strptime(http_date, time_format)
         except ValueError:
             continue
 
@@ -201,7 +209,9 @@ def http_date_to_dt(http_date, obs_date=False):
     raise ValueError('time data %r does not match known formats' % http_date)
 
 
-def to_query_str(params, comma_delimited_lists=True, prefix=True):
+def to_query_str(
+    params: dict, comma_delimited_lists: bool = True, prefix: bool = True
+) -> str:
     """Convert a dictionary of parameters to a query string.
 
     Args:
@@ -259,7 +269,7 @@ def to_query_str(params, comma_delimited_lists=True, prefix=True):
     return query_str[:-1]
 
 
-def get_bound_method(obj, method_name):
+def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[..., Any]]:
     """Get a bound method of the given object by name.
 
     Args:
@@ -286,7 +296,7 @@ def get_bound_method(obj, method_name):
     return method
 
 
-def get_argnames(func):
+def get_argnames(func: Callable) -> List[str]:
     """Introspect the arguments of a callable.
 
     Args:
@@ -316,7 +326,9 @@ def get_argnames(func):
 
 
 @deprecated('Please use falcon.code_to_http_status() instead.')
-def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
+def get_http_status(
+    status_code: Union[str, int], default_reason: str = _DEFAULT_HTTP_REASON
+) -> str:
     """Get both the http status code and description from just a code.
 
     Warning:
@@ -354,7 +366,7 @@ def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
         return str(code) + ' ' + default_reason
 
 
-def secure_filename(filename):
+def secure_filename(filename: str) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -395,7 +407,7 @@ def secure_filename(filename):
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def http_status_to_code(status):
+def http_status_to_code(status: Union[http.HTTPStatus, int, bytes, str]) -> int:
     """Normalize an HTTP status to an integer code.
 
     This function takes a member of :class:`http.HTTPStatus`, an HTTP status
@@ -433,7 +445,7 @@ def http_status_to_code(status):
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def code_to_http_status(status):
+def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
     """Normalize an HTTP status to an HTTP status line string.
 
     This function takes a member of :class:`http.HTTPStatus`, an ``int`` status
@@ -458,17 +470,19 @@ def code_to_http_status(status):
     if isinstance(status, http.HTTPStatus):
         return '{} {}'.format(status.value, status.phrase)
 
-    if isinstance(status, str):
+    # NOTE(kgriffs): If it is a str but does not have a space, assume it is
+    #   just the number by itself.
+    if isinstance(status, str) and ' ' in status:
         return status
 
-    if isinstance(status, bytes):
+    if isinstance(status, bytes) and b' ' in status:
         return status.decode()
 
     try:
         code = int(status)
-        if not 100 <= code <= 999:
-            raise ValueError('{} is not a valid status code'.format(status))
     except (ValueError, TypeError):
+        raise ValueError('{!r} is not a valid status code'.format(status))
+    if not 100 <= code <= 999:
         raise ValueError('{!r} is not a valid status code'.format(status))
 
     try:
@@ -479,7 +493,7 @@ def code_to_http_status(status):
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
-def _encode_items_to_latin1(data):
+def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
     """Decode all key/values of a dict to Latin-1.
 
     Args:
@@ -497,7 +511,7 @@ def _encode_items_to_latin1(data):
     return result
 
 
-def _isascii(string):
+def _isascii(string: str) -> bool:
     """Return ``True`` if all characters in the string are ASCII.
 
     ASCII characters have code points in the range U+0000-U+007F.

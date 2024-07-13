@@ -1,7 +1,9 @@
 import pytest
 
 import falcon
-from falcon import ASGI_SUPPORTED, constants, testing
+from falcon import constants, testing
+import falcon.asgi
+from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
@@ -84,11 +86,6 @@ class TestErrorHandler:
     def test_caught_error_async(self, asgi):
         if not asgi:
             pytest.skip('Test only applies to ASGI')
-
-        if not ASGI_SUPPORTED:
-            pytest.skip('ASGI requires Python 3.6+')
-
-        import falcon.asgi
 
         app = falcon.asgi.App()
         app.add_route('/', ErroredClassResource())
@@ -216,9 +213,12 @@ class TestErrorHandler:
         app.add_route('/', ErroredClassResource())
         client = testing.TestClient(app)
 
-        client.app.add_error_handler(Exception, legacy_handler1)
-        client.app.add_error_handler(CustomBaseException, legacy_handler2)
-        client.app.add_error_handler(CustomException, legacy_handler3)
+        with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+            client.app.add_error_handler(Exception, legacy_handler1)
+        with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+            client.app.add_error_handler(CustomBaseException, legacy_handler2)
+        with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+            client.app.add_error_handler(CustomException, legacy_handler3)
 
         client.simulate_delete()
         client.simulate_get()
@@ -287,6 +287,7 @@ class TestNoBodyWithStatus:
     def test_data_is_set(self, body_client):
         res = body_client.simulate_get('/error')
         assert res.status == falcon.HTTP_IM_A_TEAPOT
+        assert res.status_code == 418
         assert res.content == b''
 
     def test_media_is_set(self, body_client):

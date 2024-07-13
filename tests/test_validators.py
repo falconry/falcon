@@ -1,4 +1,4 @@
-import typing
+import typing  # NOQA: F401
 
 try:
     import jsonschema as _jsonschema  # NOQA
@@ -132,8 +132,11 @@ def test_req_schema_validation_success(asgi):
 
 
 @skip_missing_dep
-def test_req_schema_validation_failure(asgi):
-    with pytest.raises(falcon.HTTPBadRequest) as excinfo:
+@pytest.mark.parametrize(
+    'exception_cls', [falcon.HTTPBadRequest, falcon.MediaValidationError]
+)
+def test_req_schema_validation_failure(asgi, exception_cls):
+    with pytest.raises(exception_cls) as excinfo:
         call_method(asgi, 'request_validated', MockReq(asgi, False), None)
 
     assert excinfo.value.description == "'message' is a required property"

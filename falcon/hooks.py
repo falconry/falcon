@@ -119,8 +119,8 @@ def after(action, *args, is_async=False, **kwargs):
             request
 
         *args: Any additional arguments will be passed to *action* in the
-            order given, immediately following the *req*, *resp*, *resource*,
-            and *params* arguments.
+            order given, immediately following the *req*, *resp* and *resource*
+            arguments.
 
     Keyword Args:
         is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
@@ -181,7 +181,7 @@ def _wrap_with_after(responder, action, action_args, action_kwargs, is_async):
         responder: The responder method to wrap.
         action: A function with a signature similar to a resource responder
             method, taking the form ``func(req, resp, resource)``.
-        action_args: Additional positional agruments to pass to *action*.
+        action_args: Additional positional arguments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
         is_async: Set to ``True`` for cythonized responders that are
             actually coroutine functions, since such responders can not
@@ -227,7 +227,7 @@ def _wrap_with_before(responder, action, action_args, action_kwargs, is_async):
         responder: The responder method to wrap.
         action: A function with a similar signature to a resource responder
             method, taking the form ``func(req, resp, resource, params)``.
-        action_args: Additional positional agruments to pass to *action*.
+        action_args: Additional positional arguments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
         is_async: Set to ``True`` for cythonized responders that are
             actually coroutine functions, since such responders can not
@@ -289,7 +289,7 @@ def _merge_responder_args(args, kwargs, argnames):
     # signature.
     for i, argname in enumerate(argnames):
         # NOTE(kgriffs): extra_argnames may contain keyword arguments,
-        # which wont be in the args list, and are already in the kwargs
+        # which won't be in the args list, and are already in the kwargs
         # dict anyway, so detect and skip them.
         if argname not in kwargs:
             kwargs[argname] = args[i]

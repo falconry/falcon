@@ -6,6 +6,7 @@ path via simulate_get(), vs. probing the router directly.
 """
 
 from datetime import datetime
+import math
 import uuid
 
 import pytest
@@ -14,7 +15,7 @@ import falcon
 from falcon import testing
 from falcon.routing.util import SuffixedMethodNotFoundError
 
-from _util import create_app  # NOQA
+from _util import as_params, create_app  # NOQA
 
 
 _TEST_UUID = uuid.uuid4()
@@ -214,6 +215,49 @@ def test_int_converter(client, uri_template):
     assert resource1.req.path == '/123'
 
 
+@pytest.mark.parametrize('id_value', [2, 2.1, 1.9])
+@pytest.mark.parametrize(
+    'uri_template,',
+    [
+        '/{id:float}',
+        '/{id:float(1)}',
+        '/{id:float(min=1.9)}',
+        '/{id:float(min=1.8, max=3)}',
+    ],
+)
+def test_float_converter(client, uri_template, id_value):
+    resource1 = IDResource()
+    client.app.add_route(uri_template, resource1)
+
+    result = client.simulate_get('/{0}'.format(id_value))
+
+    assert result.status_code == 200
+    assert resource1.called
+    assert resource1.id == id_value
+    assert resource1.req.path == '/{0}'.format(id_value)
+
+
+@pytest.mark.parametrize('value', ['nan', '-inf', 'inf'])
+def test_float_converter_non_finite_allowed(value, client):
+    resource1 = IDResource()
+    client.app.add_route('/{id:float(finite=False)}', resource1)
+
+    result = client.simulate_get('/' + value)
+
+    assert result.status_code == 200
+    assert resource1.called
+    assert not math.isfinite(resource1.id)
+
+
+def test_float_converter_non_finite_disallowed(client):
+    resource1 = IDResource()
+    client.app.add_route('/{id:float}', resource1)
+
+    result = client.simulate_get('/NaN')
+    assert result.status_code == 404
+    assert not resource1.called
+
+
 @pytest.mark.parametrize(
     'uri_template,',
     [
@@ -270,7 +314,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
 
 @pytest.mark.parametrize(
     'uri_template, path, expected',
-    [
+    as_params(
         (
             '/widgets/{widget_id:uuid}',
             '/widgets/' + _TEST_UUID_STR,
@@ -310,7 +354,8 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
             '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS[:-1] + '/orders',
             None,
         ),
-    ],
+        prefix='uuid_converter',
+    ),
 )
 def test_uuid_converter(client, resource, uri_template, path, expected):
     client.app.add_route(uri_template, resource)

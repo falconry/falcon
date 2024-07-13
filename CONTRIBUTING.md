@@ -26,28 +26,25 @@ Please note that all contributors and maintainers of this project are subject to
 
 ### Pull Requests
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8.
+Before submitting a pull request, please ensure you have added or updated tests as appropriate,
+and that all existing tests still pass with your changes.
+Please also ensure that your coding style follows PEP 8 and the ``ruff`` formatting style.
 
-You can check all this by running the following from within the Falcon project directory (requires Python 3.8 and 3.5 to be installed on your system):
-
-```bash
-$ tools/mintest.sh
-```
-
-You may also use Python 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py36" or "py37" as appropriate. Note also that due to a bug introduced in tox version 3.21, you will need to pin to 3.20 in order to run Falcon's test suite. For example:
-
+In order to reformat your code with ``ruff``, simply issue:
 
 ```bash
-$ pip install -U tox==3.20 coverage
-$ rm -f .coverage.*
-$ tox -e pep8 && tox -e py35,py37 && tools/testing/combine_coverage.sh
+$ pip install -U ruff
+$ ruff format
 ```
 
-If you are using pyenv, you will need to make sure both 3.8 and 3.5 are available in the current shell, e.g.:
+You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8, 3.10, 3.11 or 3.12:
 
 ```bash
-$ pyenv shell 3.8.0 3.5.8
+$ pip install -U tox
+$ tox --recreate
 ```
+
+You may also use a CPython 3.9 environment, although in that case ``coverage`` will likely report a false positive on missing branches, and the total coverage might fall short of 100%. These issues are caused by bugs in the interpreter itself, and are unlikely to ever get fixed.
 
 #### Reviews
 
@@ -72,12 +69,12 @@ type correct? Try running `towncrier --draft` to ensure it renders correctly.
 Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
 
 ```bash
-$ tools/mintest.sh
+$ tox
 ```
 
 It is necessary to combine test coverage from multiple environments in order to account for branches in the code that are only taken for a given Python version.
 
-The script generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
+Running the default sequence of ``tox`` environments generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
 
 ### Debugging
 
@@ -97,21 +94,21 @@ If you wish, you can customize Falcon's `tox.ini` to install alternative debugge
 A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.ini`` file). For example:
 
 ```bash
-$ tox -e py38_bench
+$ tox -e py310_bench
 ```
 
 Note that you may pass additional arguments via tox to the falcon-bench command:
 
 ```bash
-$ tox -e py38_bench -- -h
-$ tox -e py38_bench -- -b falcon -i 20000
+$ tox -e py310_bench -- -h
+$ tox -e py310_bench -- -b falcon -i 20000
 ```
 
 Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use pyenv with pyenv-virtualenv from within a falcon source directory:
 
 ```bash
-$ pyenv virtualenv 3.8.0 falcon-sandbox-38
-$ pyenv shell falcon-sandbox-38
+$ pyenv virtualenv 3.10.6 falcon-sandbox-310
+$ pyenv shell falcon-sandbox-310
 $ pip install -r requirements/bench
 $ pip install -e .
 $ falcon-bench
@@ -136,11 +133,15 @@ $ gnome-open docs/_build/html/index.html
 $ xdg-open docs/_build/html/index.html
 ```
 
+### VS Code Dev Container development environment
+
+When opening the project using the [VS Code](https://code.visualstudio.com/) IDE, if you have [Docker](https://www.docker.com/) (or some drop-in replacement such as [Podman](https://podman.io/) or [Colima](https://github.com/abiosoft/colima) or [Rancher Desktop](https://rancherdesktop.io/)) installed, you can leverage the [Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers) feature to start a container in the background with all the dependencies required to test and debug the Falcon code. VS Code integrates with the Dev Container seamlessly, which can be configured via [devcontainer.json](.devcontainer/devcontainer.json). Once you open the project in VS Code, you can execute the "Reopen in Container" command to start the Dev Container which will run the headless VS Code Server process that the local VS Code app will connect to via a [published port](https://docs.docker.com/config/containers/container-networking/#published-ports).
+
 ### Code style rules
 
 * Docstrings are required for classes, attributes, methods, and functions. Follow the
  following guidelines for docstrings:
-   * Docstrings should utilize the [napolean style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
+   * Docstrings should utilize the [napoleon style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
    * Docstrings should begin with a short (~70 characters or less) summary line that ends in a period.
        * The summary line should begin immediately after the opening quotes (do not add
     a line break before the summary line)
@@ -172,7 +173,7 @@ or in mathematical expressions implementing well-known formulas.
 
 ### Changelog
 
-We use [towncrier](https://towncrier.readthedocs.io/en/actual-freaking-docs/index.html) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
+We use [towncrier](https://towncrier.readthedocs.io/) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
 
 The newsfragment file name should have the format `{issue_number}.{fragment_type}.rst`, where the fragment type is one of `breakingchange`, `newandimproved`, `bugfix`, or `misc`. If your PR closes another issue, then the original issue number should be used for the newsfragment; otherwise, use the PR number itself.
 

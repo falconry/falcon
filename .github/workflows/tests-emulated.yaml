@@ -1,4 +1,4 @@
-name: Run tests emulated
+name: Run tests (emulated)
 
 on:
   # Trigger the workflow on master but also allow it to run manually.
@@ -9,8 +9,8 @@ on:
 
 jobs:
   run_tox_emulate:
-    name: tox -e py38_cython (${{ matrix.architecture }})
-    runs-on: ubuntu-20.04
+    name: tox -e py310_cython (${{ matrix.architecture }})
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -20,12 +20,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Cache PIP
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             .pip
@@ -41,26 +41,28 @@ jobs:
       #
       - name: Run tox s390x
         if: ${{ matrix.architecture == 's390x' }}
-        uses: docker://s390x/python:3.8-buster
+        uses: docker://s390x/python:3.10-buster
         env:
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
           # NOTE: without 'pip install ujson' tox fails to install it with "Requested ujson from <url> has different version in metadata: '0.0.0'"
+          # NOTE(vytas): installing fixtures/pbr because otherwise pip install
+          # inside tox fails with an import error on some older CPythons
           args: |
             /bin/bash -c "
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox &&
+            pip install -U fixtures pip tox &&
             python --version &&
             pip --version &&
             tox --version &&
             pip install ujson &&
-            tox -e py38_cython"
+            tox -e py310_cython"
 
       - name: Run tox arm64v8
         if: ${{ matrix.architecture == 'arm64v8' }}
-        uses: docker://arm64v8/python:3.8-buster
+        uses: docker://arm64v8/python:3.10-buster
         env:
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
@@ -69,11 +71,11 @@ jobs:
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox &&
+            pip install -U fixtures pip tox &&
             python --version &&
             pip --version &&
             tox --version &&
-            tox -e py38_cython"
+            tox -e py310_cython"
 
       - name: Fix cache permission
         run: |

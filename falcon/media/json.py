@@ -26,6 +26,8 @@ class JSONHandler(BaseHandler):
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
 
+    .. rubric:: Custom JSON library
+
     You can replace the default JSON handler by using a custom JSON library
     (see also: :ref:`custom_media_handlers`). Overriding the default JSON
     implementation is simply a matter of specifying the desired ``dumps`` and
@@ -47,6 +49,8 @@ class JSONHandler(BaseHandler):
         app = falcon.App()
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
+
+    .. rubric:: Custom serialization parameters
 
     Even if you decide to stick with the stdlib's :any:`json.dumps` and
     :any:`json.loads`, you can wrap them using :any:`functools.partial` to
@@ -93,6 +97,51 @@ class JSONHandler(BaseHandler):
                 ensure_ascii=False, sort_keys=True
             ),
         )
+
+    .. _custom-media-json-encoder:
+
+    .. rubric:: Custom JSON encoder
+
+    You can also override the default :class:`~json.JSONEncoder` by using a
+    custom Encoder and updating the media handlers for ``application/json``
+    type to use that::
+
+        import json
+        from datetime import datetime
+        from functools import partial
+
+        import falcon
+        from falcon import media
+
+        class DatetimeEncoder(json.JSONEncoder):
+            \"\"\"Json Encoder that supports datetime objects.\"\"\"
+
+            def default(self, obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                return super().default(obj)
+
+        app = falcon.App()
+
+        json_handler = media.JSONHandler(
+            dumps=partial(json.dumps, cls=DatetimeEncoder),
+        )
+        extra_handlers = {
+            'application/json': json_handler,
+        }
+
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
+    .. note:: When testing an application employing a custom JSON encoder, bear
+        in mind that :class:`~.testing.TestClient` is decoupled from the app,
+        and it simulates requests as if they were performed by a third-party
+        client (just sans network). Therefore, passing the **json** parameter
+        to :ref:`simulate_* <testing_standalone_methods>` methods will
+        effectively use the stdlib's :func:`json.dumps`. If you want to
+        serialize custom objects for testing, you will need to dump them into a
+        string yourself, and pass it using the **body** parameter instead
+        (accompanied by the ``application/json`` content type header).
 
     Keyword Arguments:
         dumps (func): Function to use when serializing JSON responses.
@@ -141,7 +190,9 @@ class JSONHandler(BaseHandler):
     async def _serialize_async_s(self, media, content_type) -> bytes:
         return self._dumps(media).encode()
 
-    def _serialize_b(self, media, content_type) -> bytes:
+    # NOTE(kgriffs): Make content_type a kwarg to support the
+    #   Request.render_body() shortcut optimization.
+    def _serialize_b(self, media, content_type=None) -> bytes:
         return self._dumps(media)
 
     async def _serialize_async_b(self, media, content_type) -> bytes:

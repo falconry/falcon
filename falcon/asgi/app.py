@@ -18,6 +18,7 @@ import asyncio
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
 import traceback
+from typing import Awaitable, Callable, Iterable, Optional, Type, Union
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware
@@ -33,7 +34,7 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
-from falcon.util.misc import http_status_to_code
+from falcon.typing import ErrorHandler, SinkPrefix
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -45,6 +46,7 @@ from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
+from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
 
@@ -52,7 +54,7 @@ from .ws import WebSocketOptions
 __all__ = ['App']
 
 
-# TODO(vytas): Clean up these foul workarounds when we drop Python 3.5 support.
+# TODO(vytas): Clean up these foul workarounds before the 4.0 release.
 MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 _EVT_RESP_EOF = {'type': EventType.HTTP_RESPONSE_BODY}
@@ -255,8 +257,7 @@ class App(falcon.app.App):
     _STATIC_ROUTE_TYPE = falcon.routing.StaticRouteAsync
 
     # NOTE(kgriffs): This makes it easier to tell what we are dealing with
-    #   without having to import falcon.asgi to get at the falcon.asgi.App
-    #   type (which we may not be able to do under Python 3.5).
+    #   without having to import falcon.asgi.
     _ASGI = True
 
     _default_responder_bad_request = falcon.responders.bad_request_async
@@ -280,7 +281,12 @@ class App(falcon.app.App):
         )
 
     @_wrap_asgi_coroutine_func
-    async def __call__(self, scope, receive, send):  # noqa: C901
+    async def __call__(  # noqa: C901
+        self,
+        scope: dict,
+        receive: Callable[[], Awaitable[dict]],
+        send: Callable[[dict], Awaitable[None]],
+    ) -> None:
         # NOTE(kgriffs): The ASGI spec requires the 'type' key to be present.
         scope_type = scope['type']
 
@@ -340,10 +346,10 @@ class App(falcon.app.App):
         resp = self._response_type(options=self.resp_options)
 
         resource = None
-        responder = None
-        params = {}
+        responder: Optional[Callable] = None
+        params: dict = {}
 
-        dependent_mw_resp_stack = []
+        dependent_mw_resp_stack: list = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -403,7 +409,7 @@ class App(falcon.app.App):
                             break
 
                 if not resp.complete:
-                    await responder(req, resp, **params)
+                    await responder(req, resp, **params)  # type: ignore
 
                 req_succeeded = True
 
@@ -464,7 +470,7 @@ class App(falcon.app.App):
                         data = text
 
             else:
-                # NOTE(vytas): Custom reponse type.
+                # NOTE(vytas): Custom response type.
                 data = await resp.render_body()
 
         except Exception as ex:
@@ -473,7 +479,7 @@ class App(falcon.app.App):
 
             req_succeeded = False
 
-        resp_status = http_status_to_code(resp.status)
+        resp_status = resp.status_code
         default_media_type = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
@@ -581,7 +587,7 @@ class App(falcon.app.App):
                     }
                 )
 
-                if watcher.done():
+                if watcher.done():  # pragma: no py39,py310 cover
                     break
 
             watcher.cancel()
@@ -651,19 +657,24 @@ class App(falcon.app.App):
             #
 
             if hasattr(stream, 'read'):
-                while True:
-                    data = await stream.read(self._STREAM_BLOCK_SIZE)
-                    if data == b'':
-                        break
-                    else:
-                        await send(
-                            {
-                                'type': EventType.HTTP_RESPONSE_BODY,
-                                # NOTE(kgriffs): Handle the case in which data == None
-                                'body': data or b'',
-                                'more_body': True,
-                            }
-                        )
+                try:
+                    while True:
+                        data = await stream.read(self._STREAM_BLOCK_SIZE)
+                        if data == b'':
+                            break
+                        else:
+                            await send(
+                                {
+                                    'type': EventType.HTTP_RESPONSE_BODY,
+                                    # NOTE(kgriffs): Handle the case in which
+                                    #   data is None
+                                    'body': data or b'',
+                                    'more_body': True,
+                                }
+                            )
+                finally:
+                    if hasattr(stream, 'close'):
+                        await stream.close()
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -698,9 +709,12 @@ class App(falcon.app.App):
                         '__aiter__ method. Error raised while iterating over '
                         'Response.stream: ' + str(ex)
                     )
-
-            if hasattr(stream, 'close'):
-                await stream.close()
+                finally:
+                    # NOTE(vytas): This could be DRYed with the above identical
+                    #   twoliner in a one large block, but OTOH we would be
+                    #   unable to reuse the current try.. except.
+                    if hasattr(stream, 'close'):
+                        await stream.close()
 
         await send(_EVT_RESP_EOF)
 
@@ -709,7 +723,7 @@ class App(falcon.app.App):
         if resp._registered_callbacks:
             self._schedule_callbacks(resp)
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template: str, resource: object, **kwargs):
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
         #   will know to validate the responder methods to make sure they
         #   are async coroutines.
@@ -718,7 +732,7 @@ class App(falcon.app.App):
 
     add_route.__doc__ = falcon.app.App.add_route.__doc__
 
-    def add_sink(self, sink, prefix=r'/'):
+    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/'):
         if not iscoroutinefunction(sink) and is_python_func(sink):
             if _should_wrap_non_coroutines():
                 sink = wrap_sync_to_async(sink)
@@ -732,7 +746,11 @@ class App(falcon.app.App):
 
     add_sink.__doc__ = falcon.app.App.add_sink.__doc__
 
-    def add_error_handler(self, exception, handler=None):
+    def add_error_handler(
+        self,
+        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        handler: Optional[ErrorHandler] = None,
+    ):
         """Register a handler for one or more exception types.
 
         Error handlers may be registered for any exception type, including
@@ -833,7 +851,7 @@ class App(falcon.app.App):
 
         if handler is None:
             try:
-                handler = exception.handle
+                handler = exception.handle  # type: ignore
             except AttributeError:
                 raise AttributeError(
                     'handler must either be specified '
@@ -863,8 +881,9 @@ class App(falcon.app.App):
                 'to be used safely with an ASGI app.'
             )
 
+        exception_tuple: tuple
         try:
-            exception_tuple = tuple(exception)
+            exception_tuple = tuple(exception)  # type: ignore
         except TypeError:
             exception_tuple = (exception,)
 
@@ -1019,30 +1038,45 @@ class App(falcon.app.App):
             asgi=True,
         )
 
-    async def _http_status_handler(self, req, resp, status, params):
-        self._compose_status_response(req, resp, status)
+    async def _http_status_handler(self, req, resp, status, params, ws=None):
+        if resp:
+            self._compose_status_response(req, resp, status)
+        elif ws:
+            code = http_status_to_ws_code(status.status)
+            falcon._logger.error(
+                '[FALCON] HTTPStatus %s raised while handling WebSocket. '
+                'Closing with code %s',
+                status,
+                code,
+            )
+            await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _http_error_handler(self, req, resp, error, params, ws=None):
         if resp:
             self._compose_error_response(req, resp, error)
-
-        if ws:
+        elif ws:
+            code = http_status_to_ws_code(error.status_code)
             falcon._logger.error(
-                '[FALCON] WebSocket handshake rejected due to raised HTTP error: %s',
+                '[FALCON] HTTPError %s raised while handling WebSocket. '
+                'Closing with code %s',
                 error,
+                code,
             )
-
-            code = 3000 + falcon.util.http_status_to_code(error.status)
             await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _python_error_handler(self, req, resp, error, params, ws=None):
         falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
         if resp:
             self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
-
-        if ws:
+        elif ws:
             await self._ws_cleanup_on_error(ws)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _ws_disconnected_error_handler(self, req, resp, error, params, ws):
         falcon._logger.debug(
@@ -1087,9 +1121,9 @@ class App(falcon.app.App):
                 await err_handler(req, resp, ex, params, **kwargs)
 
             except HTTPStatus as status:
-                self._compose_status_response(req, resp, status)
+                await self._http_status_handler(req, resp, status, params, ws=ws)
             except HTTPError as error:
-                self._compose_error_response(req, resp, error)
+                await self._http_error_handler(req, resp, error, params, ws=ws)
 
             return True
 

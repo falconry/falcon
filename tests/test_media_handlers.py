@@ -8,7 +8,8 @@ import pytest
 import ujson
 
 import falcon
-from falcon import ASGI_SUPPORTED, media, testing
+from falcon import media, testing
+from falcon.asgi.stream import BoundedStream
 from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app  # NOQA
@@ -55,24 +56,30 @@ DESERIALIZATION_PARAM_LIST = [
     (mujson.loads, b'{"test": "value"}', {'test': 'value'}),
     (ujson.loads, b'{"test": "value"}', {'test': 'value'}),
 ]
+ALL_JSON_IMPL = [
+    (json.dumps, json.loads),
+    (partial(mujson.dumps, ensure_ascii=True), mujson.loads),
+    (ujson.dumps, ujson.loads),
+]
 
 
 if orjson:
     SERIALIZATION_PARAM_LIST += [
         (orjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
     ]
-
     DESERIALIZATION_PARAM_LIST += [
         (orjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
+    ALL_JSON_IMPL += [(orjson.dumps, orjson.loads)]
+
 if rapidjson:
     SERIALIZATION_PARAM_LIST += [
         (rapidjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
     ]
-
     DESERIALIZATION_PARAM_LIST += [
         (rapidjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
+    ALL_JSON_IMPL += [(rapidjson.dumps, rapidjson.loads)]
 
 
 @pytest.mark.parametrize('func, body, expected', SERIALIZATION_PARAM_LIST)
@@ -98,11 +105,6 @@ def test_deserialization(asgi, func, body, expected):
     args = ['application/javacript', len(body)]
 
     if asgi:
-        if not ASGI_SUPPORTED:
-            pytest.skip('ASGI requires Python 3.6+')
-
-        from falcon.asgi.stream import BoundedStream
-
         s = BoundedStream(testing.ASGIRequestEventEmitter(body))
         args.insert(0, s)
 
@@ -112,6 +114,44 @@ def test_deserialization(asgi, func, body, expected):
         result = handler.deserialize(*args)
 
     assert result == expected
+
+
+@pytest.mark.parametrize('dumps, loads', ALL_JSON_IMPL)
+@pytest.mark.parametrize('subclass', (True, False))
+def test_full_app(asgi, dumps, loads, subclass):
+    if subclass:
+
+        class JSONHandlerSubclass(media.JSONHandler):
+            pass
+
+        handler = JSONHandlerSubclass(dumps=dumps, loads=loads)
+        assert handler._serialize_sync is None
+        assert handler._deserialize_sync is None
+    else:
+        handler = media.JSONHandler(dumps=dumps, loads=loads)
+        assert handler._serialize_sync is not None
+        assert handler._deserialize_sync is not None
+    app = create_app(asgi)
+    app.req_options.media_handlers[falcon.MEDIA_JSON] = handler
+    app.resp_options.media_handlers[falcon.MEDIA_JSON] = handler
+
+    if asgi:
+
+        class Resp:
+            async def on_get(self, req, res):
+                res.media = await req.get_media()
+
+    else:
+
+        class Resp:
+            def on_get(self, req, res):
+                res.media = req.get_media()
+
+    app.add_route('/go', Resp())
+
+    data = {'foo': 123, 'bar': [2, 3], 'baz': {'x': 'y'}}
+    res = testing.simulate_get(app, '/go', json=data)
+    assert res.json == data
 
 
 @pytest.mark.parametrize('monkeypatch_resolver', [True, False])

@@ -14,9 +14,15 @@
 
 """WSGI BoundedStream class."""
 
+from __future__ import annotations
+
 import io
+from typing import BinaryIO, Callable, List, Optional, TypeVar, Union
 
 __all__ = ['BoundedStream']
+
+
+Result = TypeVar('Result', bound=Union[bytes, List[bytes]])
 
 
 class BoundedStream(io.IOBase):
@@ -45,21 +51,21 @@ class BoundedStream(io.IOBase):
 
     """
 
-    def __init__(self, stream, stream_len):
+    def __init__(self, stream: BinaryIO, stream_len: int) -> None:
         self.stream = stream
         self.stream_len = stream_len
 
         self._bytes_remaining = self.stream_len
 
-    def __iter__(self):
+    def __iter__(self) -> BoundedStream:
         return self
 
-    def __next__(self):
+    def __next__(self) -> bytes:
         return next(self.stream)
 
     next = __next__
 
-    def _read(self, size, target):
+    def _read(self, size: Optional[int], target: Callable[[int], Result]) -> Result:
         """Proxy reads to the underlying stream.
 
         Args:
@@ -85,19 +91,19 @@ class BoundedStream(io.IOBase):
         self._bytes_remaining -= size
         return target(size)
 
-    def readable(self):
+    def readable(self) -> bool:
         """Return ``True`` always."""
         return True
 
-    def seekable(self):
+    def seekable(self) -> bool:
         """Return ``False`` always."""
         return False
 
-    def writable(self):
+    def writable(self) -> bool:
         """Return ``False`` always."""
         return False
 
-    def read(self, size=None):
+    def read(self, size: Optional[int] = None) -> bytes:
         """Read from the stream.
 
         Args:
@@ -111,7 +117,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(size, self.stream.read)
 
-    def readline(self, limit=None):
+    def readline(self, limit: Optional[int] = None) -> bytes:
         """Read a line from the stream.
 
         Args:
@@ -125,7 +131,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(limit, self.stream.readline)
 
-    def readlines(self, hint=None):
+    def readlines(self, hint: Optional[int] = None) -> List[bytes]:
         """Read lines from the stream.
 
         Args:
@@ -139,12 +145,12 @@ class BoundedStream(io.IOBase):
 
         return self._read(hint, self.stream.readlines)
 
-    def write(self, data):
+    def write(self, data: bytes) -> None:
         """Raise IOError always; writing is not supported."""
 
         raise IOError('Stream is not writeable')
 
-    def exhaust(self, chunk_size=64 * 1024):
+    def exhaust(self, chunk_size: int = 64 * 1024) -> None:
         """Exhaust the stream.
 
         This consumes all the data left until the limit is reached.
@@ -159,7 +165,7 @@ class BoundedStream(io.IOBase):
                 break
 
     @property
-    def eof(self):
+    def eof(self) -> bool:
         return self._bytes_remaining <= 0
 
     is_exhausted = eof

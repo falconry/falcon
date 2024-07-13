@@ -18,8 +18,7 @@ from collections import OrderedDict
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
-from falcon.util import uri
-from falcon.util.deprecation import deprecated
+from falcon.util import code_to_http_status, http_status_to_code, uri
 from falcon.util.deprecation import deprecated_args
 
 
@@ -47,7 +46,10 @@ class HTTPError(Exception):
         error in a future version of falcon.
 
     Args:
-        status (str): HTTP status code and text, such as "400 Bad Request"
+        status (Union[str,int]): HTTP status code or line (e.g.,
+            ``'400 Bad Request'``). This may be set to a member of
+            :class:`http.HTTPStatus`, an HTTP status line string or byte
+            string (e.g., ``'200 OK'``), or an ``int``.
 
     Keyword Args:
         title (str): Human-friendly error title. If not provided, defaults
@@ -81,7 +83,12 @@ class HTTPError(Exception):
             base articles related to this error (default ``None``).
 
     Attributes:
-        status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
+        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
+            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
+            status line string or byte string (e.g., ``'200 OK'``), or an
+            ``int``.
+        status_code (int): HTTP status code normalized from the ``status``
+            argument passed to the initializer.
         title (str): Error title to send to the client.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
@@ -117,7 +124,7 @@ class HTTPError(Exception):
         #   we'll probably switch over to making everything code-based to more
         #   easily support HTTP/2. When that happens, should we continue to
         #   include the reason phrase in the title?
-        self.title = title or status
+        self.title = title or code_to_http_status(status)
 
         self.description = description
         self.headers = headers
@@ -136,13 +143,9 @@ class HTTPError(Exception):
 
     __str__ = __repr__
 
-    @property  # type: ignore
-    @deprecated(
-        'has_representation is deprecated and is currently unused by falcon',
-        is_property=True,
-    )
-    def has_representation(self):
-        return True
+    @property
+    def status_code(self) -> int:
+        return http_status_to_code(self.status)
 
     def to_dict(self, obj_type=dict):
         """Return a basic dictionary representing the error.
@@ -222,74 +225,6 @@ class HTTPError(Exception):
         )
 
 
-# NOTE: initialized in falcon.media.json, that is always imported since Request/Respose
+# NOTE: initialized in falcon.media.json, that is always imported since Request/Response
 # are imported by falcon init.
 _DEFAULT_JSON_HANDLER = None
-
-
-class NoRepresentation:
-    """Mixin for ``HTTPError`` child classes that have no representation.
-
-    This class can be mixed in when inheriting from ``HTTPError``, in order
-    to override the `has_representation` property such that it always
-    returns ``False``. This, in turn, will cause Falcon to return an empty
-    response body to the client.
-
-    You can use this mixin when defining errors that either should not have
-    a body (as dictated by HTTP standards or common practice), or in the
-    case that a detailed error response may leak information to an attacker.
-
-    Note:
-        This mixin class must appear before ``HTTPError`` in the base class
-        list when defining the child; otherwise, it will not override the
-        `has_representation` property as expected.
-
-    Warning:
-        As of Falcon 3.0, this mixin class is no longer used since all Falcon
-        errors have a representation. This class is considered deprecated and
-        will be removed in a future release.
-    """
-
-    @property  # type: ignore
-    @deprecated(
-        'has_representation is deprecated and is currently unused by falcon. '
-        'The class NoRepresentation is deprecated and will be removed in a '
-        'future release',
-        is_property=True,
-    )
-    def has_representation(self):
-        return False
-
-
-class OptionalRepresentation:
-    """Mixin for ``HTTPError`` child classes that may have a representation.
-
-    This class can be mixed in when inheriting from ``HTTPError`` in order
-    to override the `has_representation` property, such that it will
-    return ``False`` when the error instance has no description
-    (i.e., the `description` kwarg was not set).
-
-    You can use this mixin when defining errors that do not include
-    a body in the HTTP response by default, serializing details only when
-    the web developer provides a description of the error.
-
-    Note:
-        This mixin class must appear before ``HTTPError`` in the base class
-        list when defining the child; otherwise, it will not override the
-        `has_representation` property as expected.
-
-    Warning:
-        As of Falcon 3.0, this mixin class is no longer used since all Falcon
-        errors have a representation. This class is considered deprecated and
-        will be removed in a future release.
-    """
-
-    @property  # type: ignore
-    @deprecated(
-        'has_representation is deprecated and is currently unused by falcon. '
-        'The class OptionalRepresentation is deprecated and will be removed '
-        'in a future release',
-        is_property=True,
-    )
-    def has_representation(self):
-        return self.description is not None

@@ -7,10 +7,9 @@ CORS
 (CORS) is an additional security check performed by modern
 browsers to prevent unauthorized requests between different domains.
 
-When implementing
-a web API, it is common to have to also implement a CORS policy. Therefore,
-Falcon provides an easy way to enable a simple CORS policy via a flag passed
-to :class:`falcon.App` or :class:`falcon.asgi.App`.
+When developing a web API, it is common to also implement a CORS
+policy. Therefore, Falcon provides an easy way to enable a simple CORS policy
+via a flag passed to :class:`falcon.App` or :class:`falcon.asgi.App`.
 
 By default, Falcon's built-in CORS support is disabled, so that any cross-origin
 requests will be blocked by the browser. Passing ``cors_enable=True`` will
@@ -59,6 +58,17 @@ Usage
             # credentials
             app = falcon.asgi.App(middleware=falcon.CORSMiddleware(
                 allow_origins='example.com', allow_credentials='*'))
+
+.. note::
+    Passing the ``cors_enable`` parameter set to ``True`` is mutually exclusive
+    with directly passing an instance of :class:`~falcon.CORSMiddleware` to the
+    application's initializer.
+
+    .. versionchanged:: 4.0
+
+       Attempt to use the combination of ``cors_enable=True`` and an additional
+       instance of :class:`~falcon.CORSMiddleware` now results in a
+       :class:`ValueError`.
 
 CORSMiddleware
 --------------

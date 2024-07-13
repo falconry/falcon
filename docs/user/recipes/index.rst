@@ -8,4 +8,5 @@ Recipes
    multipart-mixed
    output-csv
    pretty-json
+   raw-url-path
    request-id

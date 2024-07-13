@@ -32,7 +32,7 @@ WSGI tutorial::
       └── app.py
 
 We'll create a *virtualenv* using the ``venv`` module from the standard library
-(Falcon requires Python 3.6+ for ASGI)::
+(Falcon requires Python 3.7+)::
 
   $ mkdir asgilook
   $ python3 -m venv asgilook/.venv
@@ -90,7 +90,7 @@ See also: :ref:`ASGI Server Installation <install_asgi_server>`.
 
 While we're at it, let's install the handy
 `HTTPie <https://github.com/jakubroztocil/httpie>`_ HTTP client to help us
-excercise our app::
+exercise our app::
 
   $ pip install httpie
 
@@ -180,13 +180,12 @@ We can now implement a basic async image store. Save the following code as
 
 
     class Image:
-
         def __init__(self, config, image_id, size):
             self._config = config
 
             self.image_id = image_id
             self.size = size
-            self.modified = datetime.datetime.utcnow()
+            self.modified = datetime.datetime.now(datetime.timezone.utc)
 
         @property
         def path(self):
@@ -206,7 +205,6 @@ We can now implement a basic async image store. Save the following code as
 
 
     class Store:
-
         def __init__(self, config):
             self._config = config
             self._images = {}
@@ -255,6 +253,8 @@ processing.
   to be picklable (which also implies that the task must be reachable from the
   global namespace, i.e., an anonymous ``lambda`` simply won't work).
 
+.. _asgi_tutorial_image_resources:
+
 Images Resource(s)
 ------------------
 
@@ -270,7 +270,6 @@ of images. Place the code below in a file named ``images.py``:
 
 
     class Images:
-
         def __init__(self, config, store):
             self._config = config
             self._store = store
@@ -415,7 +414,8 @@ Running the application is not too dissimilar from the previous command line::
   $ uvicorn asgilook.asgi:app
 
 Provided ``uvicorn`` is started as per the above command line, let's try
-uploading some images in a separate terminal::
+uploading some images in a separate terminal (change the picture path below
+to point to an existing file)::
 
   $ http POST localhost:8000/images @/home/user/Pictures/test.png
 
@@ -545,6 +545,11 @@ area-wise) of the previous one, similar to how
 `mipmapping <https://en.wikipedia.org/wiki/Mipmap>`_ works in computer graphics.
 You may wish to experiment with this resolution distribution.
 
+After updating ``store.py``, the module should now look like this:
+
+.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+    :language: python
+
 Furthermore, it is practical to impose a minimum resolution, as any potential
 benefit from switching between very small thumbnails (a few kilobytes each) is
 likely to be overshadowed by the request overhead. As you may have noticed in
@@ -573,11 +578,6 @@ as follows:
 
             self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
             self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
-
-After updating ``store.py``, the module should now look like this:
-
-.. literalinclude:: ../../examples/asgilook/asgilook/store.py
-    :language: python
 
 Let's also add a ``Thumbnails`` resource to expose the new
 functionality. The final version of ``images.py`` reads:
@@ -682,10 +682,10 @@ small files littering our storage, it consumes CPU resources, and we would
 soon find our application crumbling under load.
 
 Let's mitigate this problem with response caching. We'll use Redis, taking
-advantage of `aioredis <https://github.com/aio-libs/aioredis>`_ for async
+advantage of `redis <https://redis.readthedocs.io/en/stable/examples/asyncio_examples.html>`_ for async
 support::
 
-  pip install "aioredis < 2.0"
+  pip install redis
 
 We will also need to serialize response data (the ``Content-Type`` header and
 the body in the first version); ``msgpack`` should do::
@@ -697,7 +697,7 @@ installing Redis server on your machine, one could also:
 
 * Spin up Redis in Docker, eg::
 
-    docker run -p 6379:6379 redis
+    docker run -p 6379:6379 redis/redis-stack:latest
 
 * Assuming Redis is installed on the machine, one could also try
   `pifpaf <https://github.com/jd/pifpaf>`_ for spinning up Redis just
@@ -706,24 +706,26 @@ installing Redis server on your machine, one could also:
     pifpaf run redis -- uvicorn asgilook.asgi:app
 
 We will perform caching with a Falcon :ref:`middleware` component. Again, note
-that all middleware callbacks must be asynchronous. Even initializing the Redis
-connection with ``aioredis.create_redis_pool()`` must be ``await``\ed. But how
-can we ``await`` coroutines from within our synchronous ``create_app()``
-function?
+that all middleware callbacks must be asynchronous. Even calling ``ping()`` and
+``close()`` on the Redis connection must be ``await``\ed. But how can we
+``await`` coroutines from within our synchronous ``create_app()`` function?
 
 `ASGI application lifespan events
 <https://asgi.readthedocs.io/en/latest/specs/lifespan.html>`_ come to the
 rescue. An ASGI application server emits these events upon application startup
 and shutdown.
 
-Let's implement the ``process_startup()`` handler in our middleware
-to execute code upon our application startup:
+Let's implement the ``process_startup()`` and ``process_shutdown()`` handlers
+in our middleware to execute code upon our application's startup and shutdown,
+respectively:
 
 .. code:: python
 
     async def process_startup(self, scope, event):
-        self.redis = await self._config.create_redis_pool(
-            self._config.redis_host)
+        await self._redis.ping()
+
+    async def process_shutdown(self, scope, event):
+        await self._redis.close()
 
 .. warning::
     The Lifespan Protocol is an optional extension; please check if your ASGI
@@ -742,16 +744,16 @@ implementations for production and testing.
     ``self.redis_host``. Such a design might prove helpful for apps that
     need to create client connections in more than one place.
 
-Assuming we call our new :ref:`configuration <asgi_tutorial_config>` items
-``redis_host`` and ``create_redis_pool()``, respectively, the final version of
-``config.py`` now reads:
+Assuming we call our new :ref:`configuration <asgi_tutorial_config>` item
+``redis_host`` the final version of ``config.py`` now reads:
 
 .. literalinclude:: ../../examples/asgilook/asgilook/config.py
     :language: python
 
 Let's complete the Redis cache component by implementing
-two more middleware methods, in addition to ``process_startup()``. Create a
-``cache.py`` module containing the following code.
+two more middleware methods, in addition to ``process_startup()`` and
+``process_shutdown()``. Create a ``cache.py`` module containing the following
+code:
 
 .. literalinclude:: ../../examples/asgilook/asgilook/cache.py
     :language: python
@@ -854,7 +856,7 @@ any problems with importing local utility modules or checking code coverage::
   $ mkdir -p tests
   $ touch tests/__init__.py
 
-Next, let's implement fixtures to replace ``uuid`` and ``aioredis``, and inject them
+Next, let's implement fixtures to replace ``uuid`` and ``redis``, and inject them
 into our tests via ``conftest.py`` (place your code in the newly created ``tests``
 directory):
 
@@ -961,6 +963,54 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     strategies such as blending different types of tests and/or running the same
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
+
+Debugging ASGI Applications
+---------------------------
+(This section also applies to WSGI applications)
+
+While developing and testing ASGI applications, understanding how to configure
+and utilize logging can be helpful, especially when you encounter unexpected
+issues or behaviors.
+
+By default, Falcon does not set up logging for you,
+but Python's built-in :mod:`logging` module provides a flexible framework for
+emitting and capturing log messages. Here's how you can set up basic logging in
+your ASGI Falcon application:
+
+.. code:: python
+
+    import falcon
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
+    class ErrorResource:
+        def on_get(self, req, resp):
+            raise Exception('Something went wrong!')
+
+    app = falcon.App()
+    app.add_route('/error', ErrorResource())
+
+
+When the above route is accessed, Falcon will catch the unhandled exception and
+automatically log an error message. Below is an example of what the log output
+might look like:
+
+.. code-block:: none
+
+    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
+    Traceback (most recent call last):
+      File "path/to/falcon/app.py", line 123, in __call__
+        resp = resource.on_get(req, resp)
+      File "/path/to/your/app.py", line 7, in on_get
+        raise Exception("Something went wrong!")
+    Exception: Something went wrong!
+
+
+.. note::
+   While logging is helpful for development and debugging, be mindful of logging
+   sensitive information. Ensure that log files are stored securely and are not
+   accessible to unauthorized users.
 
 What Now?
 ---------

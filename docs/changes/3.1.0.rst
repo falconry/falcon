@@ -1,0 +1,125 @@
+Changelog for Falcon 3.1.0
+==========================
+
+
+Summary
+-------
+
+This release contains several refinements to request validation and
+error handling, along with some tweaks to response handling for static and
+downloadable files.
+
+Due to popular demand, :class:`~falcon.testing.TestClient` and
+:class:`~falcon.testing.ASGIConductor` now expose convenience shorthand aliases
+for the ``simulate_*`` methods, i.e.,
+:func:`~falcon.testing.TestClient.simulate_get` is now also available as
+:func:`~falcon.testing.TestClient.get`, etc.
+
+Some important bugs were also fixed to ensure applications properly clean up
+response streams and do not hang when reading request bodies that are
+streamed using chunked transfer encoding.
+
+This release also adds support for CPython 3.10 and deprecates CPython 3.6.
+
+
+Changes to Supported Platforms
+------------------------------
+
+- CPython 3.10 is now fully supported. (`#1966 <https://github.com/falconry/falcon/issues/1966>`__)
+- Support for Python 3.6 is now deprecated and will be removed in Falcon 4.0.
+- As with the previous release, Python 3.5 support remains deprecated and will
+  no longer be supported in Falcon 4.0.
+
+
+New & Improved
+--------------
+
+- The :func:`jsonschema.validate <falcon.media.validators.jsonschema.validate>`
+  decorator now raises an instance of :class:`~falcon.MediaValidationError`
+  instead of the generic :class:`~falcon.HTTPBadRequest` for request media
+  validation failures. Although the default behavior is kept unaltered in a
+  backwards-compatible fashion (as the specialized exception subclasses the
+  generic one), but it can now be easily customized by adding an error handler
+  for the new class. (`#1320 <https://github.com/falconry/falcon/issues/1320>`__)
+- Due to popular demand, :class:`~falcon.testing.TestClient` and
+  :class:`~falcon.testing.ASGIConductor` now expose convenience shorthand aliases
+  for the ``simulate_*`` methods, i.e.,
+  :func:`~falcon.testing.TestClient.simulate_get` is now also available as
+  :func:`~falcon.testing.TestClient.get`, etc. (`#1806 <https://github.com/falconry/falcon/issues/1806>`__)
+- The :attr:`Request.range <falcon.Request.range>` property now has stricter
+  validation:
+
+    * When parsing a byte-range-spec with a last-byte-pos, it must be greater
+      than or equal to first-byte-pos.
+    * When parsing a suffix-byte-range-spec, suffix-length must be positive.
+
+  :func:`Static routes <falcon.App.add_static_route>` now support ``Range``
+  requests. This is useful for streaming media and resumable downloads. (`#1858 <https://github.com/falconry/falcon/issues/1858>`__)
+- Added a :attr:`Response.viewable_as <falcon.Response.viewable_as>` property;
+  this is similar to :attr:`Response.downloadable_as <falcon.Response.downloadable_as>`
+  but with an "inline" disposition type so the response will still be displayed
+  in the browser. (`#1951 <https://github.com/falconry/falcon/issues/1951>`__)
+- Added support for passing :any:`pathlib.Path` objects as `directory` in the
+  :func:`~falcon.App.add_static_route` method on all targeted Python versions. (`#1962 <https://github.com/falconry/falcon/issues/1962>`__)
+- :func:`Static routes <falcon.App.add_static_route>` now set the
+  ``Content-Length`` header indicating a served file's size
+  (or length of the rendered content range). (`#1991 <https://github.com/falconry/falcon/issues/1991>`__)
+- When called with deprecated positional arguments, methods and class
+  initializers (such as :class:`falcon.HTTPError`) will now emit a
+  user-friendlier warning indicating the fully qualified name of the method in
+  question. (`#2010 <https://github.com/falconry/falcon/issues/2010>`__)
+
+
+Fixed
+-----
+
+- If provided, the ``close()`` method of an ASGI
+  :attr:`resp.stream <falcon.asgi.Response.stream>` is now guaranteed to be
+  called even in the case of an exception raised while iterating over the data. (`#1943 <https://github.com/falconry/falcon/issues/1943>`__)
+- Previously, files could be left open when serving via an ASGI static route
+  (depending on the underlying GC implementation). This has been fixed so that a
+  file is closed explicitly after rendering the response. (`#1963 <https://github.com/falconry/falcon/issues/1963>`__)
+- When a request was streamed using the chunked transfer encoding (with no
+  ``Content-Length`` known in advance), iterating over
+  :attr:`req.stream <falcon.asgi.Request.stream>` could hang until the client had
+  disconnected. This bug has been fixed, and iteration now stops upon receiving
+  the last body chunk as expected. (`#2024 <https://github.com/falconry/falcon/issues/2024>`__)
+
+
+Misc
+----
+
+- The :func:`~falcon.routing.compile_uri_template` utility method has been
+  deprecated and will be removed in Falcon 4.0. This function was only employed
+  in the early versions of the framework, and is expected to have been fully
+  supplanted by the :class:`~falcon.routing.CompiledRouter`. In the unlikely case
+  it is still in active use, its source code can be simply copied into an
+  affected application. (`#1967 <https://github.com/falconry/falcon/issues/1967>`__)
+
+
+
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all the contributors for this release!
+
+- `abidahmadq <https://github.com/abidahmadq>`__
+- `andriyor <https://github.com/andriyor>`__
+- `CaselIT <https://github.com/CaselIT>`__
+- `Contessina <https://github.com/Contessina>`__
+- `dflss <https://github.com/dflss>`__
+- `dimucciojonathan <https://github.com/dimucciojonathan>`__
+- `forana <https://github.com/forana>`__
+- `kgriffs <https://github.com/kgriffs>`__
+- `laurent-chriqui <https://github.com/laurent-chriqui>`__
+- `maxking <https://github.com/maxking>`__
+- `mgorny <https://github.com/mgorny>`__
+- `mihaitodor <https://github.com/mihaitodor>`__
+- `nix010 <https://github.com/nix010>`__
+- `signalw <https://github.com/signalw>`__
+- `the-bets <https://github.com/the-bets>`__
+- `tipabu <https://github.com/tipabu>`__
+- `treharne <https://github.com/treharne>`__
+- `vgerak <https://github.com/vgerak>`__
+- `vytas7 <https://github.com/vytas7>`__

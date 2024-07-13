@@ -14,7 +14,8 @@
 
 """HTTPStatus exception class."""
 
-from falcon.util import deprecated
+from falcon.util import http_status_to_code
+from falcon.util.deprecation import AttributeRemovedError
 
 
 class HTTPStatus(Exception):
@@ -25,32 +26,38 @@ class HTTPStatus(Exception):
     to ``falcon.HTTPError``, but for non-error status codes.
 
     Args:
-        status (str): HTTP status code and text, such as
-            '748 Confounded by Ponies'.
+        status (Union[str,int]): HTTP status code or line (e.g.,
+            ``'400 Bad Request'``). This may be set to a member of
+            :class:`http.HTTPStatus`, an HTTP status line string or byte
+            string (e.g., ``'200 OK'``), or an ``int``.
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-        body (str): Deprecated alias to :attr:`text`. Will be removed in a future
-            Falcon version. :attr:`text` take precedence if provided.
 
     Attributes:
-        status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
+        status (Union[str,int]): The HTTP status line or integer code for
+            the status that this exception represents.
+        status_code (int): HTTP status code normalized from :attr:`status`.
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-        body (str): Deprecated alias to :attr:`text`. Will be removed in a future
-            Falcon version.
 
     """
 
     __slots__ = ('status', 'headers', 'text')
 
-    def __init__(self, status, headers=None, text=None, body=None):
+    def __init__(self, status, headers=None, text=None):
         self.status = status
         self.headers = headers
-        self.text = text if text is not None else body
+        self.text = text
+
+    @property
+    def status_code(self) -> int:
+        return http_status_to_code(self.status)
 
     @property  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
     def body(self):
-        return self.text
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )

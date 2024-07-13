@@ -34,6 +34,11 @@ HTTP Status
 .. autofunction:: falcon.code_to_http_status
 .. autofunction:: falcon.get_http_status
 
+Media types
+-----------
+
+.. autofunction:: falcon.parse_header
+
 Async
 -----
 
@@ -60,7 +65,8 @@ These functions help traverse the barrier between sync and async code.
 Other
 -----
 
-.. autofunction:: falcon.deprecated
+.. autofunction:: falcon.util.deprecated
+.. autofunction:: falcon.util.deprecated_args
 .. autofunction:: falcon.to_query_str
 .. autofunction:: falcon.get_bound_method
 .. autofunction:: falcon.secure_filename

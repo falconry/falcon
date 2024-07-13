@@ -32,10 +32,10 @@ package namespace::
             )
 
             # -- snip --
-
 """
 
 from datetime import datetime
+from typing import Optional
 
 from falcon.http_error import HTTPError
 import falcon.status_codes as status
@@ -84,6 +84,8 @@ __all__ = (
     'HTTPVersionNotSupported',
     'MediaMalformedError',
     'MediaNotFoundError',
+    'MediaValidationError',
+    'MultipartParseError',
     'OperationNotAllowed',
     'PayloadTypeError',
     'UnsupportedError',
@@ -141,7 +143,7 @@ class WebSocketDisconnected(ConnectionError):
         code (int): The WebSocket close code, as per the WebSocket spec.
     """
 
-    def __init__(self, code: int = None):
+    def __init__(self, code: Optional[int] = None):
         self.code = code or 1000  # Default to "Normal Closure"
 
 
@@ -2456,6 +2458,90 @@ class MediaMalformedError(HTTPBadRequest):
     @description.setter
     def description(self, value):
         pass
+
+
+class MediaValidationError(HTTPBadRequest):
+    """400 Bad Request.
+
+    Request media is invalid. This exception is raised by a media validator
+    (such as
+    :func:`jsonschema.validate <falcon.media.validators.jsonschema.validate>`)
+    when ``req.media`` is successfully deserialized, but fails to validate
+    against the configured schema.
+
+    The cause of this exception, if any, is stored in the ``__cause__``
+    attribute using the "raise ... from" form when raising.
+
+    Note:
+        All the arguments must be passed as keyword only.
+
+    Keyword Args:
+        title (str): Error title (default '400 Bad Request').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, *, title=None, description=None, headers=None, **kwargs):
+        super().__init__(
+            title=title,
+            description=description,
+            headers=headers,
+            **kwargs,
+        )
+
+
+class MultipartParseError(MediaMalformedError):
+    """Represents a multipart form parsing error.
+
+    This error may refer to a malformed or truncated form, usage of deprecated
+    or unsupported features, or form parameters exceeding limits configured in
+    :class:`~.media.multipart.MultipartParseOptions`.
+
+    :class:`MultipartParseError` instances raised in this module always include
+    a short human-readable description of the error.
+
+    The cause of this exception, if any, is stored in the ``__cause__`` attribute
+    using the "raise ... from" form when raising.
+
+    Args:
+        source_error (Exception): The source exception that was the cause of this one.
+    """
+
+    # NOTE(caselit): remove the description @property in MediaMalformedError
+    description = None
+
+    @deprecated_args(allowed_positional=0)
+    def __init__(self, description=None, **kwargs):
+        HTTPBadRequest.__init__(
+            self,
+            title='Malformed multipart/form-data request media',
+            description=description,
+            **kwargs,
+        )
 
 
 # -----------------------------------------------------------------------------

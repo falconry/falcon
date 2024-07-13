@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, timezone
 import functools
 import http
 import itertools
 import json
 import random
-import sys
 from urllib.parse import quote, unquote_plus
 
 import pytest
@@ -110,13 +109,12 @@ class TestFalconUtils:
         assert msg in str(warn.message)
 
     def test_http_now(self):
-        expected = datetime.utcnow()
+        expected = datetime.now(timezone.utc)
         actual = falcon.http_date_to_dt(falcon.http_now())
 
-        delta = actual - expected
-        delta_sec = abs(delta.days * 86400 + delta.seconds)
+        delta = actual.replace(tzinfo=timezone.utc) - expected
 
-        assert delta_sec <= 1
+        assert delta.total_seconds() <= 1
 
     def test_dt_to_http(self):
         assert (
@@ -382,18 +380,27 @@ class TestFalconUtils:
         result = uri.parse_query_string(query_string)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
-        assert result['c'] == ['1', '2', '3']
+        assert result['c'] == '1,2,3'
         assert result['d'] == 'test'
-        assert result['e'] == ['a', '&=,']
+        assert result['e'] == 'a,,&=,'
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
-        result = uri.parse_query_string(query_string, True)
+        result = uri.parse_query_string(query_string, True, True)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
         assert result['c'] == ['1', '2', '3']
         assert result['d'] == 'test'
         assert result['e'] == ['a', '', '&=,']
+        assert result['f'] == ['a', 'a=b']
+        assert result['é'] == 'a=b'
+
+        result = uri.parse_query_string(query_string, csv=True)
+        assert result['a'] == decoded_url
+        assert result['b'] == decoded_json
+        assert result['c'] == ['1', '2', '3']
+        assert result['d'] == 'test'
+        assert result['e'] == ['a', '&=,']
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
@@ -523,7 +530,23 @@ class TestFalconUtils:
     def test_code_to_http_status(self, v_in, v_out):
         assert falcon.code_to_http_status(v_in) == v_out
 
-    @pytest.mark.parametrize('v', [0, 13, 99, 1000, 1337.01, -99, -404.3, -404, -404.3])
+    @pytest.mark.parametrize(
+        'v',
+        [
+            0,
+            13,
+            99,
+            1000,
+            1337.01,
+            -99,
+            -404.3,
+            -404,
+            -404.3,
+            'Successful',
+            'Failed',
+            None,
+        ],
+    )
     def test_code_to_http_status_value_error(self, v):
         with pytest.raises(ValueError):
             falcon.code_to_http_status(v)
@@ -622,15 +645,17 @@ class TestFalconUtils:
             ('/api', True),
             ('/data/items/something?query=apples%20and%20oranges', True),
             ('/food?item=ð\x9f\x8d\x94', False),
-            ('\x00\x00\x7F\x00\x00\x7F\x00', True),
-            ('\x00\x00\x7F\x00\x00\x80\x00', False),
+            ('\x00\x00\x7f\x00\x00\x7f\x00', True),
+            ('\x00\x00\x7f\x00\x00\x80\x00', False),
         ],
     )
-    def test_misc_isascii(self, string, expected_ascii):
+    @pytest.mark.parametrize('method', ['isascii', '_isascii'])
+    def test_misc_isascii(self, string, expected_ascii, method):
+        isascii = getattr(misc, method)
         if expected_ascii:
-            assert misc.isascii(string)
+            assert isascii(string)
         else:
-            assert not misc.isascii(string)
+            assert not isascii(string)
 
 
 @pytest.mark.parametrize(
@@ -763,6 +788,65 @@ class TestFalconTestingUtils:
         result = client.simulate_get()
         assert result.status == falcon.HTTP_702
 
+    @pytest.mark.parametrize(
+        'simulate',
+        [
+            testing.simulate_get,
+            testing.simulate_post,
+        ],
+    )
+    @pytest.mark.parametrize(
+        'value',
+        (
+            'd\xff\xff\x00',
+            'quick fox jumps over the lazy dog',
+            '{"hello": "WORLD!"}',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+            '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+            '\xe9\xe8',
+        ),
+    )
+    def test_repr_result_when_body_varies(self, asgi, value, simulate):
+        if isinstance(value, str):
+            value = bytes(value, 'UTF-8')
+
+        if asgi:
+            resource = testing.SimpleTestResourceAsync(body=value)
+        else:
+            resource = testing.SimpleTestResource(body=value)
+
+        app = create_app(asgi)
+        app.add_route('/hello', resource)
+
+        result = simulate(app, '/hello')
+        captured_resp = resource.captured_resp
+        content = captured_resp.text
+
+        if len(value) > 40:
+            content = value[:20] + b'...' + value[-20:]
+        else:
+            content = value
+
+        args = [
+            captured_resp.status,
+            captured_resp.headers['content-type'],
+            str(content),
+        ]
+
+        expected_content = ' '.join(filter(None, args))
+
+        expected_result = 'Result<{}>'.format(expected_content)
+
+        assert str(result) == expected_result
+
+    def test_repr_without_content_type_header(self, asgi):
+        value = b'huh'
+        header = [('Not-content-type', 'no!')]
+        result = falcon.testing.Result([value], falcon.HTTP_200, header)
+
+        expected_result = 'Result<200 OK {}>'.format(value)
+        assert str(result) == expected_result
+
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
         assert not result.content
@@ -868,7 +952,7 @@ class TestFalconTestingUtils:
             '',
             'I am a \u1d0a\ua731\u1d0f\u0274 string.',
             [1, 3, 3, 7],
-            {'message': '\xa1Hello Unicode! \U0001F638'},
+            {'message': '\xa1Hello Unicode! \U0001f638'},
             {
                 'count': 4,
                 'items': [
@@ -1303,7 +1387,7 @@ class TestContextType:
     )
     def test_keys_and_values(self, context_type):
         ctx = context_type()
-        ctx.update((number, number ** 2) for number in range(1, 5))
+        ctx.update((number, number**2) for number in range(1, 5))
 
         assert set(ctx.keys()) == {1, 2, 3, 4}
         assert set(ctx.values()) == {1, 4, 9, 16}
@@ -1321,6 +1405,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         C().a_method(1, b=2)
         assert len(recwarn) == 1
+        assert 'C.a_method(...)' in str(recwarn[0].message)
 
     def test_function(self, recwarn):
         @deprecation.deprecated_args(allowed_positional=0, is_method=False)
@@ -1331,10 +1416,11 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         a_function(1, b=2)
         assert len(recwarn) == 1
+        assert 'a_function(...)' in str(recwarn[0].message)
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='module __getattr__ requires python 3.7'
+    falcon.PYTHON_VERSION < (3, 7), reason='module __getattr__ requires python 3.7'
 )
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):

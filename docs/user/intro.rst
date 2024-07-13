@@ -15,7 +15,7 @@ architectural style, and tries to do as little as possible while
 remaining highly effective.
 
 Falcon apps work with any WSGI server, and run like a champ under
-CPython 3.5+ and PyPy 3.5+.
+CPython 3.7+ and PyPy 3.7+.
 
 Features
 --------
@@ -35,7 +35,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic :ref:`HTTP error <errors>` responses
 - Straightforward exception handling
 - Snappy :ref:`testing <testing>` with WSGI/ASGI helpers and mocks
-- CPython 3.5+ and PyPy 3.5+ support
+- CPython 3.7+ and PyPy 3.7+ support
 
 How is Falcon different?
 ------------------------
@@ -69,7 +69,7 @@ take care to keep logic paths within the framework simple, shallow and
 understandable. All of this makes it easier to reason about the code and to
 debug edge cases in large-scale deployments.
 
-**Flexible.** Falcon leaves a lot of decisions and i`mplementation
+**Flexible.** Falcon leaves a lot of decisions and implementation
 details to you, the API developer. This gives you a lot of freedom to
 customize and tune your implementation. Due to Falcon's minimalist
 design, Python community members are free to independently innovate on

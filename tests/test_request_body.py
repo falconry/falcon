@@ -63,7 +63,7 @@ class TestRequestBody:
 
     def test_read_body(self, client, resource):
         client.app.add_route('/', resource)
-        expected_body = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
+        expected_body = testing.rand_string(SIZE_1_KB // 2, SIZE_1_KB)
         expected_len = len(expected_body)
         headers = {'Content-Length': str(expected_len)}
 
@@ -97,7 +97,7 @@ class TestRequestBody:
         assert len(data) == 0
 
     def test_body_stream_wrapper(self):
-        data = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
+        data = testing.rand_string(SIZE_1_KB // 2, SIZE_1_KB)
         expected_body = data.encode('utf-8')
         expected_len = len(expected_body)
 

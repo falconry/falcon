@@ -4,7 +4,6 @@ import pytest
 
 import falcon
 from falcon import errors, media, testing
-from falcon.util.deprecation import DeprecatedWarning
 
 
 @pytest.fixture
@@ -62,7 +61,7 @@ def test_json(client, media_type):
         '',
         'I am a \u1d0a\ua731\u1d0f\u0274 string.',
         ['\u2665', '\u2660', '\u2666', '\u2663'],
-        {'message': '\xa1Hello Unicode! \U0001F638'},
+        {'message': '\xa1Hello Unicode! \U0001f638'},
         {
             'description': 'A collection of primitive Python type examples.',
             'bool': False is not True and True is not False,
@@ -72,7 +71,7 @@ def test_json(client, media_type):
             'list': ['a', 'sequence', 'of', 'items'],
             'none': None,
             'str': 'ASCII string',
-            'unicode': 'Hello Unicode! \U0001F638',
+            'unicode': 'Hello Unicode! \U0001f638',
         },
     ],
 )
@@ -174,17 +173,6 @@ class TestRenderBodyPrecedence:
         resp = client.resource.captured_resp
 
         resp.text = 'body'
-        resp.data = b'data'
-        resp.media = ['media']
-
-        assert resp.render_body() == b'body'
-
-    def test_body(self, client):
-        client.simulate_get('/')
-
-        resp = client.resource.captured_resp
-        with pytest.warns(DeprecatedWarning, match='Please use text instead'):
-            resp.body = 'body'
         resp.data = b'data'
         resp.media = ['media']
 

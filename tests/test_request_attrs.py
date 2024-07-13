@@ -110,7 +110,7 @@ class TestRequestAttributes:
         # NOTE(kgriffs): Behavior for IP addresses is undefined,
         # so just make sure it doesn't blow up.
         req = create_req(asgi, host='127.0.0.1', path='/hello', headers=self.headers)
-        assert type(req.subdomain) == str
+        assert type(req.subdomain) is str
 
         # NOTE(kgriffs): Test fallback to SERVER_NAME by using
         # HTTP 1.0, which will cause .create_environ to not set
@@ -526,12 +526,27 @@ class TestRequestAttributes:
         with pytest.raises(falcon.HTTPBadRequest):
             req.range
 
+        headers = {'Range': 'bytes=--1'}
+        req = create_req(asgi, headers=headers)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
+
+        headers = {'Range': 'bytes=--0'}
+        req = create_req(asgi, headers=headers)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
+
         headers = {'Range': 'bytes=-3-'}
         req = create_req(asgi, headers=headers)
         with pytest.raises(falcon.HTTPBadRequest):
             req.range
 
         headers = {'Range': 'bytes=-3-4'}
+        req = create_req(asgi, headers=headers)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
+
+        headers = {'Range': 'bytes=4-3'}
         req = create_req(asgi, headers=headers)
         with pytest.raises(falcon.HTTPBadRequest):
             req.range
@@ -694,7 +709,6 @@ class TestRequestAttributes:
         ],
     )
     def test_date_invalid(self, asgi, header, attr):
-
         # Date formats don't conform to RFC 1123
         headers = {header: 'Thu, 04 Apr 2013'}
         expected_desc = (
@@ -980,7 +994,7 @@ class TestRequestAttributes:
     def test_etag_parsing_helper(self, asgi, header_value):
         # NOTE(kgriffs): Test a couple of cases that are not directly covered
         #   elsewhere (but that we want the helper to still support
-        #   for the sake of avoiding suprises if they are ever called without
+        #   for the sake of avoiding surprises if they are ever called without
         #   preflighting the header value).
 
         assert _parse_etags(header_value) is None

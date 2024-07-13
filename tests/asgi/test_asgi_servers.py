@@ -4,10 +4,12 @@ import hashlib
 import os
 import platform
 import random
+import signal
 import subprocess
 import sys
 import time
 
+import httpx
 import pytest
 import requests
 import requests.exceptions
@@ -25,8 +27,10 @@ _WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
-_SIZE_1_MB = _SIZE_1_KB ** 2
-
+_SIZE_1_MB = _SIZE_1_KB**2
+# NOTE(vytas): Windows specific: {Application Exit by CTRL+C}.
+#   The application terminated as a result of a CTRL+C.
+_STATUS_CONTROL_C_EXIT = 0xC000013A
 
 _REQUEST_TIMEOUT = 10
 
@@ -73,7 +77,7 @@ class TestASGIServer:
         }
 
     def test_post_multiple(self, server_base_url):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == body
@@ -104,12 +108,32 @@ class TestASGIServer:
             pass
 
     def test_post_read_bounded_stream(self, server_base_url):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(
             server_base_url + 'bucket', data=body, timeout=_REQUEST_TIMEOUT
         )
         assert resp.status_code == 200
         assert resp.text == body
+
+    def test_post_read_bounded_stream_large(self, server_base_url):
+        """Test that we can correctly read large bodies chunked server-side.
+
+        ASGI servers typically employ some type of flow control to stream
+        large request bodies to the app. This occurs regardless of whether
+        "chunked" Transfer-Encoding is employed by the client.
+        """
+
+        # NOTE(kgriffs): One would hope that flow control is effective enough
+        #   to at least prevent bursting over 1 MB.
+        size_mb = 5
+
+        body = os.urandom(_SIZE_1_MB * size_mb)
+        resp = requests.put(
+            server_base_url + 'bucket/drops', data=body, timeout=_REQUEST_TIMEOUT
+        )
+        assert resp.status_code == 200
+        assert resp.json().get('drops') > size_mb
+        assert resp.json().get('sha1') == hashlib.sha1(body).hexdigest()
 
     def test_post_read_bounded_stream_no_body(self, server_base_url):
         resp = requests.post(server_base_url + 'bucket', timeout=_REQUEST_TIMEOUT)
@@ -140,6 +164,23 @@ class TestASGIServer:
                 server_base_url + 'events',
                 timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
+
+    @pytest.mark.asyncio
+    async def test_stream_chunked_request(self, server_base_url):
+        """Regression test for https://github.com/falconry/falcon/issues/2024"""
+
+        async def emitter():
+            for _ in range(64):
+                yield b'123456789ABCDEF\n'
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.put(
+                server_base_url + 'bucket/drops',
+                content=emitter(),
+                timeout=_REQUEST_TIMEOUT,
+            )
+            resp.raise_for_status()
+            assert resp.json().get('drops') >= 1
 
 
 class TestWebSocket:
@@ -462,7 +503,13 @@ uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
     )
 
     return subprocess.Popen(
-        ('uvicorn',) + loop_options + options,
+        (
+            sys.executable,
+            '-m',
+            'uvicorn',
+        )
+        + loop_options
+        + options,
         cwd=_MODULE_DIR,
     )
 
@@ -470,6 +517,8 @@ uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
 def _daphne_factory(host, port):
     return subprocess.Popen(
         (
+            sys.executable,
+            '-m',
             'daphne',
             '--bind',
             host,
@@ -505,6 +554,8 @@ run(config)
         )
     return subprocess.Popen(
         (
+            sys.executable,
+            '-m',
             'hypercorn',
             '--bind',
             f'{host}:{port}',
@@ -520,16 +571,22 @@ run(config)
 def _can_run(factory):
     if _WIN32 and factory == _daphne_factory:
         pytest.skip('daphne does not support windows')
+
     if factory == _daphne_factory:
         try:
             import daphne  # noqa
         except Exception:
             pytest.skip('daphne not installed')
-    if factory == _hypercorn_factory:
+    elif factory == _hypercorn_factory:
         try:
             import hypercorn  # noqa
         except Exception:
             pytest.skip('hypercorn not installed')
+    elif factory == _uvicorn_factory:
+        try:
+            import uvicorn  # noqa
+        except Exception:
+            pytest.skip('uvicorn not installed')
 
 
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory, _hypercorn_factory])
@@ -566,7 +623,10 @@ def server_base_url(request):
 
             yield base_url
 
-        assert server.returncode == 0
+        # NOTE(vytas): Starting with 0.29.0, Uvicorn will propagate signal
+        #   values into the return code (which is a good practice in Unix);
+        #   see also https://github.com/encode/uvicorn/pull/1600
+        assert server.returncode in (0, -signal.SIGTERM, _STATUS_CONTROL_C_EXIT)
 
         break
 

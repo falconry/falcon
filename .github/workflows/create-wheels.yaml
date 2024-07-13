@@ -24,28 +24,26 @@ jobs:
           - "windows-latest"
           - "macos-latest"
         python-version:
-          - "3.5"
           - "3.6"
           - "3.7"
           - "3.8"
           - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
         architecture:
           - x64
-
-        include:
-          - python-version: "3.5"
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -63,9 +61,6 @@ jobs:
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -100,23 +95,20 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp35-cp35m
-          - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
+          - cp311-cp311
+          - cp312-cp312
         architecture:
           - x64
-
-        include:
-          - python-version: cp35-cp35m
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -125,35 +117,23 @@ jobs:
         env:
           py_tag: ${{ matrix.python-version }}
         run: |
-          version="${py_tag: 2:1}.${py_tag: 3:1}"
+          platform=${py_tag%%-*}
+          version=${platform:2:1}.${platform:3:3}
           echo $version
           echo "::set-output name=python-version::$version"
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ steps.linux-py-version.outputs.python-version }}
           architecture: ${{ matrix.architecture }}
 
-      - name: Create wheel for manylinux 2010 and 1
-        # this step uses the image provided by pypa here https://github.com/pypa/manylinux to generate the wheels on linux
-        # the action uses the image for manylinux2010 but can generate also a manylinux1 wheel
-        # change the tag of this image to change the image used
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2010_x86_64
-        # this action generates 3 wheels in dist/. linux manylinux1 and manylinux2010
-        with:
-          python-versions: ${{ matrix.python-version }}
-          build-requirements: "setuptools>=47 wheel>=0.34"
-          # `--no-deps` is used to only generate the wheel for the current library. Redundant in falcon since it has no dependencies
-          pip-wheel-args: "-w ./dist -v --no-deps"
-
       - name: Create wheel for manylinux 2014
-        # as previous step but for manylinux2014
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.6.0-manylinux2014_x86_64
         # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           # Remove previous original wheel just to be sure it is recreated. Should not be needed
-          pre-build-command: "rm ./dist/*-linux*.whl"
+          pre-build-command: "rm -f ./dist/*-linux*.whl"
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"
           pip-wheel-args: "-w ./dist -v --no-deps"
@@ -162,9 +142,6 @@ jobs:
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -196,7 +173,7 @@ jobs:
         os:
           - "ubuntu-latest"
         python-version:
-          - "3.9"
+          - "3.10"
         architecture:
           - x64
 
@@ -204,12 +181,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -250,29 +227,26 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp35-cp35m
-          - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
+          - cp311-cp311
+          - cp312-cp312
         architecture:
           - aarch64
           - s390x
-
-        include:
-          - python-version: cp35-cp35m
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Cache wheels
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .pip
           key: ${{ matrix.python-version }}-${{ matrix.architecture }}-pip-${{ hashFiles('requirements/tests') }}
@@ -283,8 +257,8 @@ jobs:
 
       - name: Create wheel for manylinux 2014 for arm
         if: ${{ matrix.architecture == 'aarch64' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_aarch64
-        # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
+        uses: RalfG/python-wheels-manylinux-build@v0.6.0-manylinux2014_aarch64
+        # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"
@@ -294,8 +268,6 @@ jobs:
         if: ${{ matrix.architecture == 'aarch64' }}
         uses: docker://quay.io/pypa/manylinux2014_aarch64
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
           PYTHON_VERSION: ${{ matrix.python-version }}
         with:
@@ -308,8 +280,8 @@ jobs:
 
       - name: Create wheel for manylinux 2014 for s390x
         if: ${{ matrix.architecture == 's390x' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_s390x
-        # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
+        uses: RalfG/python-wheels-manylinux-build@v0.6.0-manylinux2014_s390x
+        # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"
@@ -319,8 +291,6 @@ jobs:
         if: ${{ matrix.architecture == 's390x' }}
         uses: docker://quay.io/pypa/manylinux2014_s390x
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
           args: |
@@ -338,9 +308,9 @@ jobs:
           files: 'dist/*manylinux*'
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.10"
           architecture: "x64"
 
       - name: Publish wheel

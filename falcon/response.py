@@ -14,8 +14,11 @@
 
 """Response class."""
 
+import functools
 import mimetypes
+from typing import Optional
 
+from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
@@ -28,9 +31,10 @@ from falcon.response_helpers import header_property
 from falcon.response_helpers import is_ascii_encodable
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
+from falcon.util import http_status_to_code
 from falcon.util import structures
 from falcon.util import TimezoneGMT
-from falcon.util.deprecation import deprecated
+from falcon.util.deprecation import AttributeRemovedError, deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
@@ -41,7 +45,6 @@ _STREAM_LEN_REMOVED_MSG = (
     'The deprecated stream_len property was removed in Falcon 3.0. '
     'Please use Response.set_stream() or Response.content_length instead.'
 )
-
 
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 
@@ -58,14 +61,23 @@ class Response:
         options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        status: HTTP status code or line (e.g., ``'200 OK'``). This may be set
-            to a member of :class:`http.HTTPStatus`, an HTTP status line string
-            or byte string (e.g., ``'200 OK'``), or an ``int``.
+        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
+            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
+            status line string or byte string (e.g., ``'200 OK'``), or an
+            ``int``.
 
             Note:
                 The Falcon framework itself provides a number of constants for
                 common status codes. They all start with the ``HTTP_`` prefix,
                 as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
+
+        status_code (int): HTTP status code normalized from :attr:`status`.
+            When a code is assigned to this property, :attr:`status` is updated,
+            and vice-versa. The status code can be useful when needing to check
+            in middleware for codes that fall into a certain class, e.g.::
+
+                if resp.status_code >= 400:
+                    log.warning(f'returning error response: {resp.status_code}')
 
         media (object): A serializable object supported by the media handlers
             configured via :class:`falcon.RequestOptions`.
@@ -80,9 +92,6 @@ class Response:
                 Falcon will encode the given text as UTF-8
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
-
-        body (str): Deprecated alias for :attr:`text`. Will be removed in a
-            future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -191,15 +200,27 @@ class Response:
 
         self.context = self.context_type()
 
+    @property
+    def status_code(self) -> int:
+        return http_status_to_code(self.status)
+
+    @status_code.setter
+    def status_code(self, value):
+        self.status = value
+
     @property  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
     def body(self):
-        return self.text
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
 
     @body.setter  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
     def body(self, value):
-        self.text = value
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
 
     @property
     def data(self):
@@ -507,7 +528,7 @@ class Response:
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
-    def unset_cookie(self, name, domain=None, path=None):
+    def unset_cookie(self, name, samesite='Lax', domain=None, path=None):
         """Unset a cookie in the response.
 
         Clears the contents of the cookie, and instructs the user
@@ -529,6 +550,9 @@ class Response:
             name (str): Cookie name
 
         Keyword Args:
+            samesite (str): Allows to override the default 'Lax' same_site
+                    setting for the unset cookie.
+
             domain (str): Restricts the cookie to a specific domain and
                     any subdomains of that domain. By default, the user
                     agent will return the cookie only to the origin server.
@@ -572,7 +596,7 @@ class Response:
 
         # NOTE(CaselIT): Set SameSite to Lax to avoid setting invalid cookies.
         # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings  # noqa: E501
-        self._cookies[name]['samesite'] = 'Lax'
+        self._cookies[name]['samesite'] = samesite
 
         if domain:
             self._cookies[name]['domain'] = domain
@@ -786,6 +810,7 @@ class Response:
         hreflang=None,
         type_hint=None,
         crossorigin=None,
+        link_extension=None,
     ):
         """Append a link header to the response.
 
@@ -794,10 +819,6 @@ class Response:
         Note:
             Calling this method repeatedly will cause each link to be
             appended to the Link header value, separated by commas.
-
-        Note:
-            So-called "link-extension" elements, as defined by RFC 5988,
-            are not yet supported. See also Issue #288.
 
         Args:
             target (str): Target IRI for the resource identified by the
@@ -848,10 +869,14 @@ class Response:
                 Can take values 'anonymous' or 'use-credentials' or None.
                 (See:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
+            link_extension(iterable): Provides additional custom attributes, as
+                described in RFC 8288, Section 3.4.2. Each member of the iterable
+                must be a two-tuple in the form of (*param*, *value*).
+                (See: https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2)
 
         """
 
-        # PERF(kgriffs): Heuristic to detect possiblity of an extension
+        # PERF(kgriffs): Heuristic to detect possibility of an extension
         # relation type, in which case it will be a URL that may contain
         # reserved characters. Otherwise, don't waste time running the
         # string through uri.encode
@@ -910,6 +935,10 @@ class Response:
                 # Un-inline in case more values are supported in the future.
                 value += '; crossorigin="use-credentials"'
 
+        if link_extension is not None:
+            value += '; '
+            value += '; '.join([p + '=' + v for p, v in link_extension])
+
         _headers = self._headers
         if 'link' in _headers:
             _headers['link'] += ', ' + value
@@ -917,7 +946,9 @@ class Response:
             _headers['link'] = value
 
     # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = append_link
+    add_link = deprecated('Please use append_link() instead.', method_name='add_link')(
+        append_link
+    )
 
     cache_control = header_property(
         'Cache-Control',
@@ -1011,7 +1042,25 @@ class Response:
         ``filename*`` directive, whereas ``filename`` will contain the US
         ASCII fallback.
         """,
-        format_content_disposition,
+        functools.partial(format_content_disposition, disposition_type='attachment'),
+    )
+
+    viewable_as = header_property(
+        'Content-Disposition',
+        """Set an inline Content-Disposition header using the given filename.
+
+        The value will be used for the ``filename`` directive. For example,
+        given ``'report.pdf'``, the Content-Disposition header would be set
+        to: ``'inline; filename="report.pdf"'``.
+
+        As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+        recommendations, non-ASCII filenames will be encoded using the
+        ``filename*`` directive, whereas ``filename`` will contain the US
+        ASCII fallback.
+
+        .. versionadded:: 3.1
+        """,
+        functools.partial(format_content_disposition, disposition_type='inline'),
     )
 
     etag = header_property(
@@ -1185,6 +1234,11 @@ class ResponseOptions:
             after calling ``mimetypes.init()``.
     """
 
+    secure_cookies_by_default: bool
+    default_media_type: Optional[str]
+    media_handlers: Handlers
+    static_media_types: dict
+
     __slots__ = (
         'secure_cookies_by_default',
         'default_media_type',
@@ -1199,4 +1253,5 @@ class ResponseOptions:
 
         if not mimetypes.inited:
             mimetypes.init()
-        self.static_media_types = mimetypes.types_map
+        self.static_media_types = mimetypes.types_map.copy()
+        self.static_media_types.update(_DEFAULT_STATIC_MEDIA_TYPES)

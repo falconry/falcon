@@ -288,7 +288,7 @@ class Request:
             block indefinitely. It's a good idea to test your WSGI
             server to find out how it behaves.
 
-            This can be particulary problematic when a request body is
+            This can be particularly problematic when a request body is
             expected, but none is given. In this case, the following
             call blocks under certain WSGI servers::
 
@@ -350,7 +350,7 @@ class Request:
             header is missing.
 
         range (tuple of int): A 2-member ``tuple`` parsed from the value of the
-            Range header.
+            Range header, or ``None`` if the header is missing.
 
             The two members correspond to the first and last byte
             positions of the requested resource, inclusive. Negative
@@ -390,14 +390,25 @@ class Request:
         if_range (str): Value of the If-Range header, or ``None`` if the
             header is missing.
 
-        headers (dict): Raw HTTP headers from the request with
-            canonical dash-separated names. Parsing all the headers
-            to create this dict is done the first time this attribute
-            is accessed, and the returned object should be treated as
-            read-only. Note that this parsing can be costly, so unless you
-            need all the headers in this format, you should instead use the
-            ``get_header()`` method or one of the convenience attributes
-            to get a value for a specific header.
+        headers (dict): Raw HTTP headers from the request with dash-separated
+            names normalized to uppercase.
+
+            Note:
+                This property differs from the ASGI version of ``Request.headers``
+                in that the latter returns *lowercase* names. Middleware, such
+                as tracing and logging components, that need to be compatible with
+                both WSGI and ASGI apps should use :attr:`headers_lower` instead.
+
+            Warning:
+                Parsing all the headers to create this dict is done the first
+                time this attribute is accessed, and the returned object should
+                be treated as read-only. Note that this parsing can be costly,
+                so unless you need all the headers in this format, you should
+                instead use the ``get_header()`` method or one of the
+                convenience attributes to get a value for a specific header.
+
+        headers_lower (dict): Same as :attr:`headers` except header names
+            are normalized to lowercase.
 
         params (dict): The mapping of request query parameter names to their
             values.  Where the parameter appears multiple times in the query
@@ -415,6 +426,7 @@ class Request:
         '_cached_forwarded_prefix',
         '_cached_forwarded_uri',
         '_cached_headers',
+        '_cached_headers_lower',
         '_cached_prefix',
         '_cached_relative_uri',
         '_cached_uri',
@@ -509,6 +521,7 @@ class Request:
         self._cached_forwarded_prefix = None
         self._cached_forwarded_uri = None
         self._cached_headers = None
+        self._cached_headers_lower = None
         self._cached_prefix = None
         self._cached_relative_uri = None
         self._cached_uri = None
@@ -691,16 +704,24 @@ class Request:
             if not sep:
                 raise ValueError()
 
-            if first:
-                return (int(first), int(last or -1))
+            if first and last:
+                first, last = (int(first), int(last))
+                if last < first:
+                    raise ValueError()
+            elif first:
+                first, last = (int(first), -1)
             elif last:
-                return (-int(last), -1)
+                first, last = (-int(last), -1)
+                if first >= 0:
+                    raise ValueError()
             else:
                 msg = 'The range offsets are missing.'
                 raise errors.HTTPInvalidHeader(msg, 'Range')
 
+            return first, last
+
         except ValueError:
-            href = 'http://goo.gl/zZ6Ey'
+            href = 'https://tools.ietf.org/html/rfc7233'
             href_text = 'HTTP/1.1 Range Requests'
             msg = 'It must be a range formatted according to RFC 7233.'
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
@@ -744,8 +765,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            scheme = first_hop.scheme or self.scheme
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on own scheme
+                scheme = forwarded[0].scheme or self.scheme
+            else:
+                scheme = self.scheme
         else:
             # PERF(kgriffs): This call should normally succeed, so
             # just go for it without wasting time checking it
@@ -837,8 +862,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            host = first_hop.host or self.netloc
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on self
+                host = forwarded[0].host or self.netloc
+            else:
+                host = self.netloc
         else:
             # PERF(kgriffs): This call should normally succeed, assuming
             # that the caller is expecting a forwarded header, so
@@ -859,8 +888,6 @@ class Request:
 
     @property
     def headers(self):
-        # NOTE(kgriffs: First time here will cache the dict so all we
-        # have to do is clone it in the future.
         if self._cached_headers is None:
             headers = self._cached_headers = {}
 
@@ -876,6 +903,15 @@ class Request:
                     headers[name.replace('_', '-')] = value
 
         return self._cached_headers
+
+    @property
+    def headers_lower(self):
+        if self._cached_headers_lower is None:
+            self._cached_headers_lower = {
+                key.lower(): value for key, value in self.headers.items()
+            }
+
+        return self._cached_headers_lower
 
     @property
     def params(self):
@@ -1152,6 +1188,37 @@ class Request:
                 return default
 
             raise errors.HTTPMissingHeader(name)
+
+    def get_header_as_int(self, header, required=False):
+        """Retrieve the int value for the given header.
+
+        Args:
+            name (str): Header name, case-insensitive (e.g., 'Content-Length')
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning gracefully when the
+                header is not found (default ``False``).
+
+        Returns:
+            int: The value of the specified header if it exists,
+            or ``None`` if the header is not found and is not required.
+
+        Raises:
+            HTTPBadRequest: The header was not found in the request, but
+                it was required.
+            HttpInvalidHeader: The header contained a malformed/invalid value.
+        """
+
+        try:
+            http_int = self.get_header(header, required=required)
+            return int(http_int)
+        except TypeError:
+            # When the header does not exist and isn't required
+            return None
+        except ValueError:
+            msg = 'The value of the header must be an integer.'
+            raise errors.HTTPInvalidHeader(msg, header)
 
     def get_header_as_datetime(self, header, required=False, obs_date=False):
         """Return an HTTP header with HTTP-Date values as a datetime.
@@ -2017,6 +2084,13 @@ class RequestOptions:
             ``application/json``, ``application/x-www-form-urlencoded`` and
             ``multipart/form-data`` media types.
     """
+
+    keep_black_qs_values: bool
+    auto_parse_form_urlencoded: bool
+    auto_parse_qs_csv: bool
+    strip_url_path_trailing_slash: bool
+    default_media_type: str
+    media_handlers: Handlers
 
     __slots__ = (
         'keep_blank_qs_values',

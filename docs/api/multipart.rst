@@ -6,7 +6,7 @@ Multipart Forms
 .. contents:: :local:
 
 Falcon features easy and efficient access to submitted multipart forms by using
-:class:`falcon.media.MultipartFormHandler` to handle the
+:class:`~falcon.media.MultipartFormHandler` to handle the
 ``multipart/form-data`` :ref:`media <media>` type. This handler is enabled by
 default, allowing you to use ``req.get_media()`` to iterate over the
 :class:`body parts <falcon.media.multipart.BodyPart>` in a form:
@@ -76,6 +76,66 @@ Body Part Type
     :members:
     :exclude-members: data, media, text
 
+.. _multipart_parser_conf:
+
+Parser Configuration
+--------------------
+
+Similar to :class:`falcon.App`\'s :attr:`~falcon.App.req_options` and
+:attr:`~falcon.App.resp_options`, instantiating a
+:class:`~falcon.media.MultipartFormHandler` also fills its
+:attr:`~falcon.media.MultipartFormHandler.parse_options` attribute with a set
+of sane default values suitable for many use cases out of the box. If you need
+to customize certain form parsing aspects of your application, the preferred
+way is to directly modify the properties of this attribute on the media handler
+(parser) in question:
+
+.. code:: python
+
+    import falcon
+    import falcon.media
+
+    handler = falcon.media.MultipartFormHandler()
+
+    # Assume text fields to be encoded in latin-1 instead of utf-8
+    handler.parse_options.default_charset = 'latin-1'
+
+    # Allow an unlimited number of body parts in the form
+    handler.parse_options.max_body_part_count = 0
+
+    # Afford parsing msgpack-encoded body parts directly via part.get_media()
+    extra_handlers = {
+        falcon.MEDIA_MSGPACK: falcon.media.MessagePackHandler(),
+    }
+    handler.parse_options.media_handlers.update(extra_handlers)
+
+In order to use your customized handler in an app, simply replace the default
+handler for ``multipart/form-data`` with the new one:
+
+.. tabs::
+
+    .. group-tab:: WSGI
+
+        .. code:: python
+
+            app = falcon.App()
+
+            # handler is instantiated and configured as per the above snippet
+            app.req_options.media_handlers[falcon.MEDIA_MULTIPART] = handler
+
+    .. group-tab:: ASGI
+
+        .. code:: python
+
+            app = falcon.asgi.App()
+
+            # handler is instantiated and configured as per the above snippet
+            app.req_options.media_handlers[falcon.MEDIA_MULTIPART] = handler
+
+.. tip::
+    For more information on customizing media handlers, see also:
+    :ref:`custom_media_handlers`.
+
 Parsing Options
 ---------------
 
@@ -85,5 +145,5 @@ Parsing Options
 Parsing Errors
 --------------
 
-.. autoclass:: falcon.media.multipart.MultipartParseError
+.. autoclass:: falcon.MultipartParseError
     :members:

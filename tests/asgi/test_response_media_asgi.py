@@ -59,7 +59,7 @@ def test_json(media_type):
         '',
         'I am a \u1d0a\ua731\u1d0f\u0274 string.',
         ['\u2665', '\u2660', '\u2666', '\u2663'],
-        {'message': '\xa1Hello Unicode! \U0001F638'},
+        {'message': '\xa1Hello Unicode! \U0001f638'},
         {
             'description': 'A collection of primitive Python type examples.',
             'bool': False is not True and True is not False,
@@ -69,7 +69,7 @@ def test_json(media_type):
             'list': ['a', 'sequence', 'of', 'items'],
             'none': None,
             'str': 'ASCII string',
-            'unicode': 'Hello Unicode! \U0001F638',
+            'unicode': 'Hello Unicode! \U0001f638',
         },
     ],
 )
@@ -221,7 +221,6 @@ def run_test(test_fn):
 
     class TestResource:
         async def on_get(self, req, resp):
-
             await test_fn(resp)
 
             resp.text = None
@@ -237,17 +236,6 @@ class TestRenderBodyPrecedence:
     def test_text(self):
         async def test(resp):
             resp.text = 'body'
-            resp.data = b'data'
-            resp.media = ['media']
-
-            assert await resp.render_body() == b'body'
-
-        run_test(test)
-
-    def test_body(self):
-        async def test(resp):
-            with pytest.warns(DeprecatedWarning, match='Please use text instead'):
-                resp.body = 'body'
             resp.data = b'data'
             resp.media = ['media']
 

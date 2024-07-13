@@ -1,24 +1,33 @@
-coverage>=4.1
-pytest
+coverage >= 4.1
+# TODO(vytas): Our use of testtools breaks under pytest 8.2 along the lines of
+#   https://github.com/pytest-dev/pytest/issues/12263, unpin when fixed
+#   (or drop support for testtools altogether?)
+pytest >= 7.0, < 8.2
 pyyaml
 requests
-testtools
+# TODO(vytas): Check if testtools still brings anything to the table, and
+#   re-enable if/when unittest2 is adjusted to support CPython 3.10.
+testtools; python_version < '3.10'
 
 # ASGI Specific (daphne is installed on a its own tox env)
-pytest-asyncio
-httpx; python_version >= '3.6'
-uvicorn; python_version >= '3.6'
-aiofiles; python_version >= '3.6'
-websockets; python_version >= '3.6'
+# TODO(vytas): Some ASGI tests hang with pytest-asyncio-0.23 on 3.8 & 3.9.
+pytest-asyncio < 0.22.0
+aiofiles
+httpx
+uvicorn >= 0.17.0
+websockets
 
 # Handler Specific
-cbor2; python_version >= '3.6'
+cbor2
 msgpack
 mujson
 ujson
 
-# it's slow to compile on emulated architectures
+# it's slow to compile on emulated architectures; wheels missing for some EoL interpreters
 python-rapidjson; platform_machine != 's390x' and platform_machine != 'aarch64'
 
-# python_version >= '3.6': arm64 wheels are missing for py35
-orjson; python_version >= '3.6' and platform_python_implementation != 'PyPy' and platform_machine != 's390x'
+# wheels are missing some EoL interpreters and non-x86 platforms; build would fail unless rust is available
+orjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
+
+# Images for 3.7 on emulated architectures seem to only have OpenSSL 1.0.2
+urllib3 < 2.0; python_version <= '3.7'

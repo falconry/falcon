@@ -10,6 +10,7 @@ import falcon
 from falcon import media, testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
+from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 
@@ -17,13 +18,13 @@ from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 try:
     import rapidjson  # type: ignore
 except ImportError:
-    rapidjson = None
+    rapidjson = None  # type: ignore
 
 
 try:
     import msgpack  # type: ignore
 except ImportError:
-    msgpack = None
+    msgpack = None  # type: ignore
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -197,7 +198,8 @@ async def test_echo():  # noqa: C901
     app.add_route('/{p1}/{p2}', resource)
 
     async with testing.ASGIConductor(app) as c:
-        async with c.simulate_ws('/v1/v2', headers={}) as ws:
+        # NOTE(vytas): Using the websocket() alias.
+        async with c.websocket('/v1/v2', headers={}) as ws:
             assert (await ws.receive_text()) == 'v1:v2:hello:42'
 
             for i in range(producer_loop):
@@ -338,10 +340,11 @@ async def test_client_disconnect_early(  # noqa: C901
                             #   the case of a closed connection while waiting on
                             #   more data.
                             recv_task = falcon.create_task(ws.receive_data())
-                            await asyncio.sleep(
-                                0
-                            )  # Ensure recv_task() has a chance to get ahead
-                            await asyncio.wait([recv_task, ws.close(4099)])
+                            # Ensure recv_task() has a chance to get ahead
+                            await asyncio.sleep(0)
+                            ws_close = ws.close(4099)
+                            ws_close = asyncio.create_task(ws_close)
+                            await asyncio.wait([recv_task, ws_close])
 
                         self.data_received.set()
 
@@ -367,6 +370,13 @@ async def test_client_disconnect_early(  # noqa: C901
                     await ws.send_data(sample_data)
                     await resource.data_received.wait()
                     assert resource.data == sample_data
+
+                # NOTE(vytas): When testing the case where the server
+                #   explicitly closes the connection, try to receive some data
+                #   before closing from the client side (and potentially
+                #   winning the async race of which side closes first).
+                if explicit_close_server:
+                    await ws.receive_data()
 
                 if explicit_close_client:
                     await ws.close(4042)
@@ -432,7 +442,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
                 for __ in range(3):
                     try:
                         await ws.receive_media()
-                    except (ValueError):
+                    except ValueError:
                         self.deserialize_error_count += 1
             finally:
                 self.finished.set()
@@ -457,9 +467,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: str) -> object:
                 return rapidjson.loads(payload)
 
-        app.ws_options.media_handlers[
-            falcon.WebSocketPayloadType.TEXT
-        ] = RapidJSONHandler()
+        app.ws_options.media_handlers[falcon.WebSocketPayloadType.TEXT] = (
+            RapidJSONHandler()
+        )
 
     if custom_data:
 
@@ -471,9 +481,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: bytes) -> object:
                 return cbor2.loads(payload)
 
-        app.ws_options.media_handlers[
-            falcon.WebSocketPayloadType.BINARY
-        ] = CBORHandler()
+        app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = (
+            CBORHandler()
+        )
 
     async with conductor as c:
         async with c.simulate_ws() as ws:
@@ -493,7 +503,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             #    ensure we aren't getting any false-positives.
             await ws.send_text('"DEADBEEF"')
             await ws.send_text('DEADBEEF')
-            await ws.send_data(b'\xDE\xAD\xBE\xEF')
+            await ws.send_data(b'\xde\xad\xbe\xef')
 
             await resource.finished.wait()
 
@@ -1079,9 +1089,36 @@ async def test_ws_simulator_collect_edge_cases(conductor):
             event = await ws._emit()
 
 
+@pytest.mark.asyncio
+async def test_ws_responder_never_ready(conductor, monkeypatch):
+    async def noop_close(obj, code=None):
+        pass
+
+    class SleepyResource:
+        async def on_websocket(self, req, ws):
+            for i in range(10):
+                await asyncio.sleep(0.001)
+
+    conductor.app.add_route('/', SleepyResource())
+
+    # NOTE(vytas): It seems that it is hard to impossible to hit the second
+    #   `await ready_waiter` of the _WSContextManager on CPython 3.12 due to
+    #   different async code optimizations, so we mock away WebSocket.close.
+    monkeypatch.setattr(WebSocket, 'close', noop_close)
+
+    # NOTE(vytas): Shorten the timeout so that we do not wait for 5 seconds.
+    monkeypatch.setattr(
+        testing.ASGIWebSocketSimulator, '_DEFAULT_WAIT_READY_TIMEOUT', 0.5
+    )
+
+    async with conductor as c:
+        with pytest.raises(asyncio.TimeoutError):
+            async with c.simulate_ws():
+                pass
+
+
 @pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
 def test_msgpack_missing():
-
     options = WebSocketOptions()
     handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]
 
@@ -1090,3 +1127,132 @@ def test_msgpack_missing():
 
     with pytest.raises(RuntimeError):
         handler.deserialize(b'{}')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', [200, 500, 422, 400])
+@pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
+@pytest.mark.parametrize('accept', [True, False])
+async def test_ws_http_error_or_status_response(conductor, status, thing, accept):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            if accept:
+                await ws.accept()
+            raise thing(status)
+
+    conductor.app.add_route('/', Resource())
+    exp_code = 3000 + status
+
+    async with conductor as c:
+        if accept:
+            async with c.simulate_ws() as ws:
+                # Make sure the responder has a chance to reach the raise point
+                for _ in range(3):
+                    await asyncio.sleep(0)
+                assert ws.closed
+                assert ws.close_code == exp_code
+        else:
+            with pytest.raises(falcon.WebSocketDisconnected) as err:
+                async with c.simulate_ws():
+                    pass
+            assert err.value.code == exp_code
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', [200, 500, 422, 400])
+@pytest.mark.parametrize(
+    'thing',
+    [
+        falcon.HTTPStatus,
+        falcon.HTTPError,
+    ],
+)
+@pytest.mark.parametrize('place', ['request', 'resource'])
+async def test_ws_http_error_or_status_middleware(conductor, status, thing, place):
+    called = False
+
+    class Resource:
+        async def on_websocket(self, req, ws):
+            nonlocal called
+            called = True
+
+    class Middleware:
+        async def process_request_ws(self, req, ws):
+            if place == 'request':
+                raise thing(status)
+
+        async def process_resource_ws(self, req, ws, res, params):
+            if place == 'resource':
+                raise thing(status)
+
+    conductor.app.add_route('/', Resource())
+    conductor.app.add_middleware(Middleware())
+    exp_code = 3000 + status
+
+    async with conductor as c:
+        with pytest.raises(falcon.WebSocketDisconnected) as err:
+            async with c.simulate_ws():
+                pass
+        assert err.value.code == exp_code
+    assert not called
+
+
+class FooBarError(Exception):
+    pass
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', [200, 500, 422, 400])
+@pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
+@pytest.mark.parametrize(
+    'place', ['request', 'resource', 'ws_before_accept', 'ws_after_accept']
+)
+@pytest.mark.parametrize('handler_has_ws', [True, False])
+async def test_ws_http_error_or_status_error_handler(
+    conductor, status, thing, place, handler_has_ws
+):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            if place == 'ws_before_accept':
+                raise FooBarError
+            await ws.accept()
+            if place == 'ws_after_accept':
+                raise FooBarError
+
+    class Middleware:
+        async def process_request_ws(self, req, ws):
+            if place == 'request':
+                raise FooBarError
+
+        async def process_resource_ws(self, req, ws, res, params):
+            if place == 'resource':
+                raise FooBarError
+
+    if handler_has_ws:
+
+        async def handle_foobar(req, resp, ex, param, ws=None):  # type: ignore
+            raise thing(status)
+
+    else:
+
+        async def handle_foobar(req, resp, ex, param):  # type: ignore
+            raise thing(status)
+
+    conductor.app.add_route('/', Resource())
+    conductor.app.add_middleware(Middleware())
+    conductor.app.add_error_handler(FooBarError, handle_foobar)
+    exp_code = 3000 + status
+
+    async with conductor as c:
+        if place == 'ws_after_accept':
+            async with c.simulate_ws() as ws:
+                # Make sure the responder has a chance to reach the raise point
+                for _ in range(3):
+                    await asyncio.sleep(0)
+                assert ws.closed
+                assert ws.close_code == exp_code
+        else:
+            with pytest.raises(falcon.WebSocketDisconnected) as err:
+                async with c.simulate_ws():
+                    pass
+            assert err.value.code == exp_code

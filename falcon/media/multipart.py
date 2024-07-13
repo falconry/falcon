@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Vytautas Liuolia.
+# Copyright 2019-2023 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
 
 """Multipart form media handler."""
 
-import cgi
 import re
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
+from falcon.errors import MultipartParseError
 from falcon.media.base import BaseHandler
 from falcon.stream import BoundedStream
 from falcon.util import BufferedReader
 from falcon.util import misc
-from falcon.util.deprecation import deprecated_args
+from falcon.util.mediatypes import parse_header
 
 
 # TODO(vytas):
@@ -45,44 +45,14 @@ _CRLF = b'\r\n'
 _CRLF_CRLF = _CRLF + _CRLF
 
 
-class MultipartParseError(errors.MediaMalformedError):
-    """Represents a multipart form parsing error.
-
-    This error may refer to a malformed or truncated form, usage of deprecated
-    or unsupported features, or form parameters exceeding limits configured in
-    :class:`MultipartParseOptions`.
-
-    :class:`MultipartParseError` instances raised in this module always include
-    a short human-readable description of the error.
-
-    The cause of this exception, if any, is stored in the ``__cause__`` attribute
-    using the "raise ... from" form when raising.
-
-    Args:
-        source_error (Exception): The source exception that was the cause of this one.
-    """
-
-    # NOTE(caselit): remove the description @property in MediaMalformedError
-    description = None
-
-    @deprecated_args(allowed_positional=0)
-    def __init__(self, description=None, **kwargs):
-        errors.HTTPBadRequest.__init__(
-            self,
-            title='Malformed multipart/form-data request media',
-            description=description,
-            **kwargs,
-        )
-
-
 # TODO(vytas): Consider supporting -charset- stuff.
 #   Does anyone use that (?)
 class BodyPart:
     """Represents a body part in a multipart form.
 
     Note:
-        `BodyPart` is meant to be instantiated directly only by the
-        `MultipartForm` parser.
+        :class:`BodyPart` is meant to be instantiated directly only by the
+        :class:`MultipartFormHandler` parser.
 
     Attributes:
         content_type (str): Value of the Content-Type header, or the multipart
@@ -130,7 +100,7 @@ class BodyPart:
             wrt using this name as a filename on a regular file system.
 
             If `filename` is empty or unset when referencing this property, an
-            instance of :class:`MultipartParseError` will be raised.
+            instance of :class:`.MultipartParseError` will be raised.
 
             See also: :func:`~.secure_filename`
 
@@ -268,7 +238,7 @@ class BodyPart:
 
         If decoding fails due to invalid `data` bytes (for the specified
         encoding), or the specified encoding itself is unsupported, a
-        :class:`MultipartParseError` will be raised when referencing this
+        :class:`.MultipartParseError` will be raised when referencing this
         property.
 
         Note:
@@ -279,7 +249,7 @@ class BodyPart:
             str: The part decoded as a text string provided the part is
             encoded as ``text/plain``, ``None`` otherwise.
         """
-        content_type, options = cgi.parse_header(self.content_type)
+        content_type, options = parse_header(self.content_type)
         if content_type != 'text/plain':
             return None
 
@@ -302,10 +272,9 @@ class BodyPart:
     @property
     def filename(self):
         if self._filename is None:
-
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
-                self._content_disposition = cgi.parse_header(value.decode())
+                self._content_disposition = parse_header(value.decode())
 
             _, params = self._content_disposition
 
@@ -338,10 +307,9 @@ class BodyPart:
     @property
     def name(self):
         if self._name is None:
-
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
-                self._content_disposition = cgi.parse_header(value.decode())
+                self._content_disposition = parse_header(value.decode())
 
             _, params = self._content_disposition
             self._name = params.get('name')
@@ -506,6 +474,13 @@ class MultipartFormHandler(BaseHandler):
        over the media object.
 
     For examples on parsing the request form, see also: :ref:`multipart`.
+
+    Attributes:
+        parse_options (MultipartParseOptions):
+            Configuration options for the multipart form parser and instances
+            of :class:`~falcon.media.multipart.BodyPart` it yields.
+
+            See also: :ref:`multipart_parser_conf`.
     """
 
     _ASGI_MULTIPART_FORM = None
@@ -516,10 +491,7 @@ class MultipartFormHandler(BaseHandler):
     def _deserialize_form(
         self, stream, content_type, content_length, form_cls=MultipartForm
     ):
-        if not form_cls:
-            raise NotImplementedError
-
-        _, options = cgi.parse_header(content_type)
+        _, options = parse_header(content_type)
         try:
             boundary = options['boundary']
         except KeyError:
@@ -563,24 +535,32 @@ class MultipartFormHandler(BaseHandler):
 class MultipartParseOptions:
     """Defines a set of configurable multipart form parser options.
 
+    An instance of this class is exposed via the
+    :attr:`MultipartFormHandler.parse_options
+    <falcon.media.MultipartFormHandler.parse_options>` attribute.
+    The handler's options are also passed down to every :class:`BodyPart`
+    it instantiates.
+
+    See also: :ref:`multipart_parser_conf`.
+
     Attributes:
         default_charset (str): The default character encoding for
             :meth:`text fields <BodyPart.get_text>` (default: ``utf-8``).
 
         max_body_part_count (int): The maximum number of body parts in the form
             (default: 64). If the form contains more parts than this number,
-            an instance of :class:`MultipartParseError` will be raised. If this
+            an instance of :class:`.MultipartParseError` will be raised. If this
             option is set to 0, no limit will be imposed by the parser.
 
         max_body_part_buffer_size (int): The maximum number of bytes to buffer
             and return when the :meth:`BodyPart.get_data` method is called
             (default: 1 MiB). If the body part size exceeds this value, an
-            instance of :class:`MultipartParseError` will be raised.
+            instance of :class:`.MultipartParseError` will be raised.
 
         max_body_part_headers_size (int): The maximum size (in bytes) of the
             body part headers structure (default: 8192). If the body part
             headers size exceeds this value, an instance of
-            :class:`MultipartParseError` will be raised.
+            :class:`.MultipartParseError` will be raised.
 
         media_handlers (Handlers): A dict-like object for configuring the
             media-types to handle. By default, handlers are provided for the

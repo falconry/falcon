@@ -160,6 +160,56 @@ try one of the generic
 If you use an API gateway, you might also look into what CORS functionality
 it provides at that level.
 
+Why is my request with authorization blocked despite ``cors_enable``?
+---------------------------------------------------------------------
+
+When you are making a cross-origin request from the browser (or another HTTP
+client verifying CORS policy), and the request is authenticated using the
+Authorization header, the browser adds ``authorization`` to
+Access-Control-Request-Headers in the preflight (``OPTIONS``) request,
+however, the actual authorization credentials are omitted at this stage.
+
+If your request authentication/authorization is performed in a
+:ref:`middleware <middleware>` component which rejects requests lacking
+authorization credentials by raising an instance of :class:`~.HTTPUnauthorized`
+(or rendering a 4XX response in another way), a common pitfall is that even an
+``OPTIONS`` request (which is lacking authorization as per the above
+explanation) yields an error in this manner. As a result of the failed
+preflight, the browser chooses not proceed with the main request.
+
+If you have implemented the authorization middleware yourself, you can simply
+let ``OPTIONS`` pass through:
+
+.. code:: python
+
+    class MyAuthMiddleware:
+        def process_request(self, req, resp):
+            # NOTE: Do not authenticate OPTIONS requests.
+            if req.method == 'OPTIONS':
+                return
+
+            # -- snip --
+
+            # My authorization logic...
+
+Alternatively, if the middleware comes from a third-party library,
+it may be more practical to subclass it:
+
+.. code:: python
+
+    class CORSAwareMiddleware(SomeAuthMiddleware):
+        def process_request(self, req, resp):
+            # NOTE: Do not authenticate OPTIONS requests.
+            if req.method != 'OPTIONS':
+                super().process_request(req, resp)
+
+In the case middleware in question instead hooks into ``process_resource()``,
+you can use a similar treatment.
+
+If you tried the above, and you still suspect the problem lies within Falcon's
+:ref:`CORS middleware <cors>`, it might be a bug! :ref:`Let us know <help>` so
+we can help.
+
 How do I implement redirects within Falcon?
 -------------------------------------------
 
@@ -379,6 +429,32 @@ order to handle all three routes:
     app.add_route('/game/{game_id}/state', game, suffix='state')
     app.add_route('/game/ping', game, suffix='ping')
 
+.. _routing_encoded_slashes:
+
+Why is my URL with percent-encoded forward slashes (``%2F``) routed incorrectly?
+--------------------------------------------------------------------------------
+This is an unfortunate artifact of the WSGI specification, which offers no
+standard means of accessing the "raw" request URL. According to PEP 3333,
+`the recommended way to reconstruct a request's URL path
+<https://www.python.org/dev/peps/pep-3333/#url-reconstruction>`_ is using the
+``PATH_INFO`` CGI variable, which is already presented percent-decoded,
+effectively making originally percent-encoded forward slashes (``%2F``)
+indistinguishable from others passed verbatim (and intended to separate URI
+fields).
+
+Although not standardized, some WSGI servers provide the raw URL as a
+non-standard extension; for instance, Gunicorn exposes it as ``RAW_URI``,
+uWSGI calls it ``REQUEST_URI``, etc. You can implement a WSGI (or ASGI, see the
+discussion below) middleware component to overwrite the request path with the
+path component of the raw URL, see more in the following recipe:
+:ref:`raw_url_path_recipe`.
+
+In contrast to WSGI, the ASGI specification does define a standard connection
+HTTP scope variable name (``raw_path``) for the unmodified HTTP path. However,
+it is not mandatory, and some applications servers may be unable to provide
+it. Nevertheless, we are exploring the possibility of adding an optional
+feature to use this raw path for routing in the ASGI flavor of the framework.
+
 Extensibility
 ~~~~~~~~~~~~~
 
@@ -401,8 +477,8 @@ How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
 You can inject extra responder kwargs from a hook by adding them
 to the *params* dict passed into the hook. You can also set custom attributes
-on the ``req.context`` object, as a way of passing contextual information
-around:
+on the :attr:`req.context <falcon.Request.context>` object, as a way of passing
+contextual information around:
 
 .. code:: python
 
@@ -439,7 +515,7 @@ plain HTTP 500 error. To provide your own 500 logic, you can add a custom error
 handler for Python's base :class:`Exception` type. This will not affect the
 default handlers for :class:`~.HTTPError` and :class:`~.HTTPStatus`.
 
-See :ref:`errors` and the :meth:`falcon.API.add_error_handler` docs for more
+See :ref:`errors` and the :meth:`falcon.App.add_error_handler` docs for more
 details.
 
 Request Handling
@@ -449,7 +525,8 @@ How do I authenticate requests?
 -------------------------------
 Hooks and middleware components can be used together to authenticate and
 authorize requests. For example, a middleware component could be used to
-parse incoming credentials and place the results in ``req.context``.
+parse incoming credentials and place the results in
+:attr:`req.context <falcon.Request.context>`.
 Downstream components or hooks could then use this information to
 authorize the request, taking into account the user's role and the requested
 resource.
@@ -495,13 +572,17 @@ in for either path will be sent to the same resource.
 
 Why is my query parameter missing from the req object?
 ------------------------------------------------------
-If a query param does not have a value, Falcon will by default ignore that
-parameter. For example, passing ``'foo'`` or ``'foo='`` will result in the
-parameter being ignored.
+If a query param does not have a value and the
+:attr:`~falcon.RequestOptions.keep_blank_qs_values` request option is set to
+``False`` (the default as of Falcon 2.0+ is ``True``), Falcon will ignore that
+parameter.
+For example, passing ``'foo'`` or ``'foo='`` will result in the parameter being
+ignored.
 
-If you would like to recognize such parameters, you must set the
-`keep_blank_qs_values` request option to ``True``. Request options are set
-globally for each instance of :class:`falcon.API` via the
+If you would like to recognize such parameters, the
+:attr:`~falcon.RequestOptions.keep_blank_qs_values` request option should be
+set to ``True`` (or simply kept at its default value in Falcon 2.0+). Request
+options are set globally for each instance of :class:`falcon.App` via the
 :attr:`~falcon.App.req_options` property. For example:
 
 .. code:: python
@@ -554,8 +635,7 @@ installed by default, thus making the POSTed form available as
 
 POSTed form parameters may also be read directly from
 :attr:`~falcon.Request.stream` and parsed via
-:meth:`falcon.uri.parse_query_string` or
-`urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
+:meth:`falcon.uri.parse_query_string` or :func:`urllib.parse.parse_qs`.
 
 .. _access_multipart_files:
 
@@ -588,17 +668,43 @@ The `stream` of a body part is a file-like object implementing the ``read()``
 method, making it compatible with ``boto3``\'s
 `upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
 
-.. code:: python
+.. tabs::
 
-    import boto3
+    .. group-tab:: WSGI
 
-    # -- snip --
+        .. code:: python
 
-    s3 = boto3.client('s3')
+            import boto3
 
-    for part in req.media:
-        if part.name == 'myfile':
-            s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+            # -- snip --
+
+            s3 = boto3.client('s3')
+
+            for part in req.media:
+                if part.name == 'myfile':
+                    s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+
+    .. group-tab:: ASGI
+
+        .. code:: python
+
+            import aioboto3
+
+            # -- snip --
+
+            session = aioboto3.Session()
+
+            form = await req.get_media()
+            async for part in form:
+                if part.name == 'myfile':
+                    async with session.client('s3') as s3:
+                        await s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+
+        .. note::
+            The ASGI snippet requires the
+            `aioboto3 <https://pypi.org/project/aioboto3/>`__ async wrapper in
+            lieu of ``boto3`` (as the latter only offers a synchronous
+            interface at the time of writing).
 
 .. note::
    Falcon is not endorsing any particular cloud service provider, and AWS S3
@@ -659,7 +765,7 @@ below:
             }
 
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/locations', LocationResource())
 
 In the example above, ``LocationResource`` expects a query string containing
@@ -704,15 +810,16 @@ demonstrated above.
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
 
-In Falcon 1.3 we shipped initial support for
-`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_.
-We’ve discussed building on this feature to support consuming multiple path
-segments ala Flask. This work is currently planned to commence after the 3.0
-release.
+Falcon 4 shipped initial support for
+`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_
+that can match multiple segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
+is capable of consuming multiple path segments when placed at the end of the URL template.
 
-In the meantime, the workaround is to percent-encode the forward slash. If you
-don’t control the clients and can't enforce this, you can implement a Falcon
-middleware component to rewrite the path before it is routed.
+In previous versions, you can work around the issue by implementing a Falcon
+middleware component to rewrite the path before it is routed. If you control
+the clients, you can percent-encode forward slashes inside the field in
+question, however, note that pre-processing is unavoidable in order to access
+the raw encoded URI too. See also: :ref:`routing_encoded_slashes`
 
 .. _bare_class_context_type:
 
@@ -764,38 +871,41 @@ types:
 Response Handling
 ~~~~~~~~~~~~~~~~~
 
-When would I use media, data, and stream?
------------------------------------------
+When would I use media, data, text, and stream?
+-----------------------------------------------
 
-These three parameters are mutually exclusive, you should only set one when
+These four attributes are mutually exclusive, you should only set one when
 defining your response.
 
-:ref:`resp.media <media>` is used when you want to use the Falcon serialization
-mechanism. Just assign data to the attribute and falcon will take care of the
-rest.
+:attr:`resp.media <falcon.Response.media>` is used when you want to use the
+Falcon serialization mechanism. Just assign data to the attribute and Falcon
+will take care of the rest.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.media = { 'hello': 'World' }
+            resp.media = {'hello': 'World'}
 
-`resp.text` and `resp.data` are very similar, they both allow you to set the
-body of the response. The difference being, `text` takes a string and `data`
+:attr:`resp.text <falcon.Response.text>` and
+:attr:`resp.data <falcon.Response.data>` are very similar, they both allow you
+to set the body of the response. The difference being,
+:attr:`~falcon.Response.text` takes a string, and :attr:`~falcon.Response.data`
 takes bytes.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.text = json.dumps({ 'hello': 'World' })
+            resp.text = json.dumps({'hello': 'World'})
 
         def on_post(self, req, resp):
-            resp.data = b'{ "hello": "World" }'
+            resp.data = b'{"hello": "World"}'
 
-
-`resp.stream` allows you to set a file-like object which returns bytes. We will
-call `read()` until the object is consumed.
+:attr:`resp.stream <falcon.Response.stream>` allows you to set a generator that
+yields bytes, or a file-like object with a ``read()`` method that returns
+bytes. In the case of a file-like object, the framework will call ``read()``
+until the stream is exhausted.
 
 .. code:: python
 
@@ -803,23 +913,53 @@ call `read()` until the object is consumed.
         def on_get(self, req, resp):
             resp.stream = open('myfile.json', mode='rb')
 
+See also the :ref:`outputting_csv_recipe` recipe for an example of using
+:attr:`resp.stream <falcon.Response.stream>` with a generator.
 
 How can I use resp.media with types like datetime?
 --------------------------------------------------
 
-The default JSON handler for ``resp.media`` only supports the objects and types
-listed in the table documented under
-`json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_.
-To handle additional types, you can either serialize them beforehand, or create
-a custom JSON media handler that sets the `default` param for ``json.dumps()``.
-When deserializing an incoming request body, you may also wish to implement
-`object_hook` for ``json.loads()``. Note, however, that setting the `default` or
-`object_hook` params can negatively impact the performance of (de)serialization.
+The default JSON handler for :attr:`resp.media <falcon.Response.media>` only
+supports the objects and types listed in the table documented under
+:any:`json.JSONEncoder`.
+
+To handle additional types in JSON, you can either serialize them beforehand,
+or create a custom JSON media handler that sets the `default` param for
+:func:`json.dumps`. When deserializing an incoming request body, you may also
+wish to implement `object_hook` for :func:`json.loads`. Note, however, that
+setting the `default` or `object_hook` params can negatively impact the
+performance of (de)serialization.
+
+If you use an alternative JSON library, you might also look whether it provides
+support for additional data types. For instance, the popular ``orjson`` opts to
+automatically serialize :mod:`dataclasses`, :mod:`enums <enum>`,
+:class:`~datetime.datetime` objects, etc.
+
+Furthermore, different Internet media types such as YAML,
+:class:`msgpack <falcon.media.MessagePackHandler>`, etc might support more data
+types than JSON, either as part of the respective (de)serialization format, or
+via custom type extensions.
+
+.. seealso:: See :ref:`custom-media-json-encoder` for an example on how to
+    use a custom json encoder.
+
+.. note:: When testing an application employing a custom JSON encoder, bear in
+    mind that :class:`~.testing.TestClient` is decoupled from the app, and it
+    simulates requests as if they were performed by a third-party client (just
+    sans network). Therefore, passing the **json** parameter to
+    :ref:`simulate_* <testing_standalone_methods>` methods will effectively
+    use the stdlib's :func:`json.dumps`. If you want to serialize custom
+    objects for testing, you will need to dump them into a string yourself, and
+    pass it using the **body** parameter instead (accompanied by the
+    ``application/json`` content type header).
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
-Falcon will try to do this for you, based on the value of ``resp.text`` or
-``resp.data`` (whichever is set in the response, checked in that order.)
+Falcon will try to do this for you, based on the value of
+:attr:`resp.text <falcon.Response.text>`,
+:attr:`resp.data <falcon.Response.data>` or
+:attr:`resp.media <falcon.Response.media>` (whichever is set in the response,
+checked in that order).
 
 For dynamically-generated content, you can choose to not set
 :attr:`~falcon.Response.content_length`, in which case Falcon will then leave
@@ -940,7 +1080,8 @@ Then, within ``SomeResource``:
 .. code:: python
 
     # Read from the DB
-    result = self._engine.execute(some_table.select())
+    with self._engine.connect() as connection:
+        result = connection.execute(some_table.select())
     for row in result:
         # TODO: Do something with each row
 
@@ -974,6 +1115,84 @@ use cases that may not be supported by your client library, simply encapsulate
 the client library within a management class that handles all the tricky bits,
 and pass that around instead.
 
+If you are interested in the middleware approach, the
+`falcon-sqla <https://github.com/vytas7/falcon-sqla>`__ library can be used to
+automatically check out and close SQLAlchemy connections that way (although it
+also supports the explicit context manager pattern).
+
+How do I manage my database connections with ASGI?
+--------------------------------------------------
+
+This example is similar to the above one, but it uses ASGI lifecycle hooks
+to set up a connection pool, and to dispose it at the end of the application.
+The example uses `psycopg <https://www.psycopg.org/psycopg3/docs/api/index.html>`_
+to connect to a PostgreSQL database, but a similar pattern may be adapted to
+other asynchronous database libraries.
+
+.. code:: python
+
+    import psycopg_pool
+
+    url = 'postgresql://scott:tiger@127.0.0.1:5432/test'
+
+    class AsyncPoolMiddleware:
+        def __init__(self):
+            self._pool = None
+
+        async def process_startup(self, scope, event):
+            self._pool = psycopg_pool.AsyncConnectionPool(url)
+            await self._pool.wait()  # created the pooled connections
+
+        async def process_shutdown(self, scope, event):
+            if self._pool:
+                await self._pool.close()
+
+        async def process_request(self, req, resp):
+            req.context.pool = self._pool
+
+            try:
+                req.context.conn = await self._pool.getconn()
+            except Exception:
+                req.context.conn = None
+                raise
+
+        async def process_response(self, req, resp, resource, req_succeeded):
+            if req.context.conn:
+                await self._pool.putconn(req.context.conn)
+
+Then, an example resource may use the connection or the pool:
+
+.. code:: python
+
+    class Numbers:
+        async def on_get(self, req, resp):
+            # This endpoint uses the connection created for the request by the Middleware
+            async with req.context.conn.cursor() as cur:
+                await cur.execute('SELECT value FROM numbers')
+                rows = await cur.fetchall()
+
+            resp.media = [row[0] for row in rows]
+
+        async def on_get_with_pool(self, req, resp):
+            # This endpoint uses the pool to acquire a connection
+            async with req.context.pool.connection() as conn:
+                cur = await conn.execute('SELECT value FROM numbers')
+                rows = await cur.fetchall()
+                await cur.close()
+
+            resp.media = [row[0] for row in rows]
+
+The application can then be used as
+
+.. code:: python
+
+    from falcon.asgi import App
+
+    app = App(middleware=[AsyncPoolMiddleware()])
+    num = Numbers()
+    app.add_route('/conn', num)
+    app.add_route('/pool', num, suffix='with_pool')
+
 .. _configuration-approaches:
 
 What is the recommended approach for app configuration?
@@ -983,7 +1202,7 @@ When it comes to app configuration, Falcon is not opinionated. You are free to
 choose from any of the excellent general-purpose configuration libraries
 maintained by the Python community. It’s pretty much up to you if you want to
 use the standard library or something like ``aumbry`` as demonstrated by this
-`falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_
+`Falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_.
 
 (See also the **Configuration** section of our
 `Complementary Packages wiki page <https://github.com/falconry/falcon/wiki/Complementary-Packages>`_.
@@ -1013,6 +1232,55 @@ the tutorial in the docs provides an excellent introduction to
 `testing Falcon apps with pytest <http://falcon.readthedocs.io/en/stable/user/tutorial.html#testing-your-application>`_.
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
+
+Can I shut my server down cleanly from the app?
+-----------------------------------------------
+
+Normally, the lifetime of an app server is controlled by other means than from
+inside the running app, and there is no standardized way for a WSGI or ASGI
+framework to shut down the server programmatically.
+
+However, if you need to spin up a real server for testing purposes (such as for
+collecting coverage while interacting with other services over the network),
+your app server of choice may offer a Python API or hooks that you can
+integrate into your app.
+
+For instance, the stdlib's :mod:`wsgiref` server inherits from
+:class:`~socketserver.TCPServer`, which can be stopped by calling its
+``shutdown()`` method. Just make sure to perform the call from a different
+thread (otherwise it may deadlock):
+
+.. code:: python
+
+    import http
+    import threading
+    import wsgiref.simple_server
+
+    import falcon
+
+
+    class Shutdown:
+        def __init__(self, httpd):
+            self._httpd = httpd
+
+        def on_post(self, req, resp):
+            thread = threading.Thread(target=self._httpd.shutdown, daemon=True)
+            thread.start()
+
+            resp.content_type = falcon.MEDIA_TEXT
+            resp.text = 'Shutting down...\n'
+            resp.status = http.HTTPStatus.ACCEPTED
+
+
+    with wsgiref.simple_server.make_server('', 8000, app := falcon.App()) as httpd:
+        app.add_route('/shutdown', Shutdown(httpd))
+        print('Serving on port 8000, POST to /shutdown to stop...')
+        httpd.serve_forever()
+
+.. warning::
+   While ``wsgiref.simple_server`` is handy for integration testing, it builds
+   upon :mod:`http.server`, which is not recommended for production. (See
+   :ref:`install` on how to install a production-ready WSGI or ASGI server.)
 
 How can I set cookies when simulating requests?
 -----------------------------------------------

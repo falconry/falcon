@@ -3,6 +3,8 @@ import pytest
 import falcon
 from falcon import App, status_codes, testing
 
+from _util import create_app  # NOQA: I100
+
 
 class CustomCookies:
     def items(self):
@@ -162,6 +164,36 @@ def test_create_environ_default_ua_override():
     assert req.user_agent == ua
 
 
+def test_create_environ_preserve_raw_uri():
+    uri = '/cache/http%3A%2F%2Ffalconframework.org/status'
+    environ = testing.create_environ(path=uri)
+    assert environ['PATH_INFO'] == '/cache/http://falconframework.org/status'
+    assert environ['RAW_URI'] == uri
+
+
 def test_missing_header_is_none():
     req = testing.create_req()
     assert req.auth is None
+
+
+@pytest.mark.parametrize(
+    'method', ['DELETE', 'GET', 'HEAD', 'LOCK', 'OPTIONS', 'PATCH', 'POST', 'PUT']
+)
+def test_client_simulate_aliases(asgi, method):
+    def capture_method(req, resp):
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.text = req.method
+
+    app = create_app(asgi)
+    app.add_sink(capture_method)
+
+    client = testing.TestClient(app)
+    if method == 'LOCK':
+        result = client.request(method, '/')
+    else:
+        simulate_alias = getattr(client, method.lower())
+        result = simulate_alias('/')
+
+    assert result.status_code == 200
+    expected = '' if method == 'HEAD' else method
+    assert result.text == expected

@@ -20,11 +20,9 @@ directly from the `testing` package::
     from falcon import testing
 
     wsgi_environ = testing.create_environ()
-
 """
 
 import asyncio
-import cgi
 from collections import defaultdict
 from collections import deque
 import contextlib
@@ -45,12 +43,14 @@ from typing import Union
 
 import falcon
 from falcon import errors as falcon_errors
+import falcon.asgi
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
 from falcon.util import uri
+from falcon.util.mediatypes import parse_header
 
 # NOTE(kgriffs): Changed in 3.0 from 'curl/7.24.0 (x86_64-apple-darwin12.0)'
 DEFAULT_UA = 'falcon-client/' + falcon.__version__
@@ -139,9 +139,9 @@ class ASGIRequestEventEmitter:
 
     def __init__(
         self,
-        body: Union[str, bytes] = None,
-        chunk_size: int = None,
-        disconnect_at: Union[int, float] = None,
+        body: Optional[Union[str, bytes]] = None,
+        chunk_size: Optional[int] = None,
+        disconnect_at: Optional[Union[int, float]] = None,
     ):
         if body is None:
             body = b''
@@ -170,7 +170,7 @@ class ASGIRequestEventEmitter:
     def disconnected(self):
         return self._disconnected or (self._disconnect_at <= time.time())
 
-    def disconnect(self, exhaust_body: bool = None):
+    def disconnect(self, exhaust_body: Optional[bool] = None):
         """Set the client connection state to disconnected.
 
         Call this method to simulate an immediate client disconnect and
@@ -303,8 +303,8 @@ class ASGIResponseEventCollector:
         ]
     )
 
-    _HEADER_NAME_RE = re.compile(br'^[a-zA-Z][a-zA-Z0-9\-_]*$')
-    _BAD_HEADER_VALUE_RE = re.compile(br'[\000-\037]')
+    _HEADER_NAME_RE = re.compile(rb'^[a-zA-Z][a-zA-Z0-9\-_]*$')
+    _BAD_HEADER_VALUE_RE = re.compile(rb'[\000-\037]')
 
     def __init__(self):
         self.events = []
@@ -402,6 +402,8 @@ class ASGIWebSocketSimulator:
             ``None`` if the connection has not been accepted.
     """
 
+    _DEFAULT_WAIT_READY_TIMEOUT = 5
+
     def __init__(self):
         self.__msgpack = None
 
@@ -435,7 +437,7 @@ class ASGIWebSocketSimulator:
     def headers(self) -> Iterable[Iterable[bytes]]:
         return self._accepted_headers
 
-    async def wait_ready(self, timeout: Optional[int] = 5):
+    async def wait_ready(self, timeout: Optional[int] = None):
         """Wait until the connection has been accepted or denied.
 
         This coroutine can be awaited in order to pause execution until the
@@ -447,16 +449,17 @@ class ASGIWebSocketSimulator:
                 raising an error (default: ``5``).
         """
 
+        timeout = timeout or self._DEFAULT_WAIT_READY_TIMEOUT
+
         try:
             await asyncio.wait_for(self._event_handshake_complete.wait(), timeout)
         except asyncio.TimeoutError:
             msg = (
-                'Timed out after waiting {} seconds for '
-                'the WebSocket handshake to complete. Check the '
-                'on_websocket responder and '
-                'any middleware for any conditions that may be stalling the '
-                'request flow.'
-            ).format(timeout)
+                f'Timed out after waiting {timeout} seconds for the WebSocket '
+                f'handshake to complete. Check the on_websocket responder and '
+                f'any middleware for any conditions that may be stalling the '
+                f'request flow.'
+            )
             raise asyncio.TimeoutError(msg)
 
         self._require_accepted()
@@ -654,7 +657,7 @@ class ASGIWebSocketSimulator:
     # NOTE(kgriffs): This is a coroutine just in case we need it to be
     #   in a future code revision. It also makes it more consistent
     #   with the other methods.
-    async def _send(self, data: bytes = None, text: str = None):
+    async def _send(self, data: Optional[bytes] = None, text: Optional[str] = None):
         self._require_accepted()
 
         # NOTE(kgriffs): From the client's perspective, it was a send,
@@ -799,10 +802,10 @@ def get_encoding_from_headers(headers):
     if not content_type:
         return None
 
-    content_type, params = cgi.parse_header(content_type)
+    content_type, params = parse_header(content_type)
 
     if 'charset' in params:
-        return params['charset'].strip("'\"")
+        return params['charset'].strip('\'"')
 
     # NOTE(kgriffs): Added checks for text/event-stream and application/json
     if content_type in ('text/event-stream', 'application/json'):
@@ -861,7 +864,6 @@ def create_scope(
     include_server=True,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -886,7 +888,7 @@ def create_scope(
                     f'falcon-client/{falcon.__version__}'
 
         host(str): Hostname for the request (default ``'falconframework.org'``).
-            This also determines the the value of the Host header in the
+            This also determines the value of the Host header in the
             request.
         scheme (str): URL scheme, either ``'http'`` or ``'https'``
             (default ``'http'``)
@@ -999,7 +1001,6 @@ def create_scope_ws(
     subprotocols=None,
     spec_version='2.1',
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1023,7 +1024,7 @@ def create_scope_ws(
                     f'falcon-client/{falcon.__version__}'
 
         host(str): Hostname for the request (default ``'falconframework.org'``).
-            This also determines the the value of the Host header in the
+            This also determines the value of the Host header in the
             request.
         scheme (str): URL scheme, either ``'ws'`` or ``'wss'``
             (default ``'ws'``)
@@ -1086,7 +1087,6 @@ def create_environ(
     root_path=None,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
@@ -1151,7 +1151,8 @@ def create_environ(
     body = io.BytesIO(body.encode() if isinstance(body, str) else body)
 
     # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
-    # the paths before setting PATH_INFO
+    # the paths before setting PATH_INFO but preserve raw original
+    raw_path = path
     path = uri.decode(path, unquote_plus=False)
 
     # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
@@ -1194,7 +1195,7 @@ def create_environ(
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
         'REMOTE_PORT': '65133',
-        'RAW_URI': '/',
+        'RAW_URI': raw_path,
         'SERVER_NAME': host,
         'SERVER_PORT': port,
         'wsgi.version': (1, 0),
@@ -1289,11 +1290,6 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
     disconnect_at = time.time() + 300
 
     req_event_emitter = ASGIRequestEventEmitter(body, disconnect_at=disconnect_at)
-
-    # NOTE(kgriffs): Import here in case the app is running under
-    #   Python 3.5 (in which case as long as it does not call the
-    #   present function, it won't trigger an import error).
-    import falcon.asgi
 
     req_type = req_type or falcon.asgi.Request
     return req_type(scope, req_event_emitter, options=options)

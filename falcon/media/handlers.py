@@ -1,10 +1,12 @@
 from collections import UserDict
+import functools
 
 from falcon import errors
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MULTIPART
 from falcon.constants import MEDIA_URLENCODED
 from falcon.constants import PYPY
+from falcon.media.base import BinaryBaseHandlerWS
 from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
 from falcon.media.multipart import MultipartParseOptions
@@ -14,7 +16,7 @@ from falcon.util import misc
 from falcon.vendor import mimeparse
 
 
-class MissingDependencyHandler:
+class MissingDependencyHandler(BinaryBaseHandlerWS):
     """Placeholder handler that always raises an error.
 
     This handler is used by the framework for media types that require an
@@ -165,7 +167,7 @@ if PYPY:
     #   However, if the shortcut does not succeed, invoking best_match()
     #   is relatively expensive, so it does make sense to use an LRU
     #   in that case.
-    _best_match = misc._lru_cache_safe(maxsize=64)(_best_match)  # pragma: nocover
+    _best_match = functools.lru_cache(maxsize=64)(_best_match)  # pragma: nocover
 
 
 # NOTE(vytas): An ugly way to work around circular imports.

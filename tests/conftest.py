@@ -15,12 +15,7 @@ _FALCON_TEST_ENV = (
 
 @pytest.fixture(params=[True, False], ids=['asgi', 'wsgi'])
 def asgi(request):
-    is_asgi = request.param
-
-    if is_asgi and not falcon.ASGI_SUPPORTED:
-        pytest.skip('ASGI requires Python 3.6+')
-
-    return is_asgi
+    return request.param
 
 
 # NOTE(kgriffs): Some modules actually run a wsgiref server, so
@@ -33,9 +28,12 @@ def reset_request_stream_detection():
 
 
 def pytest_configure(config):
-    plugin = config.pluginmanager.getplugin('mypy')
-    if plugin:
-        plugin.mypy_argv.append('--ignore-missing-imports')
+    if config.pluginmanager.getplugin('asyncio'):
+        config.option.asyncio_mode = 'strict'
+
+    mypy_plugin = config.pluginmanager.getplugin('mypy')
+    if mypy_plugin:
+        mypy_plugin.mypy_argv.append('--ignore-missing-imports')
 
 
 def pytest_sessionstart(session):

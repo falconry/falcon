@@ -11,11 +11,11 @@ from falcon import asgi, testing
     [
         b'',
         b'\x00',
-        b'\x00\xFF',
+        b'\x00\xff',
         b'catsup',
-        b'\xDE\xAD\xBE\xEF' * 512,
+        b'\xde\xad\xbe\xef' * 512,
         testing.rand_string(1, 2048),
-        os.urandom(100 * 2 ** 20),
+        os.urandom(100 * 2**20),
     ],
     ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random', 'random-large'],
 )
@@ -164,14 +164,38 @@ def test_filelike():
     falcon.async_to_sync(test_iteration)
 
 
+@falcon.runs_sync
+async def test_iterate_streaming_request():
+    events = iter(
+        (
+            {'type': 'http.request', 'body': b'Hello, ', 'more_body': True},
+            {'type': 'http.request', 'body': b'World', 'more_body': True},
+            {'type': 'http.request', 'body': b'!\n', 'more_body': True},
+            {'type': 'http.request', 'body': b'', 'more_body': False},
+            {'type': 'http.disconnect'},
+        )
+    )
+
+    async def receive():
+        event = next(events)
+        assert (
+            event['type'] != 'http.disconnect'
+        ), 'would hang until the client times out'
+        return event
+
+    s = asgi.BoundedStream(receive)
+
+    assert b''.join([chunk async for chunk in s]) == b'Hello, World!\n'
+
+
 @pytest.mark.parametrize(
     'body',
     [
         b'',
         b'\x00',
-        b'\x00\xFF',
+        b'\x00\xff',
         b'catsup',
-        b'\xDE\xAD\xBE\xEF' * 512,
+        b'\xde\xad\xbe\xef' * 512,
         testing.rand_string(1, 2048).encode(),
     ],
     ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random'],

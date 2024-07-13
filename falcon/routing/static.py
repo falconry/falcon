@@ -7,6 +7,83 @@ import falcon
 from falcon.util.sync import get_running_loop
 
 
+def _open_range(file_path, req_range):
+    """Open a file for a ranged request.
+
+    Args:
+        file_path (str): Path to the file to open.
+        req_range (Optional[Tuple[int, int]]): Request.range value.
+    Returns:
+        tuple: Three-member tuple of (stream, content-length, content-range).
+            If req_range is ``None`` or ignored, content-range will be
+            ``None``; otherwise, the stream will be appropriately seeked and
+            possibly bounded, and the content-range will be a tuple of
+            (start, end, size).
+    """
+    fh = io.open(file_path, 'rb')
+    size = os.fstat(fh.fileno()).st_size
+    if req_range is None:
+        return fh, size, None
+
+    start, end = req_range
+    if size == 0:
+        # NOTE(tipabu): Ignore Range headers for zero-byte files; just serve
+        #   the empty body since Content-Range can't be used to express a
+        #   zero-byte body.
+        return fh, 0, None
+
+    if start < 0 and end == -1:
+        # NOTE(tipabu): Special case: only want the last N bytes.
+        start = max(start, -size)
+        fh.seek(start, os.SEEK_END)
+        # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
+        #   its implementation was found to be buggy in many popular WSGI
+        #   servers for open files with a non-zero offset.
+        return _BoundedFile(fh, -start), -start, (size + start, size - 1, size)
+
+    if start >= size:
+        fh.close()
+        raise falcon.HTTPRangeNotSatisfiable(size)
+
+    fh.seek(start)
+    if end == -1:
+        # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
+        #   its implementation was found to be buggy in many popular WSGI
+        #   servers for open files with a non-zero offset.
+        length = size - start
+        return _BoundedFile(fh, length), length, (start, size - 1, size)
+
+    end = min(end, size - 1)
+    length = end - start + 1
+    return _BoundedFile(fh, length), length, (start, end, size)
+
+
+class _BoundedFile:
+    """Wrap a file to only allow part of it to be read.
+
+    Args:
+        fh: The file object to wrap. Should be opened in binary mode,
+            and already seeked to an appropriate position. The object must
+            expose a ``.close()`` method.
+        length (int): Number of bytes that may be read.
+    """
+
+    def __init__(self, fh, length):
+        self.fh = fh
+        self.close = fh.close
+        self.remaining = length
+
+    def read(self, size=-1):
+        """Read the underlying file object, within the specified bounds."""
+        if size < 0:
+            size = self.remaining
+        else:
+            size = min(size, self.remaining)
+        data = self.fh.read(size)
+        self.remaining -= len(data)
+        return data
+
+
 class StaticRoute:
     """Represents a static route.
 
@@ -21,8 +98,8 @@ class StaticRoute:
             Note that static routes are matched in LIFO order, and are only
             attempted after checking dynamic routes and sinks.
 
-        directory (str): The source directory from which to serve files. Must
-            be an absolute path.
+        directory (Union[str, pathlib.Path]): The source directory from which to
+            serve files. Must be an absolute path.
         downloadable (bool): Set to ``True`` to include a
             Content-Disposition header in the response. The "filename"
             directive is simply set to the name of the requested file.
@@ -40,6 +117,9 @@ class StaticRoute:
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
     _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]')
+
+    # NOTE(vytas): Match the behavior of the underlying os.path.normpath.
+    _DISALLOWED_NORMALIZED_PREFIXES = ('..' + os.path.sep, os.path.sep)
 
     # NOTE(kgriffs): If somehow an executable code exploit is triggerable, this
     # minimizes how much can be included in the payload.
@@ -93,12 +173,11 @@ class StaticRoute:
             or '//' in without_prefix
             or len(without_prefix) > self._MAX_NON_PREFIXED_LEN
         ):
-
             raise falcon.HTTPNotFound()
 
         normalized = os.path.normpath(without_prefix)
 
-        if normalized.startswith('../') or normalized.startswith('/'):
+        if normalized.startswith(self._DISALLOWED_NORMALIZED_PREFIXES):
             raise falcon.HTTPNotFound()
 
         file_path = os.path.join(self._directory, normalized)
@@ -109,13 +188,20 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
+        req_range = req.range
+        if req.range_unit != 'bytes':
+            req_range = None
         try:
-            resp.stream = io.open(file_path, 'rb')
+            stream, length, content_range = _open_range(file_path, req_range)
+            resp.set_stream(stream, length)
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                resp.stream = io.open(self._fallback_filename, 'rb')
+                stream, length, content_range = _open_range(
+                    self._fallback_filename, req_range
+                )
+                resp.set_stream(stream, length)
                 file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
@@ -124,9 +210,13 @@ class StaticRoute:
         resp.content_type = resp.options.static_media_types.get(
             suffix, 'application/octet-stream'
         )
+        resp.accept_ranges = 'bytes'
 
         if self._downloadable:
             resp.downloadable_as = os.path.basename(file_path)
+        if content_range:
+            resp.status = falcon.HTTP_206
+            resp.content_range = content_range
 
 
 class StaticRouteAsync(StaticRoute):
@@ -148,3 +238,6 @@ class _AsyncFileReader:
 
     async def read(self, size=-1):
         return await self._loop.run_in_executor(None, partial(self._file.read, size))
+
+    async def close(self):
+        await self._loop.run_in_executor(None, self._file.close)

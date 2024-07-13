@@ -5,6 +5,8 @@ import pytest
 
 import falcon
 from falcon import testing
+from falcon.util.deprecation import DeprecatedWarning
+from falcon.util.misc import _utcnow
 
 from _util import create_app  # NOQA
 
@@ -31,7 +33,7 @@ class HeaderHelpersResource:
         if last_modified is not None:
             self.last_modified = last_modified
         else:
-            self.last_modified = datetime.utcnow()
+            self.last_modified = _utcnow()
 
     def _overwrite_headers(self, req, resp):
         resp.content_type = 'x-falcon/peregrine'
@@ -117,7 +119,6 @@ class HeaderHelpersResource:
 
 
 class LocationHeaderUnicodeResource:
-
     URL1 = '/\u00e7runchy/bacon'
     URL2 = 'ab\u00e7'
 
@@ -154,14 +155,14 @@ class UnicodeHeaderResource:
     def on_post(self, req, resp):
         resp.set_headers(
             [
-                ('X-symb\u00F6l', 'thing'),
+                ('X-symb\u00f6l', 'thing'),
             ]
         )
 
     def on_put(self, req, resp):
         resp.set_headers(
             [
-                ('X-Thing', '\u00FF'),
+                ('X-Thing', '\u00ff'),
             ]
         )
 
@@ -179,18 +180,25 @@ class LinkHeaderResource:
     def __init__(self):
         self._links = []
 
+    def add_link(self, *args, **kwargs):
+        self._links.append(('add_link', args, kwargs))
+
     def append_link(self, *args, **kwargs):
-        self._links.append((args, kwargs))
+        self._links.append(('append_link', args, kwargs))
 
     def on_get(self, req, resp):
         resp.text = '{}'
 
-        append_link = None
-        for args, kwargs in self._links:
-            append_link = (
-                resp.append_link if append_link is resp.add_link else resp.add_link
-            )
-            append_link(*args, **kwargs)
+        for method_name, args, kwargs in self._links:
+            append_method = getattr(resp, method_name)
+            if method_name == 'append_link':
+                append_method(*args, **kwargs)
+            else:
+                with pytest.warns(
+                    DeprecatedWarning,
+                    match='Call to deprecated function add_link(...)',
+                ):
+                    append_method(*args, **kwargs)
 
 
 class AppendHeaderResource:
@@ -226,7 +234,7 @@ class RemoveHeaderResource:
     def on_get(self, req, resp):
         etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         if self.with_double_quotes:
-            etag = '\"' + etag + '\"'
+            etag = '"' + etag + '"'
 
         resp.etag = etag
         assert resp.etag == '"fa0d1a60ef6616bb28038515c8ea4cb2"'
@@ -245,6 +253,16 @@ class DownloadableResource:
         resp.text = 'Hello, World!\n'
         resp.content_type = falcon.MEDIA_TEXT
         resp.downloadable_as = self.filename
+
+
+class ViewableResource:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def on_get(self, req, resp):
+        resp.text = 'Hello, World!\n'
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.viewable_as = self.filename
 
 
 class ContentLengthHeaderResource:
@@ -295,7 +313,10 @@ class CustomHeadersResource:
 
 class HeadersDebugResource:
     def on_get(self, req, resp):
-        resp.media = {key.lower(): value for key, value in req.headers.items()}
+        resp.media = {
+            'raw': req.headers,
+            'lower': req.headers_lower,
+        }
 
     def on_get_header(self, req, resp, header):
         resp.media = {header.lower(): req.get_header(header)}
@@ -343,6 +364,34 @@ class TestHeaders:
 
         assert result.headers['Expires'] == 'Tue, 01 Jan 2013 10:30:30 GMT'
 
+    def test_get_header_as_int(self, client):
+        resource = testing.SimpleTestResource(body=SAMPLE_BODY)
+        client.app.add_route('/', resource)
+        request_headers = {
+            'X-Int-Val': '42',
+            'X-Str-Val': 'test-val',
+            'X-Float-Val': '3.14',
+        }
+        client.simulate_get(headers=request_headers)
+
+        req = resource.captured_req
+        value = req.get_header_as_int('X-Int-Val')
+        assert value == 42
+
+        value = req.get_header_as_int('X-Not-Found')
+        assert value is None
+
+        with pytest.raises(falcon.HTTPInvalidHeader) as exc_info:
+            req.get_header_as_int('X-Float-Val')
+        assert exc_info.value.args[0] == 'The value of the header must be an integer.'
+
+        with pytest.raises(falcon.HTTPInvalidHeader) as exc_info:
+            req.get_header_as_int('X-Str-Val')
+        assert exc_info.value.args[0] == 'The value of the header must be an integer.'
+
+        with pytest.raises(falcon.HTTPMissingHeader) as exc_info:
+            req.get_header_as_int('X-Not-Found', required=True)
+
     def test_default_value(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
         client.app.add_route('/', resource)
@@ -355,7 +404,7 @@ class TestHeaders:
         value = req.get_header('X-Not-Found', default='some-value')
         assert value == 'some-value'
 
-        # Excercise any result caching and associated abuse mitigations
+        # Exercise any result caching and associated abuse mitigations
         for i in range(10000):
             assert req.get_header('X-Not-Found-{0}'.format(i)) is None
 
@@ -431,6 +480,7 @@ class TestHeaders:
 
         for name, value in headers:
             assert (name.upper(), value) in req.headers.items()
+            assert (name.lower(), value) in req.headers_lower.items()
 
         # Functional test
         client.app.add_route('/', testing.SimpleTestResource(headers=headers))
@@ -447,7 +497,7 @@ class TestHeaders:
     @pytest.mark.parametrize(
         'content_type,body',
         [
-            ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
+            ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001f638'),
             # NOTE(kgriffs): This only works because the client defaults to
             # ISO-8859-1 IFF the media type is 'text'.
             ('text/plain', 'Hello ISO-8859-1!'),
@@ -463,7 +513,7 @@ class TestHeaders:
 
     @pytest.mark.parametrize('asgi', [True, False])
     def test_override_default_media_type_missing_encoding(self, asgi, client):
-        body = '{"msg": "Hello Unicode! \U0001F638"}'
+        body = '{"msg": "Hello Unicode! \U0001f638"}'
 
         client.app = create_app(asgi=asgi, media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
@@ -472,7 +522,7 @@ class TestHeaders:
         assert result.content == body.encode('utf-8')
         assert isinstance(result.text, str)
         assert result.text == body
-        assert result.json == {'msg': 'Hello Unicode! \U0001F638'}
+        assert result.json == {'msg': 'Hello Unicode! \U0001f638'}
 
     def test_response_header_helpers_on_get(self, client):
         last_modified = datetime(2013, 1, 1, 10, 30, 30)
@@ -566,8 +616,28 @@ class TestHeaders:
             ),
         ],
     )
-    def test_content_disposition_header(self, client, filename, expected):
+    def test_content_disposition_attachment_header(self, client, filename, expected):
         resource = DownloadableResource(filename)
+        client.app.add_route('/', resource)
+        resp = client.simulate_get()
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Disposition'] == expected
+
+    @pytest.mark.parametrize(
+        'filename,expected',
+        [
+            ('report.csv', 'inline; filename="report.csv"'),
+            ('Hello World.txt', 'inline; filename="Hello World.txt"'),
+            (
+                'Bold Digit 𝟏.txt',
+                'inline; filename=Bold_Digit_1.txt; '
+                "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+            ),
+        ],
+    )
+    def test_content_disposition_inline_header(self, client, filename, expected):
+        resource = ViewableResource(filename)
         client.app.add_route('/', resource)
         resp = client.simulate_get()
 
@@ -587,12 +657,24 @@ class TestHeaders:
         }
         resp = client.simulate_get('/headers', headers=headers)
         assert resp.status_code == 200
-        assert resp.json == {
+
+        headers_lower = {
             'host': 'falconframework.org',
             'user-agent': 'Mosaic/0.9',
             'x-latin1-header': 'Förmånsrätt',
             'x-size': 'groß',
         }
+
+        headers_upper = {key.upper(): value for key, value in headers_lower.items()}
+
+        headers_received = resp.json
+
+        if client.app._ASGI:
+            assert resp.json['raw'] == headers_lower
+        else:
+            assert resp.json['raw'] == headers_upper
+
+        assert headers_received['lower'] == headers_lower
 
         resp = client.simulate_get('/headers/X-Latin1-Header', headers=headers)
         assert resp.json == {'x-latin1-header': 'Förmånsrätt'}
@@ -787,12 +869,12 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.append_link('/things/2842', 'next')
+        resource.add_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.append_link(uri, 'http://example.com/\u00e7runchy')
+        resource.add_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.append_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
+        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 
@@ -919,6 +1001,16 @@ class TestHeaders:
 
         with pytest.raises(ValueError):
             resp.append_link('/related/resource', 'next', crossorigin=crossorigin)
+
+    def test_append_link_with_link_extension(self, client):
+        expected_value = '</related/thing>; rel=item; sizes=72x72'
+
+        resource = LinkHeaderResource()
+        resource.append_link(
+            '/related/thing', 'item', link_extension=[('sizes', '72x72')]
+        )
+
+        self._check_link_header(client, resource, expected_value)
 
     def test_content_length_options(self, client):
         result = client.simulate_options()

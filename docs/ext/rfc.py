@@ -18,13 +18,12 @@ This extensions adds hyperlinking for any RFC references that are
 formatted like this::
 
     RFC 7231; Section 6.5.3
-
 """
 
 import re
 
 
-RFC_PATTERN = re.compile('RFC (\d{4}), Section ([\d\.]+)')
+RFC_PATTERN = re.compile(r'RFC (\d{4}), Section ([\d\.]+)')
 
 
 def _render_section(section_number, rfc_number):

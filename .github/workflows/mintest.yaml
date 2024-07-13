@@ -1,0 +1,47 @@
+name: Run tests (contributor's checklist)
+
+on:
+  # Trigger the workflow on master but also allow it to run manually.
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  run_tox:
+    name: tox (default envlist on ${{matrix.python-version}})
+    runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U setuptools tox wheel
+          python --version
+          pip --version
+          tox --version
+
+      - name: Adjust .coveragerc
+        if: ${{ matrix.python-version != '3.10' }}
+        run: |
+          tools/sed_coverage_rc.py
+
+      - name: Run tox inside sdist
+        run: |
+          tools/tox_sdist.py

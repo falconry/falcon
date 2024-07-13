@@ -7,11 +7,11 @@ build-benchmark-images:
 	sudo docker pull python:3.8
 	sudo docker pull pypy:3-slim
 
-	sudo docker build --no-cache -t falconry/falcon-bench:${FALCON_VERSION}-py38 -f bench_py3.Dockerfile ./
-	sudo docker build --no-cache -t falconry/falcon-bench:${FALCON_VERSION}-py38-cython -f bench_py3_cython.Dockerfile ./
+	sudo docker build --no-cache -t falconry/falcon-bench:${FALCON_VERSION}-py310 -f bench_py3.Dockerfile ./
+	sudo docker build --no-cache -t falconry/falcon-bench:${FALCON_VERSION}-py310-cython -f bench_py3_cython.Dockerfile ./
 	sudo docker build --no-cache -t falconry/falcon-bench:${FALCON_VERSION}-pypy3 -f bench_pypy3.Dockerfile ./
 
 push:
-	sudo docker push falconry/falcon-bench:${FALCON_VERSION}-py38
-	sudo docker push falconry/falcon-bench:${FALCON_VERSION}-py38-cython
+	sudo docker push falconry/falcon-bench:${FALCON_VERSION}-py310
+	sudo docker push falconry/falcon-bench:${FALCON_VERSION}-py310-cython
 	sudo docker push falconry/falcon-bench:${FALCON_VERSION}-pypy3

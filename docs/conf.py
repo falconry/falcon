@@ -14,16 +14,14 @@
 
 from datetime import datetime
 from collections import OrderedDict
+import configparser
 import multiprocessing
 import sys
 import os
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+sys.path.insert(0, os.path.abspath('..'))
 
-import falcon
+import falcon  # noqa: E402
 
 # NOTE(kgriffs): Work around the change in Python 3.8 that breaks sphinx
 #   on macOS. See also:
@@ -84,13 +82,13 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Falcon'
-copyright = "{year} Falcon Contributors".format(year=datetime.utcnow().year)
+copyright = '{year} Falcon Contributors'.format(year=datetime.now().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-cfg = configparser.SafeConfigParser()
+cfg = configparser.ConfigParser()
 cfg.read('../setup.cfg')
 tag = cfg.get('egg_info', 'tag_build')
 
@@ -165,10 +163,12 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
+    'page_width': '80%',
+    'body_max_width': '100%',
     'github_user': 'falconry',
     'github_repo': 'falcon',
     'github_button': False,
-    'github_banner': not dash_build,
+    'github_banner': False,
     'fixed_sidebar': False,
     'show_powered_by': False,
     'extra_nav_links': OrderedDict(

@@ -1,0 +1,4 @@
+In Python 3.13, the ``cgi`` module is removed entirely from the stdlib,
+including its ``parse_header()`` method. Falcon addresses the issue by shipping
+an own implementation; :func:`falcon.parse_header` can also be used in your projects
+affected by the removal.

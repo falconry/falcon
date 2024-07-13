@@ -6,10 +6,44 @@
         "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
     ]
 
+[tool.mypy]
+    exclude = "falcon/bench/|falcon/cmd/"
+    [[tool.mypy.overrides]]
+        module = [
+            "cbor2",
+            "cython",
+            "daphne",
+            "gunicorn",
+            "hypercorn",
+            "meinheld",
+            "msgpack",
+            "mujson",
+            "pyximport",
+            "testtools",
+            "uvicorn"
+        ]
+        ignore_missing_imports = true
+
+    [[tool.mypy.overrides]]
+        # Pure Cython modules
+        module = [
+            "falcon.cyutil.misc",
+            "falcon.cyutil.reader",
+            "falcon.cyutil.uri"
+        ]
+        ignore_missing_imports = true
+
+    [[tool.mypy.overrides]]
+        module = [
+            "falcon.stream",
+            "falcon.util.*"
+        ]
+        disallow_untyped_defs = true
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "docs/changes/3.0.1.rst"
+    filename = "docs/changes/4.0.0.rst"
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
@@ -40,7 +74,38 @@
         showcontent = true
 
 [tool.black]
-    target-version = ["py35"]
+    # this is kept to avoid reformatting all the code if one were to
+    # inadvertently run black on the project
+    target-version = ["py37"]
     skip-string-normalization = true
     line-length = 88
     extend-exclude = "falcon/vendor"
+
+[tool.blue]
+    # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
+    #   With the below settings, accidentally running blue should yield
+    #   only minor cosmetic changes in a handful of files.
+    target-version = ["py37"]
+    line-length = 88
+    extend-exclude = "falcon/vendor"
+
+[tool.ruff]
+    target-version = "py37"
+    format.quote-style = "single"
+    line-length = 88
+    extend-exclude = ["falcon/vendor"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Unknown REQUEST_METHOD. '(CONNECT|DELETE|GET|HEAD|OPTIONS|PATCH|POST|PUT|TRACE|CHECKIN|CHECKOUT|COPY|LOCK|MKCOL|MOVE|PROPFIND|PROPPATCH|REPORT|UNCHECKIN|UNLOCK|UPDATE|VERSION-CONTROL)':wsgiref.validate.WSGIWarning",
+    "ignore:Unknown REQUEST_METHOD. '(FOO|BAR|BREW|SETECASTRONOMY)':wsgiref.validate.WSGIWarning",
+    "ignore:\"@coroutine\" decorator is deprecated:DeprecationWarning",
+    "ignore:Using or importing the ABCs:DeprecationWarning",
+    "ignore:cannot collect test class 'TestClient':pytest.PytestCollectionWarning",
+    "ignore:inspect.getargspec\\(\\) is deprecated:DeprecationWarning",
+    "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
+    "ignore:This process \\(.+\\) is multi-threaded",
+]
+testpaths = [
+    "tests"
+]
