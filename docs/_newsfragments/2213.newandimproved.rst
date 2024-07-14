@@ -1,1 +1,1 @@
-Added kwarg ``partitioned`` to :py:meth:`~falcon.Response.unset_cookie` to set the Partitioned setting on the cookie
+Added kwarg ``partitioned`` to :py:meth:`~falcon.Response.set_cookie` to set the Partitioned setting on the cookie
