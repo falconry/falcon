@@ -389,6 +389,8 @@ class ASGIWebSocketSimulator:
             denied or closed by the app, or the client has disconnected.
         close_code (int): The WebSocket close code provided by the app if
             the connection is closed, or ``None`` if the connection is open.
+        close_reason (str): The WebSocket close reason provided by the app if
+            the connection is closed, or ``None`` if the connection is open.
         subprotocol (str): The subprotocol the app wishes to accept, or
             ``None`` if not specified.
         headers (Iterable[Iterable[bytes]]): An iterable of ``[name, value]``
