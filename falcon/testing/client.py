@@ -32,7 +32,6 @@ import wsgiref.validate
 
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
-from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
@@ -43,7 +42,6 @@ from falcon.util import create_task
 from falcon.util import get_running_loop
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
-from falcon.util import to_query_str
 
 warnings.filterwarnings(
     'error',
@@ -588,7 +586,7 @@ def simulate_request(
             cookies=cookies,
         )
 
-    path, query_string, headers, body, extras = _prepare_sim_args(
+    path, query_string, headers, body, extras = helpers._prepare_sim_args(
         path,
         query_string,
         params,
@@ -604,7 +602,7 @@ def simulate_request(
         method=method,
         scheme=protocol,
         path=path,
-        query_string=(query_string or ''),
+        query_string=query_string,
         headers=headers,
         body=body,
         file_wrapper=file_wrapper,
@@ -763,7 +761,7 @@ async def _simulate_request_asgi(
         :py:class:`~.Result`: The result of the request
     """
 
-    path, query_string, headers, body, extras = _prepare_sim_args(
+    path, query_string, headers, body, extras = helpers._prepare_sim_args(
         path,
         query_string,
         params,
@@ -2132,44 +2130,6 @@ class _WSContextManager:
     async def __aexit__(self, exc_type, exc, tb):
         await self._ws.close()
         await self._task_req
-
-
-def _prepare_sim_args(
-    path, query_string, params, params_csv, content_type, headers, body, json, extras
-):
-    if not path.startswith('/'):
-        raise ValueError("path must start with '/'")
-
-    if '?' in path:
-        if query_string or params:
-            raise ValueError(
-                'path may not contain a query string in combination with '
-                'the query_string or params parameters. Please use only one '
-                'way of specifying the query string.'
-            )
-        path, query_string = path.split('?', 1)
-    elif query_string and query_string.startswith('?'):
-        raise ValueError("query_string should not start with '?'")
-
-    extras = extras or {}
-
-    if query_string is None:
-        query_string = to_query_str(
-            params,
-            comma_delimited_lists=params_csv,
-            prefix=False,
-        )
-
-    if content_type is not None:
-        headers = headers or {}
-        headers['Content-Type'] = content_type
-
-    if json is not None:
-        body = json_module.dumps(json, ensure_ascii=False)
-        headers = headers or {}
-        headers['Content-Type'] = MEDIA_JSON
-
-    return path, query_string, headers, body, extras
 
 
 def _is_asgi_app(app):

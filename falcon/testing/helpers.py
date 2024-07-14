@@ -29,7 +29,7 @@ import contextlib
 from enum import Enum
 import io
 import itertools
-import json
+import json as json_module
 import random
 import re
 import socket
@@ -47,8 +47,10 @@ import falcon.asgi
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
+from falcon.constants import MEDIA_JSON
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
+from falcon.util import to_query_str
 from falcon.util import uri
 from falcon.util.mediatypes import parse_header
 
@@ -535,7 +537,7 @@ class ASGIWebSocketSimulator:
             media: A JSON-encodable object to send as a TEXT (0x01) payload.
         """
 
-        text = json.dumps(media)
+        text = json_module.dumps(media)
         await self.send_text(text)
 
     async def send_msgpack(self, media: object):
@@ -604,7 +606,7 @@ class ASGIWebSocketSimulator:
         """
 
         text = await self.receive_text()
-        return json.loads(text)
+        return json_module.loads(text)
 
     async def receive_msgpack(self) -> object:
         """Receive a message from the app with a MessagePack-encoded BINARY payload.
@@ -1244,20 +1246,151 @@ def create_environ(
     return env
 
 
-def create_req(options=None, **kwargs) -> falcon.Request:
+def create_req(
+    options=None,
+    path='/',
+    query_string='',
+    http_version='1.1',
+    scheme='http',
+    host=DEFAULT_HOST,
+    port=None,
+    headers=None,
+    app=None,  # deprecated (?)
+    body='',
+    method='GET',
+    wsgierrors=None,
+    file_wrapper=None,
+    remote_addr=None,
+    root_path=None,
+    cookies=None,
+    extras=None,
+    content_type=None,
+    json=None,
+    params=None,
+    params_csv=True,
+) -> falcon.Request:
     """Create and return a new Request instance.
 
     This function can be used to conveniently create a WSGI environ
     and use it to instantiate a :py:class:`falcon.Request` object in one go.
 
-    The arguments for this function are identical to those
-    of :py:meth:`falcon.testing.create_environ`, except an additional
-    `options` keyword argument may be set to an instance of
-    :py:class:`falcon.RequestOptions` to configure certain
-    aspects of request parsing in lieu of the defaults.
+    Keyword Arguments:
+        options (falcon.RequestOptions): An instance of
+            :py:class:`falcon.RequestOptions` that should be used to determine
+            certain aspects of request parsing in lieu of the defaults.
+        path (str): The path for the request (default ``'/'``)
+        query_string (str): The query string to simulate, without a
+            leading ``'?'`` (default ``''``). The query string is passed as-is
+            (it will not be percent-encoded).
+        http_version (str): The HTTP version to simulate. Must be either
+            ``'2'``, ``'2.0'``, ``'1.1'``, ``'1.0'``, or ``'1'``
+            (default ``'1.1'``). If set to ``'1.0'``, the Host header will not
+            be added to the scope.
+        scheme (str): URL scheme, either ``'http'`` or ``'https'``
+            (default ``'http'``)
+        host(str): Hostname for the request (default ``'falconframework.org'``)
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for ``'http'``
+            and 443 for ``'https'``). A string may also be passed, as long as
+            it can be parsed as an int.
+        headers (dict): Headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
+        root_path (str): Value for the ``SCRIPT_NAME`` environ variable, described in
+            PEP-333: 'The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This may be an empty string, if the
+            application corresponds to the "root" of the server.' (default ``''``)
+        app (str): Deprecated alias for `root_path`. If both kwargs are passed,
+            `root_path` takes precedence.
+        body (str): The body of the request (default ``''``). The value will be
+            encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
+            may be passed, in which case it will be used as-is.
+        method (str): The HTTP method to use (default ``'GET'``)
+        wsgierrors (io): The stream to use as *wsgierrors*
+            (default ``sys.stderr``)
+        file_wrapper: Callable that returns an iterable, to be used as
+            the value for *wsgi.file_wrapper* in the environ.
+        remote_addr (str): Remote address for the request to use as the
+            ``'REMOTE_ADDR'`` environ variable (default ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the Set-Cookie header.
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
+        content_type (str): The value to use for the Content-Type header in
+            the request. If specified, this value will take precedence over
+            any value set for the Content-Type header in the
+            `headers` keyword argument. The ``falcon`` module provides a number
+            of :ref:`constants for common media types <media_type_constants>`.
+        json(JSON serializable): A JSON document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/json'``, overriding any value specified by either
+            the `content_type` or `headers` arguments.
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
     """
 
-    env = create_environ(**kwargs)
+    path, query_string, headers, body, extras = _prepare_sim_args(
+        path,
+        query_string,
+        params,
+        params_csv,
+        content_type,
+        headers,
+        body,
+        json,
+        extras,
+    )
+
+    env = create_environ(
+        method=method,
+        scheme=scheme,
+        path=path,
+        query_string=query_string,
+        headers=headers,
+        body=body,
+        file_wrapper=file_wrapper,
+        host=host,
+        remote_addr=remote_addr,
+        wsgierrors=wsgierrors,
+        http_version=http_version,
+        port=port,
+        root_path=root_path,
+        cookies=cookies,
+    )
+
+    if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
+        raise ValueError(
+            'WSGI environ extras may not override the request method. '
+            'Please use the method parameter.'
+        )
+
+    env.update(extras)
+
     return falcon.request.Request(env, options=options)
 
 
@@ -1454,3 +1587,41 @@ def _make_cookie_values(cookies: Dict) -> str:
             for key, cookie in cookies.items()
         ]
     )
+
+
+def _prepare_sim_args(
+    path, query_string, params, params_csv, content_type, headers, body, json, extras
+):
+    if path and not path.startswith('/'):
+        raise ValueError("path must start with '/'")
+
+    if '?' in path:
+        if query_string or params:
+            raise ValueError(
+                'path may not contain a query string in combination with '
+                'the query_string or params parameters. Please use only one '
+                'way of specifying the query string.'
+            )
+        path, query_string = path.split('?', 1)
+    elif query_string and query_string.startswith('?'):
+        raise ValueError("query_string should not start with '?'")
+
+    extras = extras or {}
+
+    if query_string is None:
+        query_string = to_query_str(
+            params,
+            comma_delimited_lists=params_csv,
+            prefix=False,
+        )
+
+    if content_type is not None:
+        headers = headers or {}
+        headers['Content-Type'] = content_type
+
+    if json is not None:
+        body = json_module.dumps(json, ensure_ascii=False)
+        headers = headers or {}
+        headers['Content-Type'] = MEDIA_JSON
+
+    return path, query_string, headers, body, extras
