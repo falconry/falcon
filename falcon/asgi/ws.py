@@ -730,7 +730,7 @@ class _BufferedReceiver:
 
 
 def check_support_reason(asgi_ver):
-    """Checks if the websocket version support a close reason."""
+    """Check if the websocket version support a close reason."""
     target_ver = [2, 3]
     current_ver = asgi_ver.split('.')
 
