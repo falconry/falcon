@@ -336,7 +336,7 @@ class Response:
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    def set_cookie(
+    def set_cookie(  # noqa: C901
         self,
         name,
         value,
