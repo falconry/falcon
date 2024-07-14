@@ -42,7 +42,7 @@ from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
 
-if TYPE_CHECKING:  # TODO: switch to TYPE_CHECKING once support for py3.5 is dropped
+if TYPE_CHECKING:
     from falcon import Request
 
     _CxElement = Union['_CxParent', '_CxChild']
@@ -305,8 +305,10 @@ class CompiledRouter:
         else:
             self._find = self._compile_and_find
 
+    # NOTE(caselit): keep request as string otherwise sphinx complains that it
+    # cannot resolve what class it refers to, since the symbol is not imported
     def find(
-        self, uri: str, req: Optional[Request] = None
+        self, uri: str, req: Optional['Request'] = None
     ) -> Optional[Tuple[object, Optional[_MethodDict], Dict[str, Any], Optional[str]]]:
         """Search for a route that matches the given partial URI.
 
