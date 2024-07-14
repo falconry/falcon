@@ -4,6 +4,7 @@ import pytest
 
 import falcon
 from falcon import testing
+
 from . import _asgi_test_app
 
 

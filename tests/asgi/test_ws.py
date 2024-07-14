@@ -5,15 +5,14 @@ import os
 import cbor2
 import pytest
 
-
 import falcon
-from falcon import media, testing
+from falcon import media
+from falcon import testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
 from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
-
 
 try:
     import rapidjson  # type: ignore

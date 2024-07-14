@@ -18,10 +18,7 @@ from __future__ import annotations
 
 import functools
 import io
-from typing import Callable
-from typing import IO
-from typing import List
-from typing import Optional
+from typing import Callable, IO, List, Optional
 
 from falcon.errors import DelimiterError
 
