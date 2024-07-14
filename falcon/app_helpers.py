@@ -14,8 +14,10 @@
 
 """Utilities for the App class."""
 
+from collections import OrderedDict
 from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Tuple
+from typing import Optional
 
 from falcon import util
 from falcon.constants import MEDIA_JSON
@@ -227,8 +229,28 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError):
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    preferred = req.client_prefers((MEDIA_XML, 'text/xml', MEDIA_JSON))
+    preferred = _negotiate_preffered_media_type(req, resp)
 
+    if preferred is not None:
+        handler, _, _ = resp.options.media_handlers._resolve(
+            preferred, MEDIA_JSON, raise_not_found=False
+        )
+        if handler:
+            resp.data = handler.serialize(exception.to_dict(OrderedDict), preferred)
+        else:
+            resp.data = exception.to_xml()
+
+        # NOTE(kgriffs): No need to append the charset param, since
+        #   utf-8 is the default for both JSON and XML.
+        resp.content_type = preferred
+
+    resp.append_header('Vary', 'Accept')
+
+
+def _negotiate_preffered_media_type(req: Request, resp: Response) -> Optional[str]:
+    supported = {MEDIA_XML, 'text/xml', MEDIA_JSON}
+    supported.update(set(resp.options.media_handlers.keys()))
+    preferred = req.client_prefers(supported)
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media
         # type based on something Falcon supports. Returning something
@@ -247,21 +269,7 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError):
             preferred = MEDIA_JSON
         elif '+xml' in accept:
             preferred = MEDIA_XML
-
-    if preferred is not None:
-        if preferred == MEDIA_JSON:
-            handler, _, _ = resp.options.media_handlers._resolve(
-                MEDIA_JSON, MEDIA_JSON, raise_not_found=False
-            )
-            resp.data = exception.to_json(handler)
-        else:
-            resp.data = exception.to_xml()
-
-        # NOTE(kgriffs): No need to append the charset param, since
-        #   utf-8 is the default for both JSON and XML.
-        resp.content_type = preferred
-
-    resp.append_header('Vary', 'Accept')
+    return preferred
 
 
 class CloseableStreamIterator:
