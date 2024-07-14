@@ -16,7 +16,6 @@
 
 from falcon.errors import OperationNotAllowed
 
-
 __all__ = ['BoundedStream']
 
 

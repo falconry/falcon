@@ -93,7 +93,6 @@ from falcon.util import wrap_sync_to_async
 from falcon.util import wrap_sync_to_async_unsafe
 from falcon.version import __version__
 
-
 # NOTE(kgriffs): Only to be used internally on the rare occasion that we
 #   need to log something that we can't communicate any other way.
 _logger = _logging.getLogger('falcon')

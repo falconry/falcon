@@ -2,7 +2,6 @@ from enum import Enum
 import os
 import sys
 
-
 PYPY = sys.implementation.name == 'pypy'
 """Evaluates to ``True`` when the current Python implementation is PyPy."""
 

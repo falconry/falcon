@@ -1,9 +1,10 @@
+from _util import create_app  # NOQA: I100
 import pytest
 
 import falcon
-from falcon import App, status_codes, testing
-
-from _util import create_app  # NOQA: I100
+from falcon import App
+from falcon import status_codes
+from falcon import testing
 
 
 class CustomCookies:

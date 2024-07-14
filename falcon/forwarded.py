@@ -22,7 +22,6 @@ import string
 
 from falcon.util.uri import unquote_string
 
-
 # '-' at the end to prevent interpretation as range in a char class
 _TCHAR = string.digits + string.ascii_letters + r"!#$%&'*+.^_`|~-"
 

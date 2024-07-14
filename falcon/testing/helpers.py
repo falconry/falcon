@@ -35,11 +35,7 @@ import re
 import socket
 import sys
 import time
-from typing import Any
-from typing import Dict
-from typing import Iterable
-from typing import Optional
-from typing import Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import falcon
 from falcon import errors as falcon_errors
