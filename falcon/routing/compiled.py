@@ -124,7 +124,7 @@ class CompiledRouter:
         self._compile_lock = Lock()
 
     @property
-    def options(self) -> 'CompiledRouterOptions':
+    def options(self) -> CompiledRouterOptions:
         return self._options
 
     @property
@@ -305,8 +305,8 @@ class CompiledRouter:
         else:
             self._find = self._compile_and_find
 
-    # NOTE(caselit): keep request as string otherwise sphinx complains that it
-    # cannot resolve what class it refers to, since the symbol is not imported
+    # NOTE(caselit): keep Request as string otherwise sphinx complains that it resolves
+    # to multiple classes, since the symbol is imported only for type check.
     def find(
         self, uri: str, req: Optional['Request'] = None
     ) -> Optional[Tuple[object, Optional[_MethodDict], Dict[str, Any], Optional[str]]]:
