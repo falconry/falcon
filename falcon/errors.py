@@ -42,7 +42,6 @@ import falcon.status_codes as status
 from falcon.util.deprecation import deprecated_args
 from falcon.util.misc import dt_to_http
 
-
 __all__ = (
     'CompatibilityError',
     'DelimiterError',

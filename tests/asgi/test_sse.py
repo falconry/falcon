@@ -5,7 +5,8 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.asgi import App, SSEvent
+from falcon.asgi import App
+from falcon.asgi import SSEvent
 
 
 def test_no_events():

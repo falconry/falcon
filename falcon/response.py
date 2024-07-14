@@ -34,10 +34,10 @@ from falcon.util import http_cookies
 from falcon.util import http_status_to_code
 from falcon.util import structures
 from falcon.util import TimezoneGMT
-from falcon.util.deprecation import AttributeRemovedError, deprecated
+from falcon.util.deprecation import AttributeRemovedError
+from falcon.util.deprecation import deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
-
 
 GMT_TIMEZONE = TimezoneGMT()
 

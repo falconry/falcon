@@ -2,7 +2,8 @@ import falcon.asgi
 
 from .cache import RedisCache
 from .config import Config
-from .images import Images, Thumbnails
+from .images import Images
+from .images import Thumbnails
 from .store import Store
 
 

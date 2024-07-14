@@ -21,7 +21,6 @@ import requests
 
 import falcon.testing
 
-
 HERE = pathlib.Path(__file__).resolve().parent
 INDEX = '/static/index.html'
 

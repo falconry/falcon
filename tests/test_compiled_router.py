@@ -1,10 +1,12 @@
-from threading import Barrier, Thread
+from threading import Barrier
+from threading import Thread
 from time import sleep
 from unittest.mock import MagicMock
 
 import pytest
 
-from falcon.routing import CompiledRouter, CompiledRouterOptions
+from falcon.routing import CompiledRouter
+from falcon.routing import CompiledRouterOptions
 
 
 def test_find_src(monkeypatch):

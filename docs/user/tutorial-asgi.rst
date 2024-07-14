@@ -175,8 +175,9 @@ We can now implement a basic async image store. Save the following code as
     import io
 
     import aiofiles
-    import falcon
     import PIL.Image
+
+    import falcon
 
 
     class Image:
@@ -266,6 +267,7 @@ of images. Place the code below in a file named ``images.py``:
 .. code:: python
 
     import aiofiles
+
     import falcon
 
 
@@ -670,8 +672,6 @@ The new ``thumbnails`` end-point should now render thumbnails on the fly::
 Again, we could also verify thumbnail URIs in the browser or image viewer that
 supports HTTP input.
 
-
-
 .. _asgi_tutorial_caching:
 
 Caching Responses
@@ -979,8 +979,10 @@ your ASGI Falcon application:
 
 .. code:: python
 
-    import falcon
     import logging
+
+    import falcon
+
 
     logging.basicConfig(level=logging.INFO)
 

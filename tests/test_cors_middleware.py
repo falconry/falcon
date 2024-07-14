@@ -1,9 +1,9 @@
+from _util import create_app  # NOQA
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
-
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 @pytest.fixture

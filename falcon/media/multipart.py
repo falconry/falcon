@@ -25,7 +25,6 @@ from falcon.util import BufferedReader
 from falcon.util import misc
 from falcon.util.mediatypes import parse_header
 
-
 # TODO(vytas):
 #   * Better support for form-wide charset setting
 #   * Clean up, simplify, and optimize BufferedReader

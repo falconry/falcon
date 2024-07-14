@@ -16,11 +16,7 @@
 
 from functools import partial
 import inspect
-from typing import Callable  # NOQA: F401
-from typing import Dict  # NOQA: F401
-from typing import List
-from typing import Optional
-from typing import Type  # NOQA: F401
+from typing import Callable, Dict, List, Optional, Type
 
 from falcon import app_helpers
 from falcon.app import App
@@ -101,7 +97,7 @@ def register_router(router_class):
 
 
 # router inspection registry
-_supported_routers = {}  # type: Dict[Type, Callable]
+_supported_routers: Dict[Type, Callable] = {}
 
 
 def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':

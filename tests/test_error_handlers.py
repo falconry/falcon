@@ -1,11 +1,12 @@
+from _util import create_app  # NOQA
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
-from falcon import constants, testing
+from falcon import constants
+from falcon import testing
 import falcon.asgi
 from falcon.util.deprecation import DeprecatedWarning
-
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 def capture_error(req, resp, ex, params):
