@@ -455,7 +455,7 @@ class Response:
                 https://site-b.example. While this attribute is not yet
                 standardized, it is already used by Chrome.
 
-                (See also: `Partitioned RFC Draft`_)
+                (See also: `CHIPS`_)
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -466,8 +466,8 @@ class Response:
         .. _Same-Site RFC Draft:
             https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7
 
-        .. _Partitioned RFC Draft:
-            https://datatracker.ietf.org/doc/html/draft-cutler-httpbis-partitioned-cookies#section-2.1
+        .. _CHIPS:
+            https://developer.mozilla.org/en-US/docs/Web/Privacy/Privacy_sandbox/Partitioned_cookies
 
         """
 
