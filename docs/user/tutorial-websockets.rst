@@ -439,11 +439,11 @@ Authentication
 ______________
 
 Adding authentication can be done with the help of middleware as well.
-It checks the request headers for a token.
-If the token is valid, the request is allowed to continue.
-If the token is invalid, the request is rejected.
+Authentication can be done a few ways. In this example we'll use the
+**First message** method, as described on the `websockets documentation <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__.
 
-There are some `considerations <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__ to take into account when implementing authentication in a WebSocket server.
+There are some `considerations <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__
+to take into account when implementing authentication in a WebSocket server.
 
 Updated server code:
 
@@ -453,14 +453,23 @@ Updated client code for the reports client:
 
 .. literalinclude:: ../../examples/wslook/wslook/reports_client.py
 
-If you try to query the reports endpoint now, everything works as expected.
-But as soon as you remove/modify the token, the connection will be closed.
+Things we've changed:
+
+- Added a new middleware class `AuthMiddleware` that will check the token on the first message.
+- Opening a websocket connection is now handled by the middleware.
+- The client now sends a token as the first message, if required for that route.
+
+If you try to query the reports endpoint now, everything works as expected on an
+authenticated route.
+But as soon as you remove/modify the token, the connection will be closed
+(after sending the first query - a `downside <https://websockets.readthedocs.io/en/stable/topics/authentication.html#sending-credentials>`__
+of first-message authentication).
 
 .. code-block:: bash
 
     $ python reports_client.py
     [...]
-    websockets.exceptions.InvalidStatusCode: server rejected WebSocket connection: HTTP 403
+    websockets.exceptions.ConnectionClosedError: received 1008 (policy violation); then sent 1008 (policy violation)
 
 .. note::
 

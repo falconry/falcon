@@ -4,9 +4,11 @@ import websockets
 
 async def send_message():
     uri = 'ws://localhost:8000/reports'
-    headers = {'Authorization': 'very secure token'}
 
-    async with websockets.connect(uri, extra_headers=headers) as websocket:
+    async with websockets.connect(uri) as websocket:
+        # Send the autentication token
+        await websocket.send('very secure token!')
+
         while True:
             message = input('Name of the log: ')
             await websocket.send(message)

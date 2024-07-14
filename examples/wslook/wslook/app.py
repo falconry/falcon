@@ -1,7 +1,8 @@
 from datetime import datetime
 
-import falcon.asgi
 import uvicorn
+
+import falcon.asgi
 from falcon import WebSocketDisconnected
 from falcon.asgi import Request, WebSocket
 
@@ -40,10 +41,7 @@ class LoggerMiddleware:
         print(f'WebSocket connection established on {req.path}')
 
 
-# Added an authentication middleware. This middleware will check if the request is on a protected route.
 class AuthMiddleware:
-    protected_routes = []
-
     def __init__(self, protected_routes: list[str] | None = None):
         if protected_routes is None:
             protected_routes = []
@@ -51,15 +49,21 @@ class AuthMiddleware:
         self.protected_routes = protected_routes
 
     async def process_request_ws(self, req: Request, ws: WebSocket):
+        # Opening a connection so we can receive the token
+        await ws.accept()
+
+        # Check if the route is protected
         if req.path not in self.protected_routes:
             return
 
-        token = req.get_header('Authorization')
+        token = await ws.receive_text()
+
         if token != 'very secure token':
             await ws.close(1008)
             return
 
-        print(f'Client with token {token} Authenticated')
+        # Never log tokens in production
+        print(f'Client with token "{token}" Authenticated')
 
 
 class HelloWorldResource:
@@ -69,11 +73,6 @@ class HelloWorldResource:
 
 class EchoWebSocketResource:
     async def on_websocket(self, req: Request, ws: WebSocket):
-        try:
-            await ws.accept()
-        except WebSocketDisconnected:
-            return
-
         while True:
             try:
                 message = await ws.receive_text()
@@ -86,11 +85,6 @@ class EchoWebSocketResource:
 
 class ReportsResource:
     async def on_websocket(self, req: Request, ws: WebSocket):
-        try:
-            await ws.accept()
-        except WebSocketDisconnected:
-            return
-
         while True:
             try:
                 query = await ws.receive_text()
@@ -111,8 +105,6 @@ app.add_route('/echo', EchoWebSocketResource())
 app.add_route('/reports', ReportsResource())
 
 app.add_middleware(LoggerMiddleware())
-
-# Add the AuthMiddleware to the app, and specify the protected routes
 app.add_middleware(AuthMiddleware(['/reports']))
 
 if __name__ == '__main__':
