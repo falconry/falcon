@@ -383,10 +383,9 @@ Then, update the responder to use the new media type:
 
 .. code:: python
 
-    import falcon
-
     import msgpack
 
+    import falcon
 
     class Resource:
 
@@ -467,10 +466,11 @@ Next, edit ``test_app.py`` to look like this:
 
 .. code:: python
 
-    import falcon
-    from falcon import testing
     import msgpack
     import pytest
+
+    import falcon
+    from falcon import testing
 
     from look.app import app
 
@@ -601,8 +601,9 @@ POSTs. Open ``images.py`` and add a POST responder to the
     import uuid
     import mimetypes
 
-    import falcon
     import msgpack
+
+    import falcon
 
 
     class Resource:
@@ -723,8 +724,9 @@ operation:
     import os
     import uuid
 
-    import falcon
     import msgpack
+
+    import falcon
 
 
     class Resource:
@@ -789,7 +791,8 @@ Hmm, it looks like we forgot to update ``app.py``. Let's do that now:
 
     import falcon
 
-    from .images import ImageStore, Resource
+    from .images import ImageStore
+    from .images import Resource
 
 
     app = application = falcon.App()
@@ -813,7 +816,8 @@ similar to the following:
 
     import falcon
 
-    from .images import ImageStore, Resource
+    from .images import ImageStore
+    from .images import Resource
 
 
     def create_app(image_store):
@@ -849,10 +853,11 @@ look similar to this:
 
     from unittest.mock import call, MagicMock, mock_open
 
-    import falcon
-    from falcon import testing
     import msgpack
     import pytest
+
+    import falcon
+    from falcon import testing
 
     import look.app
     import look.images
@@ -1041,7 +1046,8 @@ the image storage directory with an environment variable:
 
     import falcon
 
-    from .images import ImageStore, Resource
+    from .images import ImageStore
+    from .images import Resource
 
 
     def create_app(image_store):
@@ -1123,8 +1129,9 @@ Go ahead and edit your ``images.py`` file to look something like this:
     import uuid
     import mimetypes
 
-    import falcon
     import msgpack
+
+    import falcon
 
 
     class Collection:
@@ -1234,7 +1241,9 @@ similar to the following:
 
     import falcon
 
-    from .images import Collection, ImageStore, Item
+    from .images import Collection
+    from .images import ImageStore
+    from .images import Item
 
 
     def create_app(image_store):

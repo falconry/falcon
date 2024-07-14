@@ -1,13 +1,12 @@
 import functools
 import json
 
+from _util import create_app  # NOQA
+from _util import create_resp  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
-
-from _util import create_app, create_resp  # NOQA
-
 
 # --------------------------------------------------------------------
 # Fixtures

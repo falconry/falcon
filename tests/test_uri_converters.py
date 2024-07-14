@@ -8,7 +8,6 @@ import pytest
 
 from falcon.routing import converters
 
-
 _TEST_UUID = uuid.uuid4()
 _TEST_UUID_STR = str(_TEST_UUID)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')

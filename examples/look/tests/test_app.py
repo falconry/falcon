@@ -1,11 +1,14 @@
 import io
+from unittest.mock import call
+from unittest.mock import MagicMock
+from unittest.mock import mock_open
 from wsgiref.validate import InputWrapper
+
+import msgpack
+import pytest
 
 import falcon
 from falcon import testing
-from unittest.mock import call, MagicMock, mock_open
-import msgpack
-import pytest
 
 import look.app
 import look.images

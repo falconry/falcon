@@ -23,23 +23,14 @@ in the `falcon` module, and so must be explicitly imported::
     name, port = uri.parse_host('example.org:8080')
 """
 
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple, TYPE_CHECKING
-from typing import Union
+from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 from falcon.constants import PYPY
 
 try:
-    from falcon.cyutil.uri import (
-        decode as _cy_decode,
-        parse_query_string as _cy_parse_query_string,
-    )
+    from falcon.cyutil import uri as _cy_uri  # type: ignore
 except ImportError:
-    _cy_decode = None
-    _cy_parse_query_string = None
+    _cy_uri = None
 
 
 # NOTE(kgriffs): See also RFC 3986
@@ -553,8 +544,9 @@ def unquote_string(quoted: str) -> str:
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
 if not TYPE_CHECKING:
-    decode = _cy_decode or decode  # NOQA
-    parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
+    if _cy_uri is not None:
+        decode = _cy_uri.decode  # NOQA
+        parse_query_string = _cy_uri.parse_query_string  # NOQA
 
 
 __all__ = [

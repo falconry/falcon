@@ -4,7 +4,6 @@ import pytest
 
 import falcon
 
-
 _FALCON_TEST_ENV = (
     ('FALCON_ASGI_WRAP_NON_COROUTINES', 'Y'),
     ('FALCON_TESTING_SESSION', 'Y'),
