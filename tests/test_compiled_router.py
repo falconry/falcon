@@ -1,10 +1,13 @@
-from threading import Barrier, Thread
+from threading import Barrier
+from threading import Thread
 from time import sleep
 from unittest.mock import MagicMock
 
 import pytest
 
-from falcon.routing import CompiledRouter, CompiledRouterOptions
+from falcon.routing import compiled
+from falcon.routing import CompiledRouter
+from falcon.routing import CompiledRouterOptions
 
 
 def test_find_src(monkeypatch):
@@ -137,3 +140,8 @@ def test_converter_not_subclass():
     assert res is not None
     assert res[2] == {'bar': 'bar'}
     assert router.find('/foo/bar/bar') is None
+
+
+def test_base_classes():
+    with pytest.raises(NotImplementedError):
+        compiled._CxChild().src(42)

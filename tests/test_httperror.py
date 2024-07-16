@@ -6,14 +6,13 @@ import json
 import wsgiref.validate
 import xml.etree.ElementTree as et  # noqa: I202
 
+from _util import create_app  # NOQA
 import pytest
 import yaml
 
 import falcon
 import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
-
-from _util import create_app  # NOQA
 
 
 @pytest.fixture

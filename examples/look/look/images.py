@@ -3,8 +3,9 @@ import mimetypes
 import os
 import uuid
 
-import falcon
 import msgpack
+
+import falcon
 
 
 class Resource:

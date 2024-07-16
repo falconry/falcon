@@ -1,6 +1,4 @@
-from typing import Iterable
-from typing import Optional
-from typing import Union
+from typing import Iterable, Optional, Union
 
 from .request import Request
 from .response import Response

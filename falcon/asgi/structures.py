@@ -1,7 +1,6 @@
 from falcon.constants import MEDIA_JSON
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 
-
 __all__ = ['SSEvent']
 
 

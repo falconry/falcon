@@ -23,10 +23,7 @@ import datetime as dt
 import inspect
 import json as json_module
 import time
-from typing import Dict
-from typing import Optional
-from typing import Sequence
-from typing import Union
+from typing import Dict, Optional, Sequence, Union
 import warnings
 import wsgiref.validate
 

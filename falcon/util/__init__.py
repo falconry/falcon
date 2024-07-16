@@ -53,7 +53,6 @@ from falcon.util.sync import wrap_sync_to_async
 from falcon.util.sync import wrap_sync_to_async_unsafe
 from falcon.util.time import TimezoneGMT
 
-
 # NOTE(kgriffs): Backport support for the new 'SameSite' attribute
 #   for Python versions prior to 3.8. We do it this way because
 #   SimpleCookie does not give us a simple way to specify our own
@@ -85,8 +84,8 @@ BufferedReader = (
 
 def __getattr__(name: str) -> ModuleType:
     if name == 'json':
-        import warnings
         import json  # NOQA
+        import warnings
 
         warnings.warn(
             'Importing json from "falcon.util" is deprecated.', DeprecatedWarning

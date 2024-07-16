@@ -1,14 +1,14 @@
-from datetime import date, datetime
+from datetime import date
+from datetime import datetime
 import json
 from uuid import UUID
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 from falcon.errors import HTTPInvalidParam
 import falcon.testing as testing
-
-from _util import create_app  # NOQA
 
 
 class Resource(testing.SimpleTestResource):
