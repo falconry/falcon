@@ -1,11 +1,13 @@
 import json
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
-from falcon import errors, media, testing, util
-
-from _util import create_app  # NOQA
+from falcon import errors
+from falcon import media
+from falcon import testing
+from falcon import util
 
 
 def create_client(asgi, handlers=None, resource=None):

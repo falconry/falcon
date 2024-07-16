@@ -1,11 +1,10 @@
 import io
 
+from _util import has_cython  # NOQA
 import pytest
 
 import falcon
 import falcon.util
-
-from _util import has_cython  # NOQA
 
 
 class TestCythonized:

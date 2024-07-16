@@ -3,14 +3,14 @@ import io
 import os
 import pathlib
 
+import _util  # NOQA
 import pytest
 
 import falcon
-from falcon.routing import StaticRoute, StaticRouteAsync
+from falcon.routing import StaticRoute
+from falcon.routing import StaticRouteAsync
 from falcon.routing.static import _BoundedFile
 import falcon.testing as testing
-
-import _util  # NOQA
 
 
 @pytest.fixture()

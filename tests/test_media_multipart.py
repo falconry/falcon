@@ -3,15 +3,13 @@ import itertools
 import os
 import random
 
+from _util import create_app  # NOQA: I100
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
 from falcon.util import BufferedReader
-
-from _util import create_app  # NOQA: I100
-
 
 try:
     import msgpack  # type: ignore

@@ -2,14 +2,13 @@
 
 import http
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 from falcon.http_status import HTTPStatus
 import falcon.testing as testing
 from falcon.util.deprecation import AttributeRemovedError
-
-from _util import create_app  # NOQA
 
 
 @pytest.fixture(params=[True, False])

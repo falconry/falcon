@@ -1,4 +1,5 @@
-from falcon import request_helpers, stream
+from falcon import request_helpers
+from falcon import stream
 
 
 def test_bounded_stream():

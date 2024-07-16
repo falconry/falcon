@@ -3,17 +3,16 @@ import io
 import json
 import platform
 
+from _util import create_app  # NOQA
 import mujson
 import pytest
 import ujson
 
 import falcon
-from falcon import media, testing
+from falcon import media
+from falcon import testing
 from falcon.asgi.stream import BoundedStream
 from falcon.util.deprecation import DeprecatedWarning
-
-from _util import create_app  # NOQA
-
 
 orjson = None
 rapidjson = None

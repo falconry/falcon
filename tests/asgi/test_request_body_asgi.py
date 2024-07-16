@@ -7,7 +7,6 @@ import falcon.asgi
 import falcon.request
 import falcon.testing as testing
 
-
 SIZE_1_KB = 1024
 
 

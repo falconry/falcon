@@ -21,9 +21,9 @@ from falcon.constants import _UNSET
 from falcon.constants import SINGLETON_HEADERS
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
+
 from . import _request_helpers as asgi_helpers
 from .stream import BoundedStream
-
 
 __all__ = ['Request']
 

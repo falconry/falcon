@@ -1,23 +1,16 @@
 import typing  # NOQA: F401
 
 try:
-    import jsonschema as _jsonschema  # NOQA
+    import jsonschema
 except ImportError:
-    pass
+    jsonschema = None  # type: ignore
+from _util import create_app  # NOQA
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
 from falcon.media import validators
-
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
-
-
-# NOTE(kgriffs): Default to None if missing. We do it like this, here, instead
-#   of in the body of the except statement, above, to avoid flake8 import
-#   ordering errors.
-jsonschema = globals().get('_jsonschema')
-
 
 _VALID_MEDIA = {'message': 'something'}
 _INVALID_MEDIA = {}  # type: typing.Dict[str, str]
