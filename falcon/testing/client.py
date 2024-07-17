@@ -99,8 +99,8 @@ class Cookie:
         same_site (str): Specifies whether cookies are send in
             cross-site requests. Possible values are 'Lax', 'Strict'
             and 'None'. ``None`` if not specified.
-        partitioned (bool): Indicates if the cookie has the Partitioned
-            flag set
+        partitioned (bool): Indicates if the cookie has the
+            ``Partitioned`` flag set.
     """
 
     def __init__(self, morsel):
