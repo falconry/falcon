@@ -2,7 +2,10 @@ import asyncio
 import typing
 import uuid
 
-from falcon.asgi import Request, Response, SSEvent, WebSocket
+from falcon.asgi import Request
+from falcon.asgi import Response
+from falcon.asgi import SSEvent
+from falcon.asgi import WebSocket
 
 
 class Emitter:

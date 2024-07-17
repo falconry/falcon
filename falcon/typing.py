@@ -19,7 +19,6 @@ from typing import Any, Callable, Pattern, Union
 from falcon.request import Request
 from falcon.response import Response
 
-
 # Error handlers
 ErrorHandler = Callable[[Request, Response, BaseException, dict], Any]
 

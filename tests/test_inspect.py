@@ -6,7 +6,8 @@ import _inspect_fixture as i_f
 import pytest
 
 import falcon
-from falcon import inspect, routing
+from falcon import inspect
+from falcon import routing
 import falcon.asgi
 
 

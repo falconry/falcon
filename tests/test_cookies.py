@@ -1,15 +1,17 @@
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from datetime import tzinfo
 from http import cookies as http_cookies
 import re
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 import falcon.testing as testing
-from falcon.util import http_date_to_dt, TimezoneGMT
-
-from _util import create_app  # NOQA
-
+from falcon.util import http_date_to_dt
+from falcon.util import TimezoneGMT
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
@@ -74,6 +76,13 @@ class CookieResourceSameSite:
         resp.set_cookie('baz', 'foo', same_site='')
 
 
+class CookieResourcePartitioned:
+    def on_get(self, req, resp):
+        resp.set_cookie('foo', 'bar', secure=True, partitioned=True)
+        resp.set_cookie('bar', 'baz', secure=True, partitioned=False)
+        resp.set_cookie('baz', 'foo', secure=True)
+
+
 class CookieUnset:
     def on_get(self, req, resp):
         resp.unset_cookie('foo')
@@ -103,6 +112,7 @@ def client(asgi):
     app.add_route('/', CookieResource())
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
     app.add_route('/same-site', CookieResourceSameSite())
+    app.add_route('/partitioned', CookieResourcePartitioned())
     app.add_route('/unset-cookie', CookieUnset())
     app.add_route('/unset-cookie-same-site', CookieUnsetSameSite())
 
@@ -160,6 +170,7 @@ def test_response_complex_case(client):
     assert cookie.max_age == 300
     assert cookie.path is None
     assert cookie.secure
+    assert not cookie.partitioned
 
     cookie = result.cookies['bar']
     assert cookie.value == 'baz'
@@ -169,6 +180,7 @@ def test_response_complex_case(client):
     assert cookie.max_age is None
     assert cookie.path is None
     assert cookie.secure
+    assert not cookie.partitioned
 
     cookie = result.cookies['bad']
     assert cookie.value == ''  # An unset cookie has an empty value
@@ -511,3 +523,16 @@ def test_invalid_same_site_value(same_site):
 
     with pytest.raises(ValueError):
         resp.set_cookie('foo', 'bar', same_site=same_site)
+
+
+def test_partitioned_value(client):
+    result = client.simulate_get('/partitioned')
+
+    cookie = result.cookies['foo']
+    assert cookie.partitioned
+
+    cookie = result.cookies['bar']
+    assert not cookie.partitioned
+
+    cookie = result.cookies['baz']
+    assert not cookie.partitioned

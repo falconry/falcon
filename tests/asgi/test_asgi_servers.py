@@ -17,8 +17,8 @@ import websockets
 import websockets.exceptions
 
 from falcon import testing
-from . import _asgi_test_app
 
+from . import _asgi_test_app
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 

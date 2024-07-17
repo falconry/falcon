@@ -3,7 +3,9 @@ import json
 import pytest
 
 import falcon
-from falcon import errors, media, testing
+from falcon import errors
+from falcon import media
+from falcon import testing
 
 
 @pytest.fixture

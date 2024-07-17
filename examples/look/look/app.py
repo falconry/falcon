@@ -2,7 +2,8 @@ import os
 
 import falcon
 
-from .images import ImageStore, Resource
+from .images import ImageStore
+from .images import Resource
 
 
 def create_app(image_store):
