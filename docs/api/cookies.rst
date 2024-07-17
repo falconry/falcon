@@ -172,19 +172,22 @@ by setting the 'samesite' kwarg.
 The Partitioned Attribute
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Q1 2024, Google Chrome will start to `phaseout support for third-party
-cookies <https://developers.google.com/privacy-sandbox/3pcd/prepare/prepare-for-phaseout>`_.
+Starting from Q1 2024, Google Chrome will start to
+`phase out support for third-party cookies
+<https://developers.google.com/privacy-sandbox/3pcd/prepare/prepare-for-phaseout>`__.
 If your site is relying on cross-site cookies, it might be necessary to set the
-`Partitioned` attribute. `Partitioned` usually requires the `Secure` attribute
-to be set, but this is not enforced by Falcon.
+``Partitioned`` attribute. ``Partitioned`` usually requires the
+:ref:`Secure <cookie-secure-attribute>` attribute to be set. While this is not
+enforced by Falcon, the framework does set ``Secure`` by default, unless
+specified otherwise
+(see also :attr:`~falcon.ResponseOptions.secure_cookies_by_default`).
 
-Currently, :py:meth:`~falcon.Response.set_cookie` does not set `Partitioned` automatically
-depending on other attributes (like `SameSite`), although this may change in a future release.
+Currently, :py:meth:`~falcon.Response.set_cookie` does not set ``Partitioned``
+automatically depending on other attributes (like ``SameSite``),
+although this may change in a future release.
 
 .. note::
-
-    Similar to `SameSite`, the standard ``http.cookies`` module does not
-    support the `Partitioned` attribute yet and Falcon performs the same
-    monkey-patch as for `SameSite`.
-
-
+    Similar to ``SameSite`` on older Python versions, the standard
+    :mod:`http.cookies` module does not support the ``Partitioned`` attribute
+    yet, and Falcon performs the same monkey-patching as it did for
+    ``SameSite``.
