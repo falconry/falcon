@@ -56,7 +56,7 @@ However, as of Falcon 4.0+, these aliases are identical to their :mod:`asyncio`
 counterparts on all supported Python versions. (They are only kept for
 compatibility purposes.)
 
-Simply use :func:`asyncio.get_running_loop` & :func:`asyncio.create_task`
+Simply use :func:`asyncio.get_running_loop` or :func:`asyncio.create_task`
 directly in new code.
 
 Adapters
