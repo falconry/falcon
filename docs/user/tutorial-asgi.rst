@@ -79,7 +79,7 @@ include:
 
 * `Uvicorn <https://www.uvicorn.org/>`_
 * `Daphne <https://github.com/django/daphne/>`_
-* `Hypercorn <https://pgjones.gitlab.io/hypercorn/>`_
+* `Hypercorn <https://github.com/pgjones/hypercorn/>`_
 
 For a simple tutorial application like ours, any of the above should do.
 Let's pick the popular ``uvicorn`` for now::
