@@ -1325,8 +1325,7 @@ def create_req(
             iterables. Each pair of items provides the name and value
             for the Set-Cookie header.
         extras (dict): Additional values to add to the WSGI
-            ``environ`` dictionary or the ASGI scope for the request
-            (default: ``None``)
+            ``environ`` dictionary (default: ``None``)
         content_type (str): The value to use for the Content-Type header in
             the request. If specified, this value will take precedence over
             any value set for the Content-Type header in the
@@ -1390,16 +1389,34 @@ def create_req(
     return falcon.request.Request(env, options=options)
 
 
-def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.Request:
+def create_asgi_req(
+    body=None,
+    req_type=None,
+    options=None,
+    path='/',
+    query_string='',
+    method='GET',
+    headers=None,
+    host=DEFAULT_HOST,
+    scheme=None,
+    port=None,
+    http_version='1.1',
+    remote_addr=None,
+    root_path=None,
+    content_length=None,
+    include_server=True,
+    cookies=None,
+    extras=None,
+    content_type=None,
+    json=None,
+    params=None,
+    params_csv=True,
+) -> falcon.Request:
     """Create and return a new ASGI Request instance.
 
     This function can be used to conveniently create an ASGI scope
     and use it to instantiate a :py:class:`falcon.asgi.Request` object
     in one go.
-
-    The arguments for this function are identical to those
-    of :py:meth:`falcon.testing.create_scope`, with the addition of
-    `body`, `req_type`, and `options` arguments as documented below.
 
     Keyword Arguments:
         body (bytes): The body data to use for the request (default b''). If
@@ -1411,9 +1428,118 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
         options (falcon.RequestOptions): An instance of
             :py:class:`falcon.RequestOptions` that should be used to determine
             certain aspects of request parsing in lieu of the defaults.
+        path (str): The path for the request (default ``'/'``)
+        query_string (str): The query string to simulate, without a
+            leading ``'?'`` (default ``''``). The query string is passed as-is
+            (it will not be percent-encoded).
+        method (str): The HTTP method to use (default ``'GET'``)
+        headers (dict): Headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). When the
+            request will include a body, the Content-Length header should be
+            included in this list. Header names are not case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
+        host(str): Hostname for the request (default ``'falconframework.org'``).
+            This also determines the value of the Host header in the
+            request.
+        scheme (str): URL scheme, either ``'http'`` or ``'https'``
+            (default ``'http'``)
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for ``'http'``
+            and 443 for ``'https'``). A string may also be passed, as long as
+            it can be parsed as an int.
+        http_version (str): The HTTP version to simulate. Must be either
+            ``'2'``, ``'2.0'``, ``'1.1'``, ``'1.0'``, or ``'1'``
+            (default ``'1.1'``). If set to ``'1.0'``, the Host header will not
+            be added to the scope.
+        remote_addr (str): Remote address for the request to use for
+            the 'client' field in the connection scope (default None)
+        root_path (str): The root path this application is mounted at; same as
+            SCRIPT_NAME in WSGI (default ``''``).
+        content_length (int): The expected content length of the request
+            body (default ``None``). If specified, this value will be
+            used to set the Content-Length header in the request.
+        include_server (bool): Set to ``False`` to not set the 'server' key
+            in the scope ``dict`` (default ``True``).
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
+        extras (dict): Additional values to add to the ASGI scope
+            (default: ``None``)
+        content_type (str): The value to use for the Content-Type header in
+            the request. If specified, this value will take precedence over
+            any value set for the Content-Type header in the
+            `headers` keyword argument. The ``falcon`` module provides a number
+            of :ref:`constants for common media types <media_type_constants>`.
+        json(JSON serializable): A JSON document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/json'``, overriding any value specified by either
+            the `content_type` or `headers` arguments.
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
     """
 
-    scope = create_scope(**kwargs)
+    path, query_string, headers, body, extras = _prepare_sim_args(
+        path,
+        query_string,
+        params,
+        params_csv,
+        content_type,
+        headers,
+        body,
+        json,
+        extras,
+    )
+
+    if content_length is None and body is not None:
+        if isinstance(body, str):
+            body = body.encode()
+
+        content_length = len(body)
+
+    scope = create_scope(
+        path=path,
+        query_string=query_string,
+        method=method,
+        headers=headers,
+        host=host,
+        scheme=scheme,
+        port=port,
+        http_version=http_version,
+        remote_addr=remote_addr,
+        root_path=root_path,
+        content_length=content_length,
+        cookies=cookies,
+        include_server=include_server,
+    )
+
+    if 'method' in extras and extras['method'] != method.upper():
+        raise ValueError(
+            'ASGI scope extras may not override the request method. '
+            'Please use the method parameter.'
+        )
+
+    scope.update(extras)
 
     body = body or b''
     disconnect_at = time.time() + 300
