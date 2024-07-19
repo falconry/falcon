@@ -179,7 +179,7 @@ def test_create_asgi_req_prepares_args(monkeypatch):
     ],
 )
 def test_create_asgi_req_sets_content_length(monkeypatch, body, content_length):
-    mock = MagicMock()
+    mock = MagicMock(side_effect=testing.helpers.create_scope)
     monkeypatch.setattr(testing.helpers, 'create_scope', mock)
     testing.create_asgi_req(body=body)
 
