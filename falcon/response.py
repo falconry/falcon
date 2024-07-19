@@ -336,7 +336,7 @@ class Response:
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    def set_cookie(
+    def set_cookie(  # noqa: C901
         self,
         name,
         value,
@@ -347,6 +347,7 @@ class Response:
         secure=None,
         http_only=True,
         same_site=None,
+        partitioned=False,
     ):
         """Set a response cookie.
 
@@ -447,6 +448,14 @@ class Response:
 
                 (See also: `Same-Site RFC Draft`_)
 
+            partitioned (bool): Prevents cookies from being accessed from other
+                subdomains. With partitioned enabled, a cookie set by
+                https://3rd-party.example which is embedded inside
+                https://site-a.example can no longer be accessed by
+                https://site-b.example. While this attribute is not yet
+                standardized, it is already used by Chrome.
+
+                (See also: `CHIPS`_)
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -456,6 +465,9 @@ class Response:
 
         .. _Same-Site RFC Draft:
             https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7
+
+        .. _CHIPS:
+            https://developer.mozilla.org/en-US/docs/Web/Privacy/Privacy_sandbox/Partitioned_cookies
 
         """
 
@@ -527,6 +539,9 @@ class Response:
                 )
 
             self._cookies[name]['samesite'] = same_site.capitalize()
+
+        if partitioned:
+            self._cookies[name]['partitioned'] = True
 
     def unset_cookie(self, name, samesite='Lax', domain=None, path=None):
         """Unset a cookie in the response.
