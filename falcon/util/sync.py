@@ -4,13 +4,7 @@ from functools import partial
 from functools import wraps
 import inspect
 import os
-from typing import Any
-from typing import Awaitable
-from typing import Callable
-from typing import Optional
-from typing import TypeVar
-from typing import Union
-
+from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
 __all__ = [
     'async_to_sync',

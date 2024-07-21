@@ -1,9 +1,8 @@
+from _util import create_req  # NOQA
 import pytest
 
 from falcon.request import Request
 import falcon.testing as testing
-
-from _util import create_req  # NOQA
 
 
 def test_remote_addr_default(asgi):

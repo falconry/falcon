@@ -3,7 +3,8 @@ import os
 import pytest
 
 import falcon
-from falcon import asgi, testing
+from falcon import asgi
+from falcon import testing
 
 
 @pytest.mark.parametrize(

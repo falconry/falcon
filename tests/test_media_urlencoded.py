@@ -1,12 +1,11 @@
 import io
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
-
-from _util import create_app  # NOQA
 
 
 def test_deserialize_empty_form():

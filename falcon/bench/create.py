@@ -80,8 +80,9 @@ def bottle(body, headers):
 
 
 def werkzeug(body, headers):
+    from werkzeug.routing import Map
+    from werkzeug.routing import Rule
     import werkzeug.wrappers as werkzeug
-    from werkzeug.routing import Map, Rule
 
     path = '/hello/<account_id>/test'
     url_map = Map([Rule(path, endpoint='hello')])
