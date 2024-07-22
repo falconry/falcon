@@ -893,11 +893,11 @@ async def test_bad_http_version(version, conductor):
 
 
 @pytest.mark.asyncio
-async def test_bad_first_event():
+@pytest.mark.parametrize('version', ['2.1', '2.3', '2.10.3'])
+async def test_bad_first_event(version):
     app = App()
 
-    scope = testing.create_scope_ws()
-    del scope['asgi']['spec_version']
+    scope = testing.create_scope_ws(spec_version=version)
 
     ws = testing.ASGIWebSocketSimulator()
     wrapped_emit = ws._emit
@@ -917,6 +917,10 @@ async def test_bad_first_event():
 
     assert ws.closed
     assert ws.close_code == CloseCode.SERVER_ERROR
+    if version != '2.1':
+        assert ws.close_reason == 'Internal Server Error'
+    else:
+        assert ws.close_reason == ''
 
 
 @pytest.mark.asyncio
@@ -1129,6 +1133,76 @@ def test_msgpack_missing():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('reason', ['Client closing connection', '', None])
+async def test_client_close_with_reason(reason, conductor):
+    class Resource:
+        def __init__(self):
+            pass
+
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            while True:
+                try:
+                    await ws.receive_data()
+
+                except falcon.WebSocketDisconnected:
+                    break
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    async with conductor as c:
+        async with c.simulate_ws('/', spec_version='2.3') as ws:
+            await ws.close(4099, reason)
+
+    assert ws.close_code == 4099
+    if reason:
+        assert ws.close_reason == reason
+    else:
+        assert ws.close_reason == ''
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('no_default', [True, False])
+@pytest.mark.parametrize('code', [None, 1011, 4099, 4042, 3405])
+async def test_no_reason_mapping(no_default, code, conductor):
+    class Resource:
+        def __init__(self):
+            pass
+
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            await ws.close(code)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+    if no_default:
+        conductor.app.ws_options.default_close_reasons = {}
+    else:
+        conductor.app.ws_options.default_close_reasons[4099] = '4099 reason'
+
+    async with conductor as c:
+        with pytest.raises(falcon.WebSocketDisconnected):
+            async with c.simulate_ws('/', spec_version='2.10.3') as ws:
+                await ws.receive_data()
+
+    if code:
+        assert ws.close_code == code
+    else:
+        assert ws.close_code == CloseCode.NORMAL
+
+    if 3100 <= ws.close_code <= 3999:
+        assert ws.close_reason == falcon.util.code_to_http_status(ws.close_code - 3000)
+    elif (
+        no_default
+        or ws.close_code not in conductor.app.ws_options.default_close_reasons
+    ):
+        assert ws.close_reason == ''
+    else:
+        reason = conductor.app.ws_options.default_close_reasons[ws.close_code]
+        assert ws.close_reason == reason
+
+
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
 @pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
 @pytest.mark.parametrize('accept', [True, False])

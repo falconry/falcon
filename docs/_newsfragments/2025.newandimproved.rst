@@ -1,0 +1,1 @@
+Support closing a :class:`falcon.asgi.WebSocket` with a reason.
