@@ -4,6 +4,7 @@
         "setuptools>=47",
         "wheel>=0.34",
         "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
+        "typing-extensions>=4"
     ]
 
 [tool.mypy]
