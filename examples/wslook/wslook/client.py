@@ -1,6 +1,6 @@
-# This is a simple example of a WebSocket client that sends a message to the server
-# Since it's an example using the `websockets` library and it isn't using anything specific to Falcon,
-# there are no tests. Coverage is skipped for this module.
+# This is a simple example of a WebSocket client that sends a message to the server.
+# Since it's an example using the `websockets` library, and it isn't using anything specific
+# to Falcon, there are no tests. Coverage is skipped for this module.
 
 import asyncio
 
