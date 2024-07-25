@@ -1,9 +1,11 @@
 from copy import copy
 
 import pytest
-from falcon import testing
+from wslook.app import app
+from wslook.app import AuthMiddleware
+
 from falcon import errors
-from wslook.app import app, AuthMiddleware
+from falcon import testing
 
 
 @pytest.mark.asyncio

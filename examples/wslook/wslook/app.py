@@ -2,9 +2,10 @@ from datetime import datetime
 
 import uvicorn
 
-import falcon.asgi
 from falcon import WebSocketDisconnected
-from falcon.asgi import Request, WebSocket
+import falcon.asgi
+from falcon.asgi import Request
+from falcon.asgi import WebSocket
 
 REPORTS = {
     'report1': {

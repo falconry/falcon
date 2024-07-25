@@ -13,8 +13,9 @@ logging messages.
    This tutorial covers the asynchronous flavor of Falcon using
    the `ASGI <https://asgi.readthedocs.io/en/latest/>`__ protocol.
 
-   A Falcon WebSocket server is build upon the `ASGI WebSocket specification <https://asgi.readthedocs.io/en/latest/specs/www.html#websocket>`__. Therefore it's not supported in a Falcon WSGI application.
-
+   A Falcon WebSocket server builds upon the
+   `ASGI WebSocket specification <https://asgi.readthedocs.io/en/latest/specs/www.html#websocket>`__.
+   Therefore it's not supported in a Falcon WSGI application.
 
 First Steps
 ___________
@@ -132,8 +133,8 @@ this::
     or
     $ wsproto
 
-To test the new WebSocket route, we can use the `websocat <https://github.com/vi/websocat>`__
-tool::
+To test the new WebSocket route, we can use the
+`websocat <https://github.com/vi/websocat>`__ tool::
 
     $ websocat ws://localhost:8000/echo
     $ hello
@@ -148,7 +149,7 @@ server.
 Simple Client
 _____________
 
-Create a new file called `client.py` in the same directory as `app.py`.
+Create a new file called ``client.py`` in the same directory as ``app.py``.
 The client will ask for your input and send it to the server.:
 
 .. literalinclude:: ../../examples/wslook/wslook/client.py
@@ -211,7 +212,6 @@ data.
     $ python client.py
     $ Enter a message: Hi
       {"message": "Hi", "date": "2024-07-13T12:11:51.758923"}
-
 
 .. note::
     By default, `send_media() <https://falcon.readthedocs.io/en/latest/api/websocket.html#falcon.asgi.WebSocket.send_media>`__ and `receive_media() <https://falcon.readthedocs.io/en/latest/api/websocket.html#falcon.asgi.WebSocket.receive_media>`__ will serialize to (and deserialize from) JSON for a TEXT payload, and to/from MessagePack for a BINARY payload (see also: `Built-in Media Handlers <https://falcon.readthedocs.io/en/latest/api/websocket.html#bimh>`__).
@@ -440,9 +440,11 @@ ______________
 
 Adding authentication can be done with the help of middleware as well.
 Authentication can be done a few ways. In this example we'll use the
-**First message** method, as described on the `websockets documentation <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__.
+**First message** method, as described on the
+`websockets documentation <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__.
 
-There are some `considerations <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__
+There are some
+`considerations <https://websockets.readthedocs.io/en/stable/topics/authentication.html>`__
 to take into account when implementing authentication in a WebSocket server.
 
 Updated server code:
@@ -462,7 +464,8 @@ Things we've changed:
 If you try to query the reports endpoint now, everything works as expected on an
 authenticated route.
 But as soon as you remove/modify the token, the connection will be closed
-(after sending the first query - a `downside <https://websockets.readthedocs.io/en/stable/topics/authentication.html#sending-credentials>`__
+(after sending the first query - a
+`downside <https://websockets.readthedocs.io/en/stable/topics/authentication.html#sending-credentials>`__
 of first-message authentication).
 
 .. code-block:: bash
@@ -480,7 +483,9 @@ of first-message authentication).
 What Now
 ________
 
-This tutorial is just the beginning. You can extend the server with more complex logic.
-For example, you could add a database to store/retrieve the reports, or add more routes to the server.
+This tutorial is just the beginning. You can extend the server with more
+complex logic. For example, you could add a database to store/retrieve the
+reports, or add more routes to the server.
 
-For more information on websockets in Falcon, check out the `WebSocket API <https://falcon.readthedocs.io/en/latest/api/websocket.html>`__.
+For more information on websockets in Falcon, check out the
+`WebSocket API <https://falcon.readthedocs.io/en/latest/api/websocket.html>`__.
