@@ -65,7 +65,8 @@ as expected.
     if __name__ == '__main__':
         uvicorn.run(app, host='localhost', port=8000)
 
-Now we can test the application by running the following command::
+Now we can test the application with ``httpie`` (installable with
+``pip install httpie``) by running the following command::
 
    $ http localhost:8000/hello
 
