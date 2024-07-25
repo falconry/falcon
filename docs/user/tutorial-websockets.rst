@@ -461,6 +461,7 @@ Things we've changed:
 - Added a new middleware class `AuthMiddleware` that will check the token on the first message.
 - Opening a websocket connection is now handled by the middleware.
 - The client now sends a token as the first message, if required for that route.
+- Falcon was configured to server a simple html page to use the echo websocket client for a browser.
 
 If you try to query the reports endpoint now, everything works as expected on an
 authenticated route.
