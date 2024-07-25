@@ -9,7 +9,6 @@ import falcon.asgi
 from falcon.asgi import Request
 from falcon.asgi import WebSocket
 
-
 logger = logging.getLogger('ws-logger')
 logger.setLevel('INFO')
 logger.addHandler(logging.StreamHandler())

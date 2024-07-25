@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def test_hello_http_call(client):
     response = client.simulate_get('/hello')
     assert response.status_code == 200
@@ -5,6 +8,9 @@ def test_hello_http_call(client):
     assert data == {'hello': 'world'}
 
 
-def test_missing_endpoint(client):
+def test_fallback(client):
     response = client.simulate_get('/missing')
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'text/html'
+    index = Path(__file__).parent.parent / 'wslook/static/index.html'
+    assert response.text == index.read_text()
