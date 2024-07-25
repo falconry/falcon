@@ -116,7 +116,7 @@ app.add_route('/reports', ReportsResource())
 app.add_middleware(LoggerMiddleware())
 app.add_middleware(AuthMiddleware(['/reports']))
 
-# usually a web server, like Nginx or Caddy, should server static assets, but
+# usually a web server, like Nginx or Caddy, should serve static assets, but
 # for the purpose of this example we use falcon.
 static_path = pathlib.Path(__file__).parent / 'static'
 app.add_static_route('/', static_path, fallback_filename='index.html')
