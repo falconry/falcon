@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 
 import uvicorn
 
@@ -6,6 +7,12 @@ from falcon import WebSocketDisconnected
 import falcon.asgi
 from falcon.asgi import Request
 from falcon.asgi import WebSocket
+
+
+logger = logging.getLogger('ws-logger')
+logger.setLevel('INFO')
+logger.addHandler(logging.StreamHandler())
+
 
 REPORTS = {
     'report1': {
@@ -39,7 +46,7 @@ class LoggerMiddleware:
         # This will be called for the HTTP request that initiates the
         #   WebSocket handshake after routing (if a route matches the
         #   request).
-        print(f'WebSocket connection established on {req.path}')
+        logger.info('WebSocket connection established on %r', req.path)
 
 
 class AuthMiddleware:
@@ -64,7 +71,7 @@ class AuthMiddleware:
             return
 
         # Never log tokens in production
-        print(f'Client with token "{token}" Authenticated')
+        logger.info('Client with token %r Authenticated', token)
 
 
 class HelloWorldResource:
@@ -90,7 +97,7 @@ class ReportsResource:
             try:
                 query = await ws.receive_text()
                 report = REPORTS.get(query, None)
-                print(report)
+                logger.info('selected report: %s', report)
 
                 if report is None:
                     await ws.send_media({'error': 'report not found'})
