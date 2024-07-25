@@ -1,4 +1,4 @@
-.. _tutorial-websockets:
+.. _tutorial-ws:
 
 Tutorial (WebSockets)
 =====================
@@ -21,7 +21,7 @@ First Steps
 ___________
 
 We'll start with a clean working directory and create a new virtual environment
-using the `venv` module.:
+using the :mod:`venv` module:
 
 .. code-block:: bash
 
