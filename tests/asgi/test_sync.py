@@ -107,3 +107,23 @@ def test_sync_helpers():
     for i, val in enumerate(shirley_values):
         assert val[0] in {24, 42, 1, 5, 3}
         assert val[1] is None or (0 <= val[1] < 1000)
+
+
+@pytest.mark.asyncio
+async def test_sync_asyncio_aliases():
+    async def dummy_async_func():
+        pass
+
+    with pytest.warns(
+        falcon.util.deprecation.DeprecatedWarning,
+        match='Call to deprecated function create_task',
+    ):
+        task = falcon.util.create_task(dummy_async_func())
+
+    with pytest.warns(
+        falcon.util.deprecation.DeprecatedWarning,
+        match='Call to deprecated function get_running_loop',
+    ):
+        falcon.util.get_running_loop()
+
+    await task
