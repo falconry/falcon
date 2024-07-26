@@ -876,7 +876,7 @@ async def _simulate_request_asgi(
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
-        task_lifespan = asyncio.get_running_loop().create_task(
+        task_lifespan = asyncio.create_task(
             app(lifespan_scope, lifespan_event_emitter, lifespan_event_collector)
         )
 
@@ -1021,7 +1021,7 @@ class ASGIConductor:
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
-        self._lifespan_task = asyncio.get_running_loop().create_task(
+        self._lifespan_task = asyncio.create_task(
             self.app(
                 lifespan_scope, lifespan_event_emitter, self._lifespan_event_collector
             )
