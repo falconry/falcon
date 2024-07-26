@@ -263,6 +263,19 @@ def test_unset_cookies_samesite(client):
     assert not result_unset.cookies['baz'].same_site
 
 
+def test_cookie_expires_naive(client):
+    result = client.simulate_post('/')
+
+    cookie = result.cookies['foo']
+    assert cookie.value == 'bar'
+    assert cookie.domain is None
+    assert cookie.expires == datetime(year=2050, month=1, day=1, tzinfo=timezone.utc)
+    assert not cookie.http_only
+    assert cookie.max_age is None
+    assert cookie.path is None
+    assert not cookie.secure
+
+
 def test_cookie_expires_aware(client):
     result = client.simulate_put('/')
 
