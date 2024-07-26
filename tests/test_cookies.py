@@ -14,8 +14,6 @@ from falcon.util import http_date_to_dt
 from falcon.util import TimezoneGMT
 from falcon.util.misc import _utcnow
 
-from _util import create_app  # NOQA
-
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
 
