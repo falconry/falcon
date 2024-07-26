@@ -137,7 +137,7 @@ def wrap_sync_to_async(
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return await get_running_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             executor, partial(func, *args, **kwargs)
         )
 
@@ -184,7 +184,7 @@ async def sync_to_async(
         synchronous callable.
     """
 
-    return await get_running_loop().run_in_executor(
+    return await asyncio.get_running_loop().run_in_executor(
         None, partial(func, *args, **kwargs)
     )
 

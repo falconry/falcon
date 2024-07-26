@@ -50,7 +50,7 @@ def test_sync_helpers():
             cmus = falcon.util.wrap_sync_to_async(callme_unsafely, threadsafe=True)
             cms = falcon.util.wrap_sync_to_async(callme_safely, threadsafe=False)
 
-            loop = falcon.util.get_running_loop()
+            loop = asyncio.get_running_loop()
 
             # NOTE(kgriffs): create_task() is used here, so that the coroutines
             #   are scheduled immediately in the order created; under Python
