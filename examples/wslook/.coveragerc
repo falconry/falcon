@@ -1,0 +1,4 @@
+[run]
+omit =
+    examples/wslook/wslook/client.py
+    examples/wslook/wslook/reports_client.py
