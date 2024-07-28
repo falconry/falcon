@@ -89,7 +89,7 @@ def patch_open(monkeypatch):
         '/static/.\x9fssh/authorized_keys',
         # Reserved characters (~, ?, <, >, :, *, |, ', and ")
         '/static/~/.ssh/authorized_keys',
-        '/static/.ssh/authorized_key?',
+        '/static/.ssh/authorized_key%3F',  # %3F is percent encoding for `?`
         '/static/.ssh/authorized_key>foo',
         '/static/.ssh/authorized_key|foo',
         '/static/.ssh/authorized_key<foo',
