@@ -1,0 +1,2 @@
+The function :func:`falcon.http_date_to_dt` now validates http-dates to have the correct
+timezone set. It now also returns timezone aware datetime objects.
