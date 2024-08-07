@@ -13,7 +13,6 @@ from typing import (
     Union,
 )
 
-import falcon
 from falcon import errors
 from falcon import media
 from falcon.asgi_spec import EventType
@@ -598,7 +597,7 @@ class _BufferedReceiver:
         self._asgi_receive = asgi_receive
         self._max_queue = max_queue
 
-        self._loop = falcon.get_running_loop()
+        self._loop = asyncio.get_running_loop()
 
         self._messages: Deque[dict] = collections.deque()
         self._pop_message_waiter = None
@@ -611,7 +610,7 @@ class _BufferedReceiver:
 
     def start(self):
         if not self._pump_task:
-            self._pump_task = falcon.create_task(self._pump())
+            self._pump_task = asyncio.create_task(self._pump())
 
     async def stop(self):
         if not self._pump_task:

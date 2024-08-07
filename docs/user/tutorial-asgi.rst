@@ -1033,6 +1033,10 @@ numerous ways:
   :ref:`WebSockets <ws>`.
 * ...And much more (patches welcome, as they say)!
 
+.. tip::
+   If you want to add :ref:`WebSocket <ws>` support, please check out our
+   :ref:`WebSocket tutorial <tutorial-ws>` too!
+
 Compared to the sync version, asynchronous code can at times be harder to
 design and reason about. Should you run into any issues, our friendly community
 is available to answer your questions and help you work through any sticky
