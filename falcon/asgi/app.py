@@ -39,7 +39,6 @@ from falcon.typing import SinkPrefix
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
-from falcon.util.sync import get_running_loop
 from falcon.util.sync import wrap_sync_to_async
 
 from ._asgi_helpers import _validate_asgi_scope
@@ -552,7 +551,7 @@ class App(falcon.app.App):
                     if received_event['type'] == EventType.HTTP_DISCONNECT:
                         break
 
-            watcher = falcon.create_task(watch_disconnect())
+            watcher = asyncio.create_task(watch_disconnect())
 
             await send(
                 {
@@ -905,7 +904,7 @@ class App(falcon.app.App):
         # if not callbacks:
         #     return
 
-        loop = get_running_loop()
+        loop = asyncio.get_running_loop()
 
         for cb, is_async in callbacks:
             if is_async:
