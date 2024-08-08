@@ -1,8 +1,14 @@
+import importlib.util
 import os
+import pathlib
 
 import pytest
 
 import falcon
+import falcon.asgi
+
+HERE = pathlib.Path(__file__).resolve().parent
+EXAMPLES = HERE.parent / 'examples'
 
 _FALCON_TEST_ENV = (
     ('FALCON_ASGI_WRAP_NON_COROUTINES', 'Y'),
@@ -15,6 +21,29 @@ _FALCON_TEST_ENV = (
 @pytest.fixture(params=[True, False], ids=['asgi', 'wsgi'])
 def asgi(request):
     return request.param
+
+
+@pytest.fixture()
+def create_app(asgi):
+    def app_factory(**kwargs):
+        app_cls = falcon.asgi.App if asgi else falcon.App
+        return app_cls(**kwargs)
+
+    return app_factory
+
+
+@pytest.fixture()
+def example_module():
+    def load(filename, prefix='examples'):
+        path = EXAMPLES / filename
+        module_name = f'{prefix}.{path.stem}'
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        assert spec is not None, f'could not load module from {path}'
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    return load
 
 
 # NOTE(kgriffs): Some modules actually run a wsgiref server, so
