@@ -1,5 +1,5 @@
 import pytest
-from wslook.app import app
+from ws_tutorial.app import app
 
 import falcon.testing
 

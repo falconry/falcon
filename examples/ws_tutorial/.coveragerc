@@ -1,0 +1,4 @@
+[run]
+omit =
+    examples/ws_tutorial/ws_tutorial/client.py
+    examples/ws_tutorial/ws_tutorial/reports_client.py

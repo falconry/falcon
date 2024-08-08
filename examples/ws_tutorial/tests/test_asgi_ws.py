@@ -1,8 +1,8 @@
 from copy import copy
 
 import pytest
-from wslook.app import app
-from wslook.app import AuthMiddleware
+from ws_tutorial.app import app
+from ws_tutorial.app import AuthMiddleware
 
 from falcon import errors
 from falcon import testing

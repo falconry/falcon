@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>WebSocket Echo</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        #messageForm {
+            margin-bottom: 1em;
+        }
+
+        #history {
+            width: 500px;
+            height: 200px;
+            border: 1px solid #ccc;
+            padding: 1em;
+            overflow-y: scroll;
+            background-color: #fff;
+        }
+    </style>
+    <script type="text/javascript">
+        window.onload = () => {
+            const historyEl = document.getElementById('history');
+            const messageEl = document.getElementById('message')
+            // Create a new WebSocket.
+            const socket = new WebSocket('echo');
+
+            // Connection opened
+            socket.addEventListener('open', event => {
+                historyEl.textContent += 'Connected to server\n';
+            });
+
+            // Listen for messages
+            socket.addEventListener('message', event => {
+                historyEl.textContent += 'Server: ' + event.data + '\n';
+            });
+
+            // Connection closed
+            socket.addEventListener('close', event => {
+                historyEl.textContent += 'Server connection closed\n';
+            });
+
+            // Connection error
+            socket.addEventListener('error', event => {
+                console.log('Error: ', event);
+            });
+
+            // Send message to server on form submit
+            const form = document.getElementById('messageForm');
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                const message = messageEl.value
+                if (!message) {
+                    return;
+                }
+                socket.send(message);
+                historyEl.textContent += `You: ${message}\n`;
+                messageEl.value = '';
+            });
+        };
+    </script>
+</head>
+
+<body>
+    <h1>WebSocket Echo Test</h1>
+    <form id="messageForm">
+        <input type="text" id="message" placeholder="Type your message here">
+        <input type="submit" value="Send">
+    </form>
+    <pre id="history"></pre>
+</body>
+
+</html>
