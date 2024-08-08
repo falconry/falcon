@@ -25,16 +25,16 @@ using the :mod:`venv` module:
 
 .. code-block:: bash
 
-   $ mkdir asyncws
-   $ cd asyncws
+   $ mkdir ws_tutorial
+   $ cd ws_tutorial
    $ python3 -m venv .venv
    $ source .venv/bin/activate
 
 Create the following directory structure::
 
-  asyncws
+  ws_tutorial
   ├── .venv
-  └── asyncws
+  └── ws_tutorial
       ├── __init__.py
       └── app.py
 
@@ -153,7 +153,7 @@ _____________
 Create a new file called ``client.py`` in the same directory as ``app.py``.
 The client will ask for your input and send it to the server.:
 
-.. literalinclude:: ../../examples/wslook/wslook/client.py
+.. literalinclude:: ../../examples/ws_tutorial/ws_tutorial/client.py
 
 Run this client in a separate terminal:
 
@@ -450,18 +450,18 @@ to take into account when implementing authentication in a WebSocket server.
 
 Updated server code:
 
-.. literalinclude:: ../../examples/wslook/wslook/app.py
+.. literalinclude:: ../../examples/ws_tutorial/ws_tutorial/app.py
 
 Updated client code for the reports client:
 
-.. literalinclude:: ../../examples/wslook/wslook/reports_client.py
+.. literalinclude:: ../../examples/ws_tutorial/ws_tutorial/reports_client.py
 
 Things we've changed:
 
 - Added a new middleware class `AuthMiddleware` that will check the token on the first message.
-- Opening a websocket connection is now handled by the middleware.
+- Opening a WebSocket connection is now handled by the middleware.
 - The client now sends a token as the first message, if required for that route.
-- Falcon was configured to server a simple html page to use the echo websocket client for a browser.
+- Falcon was configured to serve a simple HTML page to use the echo WebSocket client for a browser.
 
 If you try to query the reports endpoint now, everything works as expected on an
 authenticated route.

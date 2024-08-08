@@ -12,5 +12,5 @@ def test_fallback(client):
     response = client.simulate_get('/missing')
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'text/html'
-    index = Path(__file__).parent.parent / 'wslook/static/index.html'
+    index = Path(__file__).parent.parent / 'ws_tutorial/static/index.html'
     assert response.text == index.read_text()
