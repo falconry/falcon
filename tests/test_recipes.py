@@ -1,18 +1,54 @@
-import pathlib
-
 import pytest
 
 import falcon
 import falcon.testing
 
 
-@pytest.fixture()
-def recipe_module(example_module):
-    def load(filename):
-        path = pathlib.Path('recipes') / filename
-        return example_module(path, prefix='examples.recipes')
+class TestMultipartMixed:
+    """Test parsing example from the now-obsolete RFC 1867:
 
-    return load
+    --AaB03x
+    Content-Disposition: form-data; name="field1"
+
+    Joe Blow
+    --AaB03x
+    Content-Disposition: form-data; name="docs"
+    Content-Type: multipart/mixed; boundary=BbC04y
+
+    --BbC04y
+    Content-Disposition: attachment; filename="file1.txt"
+
+    This is file1.
+
+    --BbC04y
+    Content-Disposition: attachment; filename="file2.txt"
+
+    Hello, World!
+
+    --BbC04y--
+
+    --AaB03x--
+    """
+
+    @classmethod
+    def prepare_form(cls):
+        lines = [line.strip() for line in cls.__doc__.splitlines()[2:]]
+        return '\r\n'.join(lines).encode()
+
+    def test_parse(self, util):
+        recipe = util.load_module('examples/recipes/multipart_mixed_main.py')
+
+        result = falcon.testing.simulate_post(
+            recipe.app,
+            '/forms',
+            body=self.prepare_form(),
+            content_type='multipart/form-data; boundary=AaB03x',
+        )
+        assert result.status_code == 200
+        assert result.json == {
+            'file1.txt': 'This is file1.\r\n',
+            'file2.txt': 'Hello, World!\r\n',
+        }
 
 
 class TestOutputCSV:
@@ -24,11 +60,11 @@ class TestOutputCSV:
         ],
         ids=['simple', 'stream'],
     )
-    def test_csv_output(self, asgi, create_app, recipe_module, recipe, expected_head):
+    def test_csv_output(self, asgi, util, recipe, expected_head):
         suffix = 'asgi' if asgi else 'wsgi'
-        loaded = recipe_module(f'{recipe}_{suffix}.py')
-        app = create_app()
-        app.add_route('/report', loaded.Report())
+        module = util.load_module(f'examples/recipes/{recipe}_{suffix}.py')
+        app = util.create_app(asgi)
+        app.add_route('/report', module.Report())
 
         result = falcon.testing.simulate_get(app, '/report')
         assert result.status_code == 200
@@ -50,11 +86,11 @@ class TestPrettyJSON:
         def process_request(self, req, resp):
             resp.content_type = req.accept
 
-    def test_optional_indent(self, create_app, recipe_module):
-        recipe = recipe_module('pretty_json_main.py')
+    def test_optional_indent(self, util):
+        recipe = util.load_module('examples/recipes/pretty_json_main.py')
 
-        app = create_app(middleware=[self.NegotiationMiddleware()])
-        (app.add_route('/quote', self.QuoteResource()),)
+        app = falcon.App(middleware=[self.NegotiationMiddleware()])
+        app.add_route('/quote', self.QuoteResource())
         app.resp_options.media_handlers.update(
             {falcon.MEDIA_JSON: recipe.CustomJSONHandler()}
         )
