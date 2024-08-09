@@ -9,16 +9,8 @@ prettify the output. By default, Falcon's :class:`JSONHandler
 However, you can easily customize the output by simply providing the
 desired ``dumps`` parameters:
 
-.. code:: python
-
-    import functools
-    import json
-
-    from falcon import media
-
-    json_handler = media.JSONHandler(
-        dumps=functools.partial(json.dumps, indent=4, sort_keys=True),
-    )
+.. literalinclude:: ../../../examples/recipes/pretty_json_intro.py
+    :language: python
 
 You can now replace the default ``application/json``
 :attr:`response media handlers <falcon.ResponseOptions.media_handlers>`
@@ -50,35 +42,9 @@ functionality" as per `RFC 6836, Section 4.3
 Assuming we want to add JSON ``indent`` support to a Falcon app, this can be
 implemented with a :ref:`custom media handler <custom-media-handler-type>`:
 
-.. code:: python
+.. literalinclude:: ../../../examples/recipes/pretty_json_main.py
+    :language: python
 
-    import json
-
-    import falcon
-
-
-    class CustomJSONHandler(falcon.media.BaseHandler):
-        MAX_INDENT_LEVEL = 8
-
-        def deserialize(self, stream, content_type, content_length):
-            data = stream.read()
-            return json.loads(data.decode())
-
-        def serialize(self, media, content_type):
-            _, params = falcon.parse_header(content_type)
-            indent = params.get('indent')
-            if indent is not None:
-                try:
-                    indent = int(indent)
-                    # NOTE: Impose a reasonable indentation level limit.
-                    if indent < 0 or indent > self.MAX_INDENT_LEVEL:
-                        indent = None
-                except ValueError:
-                    # TODO: Handle invalid params?
-                    indent = None
-
-            result = json.dumps(media, indent=indent, sort_keys=bool(indent))
-            return result.encode()
 
 Furthermore, we'll need to implement content-type negotiation to accept the
 indented JSON content type for response serialization. The bare-minimum

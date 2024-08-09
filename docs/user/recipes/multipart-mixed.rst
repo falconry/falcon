@@ -22,14 +22,8 @@ Let us extend the multipart form parser :attr:`media handlers
 <falcon.media.multipart.MultipartParseOptions.media_handlers>` to recursively
 parse embedded forms of the ``multipart/mixed`` content type:
 
-.. code:: python
-
-    import falcon
-    import falcon.media
-
-    parser = falcon.media.MultipartFormHandler()
-    parser.parse_options.media_handlers['multipart/mixed'] = (
-        falcon.media.MultipartFormHandler())
+.. literalinclude:: ../../../examples/recipes/multipart_mixed_intro.py
+    :language: python
 
 .. note::
     Here we create a new parser (with default options) for nested parts,
@@ -40,29 +34,8 @@ parse embedded forms of the ``multipart/mixed`` content type:
 
 Let us now use the nesting-aware parser in an app:
 
-.. code:: python
-
-    import falcon
-    import falcon.media
-
-    class Forms:
-        def on_post(self, req, resp):
-            example = {}
-            for part in req.media:
-                if part.content_type.startswith('multipart/mixed'):
-                    for nested in part.media:
-                        example[nested.filename] = nested.text
-
-            resp.media = example
-
-
-    parser = falcon.media.MultipartFormHandler()
-    parser.parse_options.media_handlers['multipart/mixed'] = (
-        falcon.media.MultipartFormHandler())
-
-    app = falcon.App()
-    app.req_options.media_handlers[falcon.MEDIA_MULTIPART] = parser
-    app.add_route('/forms', Forms())
+.. literalinclude:: ../../../examples/recipes/multipart_mixed_main.py
+    :language: python
 
 We should now be able to consume a form containing a nested ``multipart/mixed``
 part (the example is adapted from the now-obsolete
