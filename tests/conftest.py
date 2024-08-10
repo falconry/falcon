@@ -91,8 +91,7 @@ class _SuiteUtils:
         root = root / parent_dir if parent_dir is not None else root
         path = root / filename
         if suffix is not None:
-            path = path.with_stem(f'{path.stem}_{suffix}')
-        path = path.with_suffix('.py')
+            path = path.with_name(f'{path.stem}_{suffix}.py')
         prefix = '.'.join(path.parent.parts)
         module_name = f'{prefix}.{path.stem}'
 
