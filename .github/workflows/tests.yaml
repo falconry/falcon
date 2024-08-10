@@ -89,10 +89,10 @@ jobs:
           - python-version: "3.12"
             os: windows-latest
             toxenv: py312_nocover
-          - python-version: "3.13-rc"
+          - python-version: "3.13.0-rc.1"
             os: ubuntu-latest
             toxenv: py313
-          - python-version: "3.13-rc"
+          - python-version: "3.13.0-rc.1"
             os: ubuntu-latest
             toxenv: py313_cython
           # These env require 3.8 and 20.04, see tox.ini
