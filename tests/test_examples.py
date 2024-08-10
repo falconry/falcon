@@ -1,3 +1,10 @@
+import pytest
+
+try:
+    import httpx
+except ImportError:
+    httpx = None  # type: ignore
+
 import falcon.testing as testing
 
 
@@ -14,6 +21,9 @@ def test_things(asgi, util):
     )
 
 
+@pytest.mark.skipif(
+    httpx is None, reason='things_advanced_asgi.py requires httpx [not found]'
+)
 def test_things_advanced(asgi, util):
     suffix = '_asgi' if asgi else ''
     advanced = util.load_module(f'examples/things_advanced{suffix}.py')

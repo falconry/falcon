@@ -33,6 +33,11 @@ class TestMultipartMixed:
     @classmethod
     def prepare_form(cls):
         lines = [line.strip() for line in cls.__doc__.splitlines()[2:]]
+
+        # NOTE(vytas): On CPython 3.13-rc1, the last newline was missing.
+        if lines[-1]:
+            lines.append('')
+
         return '\r\n'.join(lines).encode()
 
     def test_parse(self, util):
