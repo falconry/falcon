@@ -60,9 +60,10 @@ class TestOutputCSV:
         ],
         ids=['simple', 'stream'],
     )
-    def test_csv_output(self, asgi, util, recipe, expected_head):
-        suffix = 'asgi' if asgi else 'wsgi'
-        module = util.load_module(f'examples/recipes/{recipe}_{suffix}.py')
+    def test_csv_output(self, asgi, app_kind, util, recipe, expected_head):
+        module = util.load_module(
+            recipe, parent_dir='examples/recipes', suffix=app_kind
+        )
         app = util.create_app(asgi)
         app.add_route('/report', module.Report())
 
@@ -106,3 +107,32 @@ class TestPrettyJSON:
             'than in the past."\n'
             '}'
         )
+
+
+class TestRawURLPath:
+    def path_extras(self, asgi, url):
+        if asgi:
+            return {'raw_path': url.encode()}
+        return None
+
+    def test_raw_path(self, asgi, app_kind, util):
+        recipe = util.load_module(
+            'raw_url_path', parent_dir='examples/recipes', suffix=app_kind
+        )
+
+        # TODO(vytas): Improve TestClient to automatically add ASGI raw_path
+        #   (as it does for WSGI): GH #2262.
+
+        url1 = '/cache/http%3A%2F%2Ffalconframework.org'
+        result1 = falcon.testing.simulate_get(
+            recipe.app, url1, extras=self.path_extras(asgi, url1)
+        )
+        assert result1.status_code == 200
+        assert result1.json == {'url': 'http://falconframework.org'}
+
+        url2 = '/cache/http%3A%2F%2Ffalconframework.org/status'
+        result2 = falcon.testing.simulate_get(
+            recipe.app, url2, extras=self.path_extras(asgi, url2)
+        )
+        assert result2.status_code == 200
+        assert result2.json == {'cached': True}

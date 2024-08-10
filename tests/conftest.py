@@ -24,6 +24,12 @@ def asgi(request):
     return request.param
 
 
+@pytest.fixture()
+def app_kind(asgi):
+    # NOTE(vytas): Same as the above asgi fixture but as string.
+    return 'asgi' if asgi else 'wsgi'
+
+
 class _SuiteUtils:
     """Assorted utilities that previously resided in the _util.py module."""
 
@@ -80,10 +86,16 @@ class _SuiteUtils:
         ]
 
     @staticmethod
-    def load_module(filename):
-        path = FALCON_ROOT / filename
+    def load_module(filename, parent_dir=None, suffix=None):
+        root = FALCON_ROOT
+        root = root / parent_dir if parent_dir is not None else root
+        path = root / filename
+        if suffix is not None:
+            path = path.with_stem(f'{path.stem}_{suffix}')
+        path = path.with_suffix('.py')
         prefix = '.'.join(path.parent.parts)
         module_name = f'{prefix}.{path.stem}'
+
         spec = importlib.util.spec_from_file_location(module_name, path)
         assert spec is not None, f'could not load module from {path}'
         module = importlib.util.module_from_spec(spec)
@@ -91,6 +103,7 @@ class _SuiteUtils:
         return module
 
 
+# TODO(vytas): Migrate all cases to use this fixture instead of _util.
 @pytest.fixture(scope='session')
 def util():
     return _SuiteUtils()
