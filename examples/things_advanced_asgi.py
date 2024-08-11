@@ -21,7 +21,7 @@ class StorageEngine:
 
 class StorageError(Exception):
     @staticmethod
-    async def handle(ex, req, resp, params):
+    async def handle(req, resp, ex, params):
         # TODO: Log the error, clean up, etc. before raising
         raise falcon.HTTPInternalServerError()
 
@@ -202,7 +202,7 @@ class ThingsResource:
 # The app instance is an ASGI callable
 app = falcon.asgi.App(
     middleware=[
-        # AuthMiddleware(),
+        AuthMiddleware(),
         RequireJSON(),
         JSONTranslator(),
     ]

@@ -21,7 +21,7 @@ class StorageEngine:
 
 class StorageError(Exception):
     @staticmethod
-    def handle(ex, req, resp, params):
+    def handle(req, resp, ex, params):
         # TODO: Log the error, clean up, etc. before raising
         raise falcon.HTTPInternalServerError()
 
