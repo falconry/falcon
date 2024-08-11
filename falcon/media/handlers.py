@@ -37,7 +37,7 @@ class MissingDependencyHandler(BinaryBaseHandlerWS):
     serialize = deserialize = _raise
 
 
-class Handlers(UserDict[str, BaseHandler]):
+class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
 
     def __init__(self, initial=None):
