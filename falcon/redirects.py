@@ -21,7 +21,7 @@ import falcon
 from falcon.http_status import HTTPStatus
 
 if TYPE_CHECKING:
-    from falcon.typing import NormalizedHeaders
+    from falcon.typing import Headers
 
 
 class HTTPMovedPermanently(HTTPStatus):
@@ -43,9 +43,7 @@ class HTTPMovedPermanently(HTTPStatus):
             response.
     """
 
-    def __init__(
-        self, location: str, headers: Optional[NormalizedHeaders] = None
-    ) -> None:
+    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -74,9 +72,7 @@ class HTTPFound(HTTPStatus):
             response.
     """
 
-    def __init__(
-        self, location: str, headers: Optional[NormalizedHeaders] = None
-    ) -> None:
+    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -110,9 +106,7 @@ class HTTPSeeOther(HTTPStatus):
             response.
     """
 
-    def __init__(
-        self, location: str, headers: Optional[NormalizedHeaders] = None
-    ) -> None:
+    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -141,9 +135,7 @@ class HTTPTemporaryRedirect(HTTPStatus):
             response.
     """
 
-    def __init__(
-        self, location: str, headers: Optional[NormalizedHeaders] = None
-    ) -> None:
+    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -169,9 +161,7 @@ class HTTPPermanentRedirect(HTTPStatus):
             response.
     """
 
-    def __init__(
-        self, location: str, headers: Optional[NormalizedHeaders] = None
-    ) -> None:
+    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)

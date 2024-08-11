@@ -64,6 +64,6 @@ SinkPrefix = Union[str, Pattern]
 #   arguments afterwords?
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
-NormalizedHeaders = Dict[str, str]
-RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]]]
+Headers = Dict[str, str]
+HeaderList = Union[Headers, List[Tuple[str, str]]]
 Status = Union[http.HTTPStatus, str, int]

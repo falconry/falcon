@@ -26,8 +26,8 @@ from falcon.util import uri
 from falcon.util.deprecation import deprecated_args
 
 if TYPE_CHECKING:
+    from falcon.typing import HeaderList
     from falcon.typing import Link
-    from falcon.typing import RawHeaders
     from falcon.typing import Serializer
     from falcon.typing import Status
 
@@ -123,7 +123,7 @@ class HTTPError(Exception):
         status: Status,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: Optional[RawHeaders] = None,
+        headers: Optional[HeaderList] = None,
         href: Optional[str] = None,
         href_text: Optional[str] = None,
         code: Optional[int] = None,
