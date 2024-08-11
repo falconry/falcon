@@ -49,7 +49,6 @@ if TYPE_CHECKING:
 
 Link = Dict[str, str]
 
-
 # Error handlers
 ErrorHandler = Callable[['Request', 'Response', BaseException, dict], Any]
 

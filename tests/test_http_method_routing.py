@@ -1,12 +1,11 @@
 from functools import wraps
 
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 import falcon.constants
 import falcon.testing as testing
-
-from _util import create_app  # NOQA
 
 # RFC 7231, 5789 methods
 HTTP_METHODS = [

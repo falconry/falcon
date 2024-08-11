@@ -1,17 +1,16 @@
 import datetime
 import itertools
 
+from _util import create_req  # NOQA
 import pytest
 
 import falcon
-from falcon.request import Request, RequestOptions
+from falcon.request import Request
+from falcon.request import RequestOptions
 from falcon.request_helpers import _parse_etags
 import falcon.testing as testing
 import falcon.uri
 from falcon.util.structures import ETag
-
-from _util import create_req  # NOQA
-
 
 _HTTP_VERSIONS = ['1.0', '1.1', '2']
 
@@ -709,7 +708,6 @@ class TestRequestAttributes:
         ],
     )
     def test_date_invalid(self, asgi, header, attr):
-
         # Date formats don't conform to RFC 1123
         headers = {header: 'Thu, 04 Apr 2013'}
         expected_desc = (

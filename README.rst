@@ -8,7 +8,7 @@
     >
     </a>
 
-|Build Status| |Docs| |codecov.io| |Blue|
+|Build Status| |Docs| |codecov.io|
 
 The Falcon Web Framework
 ========================
@@ -1027,7 +1027,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2023 by Individual and corporate contributors as
+Copyright 2013-2024 by Individual and corporate contributors as
 noted in the individual source files.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -1049,6 +1049,3 @@ limitations under the License.
    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
    :target: http://codecov.io/gh/falconry/falcon
-.. |Blue| image:: https://img.shields.io/badge/code%20style-blue-blue.svg
-    :target: https://blue.readthedocs.io/
-    :alt: code style: blue

@@ -4,6 +4,7 @@ import hashlib
 import os
 import platform
 import random
+import signal
 import subprocess
 import sys
 import time
@@ -16,8 +17,8 @@ import websockets
 import websockets.exceptions
 
 from falcon import testing
-from . import _asgi_test_app
 
+from . import _asgi_test_app
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -27,7 +28,9 @@ _WIN32 = sys.platform.startswith('win')
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
 _SIZE_1_MB = _SIZE_1_KB**2
-
+# NOTE(vytas): Windows specific: {Application Exit by CTRL+C}.
+#   The application terminated as a result of a CTRL+C.
+_STATUS_CONTROL_C_EXIT = 0xC000013A
 
 _REQUEST_TIMEOUT = 10
 
@@ -620,7 +623,10 @@ def server_base_url(request):
 
             yield base_url
 
-        assert server.returncode == 0
+        # NOTE(vytas): Starting with 0.29.0, Uvicorn will propagate signal
+        #   values into the return code (which is a good practice in Unix);
+        #   see also https://github.com/encode/uvicorn/pull/1600
+        assert server.returncode in (0, -signal.SIGTERM, _STATUS_CONTROL_C_EXIT)
 
         break
 

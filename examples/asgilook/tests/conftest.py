@@ -3,11 +3,12 @@ import random
 import uuid
 
 import fakeredis.aioredis
-import falcon.asgi
-import falcon.testing
 import PIL.Image
 import PIL.ImageDraw
 import pytest
+
+import falcon.asgi
+import falcon.testing
 
 from asgilook.app import create_app
 from asgilook.config import Config

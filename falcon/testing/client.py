@@ -23,10 +23,7 @@ import datetime as dt
 import inspect
 import json as json_module
 import time
-from typing import Dict
-from typing import Optional
-from typing import Sequence
-from typing import Union
+from typing import Dict, Optional, Sequence, Union
 import warnings
 import wsgiref.validate
 
@@ -39,8 +36,6 @@ from falcon.testing.srmock import StartResponseMock
 from falcon.util import async_to_sync
 from falcon.util import CaseInsensitiveDict
 from falcon.util import code_to_http_status
-from falcon.util import create_task
-from falcon.util import get_running_loop
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
 from falcon.util import to_query_str
@@ -99,6 +94,11 @@ class Cookie:
             transmitted from the client via HTTPS.
         http_only (bool): Whether or not the cookie may only be
             included in unscripted requests from the client.
+        same_site (str): Specifies whether cookies are send in
+            cross-site requests. Possible values are 'Lax', 'Strict'
+            and 'None'. ``None`` if not specified.
+        partitioned (bool): Indicates if the cookie has the
+            ``Partitioned`` flag set.
     """
 
     def __init__(self, morsel):
@@ -113,6 +113,7 @@ class Cookie:
             'secure',
             'httponly',
             'samesite',
+            'partitioned',
         ):
             value = morsel[name.replace('_', '-')] or None
             setattr(self, '_' + name, value)
@@ -153,8 +154,12 @@ class Cookie:
         return bool(self._httponly)  # type: ignore[attr-defined]
 
     @property
-    def same_site(self) -> Optional[int]:
+    def same_site(self) -> Optional[str]:
         return self._samesite if self._samesite else None  # type: ignore[attr-defined]
+
+    @property
+    def partitioned(self) -> bool:
+        return bool(self._partitioned)  # type: ignore[attr-defined]
 
 
 class _ResultBase:
@@ -452,7 +457,6 @@ def simulate_request(
     asgi_chunk_size=4096,
     asgi_disconnect_ttl=300,
 ) -> _ResultBase:
-
     """Simulate a request to a WSGI or ASGI application.
 
     Performs a request against a WSGI or ASGI application. In the case of
@@ -671,7 +675,6 @@ async def _simulate_request_asgi(
     _one_shot=True,
     _stream_result=False,
 ) -> _ResultBase:
-
     """Simulate a request to an ASGI application.
 
     Keyword Args:
@@ -826,7 +829,9 @@ async def _simulate_request_asgi(
     resp_event_collector = helpers.ASGIResponseEventCollector()
 
     if not _one_shot:
-        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = asyncio.create_task(
+            app(http_scope, req_event_emitter, resp_event_collector)
+        )
 
         if _stream_result:
             # NOTE(kgriffs): Wait until the response has been started and give
@@ -871,13 +876,15 @@ async def _simulate_request_asgi(
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
-        task_lifespan = get_running_loop().create_task(
+        task_lifespan = asyncio.create_task(
             app(lifespan_scope, lifespan_event_emitter, lifespan_event_collector)
         )
 
         await _wait_for_startup(lifespan_event_collector.events)
 
-        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = asyncio.create_task(
+            app(http_scope, req_event_emitter, resp_event_collector)
+        )
         req_event_emitter.disconnect()
         await task_req
 
@@ -1014,7 +1021,7 @@ class ASGIConductor:
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
-        self._lifespan_task = get_running_loop().create_task(
+        self._lifespan_task = asyncio.create_task(
             self.app(
                 lifespan_scope, lifespan_event_emitter, self._lifespan_event_collector
             )
@@ -1103,7 +1110,7 @@ class ASGIConductor:
         scope = helpers.create_scope_ws(path=path, **kwargs)
         ws = helpers.ASGIWebSocketSimulator()
 
-        task_req = create_task(self.app(scope, ws._emit, ws._collect))
+        task_req = asyncio.create_task(self.app(scope, ws._emit, ws._collect))
 
         return _WSContextManager(ws, task_req)
 
@@ -2107,7 +2114,7 @@ class _WSContextManager:
         self._task_req = task_req
 
     async def __aenter__(self):
-        ready_waiter = create_task(self._ws.wait_ready())
+        ready_waiter = asyncio.create_task(self._ws.wait_ready())
 
         # NOTE(kgriffs): Wait on both so that in the case that the request
         #   task raises an error, we don't just end up masking it with an

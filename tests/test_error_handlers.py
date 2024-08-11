@@ -1,10 +1,12 @@
+from _util import create_app  # NOQA
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
-from falcon import constants, testing
+from falcon import constants
+from falcon import testing
 import falcon.asgi
-
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
+from falcon.util.deprecation import DeprecatedWarning
 
 
 def capture_error(req, resp, ex, params):
@@ -212,9 +214,12 @@ class TestErrorHandler:
         app.add_route('/', ErroredClassResource())
         client = testing.TestClient(app)
 
-        client.app.add_error_handler(Exception, legacy_handler1)
-        client.app.add_error_handler(CustomBaseException, legacy_handler2)
-        client.app.add_error_handler(CustomException, legacy_handler3)
+        with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+            client.app.add_error_handler(Exception, legacy_handler1)
+        with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+            client.app.add_error_handler(CustomBaseException, legacy_handler2)
+        with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+            client.app.add_error_handler(CustomException, legacy_handler3)
 
         client.simulate_delete()
         client.simulate_get()

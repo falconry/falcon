@@ -23,7 +23,7 @@ formatted like this::
 import re
 
 
-RFC_PATTERN = re.compile('RFC (\d{4}), Section ([\d\.]+)')
+RFC_PATTERN = re.compile(r'RFC (\d{4}), Section ([\d\.]+)')
 
 
 def _render_section(section_number, rfc_number):

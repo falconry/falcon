@@ -1,6 +1,7 @@
 import re
 
-from falcon.asgi import Request, WebSocket
+from falcon.asgi import Request
+from falcon.asgi import WebSocket
 
 from .hub import Hub
 

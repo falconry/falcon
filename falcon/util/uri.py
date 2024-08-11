@@ -22,23 +22,15 @@ in the `falcon` module, and so must be explicitly imported::
 
     name, port = uri.parse_host('example.org:8080')
 """
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple, TYPE_CHECKING
-from typing import Union
+
+from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 from falcon.constants import PYPY
 
 try:
-    from falcon.cyutil.uri import (
-        decode as _cy_decode,
-        parse_query_string as _cy_parse_query_string,
-    )
+    from falcon.cyutil import uri as _cy_uri  # type: ignore
 except ImportError:
-    _cy_decode = None
-    _cy_parse_query_string = None
+    _cy_uri = None
 
 
 # NOTE(kgriffs): See also RFC 3986
@@ -57,7 +49,6 @@ _HEX_TO_BYTE = {
 
 
 def _create_char_encoder(allowed_chars: str) -> Callable[[int], str]:
-
     lookup = {}
 
     for code_point in range(256):
@@ -74,7 +65,6 @@ def _create_char_encoder(allowed_chars: str) -> Callable[[int], str]:
 def _create_str_encoder(
     is_value: bool, check_is_escaped: bool = False
 ) -> Callable[[str], str]:
-
     allowed_chars = _UNRESERVED if is_value else _ALL_ALLOWED
     allowed_chars_plus_percent = allowed_chars + '%'
     encode_char = _create_char_encoder(allowed_chars)
@@ -337,13 +327,13 @@ def decode(encoded_uri: str, unquote_plus: bool = True) -> str:
 
 
 def parse_query_string(
-    query_string: str, keep_blank: bool = False, csv: bool = True
+    query_string: str, keep_blank: bool = False, csv: bool = False
 ) -> Dict[str, Union[str, List[str]]]:
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
     parameters with values are returned. For example, given 'foo=bar&flag',
-    this function would ignore 'flag' unless the `keep_blank_qs_values` option
+    this function would ignore 'flag' unless the `keep_blank` option
     is set.
 
     Note:
@@ -351,6 +341,8 @@ def parse_query_string(
         lists by repeating a given param multiple times, Falcon supports
         a more compact form in which the param may be given a single time
         but set to a ``list`` of comma-separated elements (e.g., 'foo=a,b,c').
+        This comma-separated format can be enabled by setting the `csv`
+        option (see below) to ``True``.
 
         When using this format, all commas uri-encoded will not be treated by
         Falcon as a delimiter. If the client wants to send a value as a list,
@@ -365,12 +357,13 @@ def parse_query_string(
             they do not have a value (default ``False``). For comma-separated
             values, this option also determines whether or not empty elements
             in the parsed list are retained.
-        csv: Set to ``False`` in order to disable splitting query
-            parameters on ``,`` (default ``True``). Depending on the user agent,
-            encoding lists as multiple occurrences of the same parameter might
-            be preferable. In this case, setting `parse_qs_csv` to ``False``
-            will cause the framework to treat commas as literal characters in
-            each occurring parameter value.
+        csv: Set to ``True`` in order to enable splitting query
+            parameters on ``,`` (default ``False``).
+            Depending on the user agent, encoding lists as multiple occurrences
+            of the same parameter might be preferable. In this case, keeping
+            `parse_qs_csv` at its default value (``False``) will cause the
+            framework to treat commas as literal characters in each occurring
+            parameter value.
 
     Returns:
         dict: A dictionary of (*name*, *value*) pairs, one per query
@@ -551,8 +544,9 @@ def unquote_string(quoted: str) -> str:
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
 if not TYPE_CHECKING:
-    decode = _cy_decode or decode  # NOQA
-    parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
+    if _cy_uri is not None:
+        decode = _cy_uri.decode  # NOQA
+        parse_query_string = _cy_uri.parse_query_string  # NOQA
 
 
 __all__ = [

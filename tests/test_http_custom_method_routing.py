@@ -2,15 +2,14 @@ import importlib
 import os
 import wsgiref.validate
 
+from _util import create_app  # NOQA
+from _util import has_cython  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
 import falcon.constants
 from falcon.routing import util
-
-from _util import create_app, has_cython  # NOQA
-
 
 FALCON_CUSTOM_HTTP_METHODS = ['FOO', 'BAR']
 

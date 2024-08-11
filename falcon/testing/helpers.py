@@ -23,7 +23,6 @@ directly from the `testing` package::
 """
 
 import asyncio
-import cgi
 from collections import defaultdict
 from collections import deque
 import contextlib
@@ -36,11 +35,7 @@ import re
 import socket
 import sys
 import time
-from typing import Any
-from typing import Dict
-from typing import Iterable
-from typing import Optional
-from typing import Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import falcon
 from falcon import errors as falcon_errors
@@ -51,6 +46,7 @@ from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
 from falcon.util import uri
+from falcon.util.mediatypes import parse_header
 
 # NOTE(kgriffs): Changed in 3.0 from 'curl/7.24.0 (x86_64-apple-darwin12.0)'
 DEFAULT_UA = 'falcon-client/' + falcon.__version__
@@ -402,6 +398,8 @@ class ASGIWebSocketSimulator:
             ``None`` if the connection has not been accepted.
     """
 
+    _DEFAULT_WAIT_READY_TIMEOUT = 5
+
     def __init__(self):
         self.__msgpack = None
 
@@ -435,7 +433,7 @@ class ASGIWebSocketSimulator:
     def headers(self) -> Iterable[Iterable[bytes]]:
         return self._accepted_headers
 
-    async def wait_ready(self, timeout: Optional[int] = 5):
+    async def wait_ready(self, timeout: Optional[int] = None):
         """Wait until the connection has been accepted or denied.
 
         This coroutine can be awaited in order to pause execution until the
@@ -447,16 +445,17 @@ class ASGIWebSocketSimulator:
                 raising an error (default: ``5``).
         """
 
+        timeout = timeout or self._DEFAULT_WAIT_READY_TIMEOUT
+
         try:
             await asyncio.wait_for(self._event_handshake_complete.wait(), timeout)
         except asyncio.TimeoutError:
             msg = (
-                'Timed out after waiting {} seconds for '
-                'the WebSocket handshake to complete. Check the '
-                'on_websocket responder and '
-                'any middleware for any conditions that may be stalling the '
-                'request flow.'
-            ).format(timeout)
+                f'Timed out after waiting {timeout} seconds for the WebSocket '
+                f'handshake to complete. Check the on_websocket responder and '
+                f'any middleware for any conditions that may be stalling the '
+                f'request flow.'
+            )
             raise asyncio.TimeoutError(msg)
 
         self._require_accepted()
@@ -799,7 +798,7 @@ def get_encoding_from_headers(headers):
     if not content_type:
         return None
 
-    content_type, params = cgi.parse_header(content_type)
+    content_type, params = parse_header(content_type)
 
     if 'charset' in params:
         return params['charset'].strip('\'"')
@@ -861,7 +860,6 @@ def create_scope(
     include_server=True,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -999,7 +997,6 @@ def create_scope_ws(
     subprotocols=None,
     spec_version='2.1',
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1086,7 +1083,6 @@ def create_environ(
     root_path=None,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:

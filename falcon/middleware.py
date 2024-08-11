@@ -113,7 +113,6 @@ class CORSMiddleware(object):
             and req.method == 'OPTIONS'
             and req.get_header('Access-Control-Request-Method')
         ):
-
             # NOTE(kgriffs): This is a CORS preflight request. Patch the
             #   response accordingly.
 

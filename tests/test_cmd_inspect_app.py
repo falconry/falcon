@@ -2,13 +2,13 @@ from argparse import Namespace
 import io
 import sys
 
+from _util import create_app  # NOQA
 import pytest
 
-from falcon import App, inspect
+from falcon import App
+from falcon import inspect
 from falcon.cmd import inspect_app
 from falcon.testing import redirected
-
-from _util import create_app  # NOQA
 
 _WIN32 = sys.platform.startswith('win')
 _MODULE = 'tests.test_cmd_inspect_app'

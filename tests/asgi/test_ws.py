@@ -5,25 +5,25 @@ import os
 import cbor2
 import pytest
 
-
 import falcon
-from falcon import media, testing
+from falcon import media
+from falcon import testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
+from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
-
 
 try:
     import rapidjson  # type: ignore
 except ImportError:
-    rapidjson = None
+    rapidjson = None  # type: ignore
 
 
 try:
     import msgpack  # type: ignore
 except ImportError:
-    msgpack = None
+    msgpack = None  # type: ignore
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -141,7 +141,7 @@ async def test_echo():  # noqa: C901
                 await ws.send_text(f'{p1}:{p2}:{req.context.message}:{injected}')
 
             messages = deque()
-            sink_task = falcon.create_task(self._sink(ws, messages))
+            sink_task = asyncio.create_task(self._sink(ws, messages))
 
             while not sink_task.done():
                 if not messages:
@@ -338,7 +338,7 @@ async def test_client_disconnect_early(  # noqa: C901
                             #   order to test coverage of the logic that handles
                             #   the case of a closed connection while waiting on
                             #   more data.
-                            recv_task = falcon.create_task(ws.receive_data())
+                            recv_task = asyncio.create_task(ws.receive_data())
                             # Ensure recv_task() has a chance to get ahead
                             await asyncio.sleep(0)
                             ws_close = ws.close(4099)
@@ -441,7 +441,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
                 for __ in range(3):
                     try:
                         await ws.receive_media()
-                    except (ValueError):
+                    except ValueError:
                         self.deserialize_error_count += 1
             finally:
                 self.finished.set()
@@ -466,9 +466,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: str) -> object:
                 return rapidjson.loads(payload)
 
-        app.ws_options.media_handlers[
-            falcon.WebSocketPayloadType.TEXT
-        ] = RapidJSONHandler()
+        app.ws_options.media_handlers[falcon.WebSocketPayloadType.TEXT] = (
+            RapidJSONHandler()
+        )
 
     if custom_data:
 
@@ -480,9 +480,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: bytes) -> object:
                 return cbor2.loads(payload)
 
-        app.ws_options.media_handlers[
-            falcon.WebSocketPayloadType.BINARY
-        ] = CBORHandler()
+        app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = (
+            CBORHandler()
+        )
 
     async with conductor as c:
         async with c.simulate_ws() as ws:
@@ -502,7 +502,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             #    ensure we aren't getting any false-positives.
             await ws.send_text('"DEADBEEF"')
             await ws.send_text('DEADBEEF')
-            await ws.send_data(b'\xDE\xAD\xBE\xEF')
+            await ws.send_data(b'\xde\xad\xbe\xef')
 
             await resource.finished.wait()
 
@@ -1088,9 +1088,36 @@ async def test_ws_simulator_collect_edge_cases(conductor):
             event = await ws._emit()
 
 
+@pytest.mark.asyncio
+async def test_ws_responder_never_ready(conductor, monkeypatch):
+    async def noop_close(obj, code=None):
+        pass
+
+    class SleepyResource:
+        async def on_websocket(self, req, ws):
+            for i in range(10):
+                await asyncio.sleep(0.001)
+
+    conductor.app.add_route('/', SleepyResource())
+
+    # NOTE(vytas): It seems that it is hard to impossible to hit the second
+    #   `await ready_waiter` of the _WSContextManager on CPython 3.12 due to
+    #   different async code optimizations, so we mock away WebSocket.close.
+    monkeypatch.setattr(WebSocket, 'close', noop_close)
+
+    # NOTE(vytas): Shorten the timeout so that we do not wait for 5 seconds.
+    monkeypatch.setattr(
+        testing.ASGIWebSocketSimulator, '_DEFAULT_WAIT_READY_TIMEOUT', 0.5
+    )
+
+    async with conductor as c:
+        with pytest.raises(asyncio.TimeoutError):
+            async with c.simulate_ws():
+                pass
+
+
 @pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
 def test_msgpack_missing():
-
     options = WebSocketOptions()
     handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]
 
@@ -1202,7 +1229,7 @@ async def test_ws_http_error_or_status_error_handler(
 
     if handler_has_ws:
 
-        async def handle_foobar(req, resp, ex, param, ws=None):   # type: ignore
+        async def handle_foobar(req, resp, ex, param, ws=None):  # type: ignore
             raise thing(status)
 
     else:

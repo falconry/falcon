@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock
 
+from _util import create_resp  # NOQA
 import pytest
 
-from falcon import MEDIA_TEXT, ResponseOptions
-
-from _util import create_resp  # NOQA
+from falcon import MEDIA_TEXT
+from falcon import ResponseOptions
 
 
 @pytest.fixture(params=[True, False])

@@ -13,14 +13,12 @@
 # limitations under the License.
 
 """Buffered stream reader."""
+
 from __future__ import annotations
 
 import functools
 import io
-from typing import Callable
-from typing import IO
-from typing import List
-from typing import Optional
+from typing import Callable, IO, List, Optional
 
 from falcon.errors import DelimiterError
 
@@ -189,7 +187,6 @@ class BufferedReader:
         next_chunk: Optional[bytes] = None,
         next_chunk_len: int = 0,
     ) -> bytes:
-
         if delimiter_pos < 0 and delimiter is not None:
             delimiter_pos = self._buffer.find(delimiter, self._buffer_pos)
 

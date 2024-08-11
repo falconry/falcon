@@ -79,7 +79,7 @@ include:
 
 * `Uvicorn <https://www.uvicorn.org/>`_
 * `Daphne <https://github.com/django/daphne/>`_
-* `Hypercorn <https://pgjones.gitlab.io/hypercorn/>`_
+* `Hypercorn <https://github.com/pgjones/hypercorn/>`_
 
 For a simple tutorial application like ours, any of the above should do.
 Let's pick the popular ``uvicorn`` for now::
@@ -175,18 +175,18 @@ We can now implement a basic async image store. Save the following code as
     import io
 
     import aiofiles
-    import falcon
     import PIL.Image
+
+    import falcon
 
 
     class Image:
-
         def __init__(self, config, image_id, size):
             self._config = config
 
             self.image_id = image_id
             self.size = size
-            self.modified = datetime.datetime.utcnow()
+            self.modified = datetime.datetime.now(datetime.timezone.utc)
 
         @property
         def path(self):
@@ -206,7 +206,6 @@ We can now implement a basic async image store. Save the following code as
 
 
     class Store:
-
         def __init__(self, config):
             self._config = config
             self._images = {}
@@ -268,11 +267,11 @@ of images. Place the code below in a file named ``images.py``:
 .. code:: python
 
     import aiofiles
+
     import falcon
 
 
     class Images:
-
         def __init__(self, config, store):
             self._config = config
             self._store = store
@@ -673,8 +672,6 @@ The new ``thumbnails`` end-point should now render thumbnails on the fly::
 Again, we could also verify thumbnail URIs in the browser or image viewer that
 supports HTTP input.
 
-
-
 .. _asgi_tutorial_caching:
 
 Caching Responses
@@ -685,10 +682,10 @@ small files littering our storage, it consumes CPU resources, and we would
 soon find our application crumbling under load.
 
 Let's mitigate this problem with response caching. We'll use Redis, taking
-advantage of `aioredis <https://github.com/aio-libs/aioredis>`_ for async
+advantage of `redis <https://redis.readthedocs.io/en/stable/examples/asyncio_examples.html>`_ for async
 support::
 
-  pip install aioredis
+  pip install redis
 
 We will also need to serialize response data (the ``Content-Type`` header and
 the body in the first version); ``msgpack`` should do::
@@ -700,7 +697,7 @@ installing Redis server on your machine, one could also:
 
 * Spin up Redis in Docker, eg::
 
-    docker run -p 6379:6379 redis
+    docker run -p 6379:6379 redis/redis-stack:latest
 
 * Assuming Redis is installed on the machine, one could also try
   `pifpaf <https://github.com/jd/pifpaf>`_ for spinning up Redis just
@@ -747,9 +744,8 @@ implementations for production and testing.
     ``self.redis_host``. Such a design might prove helpful for apps that
     need to create client connections in more than one place.
 
-Assuming we call our new :ref:`configuration <asgi_tutorial_config>` items
-``redis_host`` and ``redis_from_url()``, respectively, the final version of
-``config.py`` now reads:
+Assuming we call our new :ref:`configuration <asgi_tutorial_config>` item
+``redis_host`` the final version of ``config.py`` now reads:
 
 .. literalinclude:: ../../examples/asgilook/asgilook/config.py
     :language: python
@@ -860,7 +856,7 @@ any problems with importing local utility modules or checking code coverage::
   $ mkdir -p tests
   $ touch tests/__init__.py
 
-Next, let's implement fixtures to replace ``uuid`` and ``aioredis``, and inject them
+Next, let's implement fixtures to replace ``uuid`` and ``redis``, and inject them
 into our tests via ``conftest.py`` (place your code in the newly created ``tests``
 directory):
 
@@ -968,6 +964,56 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
 
+Debugging ASGI Applications
+---------------------------
+(This section also applies to WSGI applications)
+
+While developing and testing ASGI applications, understanding how to configure
+and utilize logging can be helpful, especially when you encounter unexpected
+issues or behaviors.
+
+By default, Falcon does not set up logging for you,
+but Python's built-in :mod:`logging` module provides a flexible framework for
+emitting and capturing log messages. Here's how you can set up basic logging in
+your ASGI Falcon application:
+
+.. code:: python
+
+    import logging
+
+    import falcon
+
+
+    logging.basicConfig(level=logging.INFO)
+
+    class ErrorResource:
+        def on_get(self, req, resp):
+            raise Exception('Something went wrong!')
+
+    app = falcon.App()
+    app.add_route('/error', ErrorResource())
+
+
+When the above route is accessed, Falcon will catch the unhandled exception and
+automatically log an error message. Below is an example of what the log output
+might look like:
+
+.. code-block:: none
+
+    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
+    Traceback (most recent call last):
+      File "path/to/falcon/app.py", line 123, in __call__
+        resp = resource.on_get(req, resp)
+      File "/path/to/your/app.py", line 7, in on_get
+        raise Exception("Something went wrong!")
+    Exception: Something went wrong!
+
+
+.. note::
+   While logging is helpful for development and debugging, be mindful of logging
+   sensitive information. Ensure that log files are stored securely and are not
+   accessible to unauthorized users.
+
 What Now?
 ---------
 
@@ -986,6 +1032,10 @@ numerous ways:
 * Publish image upload events via :attr:`SSE <falcon.asgi.Response.sse>` or
   :ref:`WebSockets <ws>`.
 * ...And much more (patches welcome, as they say)!
+
+.. tip::
+   If you want to add :ref:`WebSocket <ws>` support, please check out our
+   :ref:`WebSocket tutorial <tutorial-ws>` too!
 
 Compared to the sync version, asynchronous code can at times be harder to
 design and reason about. Should you run into any issues, our friendly community

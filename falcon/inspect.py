@@ -18,14 +18,14 @@ from __future__ import annotations
 from functools import partial
 import inspect
 from typing import Any
-from typing import Callable  # NOQA: F401
+from typing import Callable  
 from typing import cast
-from typing import Dict  # NOQA: F401
+from typing import Dict  
 from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Type  # NOQA: F401
+from typing import Type
 from typing import Union
 
 from falcon import app_helpers
@@ -99,8 +99,9 @@ def register_router(
     def wraps(fn: Callable[..., List[RouteInfo]]) -> Callable[..., List[RouteInfo]]:
         if router_class in _supported_routers:
             raise ValueError(
-                'Another function is already registered'
-                ' for the router {}'.format(router_class)
+                'Another function is already registered for the router {}'.format(
+                    router_class
+                )
             )
         _supported_routers[router_class] = fn
         return fn

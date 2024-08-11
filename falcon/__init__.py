@@ -77,6 +77,7 @@ from falcon.util import http_status_to_code
 from falcon.util import IS_64_BITS
 from falcon.util import is_python_func
 from falcon.util import misc
+from falcon.util import parse_header
 from falcon.util import reader
 from falcon.util import runs_sync
 from falcon.util import secure_filename
@@ -91,7 +92,6 @@ from falcon.util import uri
 from falcon.util import wrap_sync_to_async
 from falcon.util import wrap_sync_to_async_unsafe
 from falcon.version import __version__
-
 
 # NOTE(kgriffs): Only to be used internally on the rare occasion that we
 #   need to log something that we can't communicate any other way.
