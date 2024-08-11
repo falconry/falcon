@@ -50,4 +50,4 @@ SinkPrefix = Union[str, Pattern]
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
 Headers = Dict[str, str]
 HeaderList = Union[Headers, List[Tuple[str, str]]]
-Status = Union[http.HTTPStatus, str, int]
+ResponseStatus = Union[http.HTTPStatus, str, int]

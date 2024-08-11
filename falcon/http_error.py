@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from falcon.media import BaseHandler
     from falcon.typing import HeaderList
     from falcon.typing import Link
-    from falcon.typing import Status
+    from falcon.typing import ResponseStatus
 
 
 class HTTPError(Exception):
@@ -120,7 +120,7 @@ class HTTPError(Exception):
     @deprecated_args(allowed_positional=1)
     def __init__(
         self,
-        status: Status,
+        status: ResponseStatus,
         title: Optional[str] = None,
         description: Optional[str] = None,
         headers: Optional[HeaderList] = None,
