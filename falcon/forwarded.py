@@ -20,8 +20,7 @@ from __future__ import annotations
 
 import re
 import string
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
 from falcon.util.uri import unquote_string
 

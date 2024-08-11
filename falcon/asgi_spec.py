@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Constants, etc. defined by the ASGI specification."""
+
 from __future__ import annotations
 
 

@@ -13,20 +13,23 @@
 # limitations under the License.
 
 """Inspect utilities for falcon applications."""
+
 from __future__ import annotations
 
 from functools import partial
 import inspect
-from typing import Any
-from typing import Callable  
-from typing import cast
-from typing import Dict  
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Type
-from typing import Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from falcon import app_helpers
 from falcon.app import App

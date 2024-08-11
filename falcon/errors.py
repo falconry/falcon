@@ -33,13 +33,11 @@ package namespace::
 
             # -- snip --
 """
+
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterable
-from typing import Optional
-from typing import TYPE_CHECKING
-from typing import Union
+from typing import Iterable, Optional, TYPE_CHECKING, Union
 
 from falcon.http_error import HTTPError
 import falcon.status_codes as status

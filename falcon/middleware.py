@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import Iterable
-from typing import Optional
-from typing import Union
+from typing import Any, Iterable, Optional, Union
 
 from .request import Request
 from .response import Response

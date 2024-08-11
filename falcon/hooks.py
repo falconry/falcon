@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Hook decorators."""
+
 from __future__ import annotations
 
 from functools import wraps

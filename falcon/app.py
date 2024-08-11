@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Falcon App class."""
+
 from functools import wraps
 from inspect import iscoroutinefunction
 import pathlib

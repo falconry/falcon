@@ -11,6 +11,7 @@
 # limitations under the License.
 
 """Request class."""
+
 from __future__ import annotations
 
 from collections import UserDict

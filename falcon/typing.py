@@ -12,39 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Shorthand definitions for more complex types."""
+
 from __future__ import annotations
 
 import http
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import MutableMapping
-from typing import Optional
-from typing import Pattern
-from typing import Tuple
-from typing import TYPE_CHECKING
-from typing import Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    MutableMapping,
+    Optional,
+    Pattern,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)
 
 if TYPE_CHECKING:
+    from typing import Protocol
+
     from falcon.request import Request
     from falcon.response import Response
-
-    from typing import Protocol
 
     class Serializer(Protocol):
         def serialize(
             self,
             media: MutableMapping[str, Union[str, int, None, Link]],
             content_type: str,
-        ) -> bytes:
-            ...
+        ) -> bytes: ...
 
     class MediaHandlers(Protocol):
         def _resolve(
             self, media_type: str, default: str, raise_not_found: bool = False
-        ) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]:
-            ...
+        ) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]: ...
 
 
 Link = Dict[str, str]

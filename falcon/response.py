@@ -13,12 +13,12 @@
 # limitations under the License.
 
 """Response class."""
+
 from __future__ import annotations
 
 import functools
 import mimetypes
-from typing import Optional
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
