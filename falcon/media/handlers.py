@@ -1,11 +1,13 @@
 from collections import UserDict
 import functools
+from typing import Mapping
 
 from falcon import errors
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MULTIPART
 from falcon.constants import MEDIA_URLENCODED
 from falcon.constants import PYPY
+from falcon.media.base import BaseHandler
 from falcon.media.base import BinaryBaseHandlerWS
 from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
@@ -41,7 +43,7 @@ class Handlers(UserDict):
     def __init__(self, initial=None):
         self._resolve = self._create_resolver()
 
-        handlers = initial or {
+        handlers: Mapping[str, BaseHandler] = initial or {
             MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
             MEDIA_URLENCODED: URLEncodedFormHandler(),

@@ -11,19 +11,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Shorthand definitions for more complex types."""
 
-from typing import Any, Callable, Pattern, Union
+from __future__ import annotations
 
-from falcon.request import Request
-from falcon.response import Response
+import http
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Pattern,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)
+
+if TYPE_CHECKING:
+    from falcon.request import Request
+    from falcon.response import Response
+
+
+Link = Dict[str, str]
 
 # Error handlers
-ErrorHandler = Callable[[Request, Response, BaseException, dict], Any]
+ErrorHandler = Callable[['Request', 'Response', BaseException, dict], Any]
 
 # Error serializers
-ErrorSerializer = Callable[[Request, Response, BaseException], Any]
+ErrorSerializer = Callable[['Request', 'Response', BaseException], Any]
 
 # Sinks
 SinkPrefix = Union[str, Pattern]
@@ -33,3 +48,6 @@ SinkPrefix = Union[str, Pattern]
 #   arguments afterwords?
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
+Headers = Dict[str, str]
+HeaderList = Union[Headers, List[Tuple[str, str]]]
+ResponseStatus = Union[http.HTTPStatus, str, int]
