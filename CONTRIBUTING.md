@@ -37,7 +37,8 @@ $ pip install -U ruff
 $ ruff format
 ```
 
-You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8, 3.10, 3.11 or 3.12:
+You can check all this by running ``tox`` from within the Falcon project directory.
+Your environment must be based on CPython 3.10, 3.11, 3.12 or 3.13:
 
 ```bash
 $ pip install -U tox
