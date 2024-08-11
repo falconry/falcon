@@ -26,9 +26,9 @@ from falcon.util import uri
 from falcon.util.deprecation import deprecated_args
 
 if TYPE_CHECKING:
+    from falcon.media import BaseHandler
     from falcon.typing import HeaderList
     from falcon.typing import Link
-    from falcon.typing import Serializer
     from falcon.typing import Status
 
 
@@ -191,7 +191,7 @@ class HTTPError(Exception):
 
         return obj
 
-    def to_json(self, handler: Optional[Serializer] = None) -> bytes:
+    def to_json(self, handler: Optional[BaseHandler] = None) -> bytes:
         """Return a JSON representation of the error.
 
         Args:
@@ -241,6 +241,6 @@ class HTTPError(Exception):
 # NOTE: initialized in falcon.media.json, that is always imported since Request/Response
 # are imported by falcon init.
 if TYPE_CHECKING:
-    _DEFAULT_JSON_HANDLER: Serializer
+    _DEFAULT_JSON_HANDLER: BaseHandler
 else:
     _DEFAULT_JSON_HANDLER = None
