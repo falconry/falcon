@@ -37,7 +37,7 @@ jobs:
           - "towncrier"
           - "look"
           - "asgilook"
-          - "wslook"
+          - "ws_tutorial"
           - "check_vendored"
           - "twine_check"
           - "daphne"
