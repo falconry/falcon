@@ -7,11 +7,6 @@ on:
     branches:
       - master
 
-  # TODO(vytas): Remove when review passes.
-  pull_request:
-    branches:
-      - master
-
 jobs:
   run_tox:
     name: tox (default envlist on ${{matrix.python-version}})
