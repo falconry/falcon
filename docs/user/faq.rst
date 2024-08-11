@@ -98,6 +98,25 @@ Therefore, as long as you implement these classes and callables in a
 thread-safe manner, and ensure that any third-party libraries used by your
 app are also thread-safe, your WSGI app as a whole will be thread-safe.
 
+Can I run Falcon on free-threaded CPython?
+------------------------------------------
+
+At the time of this writing, Falcon has not been extensively evaluated without
+the GIL yet.
+
+We load-tested the WSGI flavor of the framework via
+:class:`~wsgiref.simple_server.WSGIServer` +
+:class:`~socketserver.ThreadingMixIn` on
+`free-threaded CPython 3.13.0rc1
+<https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
+(under ``PYTHON_GIL=0``), and observed no issues that would point toward
+Falcon's reliance on the GIL. Thus, we would like to think that Falcon is still
+:ref:`thread-safe <faq_thread_safety>` even in free-threaded execution,
+but it is too early to provide a definite answer.
+
+If you experimented with free-threading of Falcon or other Python web services,
+please :ref:`share your experience <chat>`!
+
 Does Falcon support asyncio?
 ------------------------------
 
