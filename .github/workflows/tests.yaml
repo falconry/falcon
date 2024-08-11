@@ -56,9 +56,6 @@ jobs:
           - python-version: "3.8"
             os: ubuntu-latest
             toxenv: py38
-          - python-version: "3.8"
-            os: ubuntu-latest
-            toxenv: py38_cython
           - python-version: "3.9"
             os: ubuntu-latest
             toxenv: py39

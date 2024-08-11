@@ -7,6 +7,11 @@ on:
     branches:
       - master
 
+  # TODO(vytas): Remove when review passes.
+  pull_request:
+    branches:
+      - master
+
 jobs:
   run_tox:
     name: tox (default envlist on ${{matrix.python-version}})
@@ -15,10 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.8"
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
 
     steps:
       - name: Checkout repo
@@ -26,8 +31,15 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
+        if: ${{ matrix.python-version != '3.13' }}
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        if: ${{ matrix.python-version == '3.13' }}
+        with:
+          python-version: "3.13.0-rc.1 - 3.13"
 
       - name: Install dependencies
         run: |
