@@ -1,0 +1,2 @@
+The functions ``create_task()`` and ``get_running_loop()`` of `falcon.util.sync` are deprecated.
+The counterpart functions in the builtin package `asyncio` are encouraged to be used.

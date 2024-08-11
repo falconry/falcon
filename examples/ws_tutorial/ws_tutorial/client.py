@@ -8,11 +8,13 @@ import websockets
 
 
 async def send_message():
-    uri = 'ws://localhost:8000/echo/hello'
+    uri = 'ws://localhost:8000/echo'
 
     async with websockets.connect(uri) as websocket:
         while True:
-            message = input('Enter a message: ')
+            message = input('Enter a message (q to exit): ')
+            if message.casefold() == 'q':
+                break
             await websocket.send(message)
             response = await websocket.recv()
             print(response)

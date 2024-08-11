@@ -35,8 +35,6 @@ from falcon.testing.srmock import StartResponseMock
 from falcon.util import async_to_sync
 from falcon.util import CaseInsensitiveDict
 from falcon.util import code_to_http_status
-from falcon.util import create_task
-from falcon.util import get_running_loop
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
 
@@ -829,7 +827,9 @@ async def _simulate_request_asgi(
     resp_event_collector = helpers.ASGIResponseEventCollector()
 
     if not _one_shot:
-        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = asyncio.create_task(
+            app(http_scope, req_event_emitter, resp_event_collector)
+        )
 
         if _stream_result:
             # NOTE(kgriffs): Wait until the response has been started and give
@@ -874,13 +874,15 @@ async def _simulate_request_asgi(
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
-        task_lifespan = get_running_loop().create_task(
+        task_lifespan = asyncio.create_task(
             app(lifespan_scope, lifespan_event_emitter, lifespan_event_collector)
         )
 
         await _wait_for_startup(lifespan_event_collector.events)
 
-        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = asyncio.create_task(
+            app(http_scope, req_event_emitter, resp_event_collector)
+        )
         req_event_emitter.disconnect()
         await task_req
 
@@ -1017,7 +1019,7 @@ class ASGIConductor:
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
-        self._lifespan_task = get_running_loop().create_task(
+        self._lifespan_task = asyncio.create_task(
             self.app(
                 lifespan_scope, lifespan_event_emitter, self._lifespan_event_collector
             )
@@ -1106,7 +1108,7 @@ class ASGIConductor:
         scope = helpers.create_scope_ws(path=path, **kwargs)
         ws = helpers.ASGIWebSocketSimulator()
 
-        task_req = create_task(self.app(scope, ws._emit, ws._collect))
+        task_req = asyncio.create_task(self.app(scope, ws._emit, ws._collect))
 
         return _WSContextManager(ws, task_req)
 
@@ -2110,7 +2112,7 @@ class _WSContextManager:
         self._task_req = task_req
 
     async def __aenter__(self):
-        ready_waiter = create_task(self._ws.wait_ready())
+        ready_waiter = asyncio.create_task(self._ws.wait_ready())
 
         # NOTE(kgriffs): Wait on both so that in the case that the request
         #   task raises an error, we don't just end up masking it with an

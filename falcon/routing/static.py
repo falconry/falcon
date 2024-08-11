@@ -1,10 +1,10 @@
+import asyncio
 from functools import partial
 import io
 import os
 import re
 
 import falcon
-from falcon.util.sync import get_running_loop
 
 
 def _open_range(file_path, req_range):
@@ -234,7 +234,7 @@ class _AsyncFileReader:
 
     def __init__(self, file):
         self._file = file
-        self._loop = get_running_loop()
+        self._loop = asyncio.get_running_loop()
 
     async def read(self, size=-1):
         return await self._loop.run_in_executor(None, partial(self._file.read, size))
