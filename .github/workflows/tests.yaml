@@ -19,6 +19,8 @@ jobs:
       matrix:
         python-version:
           - "3.12"
+        python-dev-version:
+          - ""
         os:
           - "ubuntu-latest"
         toxenv:
@@ -35,7 +37,7 @@ jobs:
           - "towncrier"
           - "look"
           - "asgilook"
-          - "wslook"
+          - "ws_tutorial"
           - "check_vendored"
           - "twine_check"
           - "daphne"
@@ -56,9 +58,6 @@ jobs:
           - python-version: "3.8"
             os: ubuntu-latest
             toxenv: py38
-          - python-version: "3.8"
-            os: ubuntu-latest
-            toxenv: py38_cython
           - python-version: "3.9"
             os: ubuntu-latest
             toxenv: py39
@@ -89,6 +88,14 @@ jobs:
           - python-version: "3.12"
             os: windows-latest
             toxenv: py312_nocover
+          - python-version: "3.13"
+            python-dev-version: "3.13.0-rc.1 - 3.13"
+            os: ubuntu-latest
+            toxenv: py313
+          - python-version: "3.13"
+            python-dev-version: "3.13.0-rc.1 - 3.13"
+            os: ubuntu-latest
+            toxenv: py313_cython
           # These env require 3.8 and 20.04, see tox.ini
           - python-version: "3.8"
             os: ubuntu-20.04
@@ -112,8 +119,15 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
+        if: ${{ !matrix.python-dev-version }}
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Set up Python (pre-release)
+        uses: actions/setup-python@v4
+        if: ${{ matrix.python-dev-version }}
+        with:
+          python-version: ${{ matrix.python-dev-version }}
 
       - name: Install smoke test dependencies
         if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
