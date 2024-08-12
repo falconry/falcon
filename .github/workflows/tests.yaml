@@ -111,20 +111,20 @@ jobs:
     # Some are GitHub actions, others run shell commands.
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         # NOTE(vytas): Work around
         #   https://github.com/codecov/codecov-action/issues/190
         with:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         if: ${{ !matrix.python-dev-version }}
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Set up Python (pre-release)
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         if: ${{ matrix.python-dev-version }}
         with:
           python-version: ${{ matrix.python-dev-version }}
