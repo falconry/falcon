@@ -33,14 +33,14 @@ import falcon
 if typing.TYPE_CHECKING:  # pragma: no cover
     from falcon import app as wsgi
     from falcon.asgi import app as asgi
-    from falcon.hooks import ResponderOrResource
-    from falcon.typing import RawHeaders
+    from falcon.typing import HeaderList
+    from falcon.typing import Resource
 
 
 def capture_responder_args(
     req: wsgi.Request,
     resp: wsgi.Response,
-    resource: ResponderOrResource,
+    resource: Resource,
     params: typing.Mapping[str, str],
 ) -> None:
     """Before hook for capturing responder arguments.
@@ -81,7 +81,7 @@ def capture_responder_args(
 async def capture_responder_args_async(
     req: asgi.Request,
     resp: asgi.Response,
-    resource: ResponderOrResource,
+    resource: Resource,
     params: typing.Mapping[str, str],
 ) -> None:
     """Before hook for capturing responder arguments.
@@ -107,7 +107,7 @@ async def capture_responder_args_async(
 def set_resp_defaults(
     req: wsgi.Request,
     resp: wsgi.Response,
-    resource: ResponderOrResource,
+    resource: Resource,
     params: typing.Mapping[str, str],
 ) -> None:
     """Before hook for setting default response properties.
@@ -132,7 +132,7 @@ def set_resp_defaults(
 async def set_resp_defaults_async(
     req: asgi.Request,
     resp: asgi.Response,
-    resource: ResponderOrResource,
+    resource: Resource,
     params: typing.Mapping[str, str],
 ) -> None:
     """Wrap :meth:`~falcon.testing.set_resp_defaults` in a coroutine."""
@@ -181,7 +181,7 @@ class SimpleTestResource:
         status: typing.Optional[str] = None,
         body: typing.Optional[str] = None,
         json: typing.Optional[dict[str, str]] = None,
-        headers: typing.Optional[RawHeaders] = None,
+        headers: typing.Optional[HeaderList] = None,
     ):
         self._default_status = status
         self._default_headers = headers
@@ -267,14 +267,14 @@ class SimpleTestResourceAsync(SimpleTestResource):
 
     @falcon.before(capture_responder_args_async)
     @falcon.before(set_resp_defaults_async)
-    async def on_get(
+    async def on_get(  # type: ignore[override]
         self, req: asgi.Request, resp: asgi.Response, **kwargs: typing.Any
     ) -> None:
         pass
 
     @falcon.before(capture_responder_args_async)
     @falcon.before(set_resp_defaults_async)
-    async def on_post(
+    async def on_post(  # type: ignore[override]
         self, req: asgi.Request, resp: asgi.Response, **kwargs: typing.Any
     ) -> None:
         pass

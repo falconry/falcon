@@ -29,44 +29,33 @@ from falcon.util.sync import _wrap_non_coroutine_unsafe
 if typing.TYPE_CHECKING:  # pragma: no cover
     import falcon as wsgi
     from falcon import asgi
+    from falcon.typing import Resource
 
-    ResponderParams = typing.ParamSpec('ResponderParams')
-
-    class SyncResponder(typing.Protocol[ResponderParams]):
+    class SyncResponderMethod(typing.Protocol):
         def __call__(
             self,
-            responder: SyncResponderOrResource,
+            resource: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
-            *args: ResponderParams.args,
-            **kwargs: ResponderParams.kwargs,
+            *args: typing.Any,
+            **kwargs: typing.Any,
         ) -> None: ...
 
-    class AsyncResponder(typing.Protocol):
+    class AsyncResponderMethod(typing.Protocol):
         async def __call__(
             self,
-            responder: AsyncResponderOrResource,
+            resource: Resource,
             req: asgi.Request,
             resp: asgi.Response,
-            *args: ResponderParams.args,
-            **kwargs: ResponderParams.kwargs,
+            *args: typing.Any,
+            **kwargs: typing.Any,
         ) -> None: ...
 
-    Responder = typing.Union[SyncResponder, AsyncResponder]
-    Resource = object
-    SyncResponderOrResource = typing.Union[SyncResponder, Resource]
-    AsyncResponderOrResource = typing.Union[AsyncResponder, Resource]
-    ResponderOrResource = typing.Union[Responder, Resource]
+    Responder = typing.Union[SyncResponderMethod, AsyncResponderMethod]
     SynchronousAction = typing.Callable[..., typing.Any]
     AsynchronousAction = typing.Callable[..., typing.Awaitable[typing.Any]]
     Action = typing.Union[SynchronousAction, AsynchronousAction]
-else:
-    Resource = object
-    SynchronousAction = typing.Callable[..., typing.Any]
-    AsynchronousAction = typing.Callable[..., typing.Awaitable[typing.Any]]
-    SyncResponder = typing.Callable
-    AsyncResponder = typing.Awaitable
-    Responder = typing.Union[SyncResponder, AsyncResponder]
+    _R = typing.TypeVar('_R', bound=typing.Union[Responder, Resource])
 
 
 _DECORABLE_METHOD_NAME = re.compile(
@@ -76,7 +65,7 @@ _DECORABLE_METHOD_NAME = re.compile(
 
 def before(
     action: Action, *args: typing.Any, is_async: bool = False, **kwargs: typing.Any
-) -> typing.Callable[[ResponderOrResource], ResponderOrResource]:
+) -> typing.Callable[[_R], _R]:
     """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
@@ -126,42 +115,33 @@ def before(
             *action*.
     """
 
-    def _before(responder_or_resource: ResponderOrResource) -> ResponderOrResource:
+    def _before(responder_or_resource: _R) -> _R:
         if isinstance(responder_or_resource, type):
             for responder_name, responder in getmembers(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    # This pattern is necessary to capture the current value of
-                    # responder in the do_before_all closure; otherwise, they
-                    # will capture the same responder variable that is shared
-                    # between iterations of the for loop, above.
-
                     responder = typing.cast(Responder, responder)
+                    do_before_all = _wrap_with_before(
+                        responder, action, args, kwargs, is_async
+                    )
 
-                    def let(responder: Responder = responder) -> None:
-                        do_before_all = _wrap_with_before(
-                            responder, action, args, kwargs, is_async
-                        )
+                    setattr(responder_or_resource, responder_name, do_before_all)
 
-                        setattr(responder_or_resource, responder_name, do_before_all)
-
-                    let()
-
-            return responder_or_resource
+            return typing.cast(_R, responder_or_resource)
 
         else:
             responder = typing.cast(Responder, responder_or_resource)
             do_before_one = _wrap_with_before(responder, action, args, kwargs, is_async)
 
-            return do_before_one
+            return typing.cast(_R, do_before_one)
 
     return _before
 
 
 def after(
     action: Action, *args: typing.Any, is_async: bool = False, **kwargs: typing.Any
-) -> typing.Callable[[ResponderOrResource], ResponderOrResource]:
+) -> typing.Callable[[_R], _R]:
     """Execute the given action function *after* the responder.
 
     Args:
@@ -194,30 +174,26 @@ def after(
             *action*.
     """
 
-    def _after(responder_or_resource: ResponderOrResource) -> ResponderOrResource:
+    def _after(responder_or_resource: _R) -> _R:
         if isinstance(responder_or_resource, type):
             for responder_name, responder in getmembers(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
                     responder = typing.cast(Responder, responder)
+                    do_after_all = _wrap_with_after(
+                        responder, action, args, kwargs, is_async
+                    )
 
-                    def let(responder: Responder | typing.Callable = responder) -> None:
-                        do_after_all = _wrap_with_after(
-                            responder, action, args, kwargs, is_async
-                        )
+                    setattr(responder_or_resource, responder_name, do_after_all)
 
-                        setattr(responder_or_resource, responder_name, do_after_all)
-
-                    let()
-
-            return responder_or_resource
+            return typing.cast(_R, responder_or_resource)
 
         else:
             responder = typing.cast(Responder, responder_or_resource)
             do_after_one = _wrap_with_after(responder, action, args, kwargs, is_async)
 
-            return do_after_one
+            return typing.cast(_R, do_after_one)
 
     return _after
 
@@ -262,11 +238,11 @@ def _wrap_with_after(
             )
         else:
             async_action = typing.cast(AsynchronousAction, action)
-        async_responder = typing.cast(AsyncResponder, responder)
+        async_responder = typing.cast(AsyncResponderMethod, responder)
 
         @wraps(responder)
         async def do_after(
-            self: AsyncResponderOrResource,
+            self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
             *args: typing.Any,
@@ -277,13 +253,13 @@ def _wrap_with_after(
             await async_responder(self, req, resp, **kwargs)
             await async_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = typing.cast(AsyncResponder, do_after)
+        do_after_responder = typing.cast(AsyncResponderMethod, do_after)
     else:
-        responder = typing.cast(SyncResponder, responder)
+        responder = typing.cast(SyncResponderMethod, responder)
 
         @wraps(responder)
         def do_after(
-            self: SyncResponderOrResource,
+            self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
             *args: typing.Any,
@@ -295,7 +271,7 @@ def _wrap_with_after(
             responder(self, req, resp, **kwargs)
             action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = typing.cast(SyncResponder, do_after)
+        do_after_responder = typing.cast(SyncResponderMethod, do_after)
     return do_after_responder
 
 
@@ -334,11 +310,11 @@ def _wrap_with_before(
             )
         else:
             async_action = typing.cast(AsynchronousAction, action)
-        async_responder = typing.cast(AsyncResponder, responder)
+        async_responder = typing.cast(AsyncResponderMethod, responder)
 
         @wraps(responder)
         async def do_before(
-            self: AsyncResponderOrResource,
+            self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
             *args: typing.Any,
@@ -350,13 +326,13 @@ def _wrap_with_before(
             await async_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await async_responder(self, req, resp, **kwargs)
 
-        do_before_responder = typing.cast(AsyncResponder, do_before)
+        do_before_responder = typing.cast(AsyncResponderMethod, do_before)
     else:
-        responder = typing.cast(SyncResponder, responder)
+        responder = typing.cast(SyncResponderMethod, responder)
 
         @wraps(responder)
         def do_before(
-            self: SyncResponderOrResource,
+            self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
             *args: typing.Any,
@@ -368,7 +344,7 @@ def _wrap_with_before(
             action(req, resp, self, kwargs, *action_args, **action_kwargs)
             responder(self, req, resp, **kwargs)
 
-        do_before_responder = typing.cast(SyncResponder, do_before)
+        do_before_responder = typing.cast(SyncResponderMethod, do_before)
     return do_before_responder
 
 

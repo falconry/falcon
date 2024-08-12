@@ -51,3 +51,5 @@ SinkPrefix = Union[str, Pattern]
 Headers = Dict[str, str]
 HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
+
+Resource = object
