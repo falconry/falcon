@@ -47,6 +47,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from falcon.typing import SyncResponderMethod
 
 
+# TODO: if is_async is removed there protocol would no longer be needed, since
+# ParamSpec could be used together with Concatenate to use a simple Callable
+# to type the before and after function. This approach was prototyped in
+# https://github.com/falconry/falcon/pull/2234
 class SyncBeforeFn(Protocol):
     def __call__(
         self,
@@ -97,7 +101,7 @@ class AsyncAfterFn(Protocol):
 
 
 AfterFn = Union[SyncAfterFn, AsyncAfterFn]
-_R = TypeVar('_R', bound=Union[Responder, Resource])
+_R = TypeVar('_R', bound=Union['Responder', 'Resource'])
 
 
 _DECORABLE_METHOD_NAME = re.compile(
