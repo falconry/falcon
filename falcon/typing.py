@@ -43,7 +43,7 @@ ErrorSerializer = Callable[['Request', 'Response', BaseException], Any]
 JSONSerializable = Union[
     Dict[str, 'JSONSerializable'],
     List['JSONSerializable'],
-    Tuple['JSONSerializable'],
+    Tuple['JSONSerializable', ...],
     bool,
     float,
     int,
