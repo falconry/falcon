@@ -10,7 +10,7 @@ from .msgpack import MessagePackHandlerWS
 from .multipart import MultipartFormHandler
 from .urlencoded import URLEncodedFormHandler
 
-__all__ = [
+__all__ = (
     'BaseHandler',
     'BinaryBaseHandlerWS',
     'TextBaseHandlerWS',
@@ -22,4 +22,4 @@ __all__ = [
     'MissingDependencyHandler',
     'MultipartFormHandler',
     'URLEncodedFormHandler',
-]
+)

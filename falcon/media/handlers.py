@@ -40,7 +40,7 @@ class MissingDependencyHandler(BinaryBaseHandlerWS):
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
 
-    def __init__(self, initial=None):
+    def __init__(self, initial=None) -> None:
         self._resolve = self._create_resolver()
 
         handlers: Mapping[str, BaseHandler] = initial or {

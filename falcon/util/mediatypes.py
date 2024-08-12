@@ -16,6 +16,8 @@
 
 import typing
 
+__all__ = ('parse_header',)
+
 
 def _parse_param_old_stdlib(s):  # type: ignore
     while s[:1] == ';':
@@ -84,6 +86,3 @@ def parse_header(line: str) -> typing.Tuple[str, dict]:
         return (key.strip(), pdict)
 
     return _parse_header_old_stdlib(line)
-
-
-__all__ = ['parse_header']
