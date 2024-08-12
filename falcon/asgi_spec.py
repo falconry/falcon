@@ -14,6 +14,8 @@
 
 """Constants, etc. defined by the ASGI specification."""
 
+from __future__ import annotations
+
 
 class EventType:
     """Standard ASGI event type strings."""

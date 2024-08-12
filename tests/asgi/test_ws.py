@@ -141,7 +141,7 @@ async def test_echo():  # noqa: C901
                 await ws.send_text(f'{p1}:{p2}:{req.context.message}:{injected}')
 
             messages = deque()
-            sink_task = falcon.create_task(self._sink(ws, messages))
+            sink_task = asyncio.create_task(self._sink(ws, messages))
 
             while not sink_task.done():
                 if not messages:
@@ -338,7 +338,7 @@ async def test_client_disconnect_early(  # noqa: C901
                             #   order to test coverage of the logic that handles
                             #   the case of a closed connection while waiting on
                             #   more data.
-                            recv_task = falcon.create_task(ws.receive_data())
+                            recv_task = asyncio.create_task(ws.receive_data())
                             # Ensure recv_task() has a chance to get ahead
                             await asyncio.sleep(0)
                             ws_close = ws.close(4099)

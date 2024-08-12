@@ -6,7 +6,9 @@ import inspect
 import os
 from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
-__all__ = [
+from falcon.util import deprecated
+
+__all__ = (
     'async_to_sync',
     'create_task',
     'get_running_loop',
@@ -14,7 +16,7 @@ __all__ = [
     'sync_to_async',
     'wrap_sync_to_async',
     'wrap_sync_to_async_unsafe',
-]
+)
 
 Result = TypeVar('Result')
 
@@ -54,8 +56,12 @@ class _ActiveRunner:
 _active_runner = _ActiveRunner(getattr(asyncio, 'Runner', _DummyRunner))
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
-create_task = asyncio.create_task
-get_running_loop = asyncio.get_running_loop
+create_task = deprecated(
+    'This will be removed in V5. Please use `asyncio.create_task`'
+)(asyncio.create_task)
+get_running_loop = deprecated(
+    'This will be removed in V5. Please use `asyncio.get_running_loop`'
+)(asyncio.get_running_loop)
 
 
 def wrap_sync_to_async_unsafe(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -131,7 +137,7 @@ def wrap_sync_to_async(
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return await get_running_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             executor, partial(func, *args, **kwargs)
         )
 
@@ -178,7 +184,7 @@ async def sync_to_async(
         synchronous callable.
     """
 
-    return await get_running_loop().run_in_executor(
+    return await asyncio.get_running_loop().run_in_executor(
         None, partial(func, *args, **kwargs)
     )
 

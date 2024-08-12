@@ -25,7 +25,7 @@ from falcon.util.uri import parse_query_string
 from . import _request_helpers as asgi_helpers
 from .stream import BoundedStream
 
-__all__ = ['Request']
+__all__ = ('Request',)
 
 _SINGLETON_HEADERS_BYTESTR = frozenset([h.encode() for h in SINGLETON_HEADERS])
 

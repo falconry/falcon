@@ -674,7 +674,7 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/'):
+    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/') -> None:
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI

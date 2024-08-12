@@ -79,7 +79,7 @@ include:
 
 * `Uvicorn <https://www.uvicorn.org/>`_
 * `Daphne <https://github.com/django/daphne/>`_
-* `Hypercorn <https://pgjones.gitlab.io/hypercorn/>`_
+* `Hypercorn <https://github.com/pgjones/hypercorn/>`_
 
 For a simple tutorial application like ours, any of the above should do.
 Let's pick the popular ``uvicorn`` for now::
@@ -1032,6 +1032,10 @@ numerous ways:
 * Publish image upload events via :attr:`SSE <falcon.asgi.Response.sse>` or
   :ref:`WebSockets <ws>`.
 * ...And much more (patches welcome, as they say)!
+
+.. tip::
+   If you want to add :ref:`WebSocket <ws>` support, please check out our
+   :ref:`WebSocket tutorial <tutorial-ws>` too!
 
 Compared to the sync version, asynchronous code can at times be harder to
 design and reason about. Should you run into any issues, our friendly community
