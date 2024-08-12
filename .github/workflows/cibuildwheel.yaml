@@ -11,8 +11,7 @@ on:
       - master
 
 jobs:
-  build_sdist:
-    name: Build source distribution
+  build-sdist:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,12 +24,56 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Create sdist
+      - name: Build sdist
         run: |
           pip install build
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: falcon-sdist
+          name: sdist
           path: dist/*.tar.gz
+
+  build-wheels:
+    needs: build-sdist
+    name: ${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        cibw_python:
+          - "cp312-*"
+          - "cp313-*"
+        cibw_arch:
+          - "x86_64"
+        # exclude:
+        #   - os: ubuntu-latest
+        #     cibw_arch: universal2
+        #   - os: macos-latest
+        #     cibw_arch: aarch64
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.20.0
+        env:
+          CIBW_BUILD: ${{ matrix.cibw_python }}
+          CIBW_ARCHS: ${{ matrix.cibw_arch }}
+          # CIBW_TEST_SKIP: "*universal2:arm64"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: wheelhouse/*.whl

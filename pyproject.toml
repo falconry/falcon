@@ -174,3 +174,8 @@ markers = [
 testpaths = [
     "tests"
 ]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+test-requires = "-rrequirements/mintest"
+test-command = "pytest {project}/tests"
