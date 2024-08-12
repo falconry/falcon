@@ -20,42 +20,84 @@ from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
 import re
-import typing
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Tuple,
+    TYPE_CHECKING,
+    TypeVar,
+    Union,
+)
 
+from falcon._typing_extensions import Protocol
 from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
-if typing.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     import falcon as wsgi
     from falcon import asgi
+    from falcon.typing import AsyncResponderMethod
     from falcon.typing import Resource
+    from falcon.typing import Responder
+    from falcon.typing import SyncResponderMethod
 
-    class SyncResponderMethod(typing.Protocol):
-        def __call__(
-            self,
-            resource: Resource,
-            req: wsgi.Request,
-            resp: wsgi.Response,
-            *args: typing.Any,
-            **kwargs: typing.Any,
-        ) -> None: ...
 
-    class AsyncResponderMethod(typing.Protocol):
-        async def __call__(
-            self,
-            resource: Resource,
-            req: asgi.Request,
-            resp: asgi.Response,
-            *args: typing.Any,
-            **kwargs: typing.Any,
-        ) -> None: ...
+class SyncBeforeFn(Protocol):
+    def __call__(
+        self,
+        req: wsgi.Request,
+        resp: wsgi.Response,
+        resource: Resource,
+        params: Dict[str, Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
 
-    Responder = typing.Union[SyncResponderMethod, AsyncResponderMethod]
-    SynchronousAction = typing.Callable[..., typing.Any]
-    AsynchronousAction = typing.Callable[..., typing.Awaitable[typing.Any]]
-    Action = typing.Union[SynchronousAction, AsynchronousAction]
-    _R = typing.TypeVar('_R', bound=typing.Union[Responder, Resource])
+
+class AsyncBeforeFn(Protocol):
+    def __call__(
+        self,
+        req: asgi.Request,
+        resp: asgi.Response,
+        resource: Resource,
+        params: Dict[str, Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> Awaitable[None]: ...
+
+
+BeforeFn = Union[SyncBeforeFn, AsyncBeforeFn]
+
+
+class SyncAfterFn(Protocol):
+    def __call__(
+        self,
+        req: wsgi.Request,
+        resp: wsgi.Response,
+        resource: Resource,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+class AsyncAfterFn(Protocol):
+    def __call__(
+        self,
+        req: asgi.Request,
+        resp: asgi.Response,
+        resource: Resource,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Awaitable[None]: ...
+
+
+AfterFn = Union[SyncAfterFn, AsyncAfterFn]
+_R = TypeVar('_R', bound=Union[Responder, Resource])
 
 
 _DECORABLE_METHOD_NAME = re.compile(
@@ -64,8 +106,8 @@ _DECORABLE_METHOD_NAME = re.compile(
 
 
 def before(
-    action: Action, *args: typing.Any, is_async: bool = False, **kwargs: typing.Any
-) -> typing.Callable[[_R], _R]:
+    action: BeforeFn, *args: Any, is_async: bool = False, **kwargs: Any
+) -> Callable[[_R], _R]:
     """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
@@ -121,27 +163,27 @@ def before(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    responder = typing.cast(Responder, responder)
+                    responder = cast(Responder, responder)
                     do_before_all = _wrap_with_before(
                         responder, action, args, kwargs, is_async
                     )
 
                     setattr(responder_or_resource, responder_name, do_before_all)
 
-            return typing.cast(_R, responder_or_resource)
+            return cast(_R, responder_or_resource)
 
         else:
-            responder = typing.cast(Responder, responder_or_resource)
+            responder = cast(Responder, responder_or_resource)
             do_before_one = _wrap_with_before(responder, action, args, kwargs, is_async)
 
-            return typing.cast(_R, do_before_one)
+            return cast(_R, do_before_one)
 
     return _before
 
 
 def after(
-    action: Action, *args: typing.Any, is_async: bool = False, **kwargs: typing.Any
-) -> typing.Callable[[_R], _R]:
+    action: AfterFn, *args: Any, is_async: bool = False, **kwargs: Any
+) -> Callable[[_R], _R]:
     """Execute the given action function *after* the responder.
 
     Args:
@@ -180,20 +222,20 @@ def after(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    responder = typing.cast(Responder, responder)
+                    responder = cast(Responder, responder)
                     do_after_all = _wrap_with_after(
                         responder, action, args, kwargs, is_async
                     )
 
                     setattr(responder_or_resource, responder_name, do_after_all)
 
-            return typing.cast(_R, responder_or_resource)
+            return cast(_R, responder_or_resource)
 
         else:
-            responder = typing.cast(Responder, responder_or_resource)
+            responder = cast(Responder, responder_or_resource)
             do_after_one = _wrap_with_after(responder, action, args, kwargs, is_async)
 
-            return typing.cast(_R, do_after_one)
+            return cast(_R, do_after_one)
 
     return _after
 
@@ -205,9 +247,9 @@ def after(
 
 def _wrap_with_after(
     responder: Responder,
-    action: Action,
-    action_args: typing.Any,
-    action_kwargs: typing.Any,
+    action: AfterFn,
+    action_args: Any,
+    action_kwargs: Any,
     is_async: bool,
 ) -> Responder:
     """Execute the given action function after a responder method.
@@ -233,53 +275,53 @@ def _wrap_with_after(
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            async_action = typing.cast(
-                AsynchronousAction, _wrap_non_coroutine_unsafe(action)
-            )
+            async_action = cast(AsyncAfterFn, _wrap_non_coroutine_unsafe(action))
         else:
-            async_action = typing.cast(AsynchronousAction, action)
-        async_responder = typing.cast(AsyncResponderMethod, responder)
+            async_action = cast(AsyncAfterFn, action)
+        async_responder = cast(AsyncResponderMethod, responder)
 
-        @wraps(responder)
+        @wraps(async_responder)
         async def do_after(
             self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
-            *args: typing.Any,
-            **kwargs: typing.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
+
             await async_responder(self, req, resp, **kwargs)
             await async_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = typing.cast(AsyncResponderMethod, do_after)
+        do_after_responder = cast(AsyncResponderMethod, do_after)
     else:
-        responder = typing.cast(SyncResponderMethod, responder)
+        sync_action = cast(SyncAfterFn, action)
+        sync_responder = cast(SyncResponderMethod, responder)
 
-        @wraps(responder)
+        @wraps(sync_responder)
         def do_after(
             self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
-            *args: typing.Any,
-            **kwargs: typing.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            responder(self, req, resp, **kwargs)
-            action(req, resp, self, *action_args, **action_kwargs)
+            sync_responder(self, req, resp, **kwargs)
+            sync_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = typing.cast(SyncResponderMethod, do_after)
+        do_after_responder = cast(SyncResponderMethod, do_after)
     return do_after_responder
 
 
 def _wrap_with_before(
     responder: Responder,
-    action: Action,
-    action_args: typing.Tuple[typing.Any, ...],
-    action_kwargs: typing.Dict[str, typing.Any],
+    action: BeforeFn,
+    action_args: Tuple[Any, ...],
+    action_kwargs: Dict[str, Any],
     is_async: bool,
 ) -> Responder:
     """Execute the given action function before a responder method.
@@ -305,20 +347,18 @@ def _wrap_with_before(
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            async_action = typing.cast(
-                AsynchronousAction, _wrap_non_coroutine_unsafe(action)
-            )
+            async_action = cast(AsyncBeforeFn, _wrap_non_coroutine_unsafe(action))
         else:
-            async_action = typing.cast(AsynchronousAction, action)
-        async_responder = typing.cast(AsyncResponderMethod, responder)
+            async_action = cast(AsyncBeforeFn, action)
+        async_responder = cast(AsyncResponderMethod, responder)
 
-        @wraps(responder)
+        @wraps(async_responder)
         async def do_before(
             self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
-            *args: typing.Any,
-            **kwargs: typing.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
@@ -326,32 +366,33 @@ def _wrap_with_before(
             await async_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await async_responder(self, req, resp, **kwargs)
 
-        do_before_responder = typing.cast(AsyncResponderMethod, do_before)
+        do_before_responder = cast(AsyncResponderMethod, do_before)
     else:
-        responder = typing.cast(SyncResponderMethod, responder)
+        sync_action = cast(SyncBeforeFn, action)
+        sync_responder = cast(SyncResponderMethod, responder)
 
-        @wraps(responder)
+        @wraps(sync_responder)
         def do_before(
             self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
-            *args: typing.Any,
-            **kwargs: typing.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            action(req, resp, self, kwargs, *action_args, **action_kwargs)
-            responder(self, req, resp, **kwargs)
+            sync_action(req, resp, self, kwargs, *action_args, **action_kwargs)
+            sync_responder(self, req, resp, **kwargs)
 
-        do_before_responder = typing.cast(SyncResponderMethod, do_before)
+        do_before_responder = cast(SyncResponderMethod, do_before)
     return do_before_responder
 
 
 def _merge_responder_args(
-    args: typing.Tuple[typing.Any, ...],
-    kwargs: typing.Dict[str, typing.Any],
-    argnames: typing.List[str],
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+    argnames: List[str],
 ) -> None:
     """Merge responder args into kwargs.
 

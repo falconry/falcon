@@ -40,7 +40,7 @@ if typing.TYPE_CHECKING:  # pragma: no cover
 def capture_responder_args(
     req: wsgi.Request,
     resp: wsgi.Response,
-    resource: Resource,
+    resource: object,
     params: typing.Mapping[str, str],
 ) -> None:
     """Before hook for capturing responder arguments.

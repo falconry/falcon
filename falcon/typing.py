@@ -27,7 +27,11 @@ from typing import (
     Union,
 )
 
+from falcon._typing_extensions import Protocol
+
 if TYPE_CHECKING:
+    import falcon as wsgi
+    from falcon import asgi
     from falcon.request import Request
     from falcon.response import Response
 
@@ -53,3 +57,28 @@ HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
 
 Resource = object
+
+
+class SyncResponderMethod(Protocol):
+    def __call__(
+        self,
+        resource: Resource,
+        req: wsgi.Request,
+        resp: wsgi.Response,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+class AsyncResponderMethod(Protocol):
+    async def __call__(
+        self,
+        resource: Resource,
+        req: asgi.Request,
+        resp: asgi.Response,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+Responder = Union[SyncResponderMethod, AsyncResponderMethod]
