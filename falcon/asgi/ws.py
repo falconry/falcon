@@ -22,7 +22,7 @@ from falcon.constants import WebSocketPayloadType
 _WebSocketState = Enum('_WebSocketState', 'HANDSHAKE ACCEPTED CLOSED')
 
 
-__all__ = ['WebSocket']
+__all__ = ('WebSocket',)
 
 
 class WebSocket:

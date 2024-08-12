@@ -22,7 +22,7 @@ from falcon.constants import _UNSET
 from falcon.util.misc import _encode_items_to_latin1
 from falcon.util.misc import is_python_func
 
-__all__ = ['Response']
+__all__ = ('Response',)
 
 
 class Response(response.Response):

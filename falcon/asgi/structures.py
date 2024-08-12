@@ -4,7 +4,7 @@ from falcon.constants import MEDIA_JSON
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.typing import JSONSerializable
 
-__all__ = ['SSEvent']
+__all__ = ('SSEvent',)
 
 
 class SSEvent:
