@@ -978,7 +978,7 @@ class CompiledRouterOptions:
 
 
 class _CxParent:
-    def __init__(self):
+    def __init__(self) -> None:
         self._children: List[_CxElement] = []
 
     def append_child(self, construct: _CxElement):
