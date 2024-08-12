@@ -14,8 +14,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import datetime
 from io import BytesIO
+from typing import Any, Callable, cast, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import UUID
 
 from falcon import errors
@@ -24,6 +25,7 @@ from falcon import util
 from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
+from falcon.errors import MediaError
 from falcon.forwarded import _parse_forwarded_header
 
 # TODO: remove import in falcon 4
@@ -33,6 +35,7 @@ from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
 from falcon.util import structures
 from falcon.util.misc import isascii
+from falcon.util.structures import ETag
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 from falcon.vendor import mimeparse
@@ -44,8 +47,12 @@ FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
-strptime = datetime.strptime
-now = datetime.now
+strptime = datetime.datetime.strptime
+now = datetime.datetime.now
+
+Name = str
+Store = Optional[Dict]
+Default = Any
 
 
 class Request:
@@ -458,22 +465,22 @@ class Request:
 
     _wsgi_input_type_known = False
 
-    def __init__(self, env, options=None):
-        self.is_websocket = False
+    def __init__(self, env: Dict[str, Any], options: Optional[RequestOptions] = None):
+        self.is_websocket: bool = False
 
         self.env = env
         self.options = options if options else RequestOptions()
 
-        self._wsgierrors = env['wsgi.errors']
-        self.method = env['REQUEST_METHOD']
+        self._wsgierrors: BoundedStream = env['wsgi.errors']
+        self.method: str = env['REQUEST_METHOD']
 
-        self.uri_template = None
-        self._media = _UNSET
-        self._media_error = None
+        self.uri_template: Union[str, None] = None
+        self._media: Union[str, object] = _UNSET
+        self._media_error: Union[MediaError, Exception, None] = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
-        path = env['PATH_INFO'] or '/'
+        path: str = env['PATH_INFO'] or '/'
 
         # PEP 3333 specifies that the PATH_INFO variable is always
         # "bytes tunneled as latin-1" and must be encoded back.
@@ -497,7 +504,7 @@ class Request:
             and len(path) != 1
             and path.endswith('/')
         ):
-            self.path = path[:-1]
+            self.path: str = path[:-1]
         else:
             self.path = path
 
@@ -518,23 +525,25 @@ class Request:
             else:
                 self._params = {}
 
-        self._cached_access_route = None
-        self._cached_forwarded = None
-        self._cached_forwarded_prefix = None
-        self._cached_forwarded_uri = None
-        self._cached_headers = None
-        self._cached_headers_lower = None
-        self._cached_prefix = None
-        self._cached_relative_uri = None
-        self._cached_uri = None
+        self._cached_access_route: Union[
+            List[Union[str, Tuple[str, Optional[int]]]], None
+        ] = None
+        self._cached_forwarded: Union[List[Forwarded], None] = None
+        self._cached_forwarded_prefix: Union[str, None] = None
+        self._cached_forwarded_uri: Union[str, None] = None
+        self._cached_headers: Union[Dict[str, str], None] = None
+        self._cached_headers_lower: Union[Dict[str, str], None] = None
+        self._cached_prefix: Union[str, None] = None
+        self._cached_relative_uri: Union[str, None] = None
+        self._cached_uri: Union[str, None] = None
 
         try:
-            self.content_type = self.env['CONTENT_TYPE']
+            self.content_type: Union[str, None] = self.env['CONTENT_TYPE']
         except KeyError:
             self.content_type = None
 
-        self.stream = env['wsgi.input']
-        self._bounded_stream = None  # Lazy wrapping
+        self.stream: BoundedStream = env['wsgi.input']
+        self._bounded_stream: Union[BoundedStream, None] = None  # Lazy wrapping
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
@@ -554,24 +563,24 @@ class Request:
 
         self.context = self.context_type()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)
 
     # ------------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------------
 
-    user_agent = helpers.header_property('HTTP_USER_AGENT')
-    auth = helpers.header_property('HTTP_AUTHORIZATION')
+    user_agent: Optional[property] = helpers.header_property('HTTP_USER_AGENT')
+    auth: Optional[property] = helpers.header_property('HTTP_AUTHORIZATION')
 
-    expect = helpers.header_property('HTTP_EXPECT')
+    expect: Optional[property] = helpers.header_property('HTTP_EXPECT')
 
-    if_range = helpers.header_property('HTTP_IF_RANGE')
+    if_range: Optional[property] = helpers.header_property('HTTP_IF_RANGE')
 
-    referer = helpers.header_property('HTTP_REFERER')
+    referer: Optional[property] = helpers.header_property('HTTP_REFERER')
 
     @property
-    def forwarded(self):
+    def forwarded(self) -> Union[list[Forwarded], None]:
         # PERF(kgriffs): We could DRY up this memoization pattern using
         # a decorator, but that would incur additional overhead without
         # resorting to some trickery to rewrite the body of the method
@@ -588,21 +597,21 @@ class Request:
         return self._cached_forwarded
 
     @property
-    def client_accepts_json(self):
+    def client_accepts_json(self) -> bool:
         return self.client_accepts('application/json')
 
     @property
-    def client_accepts_msgpack(self):
+    def client_accepts_msgpack(self) -> bool:
         return self.client_accepts('application/x-msgpack') or self.client_accepts(
             'application/msgpack'
         )
 
     @property
-    def client_accepts_xml(self):
+    def client_accepts_xml(self) -> bool:
         return self.client_accepts('application/xml')
 
     @property
-    def accept(self):
+    def accept(self) -> str:
         # NOTE(kgriffs): Per RFC, a missing accept header is
         # equivalent to '*/*'
         try:
@@ -611,7 +620,7 @@ class Request:
             return '*/*'
 
     @property
-    def content_length(self):
+    def content_length(self) -> Union[int, None]:
         try:
             value = self.env['CONTENT_LENGTH']
         except KeyError:
@@ -639,18 +648,18 @@ class Request:
         return value_as_int
 
     @property
-    def bounded_stream(self):
+    def bounded_stream(self) -> BoundedStream:
         if self._bounded_stream is None:
             self._bounded_stream = self._get_wrapped_wsgi_input()
 
         return self._bounded_stream
 
     @property
-    def date(self):
+    def date(self) -> Union[datetime.datetime, None]:
         return self.get_header_as_datetime('Date')
 
     @property
-    def if_match(self):
+    def if_match(self) -> Union[List[ETag], None]:
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
@@ -668,7 +677,7 @@ class Request:
         return self._cached_if_match
 
     @property
-    def if_none_match(self):
+    def if_none_match(self) -> Union[List[ETag], None]:
         if self._cached_if_none_match is None:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
             if header_value:
@@ -677,15 +686,15 @@ class Request:
         return self._cached_if_none_match
 
     @property
-    def if_modified_since(self):
+    def if_modified_since(self) -> Union[datetime.datetime, None]:
         return self.get_header_as_datetime('If-Modified-Since')
 
     @property
-    def if_unmodified_since(self):
+    def if_unmodified_since(self) -> Union[datetime.datetime, None]:
         return self.get_header_as_datetime('If-Unmodified-Since')
 
     @property
-    def range(self):
+    def range(self) -> Union[Tuple[int, int], None]:
         value = self.get_header('Range')
         if value is None:
             return None
@@ -729,7 +738,7 @@ class Request:
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
 
     @property
-    def range_unit(self):
+    def range_unit(self) -> Union[str, None]:
         value = self.get_header('Range')
         if value is None:
             return None
@@ -742,25 +751,25 @@ class Request:
             raise errors.HTTPInvalidHeader(msg, 'Range')
 
     @property
-    def root_path(self):
+    def root_path(self) -> str:
         # PERF(kgriffs): try..except is faster than get() assuming that
         # we normally expect the key to exist. Even though PEP-3333
         # allows WSGI servers to omit the key when the value is an
         # empty string, uwsgi, gunicorn, waitress, and wsgiref all
         # include it even in that case.
         try:
-            return self.env['SCRIPT_NAME']
+            return cast(str, self.env['SCRIPT_NAME'])
         except KeyError:
             return ''
 
-    app = root_path
+    app = root_path  # type: ignore
 
     @property
-    def scheme(self):
-        return self.env['wsgi.url_scheme']
+    def scheme(self) -> str:
+        return cast(str, self.env['wsgi.url_scheme'])
 
     @property
-    def forwarded_scheme(self):
+    def forwarded_scheme(self) -> str:
         # PERF(kgriffs): Since the Forwarded header is still relatively
         # new, we expect X-Forwarded-Proto to be more common, so
         # try to avoid calling self.forwarded if we can, since it uses a
@@ -786,7 +795,7 @@ class Request:
         return scheme
 
     @property
-    def uri(self):
+    def uri(self) -> str:
         if self._cached_uri is None:
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
@@ -800,7 +809,7 @@ class Request:
     url = uri
 
     @property
-    def forwarded_uri(self):
+    def forwarded_uri(self) -> str:
         if self._cached_forwarded_uri is None:
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
@@ -814,35 +823,35 @@ class Request:
         return self._cached_forwarded_uri
 
     @property
-    def relative_uri(self):
+    def relative_uri(self) -> str:
         if self._cached_relative_uri is None:
             if self.query_string:
                 self._cached_relative_uri = (
-                    self.app + self.path + '?' + self.query_string
+                    self.app + self.path + '?' + self.query_string  # type: ignore
                 )
             else:
-                self._cached_relative_uri = self.app + self.path
+                self._cached_relative_uri = self.app + self.path  # type: ignore
 
         return self._cached_relative_uri
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
         if self._cached_prefix is None:
-            self._cached_prefix = self.scheme + '://' + self.netloc + self.app
+            self._cached_prefix = self.scheme + '://' + self.netloc + self.app  # type: ignore
 
         return self._cached_prefix
 
     @property
-    def forwarded_prefix(self):
+    def forwarded_prefix(self) -> str:
         if self._cached_forwarded_prefix is None:
             self._cached_forwarded_prefix = (
-                self.forwarded_scheme + '://' + self.forwarded_host + self.app
+                self.forwarded_scheme + '://' + self.forwarded_host + self.app  # type: ignore
             )
 
         return self._cached_forwarded_prefix
 
     @property
-    def host(self):
+    def host(self) -> str:
         try:
             # NOTE(kgriffs): Prefer the host header; the web server
             # isn't supposed to mess with it, so it should be what
@@ -857,7 +866,7 @@ class Request:
         return host
 
     @property
-    def forwarded_host(self):
+    def forwarded_host(self) -> str:
         # PERF(kgriffs): Since the Forwarded header is still relatively
         # new, we expect X-Forwarded-Host to be more common, so
         # try to avoid calling self.forwarded if we can, since it uses a
@@ -883,13 +892,13 @@ class Request:
         return host
 
     @property
-    def subdomain(self):
+    def subdomain(self) -> Union[str, None]:
         # PERF(kgriffs): .partition is slightly faster than .split
         subdomain, sep, remainder = self.host.partition('.')
         return subdomain if sep else None
 
     @property
-    def headers(self):
+    def headers(self) -> Dict[str, str]:
         if self._cached_headers is None:
             headers = self._cached_headers = {}
 
@@ -907,7 +916,7 @@ class Request:
         return self._cached_headers
 
     @property
-    def headers_lower(self):
+    def headers_lower(self) -> Dict[str, str]:
         if self._cached_headers_lower is None:
             self._cached_headers_lower = {
                 key.lower(): value for key, value in self.headers.items()
@@ -916,11 +925,11 @@ class Request:
         return self._cached_headers_lower
 
     @property
-    def params(self):
+    def params(self) -> Dict[str, str]:
         return self._params
 
     @property
-    def cookies(self):
+    def cookies(self) -> Dict[str, str]:
         if self._cookies_collapsed is None:
             if self._cookies is None:
                 header_value = self.get_header('Cookie')
@@ -934,7 +943,7 @@ class Request:
         return self._cookies_collapsed
 
     @property
-    def access_route(self):
+    def access_route(self) -> List[Union[str, Tuple[str, Union[int, None]]]]:
         if self._cached_access_route is None:
             # NOTE(kgriffs): Try different headers in order of
             # preference; if none are found, fall back to REMOTE_ADDR.
@@ -947,7 +956,7 @@ class Request:
             # that only masks the problem; the operator needs to be
             # aware that an upstream proxy is malfunctioning.
 
-            if 'HTTP_FORWARDED' in self.env:
+            if 'HTTP_FORWARDED' in self.env and self.forwarded:
                 self._cached_access_route = []
                 for hop in self.forwarded:
                     if hop.src is not None:
@@ -968,21 +977,21 @@ class Request:
         return self._cached_access_route
 
     @property
-    def remote_addr(self):
+    def remote_addr(self) -> str:
         try:
-            value = self.env['REMOTE_ADDR']
+            value: str = self.env['REMOTE_ADDR']
         except KeyError:
             value = '127.0.0.1'
 
         return value
 
     @property
-    def port(self):
+    def port(self) -> int:
         try:
             host_header = self.env['HTTP_HOST']
 
             default_port = 80 if self.env['wsgi.url_scheme'] == 'http' else 443
-            host, port = parse_host(host_header, default_port=default_port)
+            _, port = parse_host(host_header, default_port=default_port)
         except KeyError:
             # NOTE(kgriffs): Normalize to an int, since that is the type
             # returned by parse_host().
@@ -991,10 +1000,10 @@ class Request:
             # PEP-3333 requires that the port never be an empty string.
             port = int(self.env['SERVER_PORT'])
 
-        return port
+        return cast(int, port)
 
     @property
-    def netloc(self):
+    def netloc(self) -> str:
         env = self.env
         # NOTE(kgriffs): According to PEP-3333 we should first
         # try to use the Host header if present.
@@ -1002,11 +1011,11 @@ class Request:
         # PERF(kgriffs): try..except is faster than get() when we
         # expect the key to be present most of the time.
         try:
-            netloc_value = env['HTTP_HOST']
+            netloc_value: str = env['HTTP_HOST']
         except KeyError:
             netloc_value = env['SERVER_NAME']
 
-            port = env['SERVER_PORT']
+            port: str = env['SERVER_PORT']
             if self.scheme == 'https':
                 if port != '443':
                     netloc_value += ':' + port
@@ -1016,7 +1025,9 @@ class Request:
 
         return netloc_value
 
-    def get_media(self, default_when_empty=_UNSET):
+    def get_media(
+        self, default_when_empty: Union[str, object] = _UNSET
+    ) -> Union[str, object]:
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -1094,7 +1105,7 @@ class Request:
     # Methods
     # ------------------------------------------------------------------------
 
-    def client_accepts(self, media_type):
+    def client_accepts(self, media_type: str) -> bool:
         """Determine whether or not the client accepts a given media type.
 
         Args:
@@ -1119,7 +1130,7 @@ class Request:
         except ValueError:
             return False
 
-    def client_prefers(self, media_types):
+    def client_prefers(self, media_types: Iterable[str]) -> Union[str, None]:
         """Return the client's preferred media type, given several choices.
 
         Args:
@@ -1142,7 +1153,9 @@ class Request:
 
         return preferred_type if preferred_type else None
 
-    def get_header(self, name, required=False, default=None):
+    def get_header(
+        self, name: Name, required: bool = False, default: Default = None
+    ) -> Union[str, Default]:
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -1191,7 +1204,9 @@ class Request:
 
             raise errors.HTTPMissingHeader(name)
 
-    def get_header_as_int(self, header, required=False):
+    def get_header_as_int(
+        self, header: Name, required: bool = False
+    ) -> Union[int, None]:
         """Retrieve the int value for the given header.
 
         Args:
@@ -1222,7 +1237,9 @@ class Request:
             msg = 'The value of the header must be an integer.'
             raise errors.HTTPInvalidHeader(msg, header)
 
-    def get_header_as_datetime(self, header, required=False, obs_date=False):
+    def get_header_as_datetime(
+        self, header: str, required: bool = False, obs_date: bool = False
+    ) -> Union[datetime.datetime, Any]:
         """Return an HTTP header with HTTP-Date values as a datetime.
 
         Args:
@@ -1256,7 +1273,7 @@ class Request:
             msg = 'It must be formatted according to RFC 7231, Section 7.1.1.1'
             raise errors.HTTPInvalidHeader(msg, header)
 
-    def get_cookie_values(self, name):
+    def get_cookie_values(self, name: str) -> Union[List[Union[str, Any]], None]:
         """Return all values provided in the Cookie header for the named cookie.
 
         (See also: :ref:`Getting Cookies <getting-cookies>`)
@@ -1287,7 +1304,13 @@ class Request:
 
         return self._cookies.get(name)
 
-    def get_param(self, name, required=False, store=None, default=None):
+    def get_param(
+        self,
+        name: Name,
+        required: bool = False,
+        store: Store = None,
+        default: Default = None,
+    ) -> Union[str, Default]:
         """Return the raw value of a query string parameter as a string.
 
         Note:
@@ -1365,13 +1388,13 @@ class Request:
 
     def get_param_as_int(
         self,
-        name,
-        required=False,
-        min_value=None,
-        max_value=None,
-        store=None,
-        default=None,
-    ):
+        name: Name,
+        required: bool = False,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None,
+        store: Store = None,
+        default: Default = None,
+    ) -> Union[int, Default]:
         """Return the value of a query string parameter as an int.
 
         Args:
@@ -1444,13 +1467,13 @@ class Request:
 
     def get_param_as_float(
         self,
-        name,
-        required=False,
-        min_value=None,
-        max_value=None,
-        store=None,
-        default=None,
-    ):
+        name: Name,
+        required: bool = False,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
+        store: Store = None,
+        default: Default = None,
+    ) -> Union[float, Default]:
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1521,7 +1544,13 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_uuid(self, name, required=False, store=None, default=None):
+    def get_param_as_uuid(
+        self,
+        name: Name,
+        required: bool = False,
+        store: Store = None,
+        default: Default = None,
+    ) -> Union[float, Default]:
         """Return the value of a query string parameter as an UUID.
 
         The value to convert must conform to the standard UUID string
@@ -1588,8 +1617,13 @@ class Request:
         raise errors.HTTPMissingParam(name)
 
     def get_param_as_bool(
-        self, name, required=False, store=None, blank_as_true=True, default=None
-    ):
+        self,
+        name: Name,
+        required: bool = False,
+        store: Store = None,
+        blank_as_true: bool = True,
+        default: Default = None,
+    ) -> Union[bool, Default]:
         """Return the value of a query string parameter as a boolean.
 
         This method treats valueless parameters as flags. By default, if no
@@ -1664,8 +1698,13 @@ class Request:
         raise errors.HTTPMissingParam(name)
 
     def get_param_as_list(
-        self, name, transform=None, required=False, store=None, default=None
-    ):
+        self,
+        name: str,
+        transform: Optional[Callable[[str], Union[str, float, int]]] = None,
+        required: bool = False,
+        store: Store = None,
+        default: Default = None,
+    ) -> Union[List[Union[str, float, int]], Default]:
         """Return the value of a query string parameter as a list.
 
         List items must be comma-separated or must be provided
@@ -1755,12 +1794,12 @@ class Request:
 
     def get_param_as_datetime(
         self,
-        name,
-        format_string='%Y-%m-%dT%H:%M:%SZ',
-        required=False,
-        store=None,
-        default=None,
-    ):
+        name: Name,
+        format_string: str = '%Y-%m-%dT%H:%M:%SZ',
+        required: bool = False,
+        store: Store = None,
+        default: Default = None,
+    ) -> Union[datetime.datetime, Default]:
         """Return the value of a query string parameter as a datetime.
 
         Args:
@@ -1806,8 +1845,13 @@ class Request:
         return date_time
 
     def get_param_as_date(
-        self, name, format_string='%Y-%m-%d', required=False, store=None, default=None
-    ):
+        self,
+        name: Name,
+        format_string: str = '%Y-%m-%d',
+        required: bool = False,
+        store: Store = None,
+        default: Default = None,
+    ) -> Union[datetime.date, Default]:
         """Return the value of a query string parameter as a date.
 
         Args:
@@ -1847,7 +1891,13 @@ class Request:
 
         return date
 
-    def get_param_as_json(self, name, required=False, store=None, default=None):
+    def get_param_as_json(
+        self,
+        name: Name,
+        required: bool = False,
+        store: Store = None,
+        default: Default = None,
+    ) -> Any:
         """Return the decoded JSON value of a query string parameter.
 
         Given a JSON value, decode it to an appropriate Python type,
@@ -1908,7 +1958,7 @@ class Request:
 
         return val
 
-    def has_param(self, name):
+    def has_param(self, name: str) -> bool:
         """Determine whether or not the query string parameter already exists.
 
         Args:
@@ -1925,7 +1975,7 @@ class Request:
         else:
             return False
 
-    def log_error(self, message):
+    def log_error(self, message: str) -> None:
         """Write an error message to the server's log.
 
         Prepends timestamp and request info to message, and writes the
@@ -1951,7 +2001,7 @@ class Request:
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _get_wrapped_wsgi_input(self):
+    def _get_wrapped_wsgi_input(self) -> BoundedStream:
         try:
             content_length = self.content_length or 0
 
@@ -1964,18 +2014,18 @@ class Request:
 
         return BoundedStream(self.env['wsgi.input'], content_length)
 
-    def _parse_form_urlencoded(self):
+    def _parse_form_urlencoded(self) -> None:
         content_length = self.content_length
         if not content_length:
             return
 
-        body = self.stream.read(content_length)
+        raw_body: bytes = self.stream.read(content_length)
 
         # NOTE(kgriffs): According to http://goo.gl/6rlcux the
         # body should be US-ASCII. Enforcing this also helps
         # catch malicious input.
         try:
-            body = body.decode('ascii')
+            body = raw_body.decode('ascii')
         except UnicodeDecodeError:
             body = None
             self.log_error(
@@ -2103,7 +2153,7 @@ class RequestOptions:
         'media_handlers',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.keep_blank_qs_values = True
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = False

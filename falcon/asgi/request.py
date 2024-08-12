@@ -14,6 +14,8 @@
 
 """ASGI Request class."""
 
+from typing import Dict
+
 from falcon import errors
 from falcon import request
 from falcon import request_helpers as helpers
@@ -592,7 +594,7 @@ class Request(request.Request):
     # NOTE(kgriffs): This is provided as an alias in order to ease migration
     #   from WSGI, but is not documented since we do not want people using
     #   it in greenfield ASGI apps.
-    bounded_stream = stream
+    bounded_stream = stream  # type: ignore
 
     @property
     def root_path(self):
@@ -875,7 +877,7 @@ class Request(request.Request):
         return self._cached_if_none_match
 
     @property
-    def headers(self):
+    def headers(self) -> Dict[str, str]:
         # NOTE(kgriffs: First time here will cache the dict so all we
         # have to do is clone it in the future.
         if self._cached_headers is None:
@@ -886,7 +888,7 @@ class Request(request.Request):
 
         return self._cached_headers
 
-    headers_lower = headers
+    headers_lower = headers  # type: ignore
 
     # ------------------------------------------------------------------------
     # Public Methods
