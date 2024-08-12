@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Inspect utilities for falcon applications."""
+
 from __future__ import annotations
 
 from functools import partial

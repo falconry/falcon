@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Hook decorators."""
-from __future__ import annotations
 
 from __future__ import annotations
 
@@ -41,8 +40,7 @@ if typing.TYPE_CHECKING:  # pragma: no cover
             resp: wsgi.Response,
             *args: ResponderParams.args,
             **kwargs: ResponderParams.kwargs,
-        ) -> None:
-            ...
+        ) -> None: ...
 
     class AsyncResponder(typing.Protocol):
         async def __call__(
@@ -52,8 +50,7 @@ if typing.TYPE_CHECKING:  # pragma: no cover
             resp: asgi.Response,
             *args: ResponderParams.args,
             **kwargs: ResponderParams.kwargs,
-        ) -> None:
-            ...
+        ) -> None: ...
 
     Responder = typing.Union[SyncResponder, AsyncResponder]
     Resource = object
@@ -203,7 +200,7 @@ def after(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    responder = t.cast(Responder, responder)
+                    responder = typing.cast(Responder, responder)
 
                     def let(responder: Responder | typing.Callable = responder) -> None:
                         do_after_all = _wrap_with_after(

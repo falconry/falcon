@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Utilities for the App class."""
-from __future__ import annotations
 
 from __future__ import annotations
 

@@ -18,7 +18,6 @@ from falcon.util import misc
 from falcon.vendor import mimeparse
 
 
-
 class MissingDependencyHandler(BinaryBaseHandlerWS):
     """Placeholder handler that always raises an error.
 

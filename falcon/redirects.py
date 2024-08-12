@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """HTTPStatus specializations for 3xx redirects."""
-from __future__ import annotations
-
-from typing import Optional
-from typing import TYPE_CHECKING
 
 from __future__ import annotations
 

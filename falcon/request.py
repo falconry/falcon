@@ -11,7 +11,6 @@
 # limitations under the License.
 
 """Request class."""
-from __future__ import annotations
 
 from __future__ import annotations
 
@@ -2093,7 +2092,7 @@ class RequestOptions:
     auto_parse_qs_csv: bool
     strip_url_path_trailing_slash: bool
     default_media_type: str
-    media_handlers: UserDict
+    media_handlers: Handlers
 
     __slots__ = (
         'keep_blank_qs_values',

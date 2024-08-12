@@ -22,6 +22,7 @@ directly from the `testing` package::
 
     resource = testing.SimpleTestResource()
 """
+
 from __future__ import annotations
 
 from json import dumps as json_dumps
@@ -29,7 +30,7 @@ import typing
 
 import falcon
 
-if typing.TYPE_CHECKING:   # pragma: no cover
+if typing.TYPE_CHECKING:  # pragma: no cover
     from falcon import app as wsgi
     from falcon.asgi import app as asgi
     from falcon.hooks import ResponderOrResource
@@ -197,9 +198,9 @@ class SimpleTestResource:
         else:
             self._default_body = body
 
-        self.captured_req: typing.Optional[
-            typing.Union[wsgi.Request, asgi.Request]
-        ] = None
+        self.captured_req: typing.Optional[typing.Union[wsgi.Request, asgi.Request]] = (
+            None
+        )
         self.captured_resp: typing.Optional[
             typing.Union[wsgi.Response, asgi.Response]
         ] = None
