@@ -30,30 +30,49 @@ jobs:
           python -m build --sdist
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: sdist
+          name: cibw-sdist
           path: dist/*.tar.gz
 
   build-wheels:
     needs: build-sdist
-    name: ${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}-${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: cibw: ${{ matrix.python }}-${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-        cibw_python:
-          - "cp312-*"
-          - "cp313-*"
-        cibw_arch:
-          - "x86_64"
-        # exclude:
-        #   - os: ubuntu-latest
-        #     cibw_arch: universal2
-        #   - os: macos-latest
-        #     cibw_arch: aarch64
+        platform:
+          - name: manylinux_x86_64
+            os: ubuntu-latest
+          - name: musllinux_x86_64
+            os: ubuntu-latest
+          - name: manylinux_aarch64
+            os: ubuntu-latest
+            emulation: true
+          - name: musllinux_aarch64
+            os: ubuntu-latest
+            emulation: true
+          - name: manylinux_s390x
+            os: ubuntu-latest
+            emulation: true
+          - name: macosx_x86_64
+            os: macos-13
+          - name: macosx_arm64
+            os: macos-14
+          - name: win_amd64
+            os: windows-latest
+        python:
+          - cp39
+          - cp310
+          - cp311
+          - cp312
+          - cp313
+        include:
+          - python: cp38
+            platform:
+              name: manylinux_x86_64
+              os: ubuntu-latest
 
     defaults:
       run:
@@ -65,17 +84,23 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        if: ${{ matrix.platform.emulation }}
+        with:
+          platforms: all
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0
+        if: ${{ matrix.python == 'l33t' }}
         env:
-          CIBW_BUILD: ${{ matrix.cibw_python }}
-          CIBW_ARCHS: ${{ matrix.cibw_arch }}
-          # CIBW_TEST_SKIP: "*universal2:arm64"
+          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
 
       - name: Upload artifacts
         # NOTE(vytas): Not using v4 yet because it does not support combining
         #   files from multiple jobs; see #478 on actions/upload-artifact.
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.python == 'l33t' }}
         with:
-          name: dist
+          name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/*.whl
