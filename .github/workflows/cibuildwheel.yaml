@@ -1,0 +1,36 @@
+name: Build wheels
+
+on:
+  # Run when a release has been created
+  # release:
+  #   types: [created]
+
+  # TODO(vytas): Remove testing and only leave on release later.
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Create sdist
+        run: |
+          pip install build
+          python -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: falcon-sdist
+          path: dist/*.tar.gz
