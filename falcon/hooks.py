@@ -38,7 +38,7 @@ from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import falcon as wsgi
     from falcon import asgi
     from falcon.typing import AsyncResponderMethod
@@ -46,61 +46,55 @@ if TYPE_CHECKING:  # pragma: no cover
     from falcon.typing import Responder
     from falcon.typing import SyncResponderMethod
 
+    # TODO: if is_async is removed these protocol would no longer be needed, since
+    # ParamSpec could be used together with Concatenate to use a simple Callable
+    # to type the before and after functions. This approach was prototyped in
+    # https://github.com/falconry/falcon/pull/2234
+    class SyncBeforeFn(Protocol):
+        def __call__(
+            self,
+            req: wsgi.Request,
+            resp: wsgi.Response,
+            resource: Resource,
+            params: Dict[str, Any],
+            *args: Any,
+            **kwargs: Any,
+        ) -> None: ...
 
-# TODO: if is_async is removed these protocol would no longer be needed, since
-# ParamSpec could be used together with Concatenate to use a simple Callable
-# to type the before and after functions. This approach was prototyped in
-# https://github.com/falconry/falcon/pull/2234
-class SyncBeforeFn(Protocol):
-    def __call__(
-        self,
-        req: wsgi.Request,
-        resp: wsgi.Response,
-        resource: Resource,
-        params: Dict[str, Any],
-        *args: Any,
-        **kwargs: Any,
-    ) -> None: ...
+    class AsyncBeforeFn(Protocol):
+        def __call__(
+            self,
+            req: asgi.Request,
+            resp: asgi.Response,
+            resource: Resource,
+            params: Dict[str, Any],
+            *args: Any,
+            **kwargs: Any,
+        ) -> Awaitable[None]: ...
 
+    BeforeFn = Union[SyncBeforeFn, AsyncBeforeFn]
 
-class AsyncBeforeFn(Protocol):
-    def __call__(
-        self,
-        req: asgi.Request,
-        resp: asgi.Response,
-        resource: Resource,
-        params: Dict[str, Any],
-        *args: Any,
-        **kwargs: Any,
-    ) -> Awaitable[None]: ...
+    class SyncAfterFn(Protocol):
+        def __call__(
+            self,
+            req: wsgi.Request,
+            resp: wsgi.Response,
+            resource: Resource,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None: ...
 
+    class AsyncAfterFn(Protocol):
+        def __call__(
+            self,
+            req: asgi.Request,
+            resp: asgi.Response,
+            resource: Resource,
+            *args: Any,
+            **kwargs: Any,
+        ) -> Awaitable[None]: ...
 
-BeforeFn = Union[SyncBeforeFn, AsyncBeforeFn]
-
-
-class SyncAfterFn(Protocol):
-    def __call__(
-        self,
-        req: wsgi.Request,
-        resp: wsgi.Response,
-        resource: Resource,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None: ...
-
-
-class AsyncAfterFn(Protocol):
-    def __call__(
-        self,
-        req: asgi.Request,
-        resp: asgi.Response,
-        resource: Resource,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Awaitable[None]: ...
-
-
-AfterFn = Union[SyncAfterFn, AsyncAfterFn]
+    AfterFn = Union[SyncAfterFn, AsyncAfterFn]
 _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
 
 
@@ -279,9 +273,9 @@ def _wrap_with_after(
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            async_action = cast(AsyncAfterFn, _wrap_non_coroutine_unsafe(action))
+            async_action = cast('AsyncAfterFn', _wrap_non_coroutine_unsafe(action))
         else:
-            async_action = cast(AsyncAfterFn, action)
+            async_action = cast('AsyncAfterFn', action)
         async_responder = cast('AsyncResponderMethod', responder)
 
         @wraps(async_responder)
@@ -300,7 +294,7 @@ def _wrap_with_after(
 
         do_after_responder = cast('AsyncResponderMethod', do_after)
     else:
-        sync_action = cast(SyncAfterFn, action)
+        sync_action = cast('SyncAfterFn', action)
         sync_responder = cast('SyncResponderMethod', responder)
 
         @wraps(sync_responder)
@@ -351,9 +345,9 @@ def _wrap_with_before(
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            async_action = cast(AsyncBeforeFn, _wrap_non_coroutine_unsafe(action))
+            async_action = cast('AsyncBeforeFn', _wrap_non_coroutine_unsafe(action))
         else:
-            async_action = cast(AsyncBeforeFn, action)
+            async_action = cast('AsyncBeforeFn', action)
         async_responder = cast('AsyncResponderMethod', responder)
 
         @wraps(async_responder)
@@ -372,7 +366,7 @@ def _wrap_with_before(
 
         do_before_responder = cast('AsyncResponderMethod', do_before)
     else:
-        sync_action = cast(SyncBeforeFn, action)
+        sync_action = cast('SyncBeforeFn', action)
         sync_responder = cast('SyncResponderMethod', responder)
 
         @wraps(sync_responder)
