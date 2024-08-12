@@ -168,6 +168,9 @@ filterwarnings = [
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
     "ignore:This process \\(.+\\) is multi-threaded",
 ]
+markers = [
+    "slow: mark Falcon tests as slower (potentially taking more than ~500ms).",
+]
 testpaths = [
     "tests"
 ]

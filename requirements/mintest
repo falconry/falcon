@@ -2,6 +2,7 @@ coverage>=4.1
 msgpack
 mujson
 pytest
+pytest-asyncio < 0.22.0
 pyyaml
 requests
 ujson
