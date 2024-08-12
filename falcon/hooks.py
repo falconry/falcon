@@ -167,7 +167,7 @@ def before(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    responder = cast(Responder, responder)
+                    responder = cast('Responder', responder)
                     do_before_all = _wrap_with_before(
                         responder, action, args, kwargs, is_async
                     )
@@ -177,7 +177,7 @@ def before(
             return cast(_R, responder_or_resource)
 
         else:
-            responder = cast(Responder, responder_or_resource)
+            responder = cast('Responder', responder_or_resource)
             do_before_one = _wrap_with_before(responder, action, args, kwargs, is_async)
 
             return cast(_R, do_before_one)
@@ -226,7 +226,7 @@ def after(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    responder = cast(Responder, responder)
+                    responder = cast('Responder', responder)
                     do_after_all = _wrap_with_after(
                         responder, action, args, kwargs, is_async
                     )
@@ -236,7 +236,7 @@ def after(
             return cast(_R, responder_or_resource)
 
         else:
-            responder = cast(Responder, responder_or_resource)
+            responder = cast('Responder', responder_or_resource)
             do_after_one = _wrap_with_after(responder, action, args, kwargs, is_async)
 
             return cast(_R, do_after_one)
@@ -282,7 +282,7 @@ def _wrap_with_after(
             async_action = cast(AsyncAfterFn, _wrap_non_coroutine_unsafe(action))
         else:
             async_action = cast(AsyncAfterFn, action)
-        async_responder = cast(AsyncResponderMethod, responder)
+        async_responder = cast('AsyncResponderMethod', responder)
 
         @wraps(async_responder)
         async def do_after(
@@ -298,10 +298,10 @@ def _wrap_with_after(
             await async_responder(self, req, resp, **kwargs)
             await async_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = cast(AsyncResponderMethod, do_after)
+        do_after_responder = cast('AsyncResponderMethod', do_after)
     else:
         sync_action = cast(SyncAfterFn, action)
-        sync_responder = cast(SyncResponderMethod, responder)
+        sync_responder = cast('SyncResponderMethod', responder)
 
         @wraps(sync_responder)
         def do_after(
@@ -317,7 +317,7 @@ def _wrap_with_after(
             sync_responder(self, req, resp, **kwargs)
             sync_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = cast(SyncResponderMethod, do_after)
+        do_after_responder = cast('SyncResponderMethod', do_after)
     return do_after_responder
 
 
@@ -354,7 +354,7 @@ def _wrap_with_before(
             async_action = cast(AsyncBeforeFn, _wrap_non_coroutine_unsafe(action))
         else:
             async_action = cast(AsyncBeforeFn, action)
-        async_responder = cast(AsyncResponderMethod, responder)
+        async_responder = cast('AsyncResponderMethod', responder)
 
         @wraps(async_responder)
         async def do_before(
@@ -370,10 +370,10 @@ def _wrap_with_before(
             await async_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await async_responder(self, req, resp, **kwargs)
 
-        do_before_responder = cast(AsyncResponderMethod, do_before)
+        do_before_responder = cast('AsyncResponderMethod', do_before)
     else:
         sync_action = cast(SyncBeforeFn, action)
-        sync_responder = cast(SyncResponderMethod, responder)
+        sync_responder = cast('SyncResponderMethod', responder)
 
         @wraps(sync_responder)
         def do_before(
@@ -389,7 +389,7 @@ def _wrap_with_before(
             sync_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             sync_responder(self, req, resp, **kwargs)
 
-        do_before_responder = cast(SyncResponderMethod, do_before)
+        do_before_responder = cast('SyncResponderMethod', do_before)
     return do_before_responder
 
 
