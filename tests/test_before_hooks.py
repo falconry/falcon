@@ -2,12 +2,13 @@ import functools
 import io
 import json
 
+from _util import create_app  # NOQA
+from _util import create_resp  # NOQA
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
 import falcon.testing as testing
-
-from _util import create_app, create_resp, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 def validate(req, resp, resource, params):
@@ -130,7 +131,6 @@ class WrappedRespondersBodyParserResource:
 
 @falcon.before(bunnies)
 class WrappedClassResource:
-
     _some_fish = Fish()
 
     # Test non-callable should be skipped by decorator

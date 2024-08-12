@@ -424,6 +424,10 @@ by the framework.
     app = falcon.asgi.App(middleware=SomeMiddleware())
     app.add_route('/{account_id}/messages', SomeResource())
 
+.. tip::
+   If you prefer to learn by doing, feel free to continue experimenting along
+   the lines of our :ref:`WebSocket tutorial <tutorial-ws>`!
+
 Testing
 -------
 

@@ -22,24 +22,27 @@ in the `falcon` module, and so must be explicitly imported::
 
     name, port = uri.parse_host('example.org:8080')
 """
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple, TYPE_CHECKING
-from typing import Union
+
+from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 from falcon.constants import PYPY
 
 try:
-    from falcon.cyutil.uri import (
-        decode as _cy_decode,
-        parse_query_string as _cy_parse_query_string,
-    )
+    from falcon.cyutil import uri as _cy_uri  # type: ignore
 except ImportError:
-    _cy_decode = None
-    _cy_parse_query_string = None
+    _cy_uri = None
 
+
+__all__ = (
+    'decode',
+    'encode',
+    'encode_value',
+    'encode_check_escaped',
+    'encode_value_check_escaped',
+    'parse_host',
+    'parse_query_string',
+    'unquote_string',
+)
 
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
@@ -57,7 +60,6 @@ _HEX_TO_BYTE = {
 
 
 def _create_char_encoder(allowed_chars: str) -> Callable[[int], str]:
-
     lookup = {}
 
     for code_point in range(256):
@@ -74,7 +76,6 @@ def _create_char_encoder(allowed_chars: str) -> Callable[[int], str]:
 def _create_str_encoder(
     is_value: bool, check_is_escaped: bool = False
 ) -> Callable[[str], str]:
-
     allowed_chars = _UNRESERVED if is_value else _ALL_ALLOWED
     allowed_chars_plus_percent = allowed_chars + '%'
     encode_char = _create_char_encoder(allowed_chars)
@@ -554,17 +555,6 @@ def unquote_string(quoted: str) -> str:
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
 if not TYPE_CHECKING:
-    decode = _cy_decode or decode  # NOQA
-    parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
-
-
-__all__ = [
-    'decode',
-    'encode',
-    'encode_value',
-    'encode_check_escaped',
-    'encode_value_check_escaped',
-    'parse_host',
-    'parse_query_string',
-    'unquote_string',
-]
+    if _cy_uri is not None:
+        decode = _cy_uri.decode  # NOQA
+        parse_query_string = _cy_uri.parse_query_string  # NOQA

@@ -17,12 +17,16 @@ from __future__ import annotations
 from typing import Optional
 from typing import TYPE_CHECKING
 
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
+
 from falcon.util import http_status_to_code
 from falcon.util.deprecation import AttributeRemovedError
 
 if TYPE_CHECKING:
-    from falcon.typing import RawHeaders
-    from falcon.typing import Status
+    from falcon.typing import HeaderList
+    from falcon.typing import ResponseStatus
 
 
 class HTTPStatus(Exception):
@@ -55,8 +59,8 @@ class HTTPStatus(Exception):
 
     def __init__(
         self,
-        status: Status,
-        headers: Optional[RawHeaders] = None,
+        status: ResponseStatus,
+        headers: Optional[HeaderList] = None,
         text: Optional[str] = None,
     ) -> None:
         self.status = status

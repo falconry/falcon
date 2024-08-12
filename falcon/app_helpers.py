@@ -15,13 +15,16 @@
 """Utilities for the App class."""
 from __future__ import annotations
 
+from __future__ import annotations
+
 from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Tuple
 
 from falcon import util
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
-from falcon.errors import CompatibilityError, HTTPError
+from falcon.errors import CompatibilityError
+from falcon.errors import HTTPError
 from falcon.request import Request
 from falcon.response import Response
 from falcon.util.sync import _wrap_non_coroutine_unsafe

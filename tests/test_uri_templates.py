@@ -9,14 +9,13 @@ from datetime import datetime
 import math
 import uuid
 
+from _util import as_params  # NOQA
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
 from falcon.routing.util import SuffixedMethodNotFoundError
-
-from _util import as_params, create_app  # NOQA
-
 
 _TEST_UUID = uuid.uuid4()
 _TEST_UUID_2 = uuid.uuid4()

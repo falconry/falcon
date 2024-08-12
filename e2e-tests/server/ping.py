@@ -1,7 +1,8 @@
 from http import HTTPStatus
 
 import falcon
-from falcon.asgi import Request, Response
+from falcon.asgi import Request
+from falcon.asgi import Response
 
 
 class Pong:

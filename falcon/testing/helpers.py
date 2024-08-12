@@ -35,11 +35,7 @@ import re
 import socket
 import sys
 import time
-from typing import Any
-from typing import Dict
-from typing import Iterable
-from typing import Optional
-from typing import Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import falcon
 from falcon import errors as falcon_errors
@@ -864,7 +860,6 @@ def create_scope(
     include_server=True,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -1002,7 +997,6 @@ def create_scope_ws(
     subprotocols=None,
     spec_version='2.1',
 ) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1089,7 +1083,6 @@ def create_environ(
     root_path=None,
     cookies=None,
 ) -> Dict[str, Any]:
-
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:

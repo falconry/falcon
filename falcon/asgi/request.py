@@ -21,11 +21,11 @@ from falcon.constants import _UNSET
 from falcon.constants import SINGLETON_HEADERS
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
+
 from . import _request_helpers as asgi_helpers
 from .stream import BoundedStream
 
-
-__all__ = ['Request']
+__all__ = ('Request',)
 
 _SINGLETON_HEADERS_BYTESTR = frozenset([h.encode() for h in SINGLETON_HEADERS])
 
@@ -384,7 +384,6 @@ class Request(request.Request):
     _wsgi_errors = None
 
     def __init__(self, scope, receive, first_event=None, options=None):
-
         # =====================================================================
         # Prepare headers
         # =====================================================================

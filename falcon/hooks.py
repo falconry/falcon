@@ -15,6 +15,8 @@
 """Hook decorators."""
 from __future__ import annotations
 
+from __future__ import annotations
+
 from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
@@ -68,6 +70,7 @@ else:
     SyncResponder = typing.Callable
     AsyncResponder = typing.Awaitable
     Responder = typing.Union[SyncResponder, AsyncResponder]
+
 
 _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
@@ -137,7 +140,9 @@ def before(
                     # will capture the same responder variable that is shared
                     # between iterations of the for loop, above.
 
-                    def let(responder: typing.Callable = responder) -> None:
+                    responder = typing.cast(Responder, responder)
+
+                    def let(responder: Responder = responder) -> None:
                         do_before_all = _wrap_with_before(
                             responder, action, args, kwargs, is_async
                         )
@@ -198,6 +203,7 @@ def after(
                 responder_or_resource, callable
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
+                    responder = t.cast(Responder, responder)
 
                     def let(responder: Responder | typing.Callable = responder) -> None:
                         do_after_all = _wrap_with_after(

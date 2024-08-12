@@ -14,12 +14,10 @@
 """HTTPError exception class."""
 from __future__ import annotations
 
+from __future__ import annotations
+
 from collections import OrderedDict
-from typing import MutableMapping
-from typing import Optional
-from typing import Type
-from typing import TYPE_CHECKING
-from typing import Union
+from typing import MutableMapping, Optional, Type, TYPE_CHECKING, Union
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
@@ -29,10 +27,10 @@ from falcon.util import uri
 from falcon.util.deprecation import deprecated_args
 
 if TYPE_CHECKING:
+    from falcon.media import BaseHandler
+    from falcon.typing import HeaderList
     from falcon.typing import Link
-    from falcon.typing import RawHeaders
-    from falcon.typing import Serializer
-    from falcon.typing import Status
+    from falcon.typing import ResponseStatus
 
 
 class HTTPError(Exception):
@@ -123,10 +121,10 @@ class HTTPError(Exception):
     @deprecated_args(allowed_positional=1)
     def __init__(
         self,
-        status: Status,
+        status: ResponseStatus,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: Optional[RawHeaders] = None,
+        headers: Optional[HeaderList] = None,
         href: Optional[str] = None,
         href_text: Optional[str] = None,
         code: Optional[int] = None,
@@ -194,7 +192,7 @@ class HTTPError(Exception):
 
         return obj
 
-    def to_json(self, handler: Optional[Serializer] = None) -> bytes:
+    def to_json(self, handler: Optional[BaseHandler] = None) -> bytes:
         """Return a JSON representation of the error.
 
         Args:
@@ -244,6 +242,6 @@ class HTTPError(Exception):
 # NOTE: initialized in falcon.media.json, that is always imported since Request/Response
 # are imported by falcon init.
 if TYPE_CHECKING:
-    _DEFAULT_JSON_HANDLER: Serializer
+    _DEFAULT_JSON_HANDLER: BaseHandler
 else:
     _DEFAULT_JSON_HANDLER = None

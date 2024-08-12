@@ -25,7 +25,6 @@ from falcon.util import BufferedReader
 from falcon.util import misc
 from falcon.util.mediatypes import parse_header
 
-
 # TODO(vytas):
 #   * Better support for form-wide charset setting
 #   * Clean up, simplify, and optimize BufferedReader
@@ -272,7 +271,6 @@ class BodyPart:
     @property
     def filename(self):
         if self._filename is None:
-
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -308,7 +306,6 @@ class BodyPart:
     @property
     def name(self):
         if self._name is None:
-
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())

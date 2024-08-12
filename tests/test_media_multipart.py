@@ -3,15 +3,13 @@ import itertools
 import os
 import random
 
+from _util import create_app  # NOQA: I100
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
 from falcon.util import BufferedReader
-
-from _util import create_app  # NOQA: I100
-
 
 try:
     import msgpack  # type: ignore
@@ -60,7 +58,7 @@ EXAMPLE3 = (
     b'--BOUNDARY\r\n'
     b'Content-Disposition: form-data; name="file"; filename="bytes"\r\n'
     b'Content-Type: application/x-falcon\r\n\r\n'
-    + b'123456789abcdef\n' * 64 * 1024 * 2
+    + (b'123456789abcdef\n' * 64 * 1024 * 2)
     + b'\r\n'
     b'--BOUNDARY\r\n'
     b'Content-Disposition: form-data; name="empty"\r\n'
@@ -622,9 +620,9 @@ def test_nested_multipart_mixed():
             resp.media = example
 
     parser = media.MultipartFormHandler()
-    parser.parse_options.media_handlers[
-        'multipart/mixed'
-    ] = media.MultipartFormHandler()
+    parser.parse_options.media_handlers['multipart/mixed'] = (
+        media.MultipartFormHandler()
+    )
 
     app = falcon.App()
     app.req_options.media_handlers[falcon.MEDIA_MULTIPART] = parser

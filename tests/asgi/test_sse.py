@@ -5,7 +5,8 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.asgi import App, SSEvent
+from falcon.asgi import App
+from falcon.asgi import SSEvent
 
 
 def test_no_events():
@@ -83,7 +84,7 @@ def test_multiple_events():
         '\n'
         ': Serve with chips.\n'
         'retry: 100\n'
-        'data: guacamole \u1F951\n'
+        'data: guacamole \u1f951\n'
         '\n'
         'retry: 100\n'
         'data: {"condiment": "salsa"}\n'
@@ -101,7 +102,7 @@ def test_multiple_events():
                         data=b'onions', event='topping', event_id='5678', retry=100
                     ),
                     SSEvent(
-                        text='guacamole \u1F951', retry=100, comment='Serve with chips.'
+                        text='guacamole \u1f951', retry=100, comment='Serve with chips.'
                     ),
                     SSEvent(json={'condiment': 'salsa'}, retry=100),
                 ]:
@@ -173,7 +174,6 @@ def test_multiple_events_early_disconnect():
         async with testing.ASGIConductor(app) as conductor:
             # NOTE(vytas): Using the get_stream() alias.
             async with conductor.get_stream() as sr:
-
                 event_count = 0
 
                 result_text = ''

@@ -1,23 +1,31 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 import functools
 import http
 import itertools
 import json
 import random
-from urllib.parse import quote, unquote_plus
+from urllib.parse import quote
+from urllib.parse import unquote_plus
 
+from _util import create_app  # NOQA
+from _util import to_coroutine  # NOQA
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
 from falcon import util
-from falcon.constants import MEDIA_JSON, MEDIA_MSGPACK, MEDIA_URLENCODED, MEDIA_YAML
-from falcon.util import deprecation, misc, structures, uri
-
-from _util import create_app, to_coroutine  # NOQA
+from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_MSGPACK
+from falcon.constants import MEDIA_URLENCODED
+from falcon.constants import MEDIA_YAML
+from falcon.util import deprecation
+from falcon.util import misc
+from falcon.util import structures
+from falcon.util import uri
 
 
 @pytest.fixture
@@ -645,8 +653,8 @@ class TestFalconUtils:
             ('/api', True),
             ('/data/items/something?query=apples%20and%20oranges', True),
             ('/food?item=ð\x9f\x8d\x94', False),
-            ('\x00\x00\x7F\x00\x00\x7F\x00', True),
-            ('\x00\x00\x7F\x00\x00\x80\x00', False),
+            ('\x00\x00\x7f\x00\x00\x7f\x00', True),
+            ('\x00\x00\x7f\x00\x00\x80\x00', False),
         ],
     )
     @pytest.mark.parametrize('method', ['isascii', '_isascii'])
@@ -952,7 +960,7 @@ class TestFalconTestingUtils:
             '',
             'I am a \u1d0a\ua731\u1d0f\u0274 string.',
             [1, 3, 3, 7],
-            {'message': '\xa1Hello Unicode! \U0001F638'},
+            {'message': '\xa1Hello Unicode! \U0001f638'},
             {
                 'count': 4,
                 'items': [

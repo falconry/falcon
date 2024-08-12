@@ -13,7 +13,8 @@
 """Request class."""
 from __future__ import annotations
 
-from collections import UserDict
+from __future__ import annotations
+
 from datetime import datetime
 from io import BytesIO
 from uuid import UUID

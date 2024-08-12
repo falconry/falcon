@@ -58,7 +58,7 @@ class BaseConverter(metaclass=abc.ABCMeta):
         """
 
 
-def _consumes_multiple_segments(converter):
+def _consumes_multiple_segments(converter: object) -> bool:
     return getattr(converter, 'CONSUME_MULTIPLE_SEGMENTS', False)
 
 

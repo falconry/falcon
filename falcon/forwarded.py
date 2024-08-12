@@ -20,11 +20,9 @@ from __future__ import annotations
 
 import re
 import string
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
 from falcon.util.uri import unquote_string
-
 
 # '-' at the end to prevent interpretation as range in a char class
 _TCHAR = string.digits + string.ascii_letters + r"!#$%&'*+.^_`|~-"

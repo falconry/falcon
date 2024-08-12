@@ -2,15 +2,13 @@ import io
 import os
 import tempfile
 
+from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import aiofiles
 import pytest
 
 import falcon
 from falcon import testing
 import falcon.asgi
-
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
-
 
 SIZE_1_KB = 1024
 

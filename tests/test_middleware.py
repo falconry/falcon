@@ -4,6 +4,7 @@ try:
     import cython
 except ImportError:
     cython = None
+from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -11,9 +12,6 @@ import falcon.errors
 import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _utcnow
-
-from _util import create_app  # NOQA
-
 
 _EXPECTED_BODY = {'status': 'ok'}
 
@@ -122,7 +120,6 @@ class RemoveBasePathMiddleware:
 
 
 class ResponseCacheMiddlware:
-
     PROCESS_REQUEST_CACHED_BODY = {'cached': True}
     PROCESS_RESOURCE_CACHED_BODY = {'cached': True, 'resource': True}
 
