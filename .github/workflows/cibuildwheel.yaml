@@ -37,7 +37,7 @@ jobs:
 
   build-wheels:
     needs: build-sdist
-    name: cibw: ${{ matrix.python }}-${{ matrix.platform.name }}
+    name: cibw ${{ matrix.python }}-${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
