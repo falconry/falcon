@@ -23,7 +23,7 @@ in the `falcon` module, and so must be explicitly imported::
     name, port = uri.parse_host('example.org:8080')
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Callable, Dict, List, Optional, overload, Tuple, TYPE_CHECKING, Union
 
 from falcon.constants import PYPY
 
@@ -465,6 +465,16 @@ def parse_query_string(
                 params[k] = v
 
     return params
+
+
+@overload
+def parse_host(host: str, default_port: int) -> Tuple[str, int]: ...
+
+
+@overload
+def parse_host(
+    host: str, default_port: Optional[int] = None
+) -> Tuple[str, Optional[int]]: ...
 
 
 def parse_host(

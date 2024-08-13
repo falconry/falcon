@@ -8,7 +8,8 @@
 
 [tool.mypy]
     exclude = [
-        "falcon/bench/|falcon/cmd/",
+        "falcon/bench/",
+        "falcon/cmd/",
         "falcon/vendor"
     ]
     [[tool.mypy.overrides]]
@@ -38,7 +39,6 @@
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.util.*",
             "falcon.app_helpers",
             "falcon.asgi_spec",
             "falcon.constants",
@@ -49,9 +49,14 @@
             "falcon.http_status",
             "falcon.http_status",
             "falcon.inspect",
+            "falcon.media.base",
+            "falcon.media.handlers",
             "falcon.middleware",
             "falcon.redirects",
+            "falcon.request_helpers",
+            "falcon.request",
             "falcon.stream",
+            "falcon.util.*",
         ]
         disallow_untyped_defs = true
 

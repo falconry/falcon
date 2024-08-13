@@ -14,9 +14,11 @@
 
 """Utilities for the Request class."""
 
+from __future__ import annotations
+
 from http import cookies as http_cookies
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Optional, TYPE_CHECKING, Union
 
 # TODO: Body, BoundedStream import here is for backwards-compatibility
 # and it should be removed in Falcon 4.0
@@ -24,6 +26,8 @@ from falcon.stream import Body  # NOQA
 from falcon.stream import BoundedStream  # NOQA
 from falcon.util import ETag
 
+if TYPE_CHECKING:
+    from falcon.request import Request
 # https://tools.ietf.org/html/rfc6265#section-4.1.1
 #
 # NOTE(kgriffs): Fortunately we don't have to worry about code points in
@@ -41,7 +45,6 @@ _COOKIE_NAME_RESERVED_CHARS = re.compile(
 #   and more performant.
 _ENTITY_TAG_PATTERN = re.compile(r'([Ww]/)?"([^"]*)"')
 
-Cookies = Dict[str, List[Union[str, Any]]]
 
 
 def parse_cookie_header(header_value: str) -> Cookies:
@@ -117,7 +120,7 @@ def header_property(wsgi_name: str) -> property:
 
     """
 
-    def fget(self):
+    def fget(self: Request) -> Optional[str]:
         try:
             return self.env[wsgi_name] or None
         except KeyError:
@@ -129,7 +132,7 @@ def header_property(wsgi_name: str) -> property:
 # NOTE(kgriffs): Going forward we should privatize helpers, as done here. We
 #   can always move this over to falcon.util if we decide it would be
 #   more generally useful to app developers.
-def _parse_etags(etag_str: str) -> Union[List[ETag], None]:
+def _parse_etags(etag_str: str) -> Optional[List[Union[ETag, Literal['*']]]]:
     """Parse a string containing one or more HTTP entity-tags.
 
     The string is assumed to be formatted as defined for a precondition
@@ -156,12 +159,12 @@ def _parse_etags(etag_str: str) -> Union[List[ETag], None]:
         return None
 
     if etag_str == '*':
-        return [ETag(etag_str)]
+        return ['*']
 
     if ',' not in etag_str:
         return [ETag.loads(etag_str)]
 
-    etags = []
+    etags: List[Union[ETag, Literal['*']]] = []
 
     # PERF(kgriffs): Parsing out the weak string like this turns out to be more
     #   performant than grabbing the entire entity-tag and passing it to

@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import abc
+from asyncio import StreamReader
 import io
-from typing import IO, Optional, Union
+from typing import Optional, Union
 
 from falcon.constants import MEDIA_JSON
+from falcon.typing import ReadableIO
 
 
 class BaseHandler(metaclass=abc.ABCMeta):
@@ -82,7 +86,10 @@ class BaseHandler(metaclass=abc.ABCMeta):
         return self.serialize(media, content_type)
 
     def deserialize(
-        self, stream: IO, content_type: str, content_length: Optional[int]
+        self,
+        stream: ReadableIO,
+        content_type: Optional[str],
+        content_length: Optional[int],
     ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
@@ -107,7 +114,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Returns:
             object: A deserialized object.
         """
-        if MEDIA_JSON in content_type:
+        if content_type and MEDIA_JSON in content_type:
             raise NotImplementedError(
                 'The JSON media handler requires the sync interface to be '
                 "implemented even in ASGI applications, because it's used "
@@ -117,7 +124,10 @@ class BaseHandler(metaclass=abc.ABCMeta):
             raise NotImplementedError()
 
     async def deserialize_async(
-        self, stream: IO, content_type: str, content_length: Optional[int]
+        self,
+        stream: StreamReader,
+        content_type: Optional[str],
+        content_length: Optional[int],
     ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
