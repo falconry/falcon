@@ -19,7 +19,6 @@ from datetime import datetime
 from io import BytesIO
 from typing import (
     Any,
-    BinaryIO,
     Callable,
     ClassVar,
     Dict,
@@ -49,6 +48,7 @@ from falcon.forwarded import Forwarded
 from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
+from falcon.typing import ReadableIO
 from falcon.util import deprecated
 from falcon.util import ETag
 from falcon.util import structures
@@ -129,15 +129,16 @@ class Request:
     type to use for initializing the `context` attribute. By default,
     the framework will instantiate bare objects (instances of the bare
     :class:`falcon.Context` class). However, you may override this
-    behavior by creating a custom child class of ``falcon.Request``,
-    and then passing that new class to `falcon.App()` by way of the
-    latter's `request_type` parameter.
+    behavior by creating a custom child class of
+    ``Request``, and then passing that new class to
+    ``App()`` by way of the latter's `request_type` parameter.
 
     Note:
         When overriding `context_type` with a factory function (as
         opposed to a class), the function is called like a method of
-        the current Request instance. Therefore the first argument is
-        the Request instance itself (self).
+        the current ``Request`` instance. Therefore the first argument
+        is the Request instance itself (i.e., `self`).
+
     """
 
     # Attribute declaration
@@ -152,16 +153,15 @@ class Request:
     it has been initialized.
 
     Note:
-        **New in 2.0:** The default `context_type` (see below) was
-        changed from :class:`dict` to a bare class; the preferred way to
-        pass request-specific data is now to set attributes directly on
-        the `context` object. For example::
+        The preferred way to pass request-specific data, when using the
+        default context type, is to set attributes directly on the
+        `context` object. For example::
 
             req.context.role = 'trial'
             req.context.user = 'guest'
     """
     method: str
-    """HTTP method requested (e.g., 'GET', 'POST', etc.)"""
+    """HTTP method requested, uppercase (e.g., ``'GET'``, ``'POST'``, etc.)"""
     path: str
     """Path portion of the request URI (not including query string).
 
@@ -190,7 +190,7 @@ class Request:
     """
     content_type: Optional[str]
     """Value of the Content-Type header, or ``None`` if the header is missing."""
-    stream: BinaryIO
+    stream: ReadableIO
     """File-like input object for reading the body of the
     request, if any. This object provides direct access to the
     server's data stream and is non-seekable. In order to
@@ -241,6 +241,8 @@ class Request:
     """
     options: RequestOptions
     """Set of global options passed from the App handler."""
+    is_websocket: bool
+    """Always ``False`` in a sync ``Request``."""
 
     def __init__(
         self, env: Dict[str, Any], options: Optional[RequestOptions] = None
@@ -351,13 +353,10 @@ class Request:
     """Value of the User-Agent header, or ``None`` if the header is missing."""
     auth: Optional[str] = helpers.header_property('HTTP_AUTHORIZATION')
     """Value of the Authorization header, or ``None`` if the header is missing."""
-
     expect: Optional[str] = helpers.header_property('HTTP_EXPECT')
     """Value of the Expect header, or ``None`` if the header is missing."""
-
     if_range: Optional[str] = helpers.header_property('HTTP_IF_RANGE')
     """Value of the If-Range header, or ``None`` if the header is missing."""
-
     referer: Optional[str] = helpers.header_property('HTTP_REFERER')
     """Value of the Referer header, or ``None`` if the header is missing."""
 
@@ -621,8 +620,9 @@ class Request:
         empty string, if the application corresponds to the "root"
         of the server.
 
-        (Corresponds to the "SCRIPT_NAME" environ variable defined
-        by PEP-3333.)
+        (In WSGI it corresponds to the "SCRIPT_NAME" environ variable defined
+        by PEP-3333; in ASGI it Corresponds to the "root_path"ASGI HTTP
+        scope field.)
         """
         # PERF(kgriffs): try..except is faster than get() assuming that
         # we normally expect the key to exist. Even though PEP-3333
@@ -738,20 +738,20 @@ class Request:
         if self._cached_relative_uri is None:
             if self.query_string:
                 self._cached_relative_uri = (
-                    self.app + self.path + '?' + self.query_string  # type: ignore
+                    self.root_path + self.path + '?' + self.query_string
                 )
             else:
-                self._cached_relative_uri = self.app + self.path  # type: ignore
+                self._cached_relative_uri = self.root_path + self.path
 
         return self._cached_relative_uri
 
     @property
     def prefix(self) -> str:
         """The prefix of the request URI, including scheme,
-        host, and WSGI app (if any).
+        host, and app :attr:`~.root_path` (if any).
         """
         if self._cached_prefix is None:
-            self._cached_prefix = self.scheme + '://' + self.netloc + self.app  # type: ignore
+            self._cached_prefix = self.scheme + '://' + self.netloc + self.root_path
 
         return self._cached_prefix
 
@@ -764,7 +764,7 @@ class Request:
         """
         if self._cached_forwarded_prefix is None:
             self._cached_forwarded_prefix = (
-                self.forwarded_scheme + '://' + self.forwarded_host + self.app  # type: ignore
+                self.forwarded_scheme + '://' + self.forwarded_host + self.root_path
             )
 
         return self._cached_forwarded_prefix
@@ -807,7 +807,7 @@ class Request:
             requested by the user agent; in that case, using
             :attr:`host` is sufficient.
 
-            (See also: RFC 7239, Section 4)
+        (See also: RFC 7239, Section 4)
         """
         # PERF(kgriffs): Since the Forwarded header is still relatively
         # new, we expect X-Forwarded-Host to be more common, so
@@ -907,7 +907,8 @@ class Request:
         If a cookie appears more than once in the request, only the first
         value encountered will be made available here.
 
-        See also: :meth:`~falcon.Request.get_cookie_values`.
+        See also: :meth:`~falcon.Request.get_cookie_values` or
+        :meth:`~falcon.asgi.Request.get_cookie_values`.
         """
         if self._cookies_collapsed is None:
             if self._cookies is None:
@@ -1009,7 +1010,7 @@ class Request:
         in the request, but does not specify a port, the default one for the
         given schema is returned (80 for HTTP and 443 for HTTPS). If the
         request does not include a Host header, the listening port for the
-        WSGI server is returned instead.
+        server is returned instead.
         """
         try:
             host_header = self.env['HTTP_HOST']
@@ -1197,7 +1198,7 @@ class Request:
 
     @overload
     def get_header(
-        self, name: str, required: bool = False, default: Optional[str] = ...
+        self, name: str, required: bool = ..., default: Optional[str] = ...
     ) -> Optional[str]: ...
 
     def get_header(

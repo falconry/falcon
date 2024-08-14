@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import abc
-from asyncio import StreamReader
 import io
 from typing import Optional, Union
 
 from falcon.constants import MEDIA_JSON
+from falcon.typing import AsyncReadableIO
 from falcon.typing import ReadableIO
 
 
@@ -125,7 +125,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
 
     async def deserialize_async(
         self,
-        stream: StreamReader,
+        stream: AsyncReadableIO,
         content_type: Optional[str],
         content_length: Optional[int],
     ) -> object:

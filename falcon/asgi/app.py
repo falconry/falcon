@@ -566,7 +566,7 @@ class App(falcon.app.App):
             if resp._registered_callbacks:
                 self._schedule_callbacks(resp)
 
-            handler, _, _ = self.resp_options.media_handlers._resolve(
+            sse_handler, _, _ = self.resp_options.media_handlers._resolve(
                 MEDIA_JSON, MEDIA_JSON, raise_not_found=False
             )
 
@@ -582,7 +582,7 @@ class App(falcon.app.App):
                 await send(
                     {
                         'type': EventType.HTTP_RESPONSE_BODY,
-                        'body': event.serialize(handler),
+                        'body': event.serialize(sse_handler),
                         'more_body': True,
                     }
                 )

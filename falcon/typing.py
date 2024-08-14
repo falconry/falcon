@@ -18,6 +18,7 @@ from __future__ import annotations
 import http
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     List,
@@ -30,6 +31,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
+    from falcon.asgi_spec import AsgiEvent
     from falcon.request import Request
     from falcon.response import Response
 
@@ -68,3 +70,11 @@ Cookies = Dict[str, List[str]]
 
 class ReadableIO(Protocol):
     def read(self, n: Optional[int] = ..., /) -> bytes: ...
+
+
+# ASGI
+class AsyncReadableIO(Protocol):
+    async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+
+
+AsgiReceive = Callable[[], Awaitable['AsgiEvent']]

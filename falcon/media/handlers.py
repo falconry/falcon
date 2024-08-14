@@ -56,7 +56,7 @@ class MissingDependencyHandler(BinaryBaseHandlerWS):
 _ResolverMethodReturnTuple = Tuple[
     BaseHandler,
     Optional[Callable[[Any, Optional[str]], bytes]],
-    Optional[Callable[[bytes, str, int], Any]],
+    Optional[Callable[[bytes], Any]],
 ]
 
 
@@ -65,6 +65,7 @@ class ResolverMethod(Protocol):
     def __call__(
         self, media_type: Optional[str], default: str, raise_not_found: Literal[False]
     ) -> Union[Tuple[None, None, None], _ResolverMethodReturnTuple]: ...
+
     @overload
     def __call__(
         self,
@@ -72,6 +73,7 @@ class ResolverMethod(Protocol):
         default: str,
         raise_not_found: Literal[True] = ...,
     ) -> _ResolverMethodReturnTuple: ...
+
     def __call__(
         self, media_type: Optional[str], default: str, raise_not_found: bool = True
     ) -> Union[Tuple[None, None, None], _ResolverMethodReturnTuple]: ...
