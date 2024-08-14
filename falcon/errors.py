@@ -2790,8 +2790,3 @@ def _parse_retry_after(
     else:
         headers['Retry-After'] = str(retry_after)
     return headers
-
-
-MediaError = Union[
-    MediaNotFoundError, MediaValidationError, MediaValidationError, MultipartParseError
-]

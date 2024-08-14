@@ -66,7 +66,8 @@ SinkPrefix = Union[str, Pattern]
 Headers = Dict[str, str]
 HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
-Cookies = Dict[str, List[str]]
+StoreArgument = Optional[Dict[str, Any]]
+
 
 class ReadableIO(Protocol):
     def read(self, n: Optional[int] = ..., /) -> bytes: ...

@@ -1,6 +1,3 @@
-from typing import Iterable
-from typing import List
-
 from falcon.util.mediatypes import parse_header
 
 __version__ = '1.6.0'
@@ -138,7 +135,7 @@ def quality_parsed(mime_type, parsed_ranges):
     return quality_and_fitness_parsed(mime_type, parsed_ranges)[0]
 
 
-def quality(mime_type: str, ranges: str) -> float:
+def quality(mime_type, ranges):
     """Return the quality ('q') of a mime-type against a list of media-ranges.
 
     Returns the quality 'q' of a mime-type when compared against the
@@ -155,7 +152,7 @@ def quality(mime_type: str, ranges: str) -> float:
     return quality_parsed(mime_type, parsed_ranges)
 
 
-def best_match(supported: Iterable[str], header: str) -> str:
+def best_match(supported, header):
     """Return mime-type with the highest quality ('q') from list of candidates.
 
     Takes a list of supported mime-types and finds the best match for all the

@@ -1257,7 +1257,9 @@ def create_req(options=None, **kwargs) -> falcon.Request:
     return falcon.request.Request(env, options=options)
 
 
-def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.Request:
+def create_asgi_req(
+    body=None, req_type=None, options=None, **kwargs
+) -> falcon.asgi.Request:
     """Create and return a new ASGI Request instance.
 
     This function can be used to conveniently create an ASGI scope

@@ -20,6 +20,7 @@ from io import BytesIO
 from typing import (
     Any,
     Callable,
+    cast,
     ClassVar,
     Dict,
     List,
@@ -49,11 +50,11 @@ from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
 from falcon.typing import ReadableIO
+from falcon.typing import StoreArgument
 from falcon.util import deprecated
 from falcon.util import ETag
 from falcon.util import structures
 from falcon.util.misc import isascii
-from falcon.util.structures import ETag
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 from falcon.vendor import mimeparse
@@ -65,12 +66,8 @@ FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
-strptime = datetime.datetime.strptime
-now = datetime.datetime.now
-
-Name = str
-Store = Optional[Dict]
-Default = Any
+strptime = datetime.strptime
+now = datetime.now
 
 _T = TypeVar('_T')
 
@@ -1257,7 +1254,7 @@ class Request:
 
     @overload
     def get_header_as_int(self, header: str, required: bool = ...) -> Optional[int]: ...
-    
+
     def get_header_as_int(self, header: str, required: bool = False) -> Optional[int]:
         """Retrieve the int value for the given header.
 
@@ -1374,7 +1371,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: Optional[Dict[str, str]] = ...,
+        store: StoreArgument = ...,
         default: Optional[str] = ...,
     ) -> str: ...
 
@@ -1383,7 +1380,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: str = ...,
     ) -> str: ...
@@ -1393,7 +1390,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[str] = None,
     ) -> Optional[str]: ...
 
@@ -1401,7 +1398,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[str] = None,
     ) -> Optional[str]:
         """Return the raw value of a query string parameter as a string.
@@ -1486,7 +1483,7 @@ class Request:
         required: Literal[True] = ...,
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[int] = ...,
     ) -> int: ...
 
@@ -1497,7 +1494,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: int = ...,
     ) -> int: ...
@@ -1509,7 +1506,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[int] = ...,
     ) -> Optional[int]: ...
 
@@ -1519,7 +1516,7 @@ class Request:
         required: bool = False,
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[int] = None,
     ) -> Optional[int]:
         """Return the value of a query string parameter as an int.
@@ -1599,7 +1596,7 @@ class Request:
         required: Literal[True] = ...,
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[float] = ...,
     ) -> float: ...
 
@@ -1610,7 +1607,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: float = ...,
     ) -> float: ...
@@ -1622,7 +1619,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[float] = ...,
     ) -> Optional[float]: ...
 
@@ -1632,7 +1629,7 @@ class Request:
         required: bool = False,
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[float] = None,
     ) -> Optional[float]:
         """Return the value of a query string parameter as an float.
@@ -1710,7 +1707,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[UUID] = ...,
     ) -> UUID: ...
 
@@ -1719,7 +1716,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: UUID,
     ) -> UUID: ...
@@ -1729,7 +1726,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[UUID] = ...,
     ) -> Optional[UUID]: ...
 
@@ -1737,7 +1734,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[UUID] = None,
     ) -> Optional[UUID]:
         """Return the value of a query string parameter as an UUID.
@@ -1810,7 +1807,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         blank_as_true: bool = ...,
         default: Optional[bool] = ...,
     ) -> bool: ...
@@ -1820,7 +1817,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         blank_as_true: bool = ...,
         *,
         default: bool,
@@ -1831,7 +1828,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         blank_as_true: bool = ...,
         default: Optional[bool] = ...,
     ) -> Optional[bool]: ...
@@ -1840,7 +1837,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         blank_as_true: bool = True,
         default: Optional[bool] = None,
     ) -> Optional[bool]:
@@ -1924,7 +1921,7 @@ class Request:
         transform: None = ...,
         *,
         required: Literal[True],
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[List[str]] = ...,
     ) -> List[str]: ...
 
@@ -1934,7 +1931,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: Literal[True],
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[List[_T]] = ...,
     ) -> List[_T]: ...
 
@@ -1944,7 +1941,7 @@ class Request:
         name: str,
         transform: None = ...,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: List[str],
     ) -> List[str]: ...
@@ -1955,7 +1952,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: List[_T],
     ) -> List[_T]: ...
@@ -1966,7 +1963,7 @@ class Request:
         name: str,
         transform: None = ...,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[List[str]] = ...,
     ) -> Optional[List[str]]: ...
 
@@ -1976,7 +1973,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T] = ...,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[List[_T]] = ...,
     ) -> Optional[List[_T]]: ...
 
@@ -1985,7 +1982,7 @@ class Request:
         name: str,
         transform: Optional[Callable[[str], _T]] = None,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[List[_T]] = None,
     ) -> Optional[List[_T] | List[str]]:
         """Return the value of a query string parameter as a list.
@@ -2085,7 +2082,7 @@ class Request:
         format_string: str = ...,
         *,
         required: Literal[True],
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[datetime] = ...,
     ) -> datetime: ...
 
@@ -2095,7 +2092,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: datetime,
     ) -> datetime: ...
@@ -2106,7 +2103,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[datetime] = ...,
     ) -> Optional[datetime]: ...
 
@@ -2115,7 +2112,7 @@ class Request:
         name: str,
         format_string: str = '%Y-%m-%dT%H:%M:%SZ',
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[datetime] = None,
     ) -> Optional[datetime]:
         """Return the value of a query string parameter as a datetime.
@@ -2169,7 +2166,7 @@ class Request:
         format_string: str = ...,
         *,
         required: Literal[True],
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[py_date] = ...,
     ) -> py_date: ...
 
@@ -2179,7 +2176,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: py_date,
     ) -> py_date: ...
@@ -2190,7 +2187,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         default: Optional[py_date] = ...,
     ) -> Optional[py_date]: ...
 
@@ -2199,7 +2196,7 @@ class Request:
         name: str,
         format_string: str = '%Y-%m-%d',
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[py_date] = None,
     ) -> Optional[py_date]:
         """Return the value of a query string parameter as a date.
@@ -2245,7 +2242,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[Any] = None,
     ) -> Any:
         """Return the decoded JSON value of a query string parameter.

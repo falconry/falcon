@@ -46,8 +46,7 @@ _COOKIE_NAME_RESERVED_CHARS = re.compile(
 _ENTITY_TAG_PATTERN = re.compile(r'([Ww]/)?"([^"]*)"')
 
 
-
-def parse_cookie_header(header_value: str) -> Cookies:
+def parse_cookie_header(header_value: str) -> Dict[str, List[str]]:
     """Parse a Cookie header value into a dict of named values.
 
     (See also: RFC 6265, Section 5.4)
@@ -67,7 +66,7 @@ def parse_cookie_header(header_value: str) -> Cookies:
     #   https://tools.ietf.org/html/rfc6265#section-4.1.1
     #
 
-    cookies: Cookies = {}
+    cookies: Dict[str, List[str]] = {}
 
     for token in header_value.split(';'):
         name, __, value = token.partition('=')
@@ -108,7 +107,7 @@ def parse_cookie_header(header_value: str) -> Cookies:
     return cookies
 
 
-def header_property(wsgi_name: str) -> property:
+def header_property(wsgi_name: str) -> Any:
     """Create a read-only header property.
 
     Args:

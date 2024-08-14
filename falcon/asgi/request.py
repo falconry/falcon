@@ -41,6 +41,7 @@ from falcon.constants import MissingOr
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import Forwarded
 from falcon.typing import AsgiReceive
+from falcon.typing import StoreArgument
 from falcon.util import deprecated
 from falcon.util import ETag
 from falcon.util.uri import parse_host
@@ -785,7 +786,7 @@ class Request(request.Request):
         self,
         name: str,
         required: Literal[True],
-        store: Optional[Dict[str, str]] = ...,
+        store: StoreArgument = ...,
         default: Optional[str] = ...,
     ) -> str: ...
 
@@ -794,7 +795,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = ...,
-        store: Optional[Dict[str, Any]] = ...,
+        store: StoreArgument = ...,
         *,
         default: str = ...,
     ) -> str: ...
@@ -804,7 +805,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[str] = None,
     ) -> Optional[str]: ...
 
@@ -812,7 +813,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = False,
-        store: Optional[Dict[str, Any]] = None,
+        store: StoreArgument = None,
         default: Optional[str] = None,
     ) -> Optional[str]:
         """Return the raw value of a query string parameter as a string.
@@ -862,6 +863,13 @@ class Request(request.Request):
         #   the ASGI-specific docstring above. Is there a better way?
 
         return super().get_param(name, required=required, store=store, default=default)
+
+    @property
+    def env(self) -> NoReturn:  # type:ignore[override]
+        """The env property is not available in ASGI. Use :attr:`~.store` instead"""
+        raise AttributeError(
+            'The env property is not available in ASGI. Use :attr:`~.store` instead'
+        )
 
     def log_error(self, message: str) -> NoReturn:
         """Write a message to the server's log.
