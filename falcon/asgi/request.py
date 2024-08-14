@@ -329,8 +329,10 @@ class Request(request.Request):
     # NOTE(kgriffs): This is provided as an alias in order to ease migration
     #   from WSGI, but is not documented since we do not want people using
     #   it in greenfield ASGI apps.
-    bounded_stream = stream  # type: ignore[assignment]
-    """Alias to :attr:`stream`."""
+    @property
+    def bounded_stream(self) -> BoundedStream:  # type: ignore[assignment]
+        """Alias to :attr:`~.stream`."""
+        return self.stream
 
     @property
     def root_path(self) -> str:
@@ -797,7 +799,7 @@ class Request(request.Request):
         required: bool = ...,
         store: StoreArgument = ...,
         *,
-        default: str = ...,
+        default: str,
     ) -> str: ...
 
     @overload

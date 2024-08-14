@@ -20,7 +20,6 @@ from io import BytesIO
 from typing import (
     Any,
     Callable,
-    cast,
     ClassVar,
     Dict,
     List,
@@ -627,7 +626,7 @@ class Request:
         # empty string, uwsgi, gunicorn, waitress, and wsgiref all
         # include it even in that case.
         try:
-            return cast(str, self.env['SCRIPT_NAME'])
+            return self.env['SCRIPT_NAME']
         except KeyError:
             return ''
 
@@ -959,7 +958,7 @@ class Request:
             # that only masks the problem; the operator needs to be
             # aware that an upstream proxy is malfunctioning.
 
-            if 'HTTP_FORWARDED' in self.env and self.forwarded:
+            if 'HTTP_FORWARDED' in self.env:
                 self._cached_access_route = []
                 for hop in self.forwarded or ():
                     if hop.src is not None:
@@ -1022,7 +1021,7 @@ class Request:
             # PEP-3333 requires that the port never be an empty string.
             port = int(self.env['SERVER_PORT'])
 
-        return cast(int, port)
+        return port
 
     @property
     def netloc(self) -> str:
@@ -1186,12 +1185,12 @@ class Request:
         return preferred_type if preferred_type else None
 
     @overload
-    def get_header(self, name: str, required: bool = ..., *, default: str) -> str: ...
-
-    @overload
     def get_header(
         self, name: str, required: Literal[True], default: Optional[str] = ...
     ) -> str: ...
+
+    @overload
+    def get_header(self, name: str, required: bool = ..., *, default: str) -> str: ...
 
     @overload
     def get_header(
@@ -1382,7 +1381,7 @@ class Request:
         required: bool = ...,
         store: StoreArgument = ...,
         *,
-        default: str = ...,
+        default: str,
     ) -> str: ...
 
     @overload
@@ -1480,7 +1479,7 @@ class Request:
     def get_param_as_int(
         self,
         name: str,
-        required: Literal[True] = ...,
+        required: Literal[True],
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
         store: StoreArgument = ...,
@@ -1496,7 +1495,7 @@ class Request:
         max_value: Optional[int] = ...,
         store: StoreArgument = ...,
         *,
-        default: int = ...,
+        default: int,
     ) -> int: ...
 
     @overload
@@ -1593,7 +1592,7 @@ class Request:
     def get_param_as_float(
         self,
         name: str,
-        required: Literal[True] = ...,
+        required: Literal[True],
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
         store: StoreArgument = ...,
@@ -1609,7 +1608,7 @@ class Request:
         max_value: Optional[float] = ...,
         store: StoreArgument = ...,
         *,
-        default: float = ...,
+        default: float,
     ) -> float: ...
 
     @overload
@@ -1971,7 +1970,7 @@ class Request:
     def get_param_as_list(
         self,
         name: str,
-        transform: Callable[[str], _T] = ...,
+        transform: Callable[[str], _T],
         required: bool = ...,
         store: StoreArgument = ...,
         default: Optional[List[_T]] = ...,
