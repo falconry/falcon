@@ -24,7 +24,7 @@ cd $MAILMAN_PATH
 cat <<EOT >> tox.ini
 
 [testenv:falcon-nocov]
-basepython = python3.8
+basepython = python3.10
 commands_pre =
     pip install "importlib-resources < 6.0"
     pip uninstall -y falcon

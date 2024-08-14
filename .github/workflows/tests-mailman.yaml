@@ -10,6 +10,11 @@ on:
   #   branches:
   #     - master
 
+  # TODO(vytas): Remove once we are happy with the PR.
+  pull_request:
+    branches:
+      - master
+
 jobs:
   run_tox:
     name: tox -e falcon-nocov
