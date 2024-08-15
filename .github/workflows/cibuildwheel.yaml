@@ -17,6 +17,7 @@ jobs:
   build-sdist:
     name: sdist
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,8 +41,8 @@ jobs:
           path: dist/*.tar.gz
 
   build-wheels:
-    needs: build-sdist
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
+    needs: build-sdist
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
@@ -112,6 +113,7 @@ jobs:
     needs:
       - build-sdist
       - build_wheels
+    runs-on: ubuntu-latest
 
     steps:
       - name: Download packages
