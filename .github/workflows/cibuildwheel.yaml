@@ -110,9 +110,7 @@ jobs:
 
   publish-wheels:
     name: publish-wheels
-    needs:
-      - build-sdist
-      - build_wheels
+    needs: ["build-sdist", "build-wheels"]
     runs-on: ubuntu-latest
 
     steps:
