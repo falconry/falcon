@@ -14,14 +14,6 @@ from falcon.routing.static import _BoundedFile
 import falcon.testing as testing
 
 
-@pytest.fixture()
-def client(asgi):
-    app = _util.create_app(asgi=asgi)
-    client = testing.TestClient(app)
-    client.asgi = asgi
-    return client
-
-
 def normalize_path(path):
     # NOTE(vytas): On CPython 3.13, ntpath.isabs() no longer returns True for
     #   Unix-like absolute paths that start with a single \.
@@ -33,6 +25,22 @@ def normalize_path(path):
     if os.path.normpath(path).startswith('\\'):
         path = 'D:' + path
     return path
+
+
+@pytest.fixture()
+def client(asgi, monkeypatch):
+    def add_static_route_normalized(obj, prefix, directory, **kwargs):
+        add_static_route_orig(obj, prefix, normalize_path(directory), **kwargs)
+
+    app = _util.create_app(asgi=asgi)
+
+    app_cls = type(app)
+    add_static_route_orig = app_cls.add_static_route
+    monkeypatch.setattr(app_cls, 'add_static_route', add_static_route_normalized)
+
+    client = testing.TestClient(app)
+    client.asgi = asgi
+    return client
 
 
 def create_sr(asgi, prefix, directory, **kwargs):
