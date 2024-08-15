@@ -2,6 +2,7 @@ import errno
 import io
 import os
 import pathlib
+import posixpath
 
 import _util  # NOQA
 import pytest
@@ -21,9 +22,15 @@ def client(asgi):
     return client
 
 
-def create_sr(asgi, *args, **kwargs):
+def create_sr(asgi, prefix, *args, **kwargs):
+    # NOTE(vytas): On CPython 3.13, ntpath.isabs() no longer returns True for
+    #   Unix-like absolute paths that start with a single \.
+    #   See also: https://github.com/python/cpython/issues/117352
+    if posixpath.isabs(prefix) and os.path.normpath(prefix).startswith('\\'):
+        prefix = 'D:' + os.path.normpath(prefix)
+
     sr_type = StaticRouteAsync if asgi else StaticRoute
-    return sr_type(*args, **kwargs)
+    return sr_type(prefix, *args, **kwargs)
 
 
 @pytest.fixture
@@ -114,8 +121,7 @@ def patch_open(monkeypatch):
 def test_bad_path(asgi, uri, patch_open):
     patch_open(b'')
 
-    sr_type = StaticRouteAsync if asgi else StaticRoute
-    sr = sr_type('/static', '/var/www/statics')
+    sr = create_sr(asgi, '/static', '/var/www/statics')
 
     req = _util.create_req(asgi, host='test.com', path=uri, root_path='statics')
 
