@@ -8,9 +8,9 @@
 
 [tool.mypy]
     exclude = [
-        "falcon/bench/",
-        "falcon/cmd/",
-        "falcon/vendor"
+        "falcon/bench",
+        "falcon/cmd",
+        "falcon/vendor",
     ]
     disallow_untyped_defs = true
 
