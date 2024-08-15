@@ -222,13 +222,13 @@ class Request:
             doc = json.load(req.stream)
 
     For a slight performance cost, you may instead wish to use
-    :py:attr:`bounded_stream`, which wraps the native WSGI
+    :attr:`bounded_stream`, which wraps the native WSGI
     input object to normalize its behavior.
 
     Note:
         If an HTML form is POSTed to the API using the
         *application/x-www-form-urlencoded* media type, and
-        the :py:attr:`~.RequestOptions.auto_parse_form_urlencoded`
+        the :attr:`~.RequestOptions.auto_parse_form_urlencoded`
         option is set, the framework
         will consume `stream` in order to parse the parameters
         and merge them into the query string parameters. In this
@@ -647,7 +647,7 @@ class Request:
         Note:
             If the request was proxied, the scheme may not
             match what was originally requested by the client.
-            :py:attr:`forwarded_scheme` can be used, instead,
+            :attr:`forwarded_scheme` can be used, instead,
             to handle such cases.
         """
         return self.env['wsgi.url_scheme']
@@ -937,7 +937,7 @@ class Request:
             - ``X-Real-IP``
 
         If none of these headers are available, the value of
-        :py:attr:`~.remote_addr` is used instead.
+        :attr:`~.remote_addr` is used instead.
 
         Note:
             Per `RFC 7239`_, the access route may contain "unknown"
@@ -995,7 +995,7 @@ class Request:
 
         Note:
             If your application is behind one or more reverse
-            proxies, you can use :py:attr:`~.access_route`
+            proxies, you can use :attr:`~.access_route`
             to retrieve the real IP address of the client.
         """
         try:
@@ -1409,7 +1409,7 @@ class Request:
             automatically parse the parameters from the request body
             and merge them into the query string parameters. To enable
             this functionality, set
-            :py:attr:`~.RequestOptions.auto_parse_form_urlencoded` to
+            :attr:`~.RequestOptions.auto_parse_form_urlencoded` to
             ``True`` via :any:`App.req_options`.
 
             Note, however, that the

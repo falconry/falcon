@@ -1268,12 +1268,12 @@ def create_req(options=None, **kwargs) -> falcon.Request:
     """Create and return a new Request instance.
 
     This function can be used to conveniently create a WSGI environ
-    and use it to instantiate a :py:class:`falcon.Request` object in one go.
+    and use it to instantiate a :class:`falcon.Request` object in one go.
 
     The arguments for this function are identical to those
-    of :py:meth:`falcon.testing.create_environ`, except an additional
+    of :meth:`falcon.testing.create_environ`, except an additional
     `options` keyword argument may be set to an instance of
-    :py:class:`falcon.RequestOptions` to configure certain
+    :class:`falcon.RequestOptions` to configure certain
     aspects of request parsing in lieu of the defaults.
     """
 
@@ -1287,22 +1287,22 @@ def create_asgi_req(
     """Create and return a new ASGI Request instance.
 
     This function can be used to conveniently create an ASGI scope
-    and use it to instantiate a :py:class:`falcon.asgi.Request` object
+    and use it to instantiate a :class:`falcon.asgi.Request` object
     in one go.
 
     The arguments for this function are identical to those
-    of :py:meth:`falcon.testing.create_scope`, with the addition of
+    of :meth:`falcon.testing.create_scope`, with the addition of
     `body`, `req_type`, and `options` arguments as documented below.
 
     Keyword Arguments:
         body (bytes): The body data to use for the request (default b''). If
-            the value is a :py:class:`str`, it will be UTF-8 encoded to
+            the value is a :class:`str`, it will be UTF-8 encoded to
             a byte string.
-        req_type (object): A subclass of :py:class:`falcon.asgi.Request`
+        req_type (object): A subclass of :class:`falcon.asgi.Request`
             to instantiate. If not specified, the standard
-            :py:class:`falcon.asgi.Request` class will simply be used.
+            :class:`falcon.asgi.Request` class will simply be used.
         options (falcon.RequestOptions): An instance of
-            :py:class:`falcon.RequestOptions` that should be used to determine
+            :class:`falcon.RequestOptions` that should be used to determine
             certain aspects of request parsing in lieu of the defaults.
     """
 
