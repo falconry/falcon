@@ -19,12 +19,14 @@ def normalize_path(path):
     #   Unix-like absolute paths that start with a single \.
     #   We work around this in tests by prepending a fake drive D:\ on Windows.
     #   See also: https://github.com/python/cpython/issues/117352
-    if not posixpath.isabs(path):
+    is_pathlib_path = isinstance(path, pathlib.Path)
+    if not is_pathlib_path and not posixpath.isabs(path):
         return path
+
     path = os.path.normpath(path)
-    if os.path.normpath(path).startswith('\\'):
+    if path.startswith('\\'):
         path = 'D:' + path
-    return path
+    return pathlib.Path(path) if is_pathlib_path else path
 
 
 @pytest.fixture()
@@ -45,6 +47,7 @@ def client(asgi, monkeypatch):
 
 def create_sr(asgi, prefix, directory, **kwargs):
     sr_type = StaticRouteAsync if asgi else StaticRoute
+    print(f'creating {sr_type.__name__}{(prefix, normalize_path(directory))}')
     return sr_type(prefix, normalize_path(directory), **kwargs)
 
 
