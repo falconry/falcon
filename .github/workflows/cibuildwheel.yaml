@@ -5,6 +5,9 @@ on:
   # release:
   #   types: [created]
 
+  # TODO(vytas): Also allow to release to Test PyPi manually.
+  workflow_dispatch:
+
   # TODO(vytas): Remove testing and only leave on release later.
   pull_request:
     branches:
@@ -64,16 +67,12 @@ jobs:
           - name: win_amd64
             os: windows-latest
         python:
+          - cp38
           - cp39
           - cp310
           - cp311
           - cp312
           - cp313
-        include:
-          - python: cp38
-            platform:
-              name: manylinux_x86_64
-              os: ubuntu-latest
 
     defaults:
       run:
@@ -93,7 +92,8 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0
-        if: ${{ matrix.platform.os == 'windows-latest' }}
+        # Limit scope for testing
+        # if: ${{ matrix.python== 'cp38' }}
         env:
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
@@ -102,7 +102,40 @@ jobs:
         # NOTE(vytas): Not using v4 yet because it does not support combining
         #   files from multiple jobs; see #478 on actions/upload-artifact.
         uses: actions/upload-artifact@v4
-        if: ${{ matrix.python == 'windows-latest' }}
+        # if: ${{ matrix.python == 'cp38' }}
         with:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/*.whl
+
+  publish-wheels:
+    name: publish-wheels
+    needs:
+      - build-sdist
+      - build_wheels
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+
+      - name: Check collected artifacts
+        # TODO(vytas): Run a script to perform version sanity checks instead.
+        run: ls -l dist/
+
+      - name: Publish artifacts to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+
+      # TODO(vytas): Enable this nuclear option once happy with other tests.
+      # - name: Publish artifacts to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   if: github.event_name == 'release'
+      #   with:
+      #     password: ${{ secrets.PYPI_TOKEN }}
+      #     repository-url: https://test.pypi.org/legacy/

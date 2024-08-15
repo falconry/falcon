@@ -47,7 +47,6 @@ def client(asgi, monkeypatch):
 
 def create_sr(asgi, prefix, directory, **kwargs):
     sr_type = StaticRouteAsync if asgi else StaticRoute
-    print(f'creating {sr_type.__name__}{(prefix, normalize_path(directory))}')
     return sr_type(prefix, normalize_path(directory), **kwargs)
 
 
