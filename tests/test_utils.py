@@ -646,7 +646,7 @@ class TestFalconUtils:
             misc.secure_filename('')
 
     def test_misc_isascii(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(deprecation.DeprecatedWarning):
             assert misc.isascii('foobar')
 
 
