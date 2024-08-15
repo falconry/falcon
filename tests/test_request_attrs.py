@@ -10,6 +10,7 @@ from falcon.request import RequestOptions
 from falcon.request_helpers import _parse_etags
 import falcon.testing as testing
 import falcon.uri
+from falcon.util import DeprecatedWarning
 from falcon.util.structures import ETag
 
 _HTTP_VERSIONS = ['1.0', '1.1', '2']
@@ -46,7 +47,9 @@ def test_app_missing():
     del env['SCRIPT_NAME']
     req = Request(env)
 
-    assert req.app == ''
+    assert req.root_path == ''
+    with pytest.warns(DeprecatedWarning):
+        assert req.app == ''
 
 
 @pytest.mark.parametrize('asgi', [True, False])
@@ -128,7 +131,9 @@ class TestRequestAttributes:
 
         scheme = req.scheme
         host = req.get_header('host')
-        app = req.app
+        app = req.root_path
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == app
         path = req.path
         query_string = req.query_string
 
@@ -900,11 +905,15 @@ class TestRequestAttributes:
 
     def test_app_present(self, asgi):
         req = create_req(asgi, root_path='/moving-pictures')
-        assert req.app == '/moving-pictures'
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == '/moving-pictures'
+        assert req.root_path == '/moving-pictures'
 
     def test_app_blank(self, asgi):
         req = create_req(asgi, root_path='')
-        assert req.app == ''
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == ''
+        assert req.root_path == ''
 
     @pytest.mark.parametrize(
         'etag,expected_value',

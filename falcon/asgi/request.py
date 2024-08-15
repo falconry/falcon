@@ -35,7 +35,6 @@ from falcon import errors
 from falcon import request
 from falcon import request_helpers as helpers
 from falcon.asgi_spec import AsgiEvent
-from falcon.constants import _UNSET
 from falcon.constants import MISSING
 from falcon.constants import MissingOr
 from falcon.constants import SINGLETON_HEADERS
@@ -330,7 +329,7 @@ class Request(request.Request):
     #   from WSGI, but is not documented since we do not want people using
     #   it in greenfield ASGI apps.
     @property
-    def bounded_stream(self) -> BoundedStream:  # type: ignore[assignment]
+    def bounded_stream(self) -> BoundedStream:  # type: ignore[override]
         """Alias to :attr:`~.stream`."""
         return self.stream
 
@@ -626,7 +625,7 @@ class Request(request.Request):
 
         except errors.MediaNotFoundError as err:
             self._media_error = err
-            if default_when_empty is not _UNSET:
+            if default_when_empty is not MISSING:
                 return default_when_empty
             raise
         except Exception as err:
@@ -718,12 +717,12 @@ class Request(request.Request):
     # ------------------------------------------------------------------------
 
     @overload
-    def get_header(self, name: str, required: bool = ..., *, default: str) -> str: ...
-
-    @overload
     def get_header(
         self, name: str, required: Literal[True], default: Optional[str] = ...
     ) -> str: ...
+
+    @overload
+    def get_header(self, name: str, required: bool = ..., *, default: str) -> str: ...
 
     @overload
     def get_header(
