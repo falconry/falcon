@@ -13,3 +13,4 @@ exclude_lines =
     pragma: nocover
     pragma: no cover
     pragma: no py39,py310 cover
+    @overload
