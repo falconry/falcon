@@ -27,7 +27,7 @@ def create_sr(asgi, prefix, directory, **kwargs):
     #   Unix-like absolute paths that start with a single \.
     #   See also: https://github.com/python/cpython/issues/117352
     if posixpath.isabs(directory) and os.path.normpath(directory).startswith('\\'):
-        prefix = 'D:' + os.path.normpath(directory)
+        directory = 'D:' + os.path.normpath(directory)
 
     sr_type = StaticRouteAsync if asgi else StaticRoute
     return sr_type(prefix, directory, **kwargs)
