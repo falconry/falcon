@@ -22,15 +22,15 @@ def client(asgi):
     return client
 
 
-def create_sr(asgi, prefix, *args, **kwargs):
+def create_sr(asgi, prefix, directory, **kwargs):
     # NOTE(vytas): On CPython 3.13, ntpath.isabs() no longer returns True for
     #   Unix-like absolute paths that start with a single \.
     #   See also: https://github.com/python/cpython/issues/117352
-    if posixpath.isabs(prefix) and os.path.normpath(prefix).startswith('\\'):
-        prefix = 'D:' + os.path.normpath(prefix)
+    if posixpath.isabs(directory) and os.path.normpath(directory).startswith('\\'):
+        prefix = 'D:' + os.path.normpath(directory)
 
     sr_type = StaticRouteAsync if asgi else StaticRoute
-    return sr_type(prefix, *args, **kwargs)
+    return sr_type(prefix, directory, **kwargs)
 
 
 @pytest.fixture
