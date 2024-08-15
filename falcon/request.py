@@ -32,7 +32,6 @@ from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
 from falcon.util import structures
-from falcon.util.misc import isascii
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 from falcon.vendor import mimeparse
@@ -489,7 +488,7 @@ class Request:
 
         # perf(vytas): Only decode the tunnelled path in case it is not ASCII.
         #   For ASCII-strings, the below decoding chain is a no-op.
-        if not isascii(path):
+        if not path.isascii():
             path = path.encode('iso-8859-1').decode('utf-8', 'replace')
 
         if (
