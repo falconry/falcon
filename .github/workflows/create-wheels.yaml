@@ -24,8 +24,6 @@ jobs:
           - "windows-latest"
           - "macos-latest"
         python-version:
-          - "3.6"
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
@@ -95,7 +93,6 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
           - cp310-cp310
@@ -227,7 +224,6 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
           - cp310-cp310
