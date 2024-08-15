@@ -32,7 +32,7 @@ WSGI tutorial::
       └── app.py
 
 We'll create a *virtualenv* using the ``venv`` module from the standard library
-(Falcon requires Python 3.7+)::
+(Falcon requires Python 3.8+)::
 
   $ mkdir asgilook
   $ python3 -m venv asgilook/.venv
