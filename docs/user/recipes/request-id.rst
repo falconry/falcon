@@ -48,4 +48,4 @@ In a pinch, you can also output the request ID directly:
 .. literalinclude:: ../../../examples/recipes/request_id_log.py
     :language: python
 
-.. _thread-local: https://docs.python.org/3.7/library/threading.html#thread-local-data
+.. _thread-local: https://docs.python.org/3/library/threading.html#thread-local-data
