@@ -22,15 +22,22 @@ def client(asgi):
     return client
 
 
-def create_sr(asgi, prefix, directory, **kwargs):
+def normalize_path(path):
     # NOTE(vytas): On CPython 3.13, ntpath.isabs() no longer returns True for
     #   Unix-like absolute paths that start with a single \.
+    #   We work around this in tests by prepending a fake drive D:\ on Windows.
     #   See also: https://github.com/python/cpython/issues/117352
-    if posixpath.isabs(directory) and os.path.normpath(directory).startswith('\\'):
-        directory = 'D:' + os.path.normpath(directory)
+    if not posixpath.isabs(path):
+        return path
+    path = os.path.normpath(path)
+    if os.path.normpath(path).startswith('\\'):
+        path = 'D:' + path
+    return path
 
+
+def create_sr(asgi, prefix, directory, **kwargs):
     sr_type = StaticRouteAsync if asgi else StaticRoute
-    return sr_type(prefix, directory, **kwargs)
+    return sr_type(prefix, normalize_path(directory), **kwargs)
 
 
 @pytest.fixture
@@ -235,7 +242,7 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, patch_open)
         body = resp.stream.read()
 
     assert resp.content_type in _MIME_ALTERNATIVE.get(mtype, (mtype,))
-    assert body.decode() == os.path.normpath('/var/www/statics' + expected_path)
+    assert body.decode() == normalize_path('/var/www/statics' + expected_path)
     assert resp.headers.get('accept-ranges') == 'bytes'
 
 
@@ -366,7 +373,7 @@ def test_pathlib_path(asgi, patch_open):
         sr(req, resp)
         body = resp.stream.read()
 
-    assert body.decode() == os.path.normpath('/var/www/statics/css/test.css')
+    assert body.decode() == normalize_path('/var/www/statics/css/test.css')
 
 
 def test_lifo(client, patch_open):
@@ -377,11 +384,11 @@ def test_lifo(client, patch_open):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
+    assert response.text == normalize_path('/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/x/thingtoo.zip')
+    assert response.text == normalize_path('/opt/somesite/x/thingtoo.zip')
 
 
 def test_lifo_negative(client, patch_open):
@@ -392,11 +399,11 @@ def test_lifo_negative(client, patch_open):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
+    assert response.text == normalize_path('/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath(
+    assert response.text == normalize_path(
         '/opt/somesite/downloads/archive/thingtoo.zip'
     )
 
@@ -456,14 +463,12 @@ def test_fallback_filename(
     asgi, uri, default, expected, content_type, downloadable, patch_open, monkeypatch
 ):
     def validate(path):
-        if os.path.normpath(default) not in path:
+        if normalize_path(default) not in path:
             raise IOError()
 
     patch_open(validate=validate)
 
-    monkeypatch.setattr(
-        'os.path.isfile', lambda file: os.path.normpath(default) in file
-    )
+    monkeypatch.setattr('os.path.isfile', lambda file: normalize_path(default) in file)
 
     sr = create_sr(
         asgi,
@@ -490,7 +495,7 @@ def test_fallback_filename(
         body = resp.stream.read()
 
     assert sr.match(req.path)
-    expected_content = os.path.normpath(os.path.join('/var/www/statics', expected))
+    expected_content = normalize_path(os.path.join('/var/www/statics', expected))
     assert body.decode() == expected_content
     assert resp.content_type in _MIME_ALTERNATIVE.get(content_type, (content_type,))
     assert resp.headers.get('accept-ranges') == 'bytes'
@@ -535,7 +540,7 @@ def test_e2e_fallback_filename(
             assert response.status == falcon.HTTP_404
         else:
             assert response.status == falcon.HTTP_200
-            assert response.text == os.path.normpath(directory + expected)
+            assert response.text == normalize_path(directory + expected)
             assert int(response.headers['Content-Length']) == len(response.text)
 
     test('/static', '/opt/somesite/static/', static_exp)
