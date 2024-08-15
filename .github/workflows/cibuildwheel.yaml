@@ -93,7 +93,7 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0
-        if: ${{ matrix.python == 'cp313' }}
+        if: ${{ matrix.platform.os == 'windows-latest' }}
         env:
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
@@ -102,7 +102,7 @@ jobs:
         # NOTE(vytas): Not using v4 yet because it does not support combining
         #   files from multiple jobs; see #478 on actions/upload-artifact.
         uses: actions/upload-artifact@v4
-        if: ${{ matrix.python == 'cp313' }}
+        if: ${{ matrix.python == 'windows-latest' }}
         with:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/*.whl
