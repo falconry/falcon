@@ -357,11 +357,11 @@ class Request(request.Request):
 
     @property
     def scheme(self) -> str:
-        """URL scheme used for the request. One of ``'http'``,
-        ``'https'``, ``'ws'``, or ``'wss'``. Defaults to ``'http'`` for
-        the ``http`` scope, or ``'ws'`` for the ``websocket`` scope, when
-        the ASGI server does not include the scheme in the connection
-        scope.
+        """URL scheme used for the request.
+
+        One of ``'http'``, ``'https'``, ``'ws'``, or ``'wss'``. Defaults to ``'http'``
+        for the ``http`` scope, or ``'ws'`` for the ``websocket`` scope, when
+        the ASGI server does not include the scheme in the connection scope.
 
         Note:
             If the request was proxied, the scheme may not
@@ -408,8 +408,9 @@ class Request(request.Request):
 
     @property
     def host(self) -> str:
-        """Host request header field, if present. If the Host
-        header is missing, this attribute resolves to the ASGI server's
+        """Host request header field, if present.
+
+        If the Host header is missing, this attribute resolves to the ASGI server's
         listening host name or IP address.
         """
         try:
@@ -479,7 +480,7 @@ class Request(request.Request):
             property with caution and validate all values before
             using them. Do not rely on the access route to authorize
             requests!
-        """
+        """  # noqa: D205
         if self._cached_access_route is None:
             # PERF(kgriffs): 'client' is optional according to the ASGI spec
             #   but it will probably be present, hence the try...except.
@@ -527,7 +528,7 @@ class Request(request.Request):
 
         This property's value is equivalent to the last element of the
         :py:attr:`~.access_route` property.
-        """
+        """  # noqa: D205
         route = self.access_route
         return route[-1]
 
@@ -694,7 +695,7 @@ class Request(request.Request):
             so unless you need all the headers in this format, you should
             instead use the ``get_header()`` method or one of the
             convenience attributes to get a value for a specific header.
-        """
+        """  # noqa: D205
         # NOTE(kgriffs: First time here will cache the dict so all we
         # have to do is clone it in the future.
         if self._cached_headers is None:
@@ -709,7 +710,7 @@ class Request(request.Request):
     def headers_lower(self) -> Mapping[str, str]:
         """Alias for :attr:`headers` provided to expose a uniform way to
         get lowercased headers for both WSGI and ASGI apps.
-        """
+        """  # noqa: D205
         return self.headers
 
     # ------------------------------------------------------------------------
@@ -868,7 +869,7 @@ class Request(request.Request):
 
     @property
     def env(self) -> NoReturn:  # type:ignore[override]
-        """The env property is not available in ASGI. Use :attr:`~.store` instead"""
+        """The env property is not available in ASGI. Use :attr:`~.store` instead."""
         raise AttributeError(
             'The env property is not available in ASGI. Use :attr:`~.store` instead'
         )

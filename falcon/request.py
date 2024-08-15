@@ -364,7 +364,7 @@ class Request:
         make a best effort to parse what it can.
 
         (See also: RFC 7239, Section 4)
-        """
+        """  # noqa: D205
         # PERF(kgriffs): We could DRY up this memoization pattern using
         # a decorator, but that would incur additional overhead without
         # resorting to some trickery to rewrite the body of the method
@@ -384,14 +384,14 @@ class Request:
     def client_accepts_json(self) -> bool:
         """``True`` if the Accept header indicates that the client is
         willing to receive JSON, otherwise ``False``.
-        """
+        """  # noqa: D205
         return self.client_accepts('application/json')
 
     @property
     def client_accepts_msgpack(self) -> bool:
         """``True`` if the Accept header indicates that the client is
         willing to receive MessagePack, otherwise ``False``.
-        """
+        """  # noqa: D205
         return self.client_accepts('application/x-msgpack') or self.client_accepts(
             'application/msgpack'
         )
@@ -400,7 +400,7 @@ class Request:
     def client_accepts_xml(self) -> bool:
         """``True`` if the Accept header indicates that the client is
         willing to receive XML, otherwise ``False``.
-        """
+        """  # noqa: D205
         return self.client_accepts('application/xml')
 
     @property
@@ -415,8 +415,9 @@ class Request:
 
     @property
     def content_length(self) -> Optional[int]:
-        """Value of the Content-Length header converted to an ``int``,
-        or ``None`` if the header is missing.
+        """Value of the Content-Length header converted to an ``int``.
+
+        Returns ``None`` if the header is missing.
         """
         try:
             value = self.env['CONTENT_LENGTH']
@@ -462,7 +463,7 @@ class Request:
         This is also safe::
 
             doc = json.load(req.bounded_stream)
-        """
+        """  # noqa: D205
         if self._bounded_stream is None:
             self._bounded_stream = self._get_wrapped_wsgi_input()
 
@@ -470,9 +471,9 @@ class Request:
 
     @property
     def date(self) -> Optional[datetime]:
-        """Value of the Date header, converted to a
-        ``datetime`` instance. The header value is assumed to
-        conform to RFC 1123.
+        """Value of the Date header, converted to a ``datetime`` instance.
+
+        The header value is assumed to conform to RFC 1123.
         """
         return self.get_header_as_datetime('Date')
 
@@ -487,7 +488,7 @@ class Request:
         the header.
 
         (See also: RFC 7232, Section 3.1)
-        """
+        """  # noqa: D205
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
@@ -511,7 +512,7 @@ class Request:
         the header.
 
         (See also: RFC 7232, Section 3.2)
-        """
+        """  # noqa: D205
         if self._cached_if_none_match is MISSING:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
             if header_value:
@@ -523,15 +524,17 @@ class Request:
 
     @property
     def if_modified_since(self) -> Optional[datetime]:
-        """Value of the If-Modified-Since header,
-        or ``None`` if the header is missing.
+        """Value of the If-Modified-Since header.
+
+        Returns ``None`` if the header is missing.
         """
         return self.get_header_as_datetime('If-Modified-Since')
 
     @property
     def if_unmodified_since(self) -> Optional[datetime]:
-        """Value of the If-Unmodified-Since header,
-        or ``None`` if the header is missing.
+        """Value of the If-Unmodified-Since header.
+
+        Returns ``None`` if the header is missing.
         """
         return self.get_header_as_datetime('If-Unmodified-Since')
 
@@ -549,7 +552,7 @@ class Request:
         Only continuous ranges are supported (e.g., "bytes=0-0,-1" would
         result in an HTTPBadRequest exception when the attribute is
         accessed).
-        """
+        """  # noqa: D205
         value = self.get_header('Range')
         if value is None:
             return None
@@ -594,8 +597,9 @@ class Request:
 
     @property
     def range_unit(self) -> Optional[str]:
-        """Unit of the range parsed from the value of the Range header,
-        or ``None`` if the header is missing.
+        """Unit of the range parsed from the value of the Range header.
+
+        Returns ``None`` if the header is missing.
         """
         value = self.get_header('Range')
         if value is None:
@@ -619,7 +623,7 @@ class Request:
         (In WSGI it corresponds to the "SCRIPT_NAME" environ variable defined
         by PEP-3333; in ASGI it Corresponds to the "root_path"ASGI HTTP
         scope field.)
-        """
+        """  # noqa: D205
         # PERF(kgriffs): try..except is faster than get() assuming that
         # we normally expect the key to exist. Even though PEP-3333
         # allows WSGI servers to omit the key when the value is an
@@ -651,8 +655,9 @@ class Request:
 
     @property
     def forwarded_scheme(self) -> str:
-        """Original URL scheme requested by the user agent, if the request
-        was proxied. Typical values are 'http' or 'https'.
+        """Original URL scheme requested by the user agent, if the request was proxied.
+
+        Typical values are 'http' or 'https'.
 
         The following request headers are checked, in order of
         preference, to determine the forwarded scheme:
@@ -709,10 +714,10 @@ class Request:
 
     @property
     def forwarded_uri(self) -> str:
-        """Original URI for proxied requests. Uses
-        :attr:`forwarded_scheme` and :attr:`forwarded_host` in
-        order to reconstruct the original URI requested by the user
-        agent.
+        """Original URI for proxied requests.
+
+        Uses :attr:`forwarded_scheme` and :attr:`forwarded_host` in order
+        to reconstruct the original URI requested by the user agent.
         """
         if self._cached_forwarded_uri is None:
             # PERF: For small numbers of items, '+' is faster
@@ -730,7 +735,7 @@ class Request:
     def relative_uri(self) -> str:
         """The path and query string portion of the
         request URI, omitting the scheme and host.
-        """
+        """  # noqa: D205
         if self._cached_relative_uri is None:
             if self.query_string:
                 self._cached_relative_uri = (
@@ -745,7 +750,7 @@ class Request:
     def prefix(self) -> str:
         """The prefix of the request URI, including scheme,
         host, and app :attr:`~.root_path` (if any).
-        """
+        """  # noqa: D205
         if self._cached_prefix is None:
             self._cached_prefix = self.scheme + '://' + self.netloc + self.root_path
 
@@ -753,10 +758,10 @@ class Request:
 
     @property
     def forwarded_prefix(self) -> str:
-        """The prefix of the original URI for
-        proxied requests. Uses :attr:`forwarded_scheme` and
-        :attr:`forwarded_host` in order to reconstruct the
-        original URI.
+        """The prefix of the original URI for proxied requests.
+
+        Uses :attr:`forwarded_scheme` and :attr:`forwarded_host` in order
+        to reconstruct the original URI.
         """
         if self._cached_forwarded_prefix is None:
             self._cached_forwarded_prefix = (
@@ -804,7 +809,7 @@ class Request:
             :attr:`host` is sufficient.
 
         (See also: RFC 7239, Section 4)
-        """
+        """  # noqa: D205
         # PERF(kgriffs): Since the Forwarded header is still relatively
         # new, we expect X-Forwarded-Host to be more common, so
         # try to avoid calling self.forwarded if we can, since it uses a
@@ -831,9 +836,9 @@ class Request:
 
     @property
     def subdomain(self) -> Optional[str]:
-        """Leftmost (i.e., most specific) subdomain from the
-        hostname. If only a single domain name is given, `subdomain`
-        will be ``None``.
+        """Leftmost (i.e., most specific) subdomain from the hostname.
+
+        If only a single domain name is given, `subdomain` will be ``None``.
 
         Note:
             If the hostname in the request is an IP address, the value
@@ -861,7 +866,7 @@ class Request:
             so unless you need all the headers in this format, you should
             instead use the ``get_header()`` method or one of the
             convenience attributes to get a value for a specific header.
-        """
+        """  # noqa: D205
         if self._cached_headers is None:
             headers = self._cached_headers = {}
 
@@ -889,8 +894,9 @@ class Request:
 
     @property
     def params(self) -> Mapping[str, Union[str, List[str]]]:
-        """The mapping of request query parameter names to their
-        values.  Where the parameter appears multiple times in the query
+        """The mapping of request query parameter names to their values.
+
+        Where the parameter appears multiple times in the query
         string, the value mapped to that parameter key will be a list of
         all the values in the order seen.
         """
@@ -898,10 +904,11 @@ class Request:
 
     @property
     def cookies(self) -> Mapping[str, str]:
-        """A dict of name/value cookie pairs. The returned object should be
-        treated as read-only to avoid unintended side-effects.
-        If a cookie appears more than once in the request, only the first
-        value encountered will be made available here.
+        """A dict of name/value cookie pairs.
+
+        The returned object should be treated as read-only to avoid unintended
+        side-effects. If a cookie appears more than once in the request, only
+        the first value encountered will be made available here.
 
         See also: :meth:`~falcon.Request.get_cookie_values` or
         :meth:`~falcon.asgi.Request.get_cookie_values`.
@@ -945,7 +952,7 @@ class Request:
             property with caution and validate all values before
             using them. Do not rely on the access route to authorize
             requests.
-        """
+        """  # noqa: D205
         if self._cached_access_route is None:
             # NOTE(kgriffs): Try different headers in order of
             # preference; if none are found, fall back to REMOTE_ADDR.
@@ -980,8 +987,7 @@ class Request:
 
     @property
     def remote_addr(self) -> str:
-        """IP address of the closest client or proxy to
-        the WSGI server.
+        """IP address of the closest client or proxy to the WSGI server.
 
         This property is determined by the value of ``REMOTE_ADDR``
         in the WSGI environment dict. Since this address is not
@@ -1002,11 +1008,12 @@ class Request:
 
     @property
     def port(self) -> int:
-        """Port used for the request. If the Host header is present
-        in the request, but does not specify a port, the default one for the
-        given schema is returned (80 for HTTP and 443 for HTTPS). If the
-        request does not include a Host header, the listening port for the
-        server is returned instead.
+        """Port used for the request.
+
+        If the Host header is present in the request, but does not specify a port,
+        the default one for the given schema is returned (80 for HTTP and 443
+        for HTTPS). If the request does not include a Host header, the listening
+        port for the server is returned instead.
         """
         try:
             host_header = self.env['HTTP_HOST']
@@ -1025,9 +1032,10 @@ class Request:
 
     @property
     def netloc(self) -> str:
-        """Returns the "host:port" portion of the request
-        URL. The port may be omitted if it is the default one for
-        the URL's schema (80 for HTTP and 443 for HTTPS).
+        """Returns the "host:port" portion of the request URL.
+
+        The port may be omitted if it is the default one for the URL's schema
+        (80 for HTTP and 443 for HTTPS).
         """
         env = self.env
         # NOTE(kgriffs): According to PEP-3333 we should first
