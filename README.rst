@@ -23,7 +23,7 @@ clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
-champ under CPython 3.7+ and PyPy 3.7+.
+champ under CPython 3.8+ and PyPy 3.8+.
 
 Quick Links
 -----------

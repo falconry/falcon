@@ -645,25 +645,9 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('')
 
-    @pytest.mark.parametrize(
-        'string,expected_ascii',
-        [
-            ('', True),
-            ('/', True),
-            ('/api', True),
-            ('/data/items/something?query=apples%20and%20oranges', True),
-            ('/food?item=ð\x9f\x8d\x94', False),
-            ('\x00\x00\x7f\x00\x00\x7f\x00', True),
-            ('\x00\x00\x7f\x00\x00\x80\x00', False),
-        ],
-    )
-    @pytest.mark.parametrize('method', ['isascii', '_isascii'])
-    def test_misc_isascii(self, string, expected_ascii, method):
-        isascii = getattr(misc, method)
-        if expected_ascii:
-            assert isascii(string)
-        else:
-            assert not isascii(string)
+    def test_misc_isascii(self):
+        with pytest.warns(DeprecationWarning):
+            assert misc.isascii('foobar')
 
 
 @pytest.mark.parametrize(
@@ -1427,9 +1411,6 @@ class TestDeprecatedArgs:
         assert 'a_function(...)' in str(recwarn[0].message)
 
 
-@pytest.mark.skipif(
-    falcon.PYTHON_VERSION < (3, 7), reason='module __getattr__ requires python 3.7'
-)
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):
         util.json
