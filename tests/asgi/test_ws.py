@@ -2,7 +2,6 @@ import asyncio
 from collections import deque
 import os
 
-import cbor2
 import pytest
 
 import falcon
@@ -15,15 +14,21 @@ from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 
 try:
-    import rapidjson  # type: ignore
+    import cbor2  # type: ignore
 except ImportError:
-    rapidjson = None  # type: ignore
+    cbor2 = None  # type: ignore
 
 
 try:
     import msgpack  # type: ignore
 except ImportError:
     msgpack = None  # type: ignore
+
+
+try:
+    import rapidjson  # type: ignore
+except ImportError:
+    rapidjson = None  # type: ignore
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -109,6 +114,7 @@ async def test_ws_not_accepted(path, conductor):
 
 
 @pytest.mark.asyncio
+@pytest.mark.slow
 async def test_echo():  # noqa: C901
     consumer_sleep = 0.01
     producer_loop = 10
@@ -407,6 +413,7 @@ async def test_client_disconnect_early(  # noqa: C901
 @pytest.mark.asyncio
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
     # TODO(kgriffs): Refactor to reduce McCabe score
 
@@ -471,6 +478,8 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
         )
 
     if custom_data:
+        if cbor2 is None:
+            pytest.skip('cbor2 is required for this test')
 
         class CBORHandler(media.BinaryBaseHandlerWS):
             def serialize(self, media: object) -> bytes:
@@ -1017,6 +1026,7 @@ def test_ws_base_not_implemented():
 
 
 @pytest.mark.asyncio
+@pytest.mark.slow
 async def test_ws_context_timeout(conductor):
     class Resource:
         async def on_websocket(self, req, ws):
@@ -1089,6 +1099,7 @@ async def test_ws_simulator_collect_edge_cases(conductor):
 
 
 @pytest.mark.asyncio
+@pytest.mark.slow
 async def test_ws_responder_never_ready(conductor, monkeypatch):
     async def noop_close(obj, code=None):
         pass

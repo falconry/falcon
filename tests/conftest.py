@@ -87,12 +87,14 @@ class _SuiteUtils:
 
     @staticmethod
     def load_module(filename, parent_dir=None, suffix=None):
-        root = FALCON_ROOT
-        root = root / parent_dir if parent_dir is not None else root
-        path = root / filename
+        if parent_dir:
+            filename = pathlib.Path(parent_dir) / filename
+        else:
+            filename = pathlib.Path(filename)
+        path = FALCON_ROOT / filename
         if suffix is not None:
             path = path.with_name(f'{path.stem}_{suffix}.py')
-        prefix = '.'.join(path.parent.parts)
+        prefix = '.'.join(filename.parent.parts)
         module_name = f'{prefix}.{path.stem}'
 
         spec = importlib.util.spec_from_file_location(module_name, path)

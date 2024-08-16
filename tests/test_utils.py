@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from datetime import datetime
 from datetime import timezone
 import functools
@@ -26,6 +24,11 @@ from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util import structures
 from falcon.util import uri
+
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None
 
 
 @pytest.fixture
@@ -1096,6 +1099,7 @@ class TestFalconTestingUtils:
             MEDIA_URLENCODED,
         ],
     )
+    @pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
     def test_simulate_content_type_extra_handler(self, asgi, content_type):
         class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):

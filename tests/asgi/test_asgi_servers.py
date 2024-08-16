@@ -9,12 +9,21 @@ import subprocess
 import sys
 import time
 
-import httpx
 import pytest
 import requests
 import requests.exceptions
-import websockets
-import websockets.exceptions
+
+try:
+    import httpx
+except ImportError:
+    httpx = None  # type: ignore
+
+try:
+    import websockets
+    import websockets.exceptions
+except ImportError:
+    websockets = None  # type: ignore
+
 
 from falcon import testing
 
@@ -166,6 +175,7 @@ class TestASGIServer:
             )
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(httpx is None, reason='httpx is required for this test')
     async def test_stream_chunked_request(self, server_base_url):
         """Regression test for https://github.com/falconry/falcon/issues/2024"""
 
@@ -183,6 +193,9 @@ class TestASGIServer:
             assert resp.json().get('drops') >= 1
 
 
+@pytest.mark.skipif(
+    websockets is None, reason='websockets is required for this test class'
+)
 class TestWebSocket:
     @pytest.mark.asyncio
     @pytest.mark.parametrize('explicit_close', [True, False])

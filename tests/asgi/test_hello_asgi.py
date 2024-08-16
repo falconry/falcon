@@ -3,12 +3,16 @@ import os
 import tempfile
 
 from _util import disable_asgi_non_coroutine_wrapping  # NOQA
-import aiofiles
 import pytest
 
 import falcon
 from falcon import testing
 import falcon.asgi
+
+try:
+    import aiofiles  # type: ignore
+except ImportError:
+    aiofiles = None  # type: ignore
 
 SIZE_1_KB = 1024
 
@@ -308,6 +312,7 @@ class TestHelloWorld:
         if assert_closed:
             assert resource.stream.close_called
 
+    @pytest.mark.skipif(aiofiles is None, reason='aiofiles is required for this test')
     def test_filelike_closing_aiofiles(self, client):
         resource = AIOFilesHelloResource()
         try:

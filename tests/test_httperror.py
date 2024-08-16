@@ -1,5 +1,3 @@
-# -*- coding: utf-8
-
 import datetime
 import http
 import json
@@ -8,11 +6,15 @@ import xml.etree.ElementTree as et  # noqa: I202
 
 from _util import create_app  # NOQA
 import pytest
-import yaml
 
 import falcon
 import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
+
+try:
+    import yaml  # type: ignore
+except ImportError:
+    yaml = None  # type: ignore
 
 
 @pytest.fixture
@@ -331,6 +333,7 @@ class TestHTTPError:
         assert response.headers['Vary'] == 'Accept'
         assert not response.content
 
+    @pytest.mark.skipif(yaml is None, reason='PyYAML is required for this test')
     def test_custom_error_serializer(self, client):
         headers = {
             'X-Error-Title': 'Storage service down',

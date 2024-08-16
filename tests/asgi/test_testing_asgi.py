@@ -9,6 +9,7 @@ from . import _asgi_test_app
 
 
 @pytest.mark.asyncio
+@pytest.mark.slow
 async def test_asgi_request_event_emitter_hang():
     # NOTE(kgriffs): This tests the ASGI server behavior that
     #   ASGIRequestEventEmitter simulates when emit() is called
