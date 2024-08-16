@@ -1,3 +1,4 @@
+# Build wheels using cibuildwheel (https://cibuildwheel.pypa.io/)
 name: Build wheels
 
 on:
@@ -68,12 +69,20 @@ jobs:
           - name: win_amd64
             os: windows-latest
         python:
-          - cp38
           - cp39
           - cp310
           - cp311
           - cp312
           - cp313
+        include:
+          - platform:
+              name: manylinux_x86_64
+              os: ubuntu-latest
+            python: cp38
+          - platform:
+              name: musllinux_x86_64
+              os: ubuntu-latest
+            python: cp38
 
     defaults:
       run:
@@ -109,8 +118,10 @@ jobs:
           path: wheelhouse/*.whl
 
   publish-wheels:
-    name: publish-wheels
-    needs: ["build-sdist", "build-wheels"]
+    name: publish
+    needs:
+      - build-sdist
+      - build-wheels
     runs-on: ubuntu-latest
 
     steps:
