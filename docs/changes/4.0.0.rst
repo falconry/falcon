@@ -32,17 +32,24 @@ Contributors to this Release
 Many thanks to all of our talented and stylish contributors for this release!
 
 - `aryaniyaps <https://github.com/aryaniyaps>`__
+- `bssyousefi <https://github.com/bssyousefi>`__
 - `CaselIT <https://github.com/CaselIT>`__
 - `cclauss <https://github.com/cclauss>`__
+- `copalco <https://github.com/copalco>`__
+- `derkweijers <https://github.com/derkweijers>`__
+- `e-io <https://github.com/e-io>`__
 - `euj1n0ng <https://github.com/euj1n0ng>`__
 - `jkapica <https://github.com/jkapica>`__
 - `jkklapp <https://github.com/jkklapp>`__
 - `john-g-g <https://github.com/john-g-g>`__
 - `kaichan1201 <https://github.com/kaichan1201>`__
+- `kentbull <https://github.com/kentbull>`__
 - `kgriffs <https://github.com/kgriffs>`__
+- `M-Mueller <https://github.com/M-Mueller>`__
 - `meetshah133 <https://github.com/meetshah133>`__
 - `mgorny <https://github.com/mgorny>`__
 - `mihaitodor <https://github.com/mihaitodor>`__
+- `MRLab12 <https://github.com/MRLab12>`__
 - `nfsec <https://github.com/nfsec>`__
 - `RioAtHome <https://github.com/RioAtHome>`__
 - `TigreModerata <https://github.com/TigreModerata>`__
