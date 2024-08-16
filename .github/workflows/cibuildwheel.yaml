@@ -9,11 +9,6 @@ on:
   # TODO(vytas): Also allow to release to Test PyPi manually.
   workflow_dispatch:
 
-  # TODO(vytas): Remove testing and only leave on release later.
-  pull_request:
-    branches:
-      - master
-
 jobs:
   build-sdist:
     name: sdist
@@ -149,4 +144,3 @@ jobs:
       #   if: github.event_name == 'release'
       #   with:
       #     password: ${{ secrets.PYPI_TOKEN }}
-      #     repository-url: https://test.pypi.org/legacy/
