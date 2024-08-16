@@ -3,7 +3,7 @@
     requires = [
         "setuptools>=47",
         "wheel>=0.34",
-        "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
+        "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
     ]
 
 [tool.mypy]
