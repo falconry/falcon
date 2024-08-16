@@ -1,5 +1,3 @@
-# -*- coding: utf-8
-
 import http
 
 from _util import create_app  # NOQA
