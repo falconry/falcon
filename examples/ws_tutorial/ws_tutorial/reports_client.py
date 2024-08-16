@@ -12,10 +12,12 @@ async def send_message():
 
     async with websockets.connect(uri) as websocket:
         # Send the authentication token
-        await websocket.send('very secure token!')
+        await websocket.send('very secure token')
 
         while True:
-            message = input('Name of the log: ')
+            message = input('Name of the log (q to exit): ')
+            if message.casefold() == 'q':
+                break
             await websocket.send(message)
             response = await websocket.recv()
             print(response)

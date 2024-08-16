@@ -8,7 +8,7 @@ from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
 from falcon.util import deprecated
 
-__all__ = [
+__all__ = (
     'async_to_sync',
     'create_task',
     'get_running_loop',
@@ -16,7 +16,7 @@ __all__ = [
     'sync_to_async',
     'wrap_sync_to_async',
     'wrap_sync_to_async_unsafe',
-]
+)
 
 Result = TypeVar('Result')
 
