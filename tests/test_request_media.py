@@ -9,6 +9,11 @@ from falcon import media
 from falcon import testing
 from falcon import util
 
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None
+
 
 def create_client(asgi, handlers=None, resource=None):
     if not resource:
@@ -98,6 +103,7 @@ def test_json(client, media_type):
         ('application/x-msgpack'),
     ],
 )
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 def test_msgpack(asgi, media_type):
     client = create_client(
         asgi,
@@ -150,6 +156,7 @@ def test_unknown_media_type(asgi, media_type):
 
 
 @pytest.mark.parametrize('media_type', ['application/json', 'application/msgpack'])
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 def test_empty_body(asgi, media_type):
     client = _create_client_invalid_media(
         asgi,
@@ -190,9 +197,8 @@ def test_invalid_json(asgi):
         assert str(client.resource.captured_error.value.__cause__) == str(e)
 
 
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 def test_invalid_msgpack(asgi):
-    import msgpack
-
     handlers = {'application/msgpack': media.MessagePackHandler()}
     client = _create_client_invalid_media(
         asgi, errors.HTTPBadRequest, handlers=handlers

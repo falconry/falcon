@@ -1,0 +1,141 @@
+# Build wheels using cibuildwheel (https://cibuildwheel.pypa.io/)
+name: Build wheels
+
+on:
+  # Run when a release has been created
+  release:
+    types: [created]
+
+  # NOTE(vytas): Also allow to release to Test PyPi manually.
+  workflow_dispatch:
+
+jobs:
+  build-sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist
+        run: |
+          pip install build
+          python -m build --sdist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+
+  build-wheels:
+    name: ${{ matrix.python }}-${{ matrix.platform.name }}
+    needs: build-sdist
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: manylinux_x86_64
+            os: ubuntu-latest
+          - name: musllinux_x86_64
+            os: ubuntu-latest
+          - name: manylinux_aarch64
+            os: ubuntu-latest
+            emulation: true
+          - name: musllinux_aarch64
+            os: ubuntu-latest
+            emulation: true
+          - name: manylinux_s390x
+            os: ubuntu-latest
+            emulation: true
+          - name: macosx_x86_64
+            os: macos-13
+          - name: macosx_arm64
+            os: macos-14
+          - name: win_amd64
+            os: windows-latest
+        python:
+          - cp39
+          - cp310
+          - cp311
+          - cp312
+          - cp313
+        include:
+          - platform:
+              name: manylinux_x86_64
+              os: ubuntu-latest
+            python: cp38
+          - platform:
+              name: musllinux_x86_64
+              os: ubuntu-latest
+            python: cp38
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        if: ${{ matrix.platform.emulation }}
+        with:
+          platforms: all
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.20.0
+        env:
+          CIBW_ARCHS_LINUX: all
+          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
+          path: wheelhouse/*.whl
+
+  publish-wheels:
+    name: publish
+    needs:
+      - build-sdist
+      - build-wheels
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+
+      - name: Check collected artifacts
+        # TODO(vytas): Run a script to perform version sanity checks instead.
+        run: ls -l dist/
+
+      - name: Publish artifacts to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+
+      # TODO(vytas): Enable this nuclear option once happy with other tests.
+      # - name: Publish artifacts to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   if: github.event_name == 'release'
+      #   with:
+      #     password: ${{ secrets.PYPI_TOKEN }}
