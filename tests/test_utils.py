@@ -1197,6 +1197,10 @@ class TestFalconTestingUtils:
             assert resource.captured_req_media is None
             assert resp.status_code == 415
 
+    def test_create_req_override_method_with_extras(self):
+        with pytest.raises(ValueError):
+            testing.create_req(method='GET', extras={'REQUEST_METHOD': 'PATCH'})
+
 
 class TestNoApiClass(testing.TestCase):
     def test_something(self):

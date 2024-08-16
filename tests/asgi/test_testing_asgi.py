@@ -1,4 +1,5 @@
 import time
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -148,6 +149,60 @@ def test_create_scope_default_ua_modify_global():
 def test_missing_header_is_none():
     req = testing.create_asgi_req()
     assert req.auth is None
+
+
+def test_create_asgi_req_prepares_args(monkeypatch):
+    kwargs = dict(
+        path='/test',
+        query_string='a=0',
+        params={},
+        params_csv=True,
+        content_type='json',
+        headers={},
+        body=b'',
+        json='',
+        extras={},
+    )
+
+    mock = MagicMock(side_effect=testing.helpers._prepare_sim_args)
+    monkeypatch.setattr(testing.helpers, '_prepare_sim_args', mock)
+
+    testing.create_asgi_req(**kwargs)
+    mock.assert_called_once_with(*kwargs.values())
+
+
+@pytest.mark.parametrize(
+    'body,content_length',
+    [
+        ('Øresund and Malmö', 19),
+        (b'Malm\xc3\xb6', 6),
+    ],
+)
+def test_create_asgi_req_sets_content_length(monkeypatch, body, content_length):
+    mock = MagicMock(side_effect=testing.helpers.create_scope)
+    monkeypatch.setattr(testing.helpers, 'create_scope', mock)
+    testing.create_asgi_req(body=body)
+
+    assert mock.call_count == 1
+    _, kwargs = mock.call_args
+    assert 'content_length' in kwargs
+    assert kwargs['content_length'] == content_length
+
+
+def test_create_asgi_req_override_method_with_extras():
+    with pytest.raises(ValueError):
+        testing.create_asgi_req(method='GET', extras={'method': 'PATCH'})
+
+
+def test_create_asgi_req_adds_extras_to_scope(monkeypatch):
+    mock = MagicMock()
+    monkeypatch.setattr(falcon.asgi, 'Request', mock)
+
+    testing.create_asgi_req(extras={'raw_path': 'test'})
+    assert mock.call_count == 1
+    (scope, _), _ = mock.call_args
+    assert 'raw_path' in scope
+    assert scope['raw_path'] == 'test'
 
 
 def test_immediate_disconnect():
