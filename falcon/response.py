@@ -14,9 +14,11 @@
 
 """Response class."""
 
+from __future__ import annotations
+
 import functools
 import mimetypes
-from typing import Optional
+from typing import Dict, Optional
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
@@ -1252,7 +1254,7 @@ class ResponseOptions:
     secure_cookies_by_default: bool
     default_media_type: Optional[str]
     media_handlers: Handlers
-    static_media_types: dict
+    static_media_types: Dict[str, str]
 
     __slots__ = (
         'secure_cookies_by_default',

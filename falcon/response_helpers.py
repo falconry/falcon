@@ -15,7 +15,6 @@
 """Utilities for the Response class."""
 
 from falcon.util import uri
-from falcon.util.misc import isascii
 from falcon.util.misc import secure_filename
 
 
@@ -91,7 +90,7 @@ def format_content_disposition(value, disposition_type='attachment'):
     # NOTE(vytas): RFC 6266, Appendix D.
     #   Include a "filename" parameter when US-ASCII ([US-ASCII]) is
     #   sufficiently expressive.
-    if isascii(value):
+    if value.isascii():
         return '%s; filename="%s"' % (disposition_type, value)
 
     # NOTE(vytas): RFC 6266, Appendix D.

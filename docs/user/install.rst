@@ -7,7 +7,7 @@ PyPy
 ----
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.7+ is supported as of PyPy v7.3.4.
+PyPy3.8+ is supported as of PyPy v7.3.7.
 
 .. code:: bash
 
@@ -23,7 +23,7 @@ CPython
 -------
 
 Falcon fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.7+.
+`CPython <https://www.python.org/downloads/>`__ 3.8+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
