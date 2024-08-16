@@ -177,5 +177,5 @@ testpaths = [
 
 [tool.cibuildwheel]
 build-frontend = "build"
-test-requires = "-rrequirements/cibwtest"
+test-requires = ["-r requirements/cibwtest"]
 test-command = "pytest {project}/tests"
