@@ -67,6 +67,7 @@ Chat = "https://gitter.im/falconry/user"
 
 [tool.setuptools]
 include-package-data = true
+license-files = ["LICENSE"]
 zip-safe = false
 
 [tool.setuptools.dynamic]
