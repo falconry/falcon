@@ -132,6 +132,7 @@ def status_msgs(*msgs):
 
 setup(
     long_description=load_description(),
+    long_description_content_type = 'text/x-rst',
     cmdclass=cmdclass,
     ext_modules=ext_modules,
 )
