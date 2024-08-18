@@ -1,12 +1,8 @@
-.. raw:: html
-
-    <a href="https://falconframework.org" target="_blank">
-    <img
-        src="https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg"
-        alt="Falcon web framework logo"
-        style="width:100%"
-    >
-    </a>
+.. image:: https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg
+   :align: center
+   :alt: Falcon logo
+   :target: https://falconframework.org/
+   :width: 100 %
 
 |Build Status| |Docs| |codecov.io|
 
