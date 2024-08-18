@@ -84,28 +84,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-.. raw:: html
-
-    <p>
-    <a href="https://www.govcert.lu/" target="_blank"><img src="https://falconframework.org/assets/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
-     </p>
-
-    <p>
-        <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/assets/rabota.jpg" height="30" alt="Examination RU" style="margin-right: 10px"></a>
-
-        <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/assets/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
-
-        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/algolia.svg" height="30" alt="Algolia"></a>
-
-        <a href="https://www.salesforce.com" target="_blank"><img src="https://falconframework.org/assets/salesforce.svg" height="30" alt="Salesforce"></a>
-    </p>
-
-    <p>
-        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/misaka.svg" height="30" alt="Misaka Network"></a>
-        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/likalo.png" height="30" alt="Likalo"></a>
-    </p>
-
-.. Patron list ends here (see the comment above this section).
+|Backer:GovCert|
 
 Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
 prioritized support.
@@ -1039,9 +1018,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
-    :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
+    :target: https://falcon.readthedocs.io/en/stable/?badge=stable
 .. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
-   :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
+    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
-   :target: http://codecov.io/gh/falconry/falcon
+    :target: http://codecov.io/gh/falconry/falcon
+.. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
+    :alt: CERT Gouvernemental Luxembourg
+    :height: 60px
+    :target: https://www.govcert.lu/
