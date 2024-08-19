@@ -1,8 +1,6 @@
 from contextlib import contextmanager
 import os
 
-import pytest
-
 import falcon
 import falcon.asgi
 import falcon.testing
