@@ -75,17 +75,6 @@ class _SuiteUtils:
             os.environ['FALCON_ASGI_WRAP_NON_COROUTINES'] = 'Y'
 
     @staticmethod
-    def as_params(*values, prefix=None):
-        if not prefix:
-            prefix = ''
-        # NOTE(caselit): each value must be a tuple/list even when using one
-        #   single argument
-        return [
-            pytest.param(*value, id=f'{prefix}_{i}' if prefix else f'{i}')
-            for i, value in enumerate(values, 1)
-        ]
-
-    @staticmethod
     def load_module(filename, parent_dir=None, suffix=None):
         if parent_dir:
             filename = pathlib.Path(parent_dir) / filename
