@@ -9,7 +9,7 @@ from falcon import status_codes
 
 class TestStatusCodes:
     @pytest.mark.skipif(
-        sys.version_info < (3, 13), reason='Outdated http statues definitions'
+        sys.version_info < (3, 13), reason='Outdated http statuses definitions'
     )
     def test_statuses_are_in_compliance_with_http_from_python313(self):
         for status in status_codes.__all__:

@@ -168,7 +168,7 @@ HTTP_742: Final[str] = '742 A kitten dies'
 HTTP_743: Final[str] = '743 I thought I knew regular expressions'
 HTTP_744: Final[str] = '744 Y U NO write integration tests?'
 HTTP_745: Final[str] = (
-    "745 I don't always test my code, but when I do" 'I do it in production'
+    "745 I don't always test my code, but when I do I do it in production"
 )
 HTTP_748: Final[str] = '748 Confounded by Ponies'
 HTTP_749: Final[str] = '749 Reserved for Chuck Norris'
