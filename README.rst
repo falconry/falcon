@@ -84,7 +84,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-|Backer:GovCert|
+|Backer:GovCert| |Backer:Sentry|
 
 Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
 prioritized support.
@@ -1028,3 +1028,7 @@ limitations under the License.
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px
     :target: https://www.govcert.lu/
+.. |Backer:Sentry| image:: https://falconframework.org/assets/sentry-dark.svg
+    :alt: Sentry
+    :height: 60px
+    :target: https://sentry.io
