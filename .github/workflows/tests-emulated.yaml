@@ -6,10 +6,6 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): Remove when review passes.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   test-emulated:
