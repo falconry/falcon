@@ -4,7 +4,6 @@ import json
 
 from _util import create_app  # NOQA
 from _util import create_resp  # NOQA
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
@@ -337,8 +336,8 @@ def test_parser_sync(body, doc):
         (None, None),
     ],
 )
-def test_parser_async(body, doc):
-    with disable_asgi_non_coroutine_wrapping():
+def test_parser_async(body, doc, util):
+    with util.disable_asgi_non_coroutine_wrapping():
 
         class WrappedRespondersBodyParserAsyncResource:
             @falcon.before(validate_param_async, 'limit', 100, is_async=True)

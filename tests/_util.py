@@ -1,6 +1,3 @@
-from contextlib import contextmanager
-import os
-
 import falcon
 import falcon.asgi
 import falcon.testing
@@ -21,7 +18,6 @@ __all__ = [
     'create_app',
     'create_req',
     'create_resp',
-    'to_coroutine',
 ]
 
 
@@ -46,22 +42,3 @@ def create_resp(asgi):
         return falcon.asgi.Response()
 
     return falcon.Response()
-
-
-def to_coroutine(callable):
-    async def wrapper(*args, **kwargs):
-        return callable(*args, **kwargs)
-
-    return wrapper
-
-
-@contextmanager
-def disable_asgi_non_coroutine_wrapping():
-    should_wrap = 'FALCON_ASGI_WRAP_NON_COROUTINES' in os.environ
-    if should_wrap:
-        del os.environ['FALCON_ASGI_WRAP_NON_COROUTINES']
-
-    yield
-
-    if should_wrap:
-        os.environ['FALCON_ASGI_WRAP_NON_COROUTINES'] = 'Y'

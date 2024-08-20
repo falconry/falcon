@@ -9,7 +9,6 @@ from urllib.parse import quote
 from urllib.parse import unquote_plus
 
 from _util import create_app  # NOQA
-from _util import to_coroutine  # NOQA
 import pytest
 
 import falcon
@@ -660,7 +659,7 @@ class TestFalconUtils:
         falcon.HTTP_METHODS * 2,
     ),
 )
-def test_simulate_request_protocol(asgi, protocol, method):
+def test_simulate_request_protocol(asgi, protocol, method, util):
     sink_called = [False]
 
     def sink(req, resp):
@@ -668,9 +667,9 @@ def test_simulate_request_protocol(asgi, protocol, method):
         assert req.protocol == protocol
 
     if asgi:
-        sink = to_coroutine(sink)
+        sink = util.to_coroutine(sink)
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_sink(sink, '/test')
 
     client = testing.TestClient(app)
@@ -696,16 +695,16 @@ def test_simulate_request_protocol(asgi, protocol, method):
         testing.simulate_delete,
     ],
 )
-def test_simulate_free_functions(asgi, simulate):
+def test_simulate_free_functions(asgi, simulate, util):
     sink_called = [False]
 
     def sink(req, resp):
         sink_called[0] = True
 
     if asgi:
-        sink = to_coroutine(sink)
+        sink = util.to_coroutine(sink)
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_sink(sink, '/test')
 
     simulate(app, '/test')
