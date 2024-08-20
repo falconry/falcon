@@ -22,12 +22,11 @@ from typing import (
     Dict,
     List,
     Pattern,
+    Protocol,
     Tuple,
     TYPE_CHECKING,
     Union,
 )
-
-from falcon._typing_extensions import Protocol
 
 if TYPE_CHECKING:
     import falcon as wsgi

@@ -27,13 +27,13 @@ from typing import (
     cast,
     Dict,
     List,
+    Protocol,
     Tuple,
     TYPE_CHECKING,
     TypeVar,
     Union,
 )
 
-from falcon._typing_extensions import Protocol
 from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
