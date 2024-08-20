@@ -1,6 +1,5 @@
 from functools import wraps
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -59,8 +58,8 @@ def resource_get_with_faulty_put():
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     app.add_route('/stonewall', Stonewall())
 
