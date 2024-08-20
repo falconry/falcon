@@ -1,3 +1,11 @@
-The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError` was
-removed, along with the ``NoRepresentation`` and ``OptionalRepresentation``
-classes.
+A number of previously deprecated methods, attributes and classes have now been
+removed:
+
+* A deprecated utility function, ``falcon.get_http_status()``, was removed.
+  Please use :meth:`falcon.code_to_http_status` instead.
+* The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError`
+  was removed, along with the ``NoRepresentation`` and
+  ``OptionalRepresentation`` classes.
+
+We decided, on the other hand, to keep the deprecated :class:`falcon.API` alias
+until Falcon 5.0.

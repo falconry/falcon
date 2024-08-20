@@ -34,7 +34,6 @@ from falcon.util.misc import code_to_http_status
 from falcon.util.misc import dt_to_http
 from falcon.util.misc import get_argnames
 from falcon.util.misc import get_bound_method
-from falcon.util.misc import get_http_status
 from falcon.util.misc import http_date_to_dt
 from falcon.util.misc import http_now
 from falcon.util.misc import http_status_to_code
