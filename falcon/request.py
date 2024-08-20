@@ -1285,9 +1285,6 @@ class Request:
         http_int = self.get_header(header, required=required)
         try:
             return int(http_int) if http_int is not None else None
-        except TypeError:
-            # When the header does not exist and isn't required
-            return None
         except ValueError:
             msg = 'The value of the header must be an integer.'
             raise errors.HTTPInvalidHeader(msg, header)
@@ -1334,9 +1331,6 @@ class Request:
                 return util.http_date_to_dt(http_date, obs_date=obs_date)
             else:
                 return None
-        except TypeError:
-            # When the header does not exist and isn't required
-            return None
         except ValueError:
             msg = 'It must be formatted according to RFC 7231, Section 7.1.1.1'
             raise errors.HTTPInvalidHeader(msg, header)
