@@ -3,7 +3,7 @@
     requires = [
         "setuptools>=47",
         "wheel>=0.34",
-        "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
+        "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
     ]
 
 [tool.mypy]
@@ -177,6 +177,14 @@ filterwarnings = [
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
     "ignore:This process \\(.+\\) is multi-threaded",
 ]
+markers = [
+    "slow: mark Falcon tests as slower (potentially taking more than ~500ms).",
+]
 testpaths = [
     "tests"
 ]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+test-requires = ["-r requirements/cibwtest"]
+test-command = "pytest {project}/tests"

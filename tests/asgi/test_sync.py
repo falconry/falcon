@@ -8,6 +8,7 @@ from falcon.asgi import App
 import falcon.util
 
 
+@pytest.mark.slow
 def test_sync_helpers():
     safely_values = []
     unsafely_values = []

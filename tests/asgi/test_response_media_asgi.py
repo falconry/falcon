@@ -9,6 +9,11 @@ from falcon import testing
 import falcon.asgi
 from falcon.util.deprecation import DeprecatedWarning
 
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None  # type: ignore
+
 
 def create_client(resource, handlers=None):
     app = falcon.asgi.App()
@@ -89,6 +94,7 @@ def test_non_ascii_json_serialization(document):
         ('application/x-msgpack'),
     ],
 )
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 def test_msgpack(media_type):
     class TestResource:
         async def on_get(self, req, resp):

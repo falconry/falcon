@@ -212,6 +212,7 @@ async def test_read(reader1, sizes, expected):
 
 
 @pytest.mark.parametrize('start_size', [1, 16777216])
+@pytest.mark.slow
 @falcon.runs_sync
 async def test_varying_read_size(reader2, start_size):
     size = start_size
@@ -318,6 +319,7 @@ async def test_invalid_delimiter_length(reader1):
         (13372477, 51637898),
     ],
 )
+@pytest.mark.slow
 @falcon.runs_sync
 async def test_irregular_large_read_until(reader2, size1, size2):
     delimiter = b'--boundary1234567890--'
@@ -376,6 +378,7 @@ async def test_small_reads(reader3):
     assert last.endswith(b'4')
 
 
+@pytest.mark.slow
 @falcon.runs_sync
 async def test_small_reads_with_delimiter(reader3):
     ops = 0

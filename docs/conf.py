@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Falcon documentation build configuration file, created by
 # sphinx-quickstart on Wed Mar 12 14:14:02 2014.
 #

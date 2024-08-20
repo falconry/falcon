@@ -406,21 +406,19 @@ def custom_client(asgi):
         multipart_handler = media.MultipartFormHandler()
         for key, value in options.items():
             setattr(multipart_handler.parse_options, key, value)
-        req_handlers = media.Handlers(
-            {
-                falcon.MEDIA_JSON: media.JSONHandler(),
-                falcon.MEDIA_MULTIPART: multipart_handler,
-            }
-        )
+        req_handlers = {
+            falcon.MEDIA_JSON: media.JSONHandler(),
+            falcon.MEDIA_MULTIPART: multipart_handler,
+        }
+        resp_handlers = {
+            falcon.MEDIA_JSON: media.JSONHandler(),
+        }
+        if msgpack:
+            resp_handlers[falcon.MEDIA_MSGPACK] = media.MessagePackHandler()
 
         app = create_app(asgi)
-        app.req_options.media_handlers = req_handlers
-        app.resp_options.media_handlers = media.Handlers(
-            {
-                falcon.MEDIA_JSON: media.JSONHandler(),
-                falcon.MEDIA_MSGPACK: media.MessagePackHandler(),
-            }
-        )
+        app.req_options.media_handlers = media.Handlers(req_handlers)
+        app.resp_options.media_handlers = media.Handlers(resp_handlers)
 
         resource = AsyncMultipartAnalyzer() if asgi else MultipartAnalyzer()
         app.add_route('/submit', resource)
