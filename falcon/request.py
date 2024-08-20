@@ -1211,8 +1211,8 @@ class Request:
             HttpInvalidHeader: The header contained a malformed/invalid value.
         """
 
+        http_int = self.get_header(header, required=required)
         try:
-            http_int = self.get_header(header, required=required)
             return int(http_int)
         except TypeError:
             # When the header does not exist and isn't required
@@ -1245,8 +1245,8 @@ class Request:
             HttpInvalidHeader: The header contained a malformed/invalid value.
         """
 
+        http_date = self.get_header(header, required=required)
         try:
-            http_date = self.get_header(header, required=required)
             return util.http_date_to_dt(http_date, obs_date=obs_date)
         except TypeError:
             # When the header does not exist and isn't required
