@@ -564,6 +564,6 @@ def unquote_string(quoted: str) -> str:
 
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
-if _cy_uri is not None:
+if _cy_uri is not None:  # pragma: nocover
     decode = _cy_uri.decode  # NOQA
     parse_query_string = _cy_uri.parse_query_string  # NOQA
