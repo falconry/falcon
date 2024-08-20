@@ -22,6 +22,7 @@ from falcon import testing
 )
 @pytest.mark.parametrize('extra_body', [True, False])
 @pytest.mark.parametrize('set_content_length', [True, False])
+@pytest.mark.slow
 def test_read_all(body, extra_body, set_content_length):
     if extra_body and not set_content_length:
         pytest.skip(

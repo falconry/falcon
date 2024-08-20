@@ -44,6 +44,17 @@ ErrorHandler = Callable[['Request', 'Response', BaseException, dict], Any]
 # Error serializers
 ErrorSerializer = Callable[['Request', 'Response', BaseException], Any]
 
+JSONSerializable = Union[
+    Dict[str, 'JSONSerializable'],
+    List['JSONSerializable'],
+    Tuple['JSONSerializable', ...],
+    bool,
+    float,
+    int,
+    str,
+    None,
+]
+
 # Sinks
 SinkPrefix = Union[str, Pattern]
 

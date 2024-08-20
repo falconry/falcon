@@ -9,6 +9,7 @@ from falcon import testing
 from falcon.asgi import App
 
 
+@pytest.mark.slow
 def test_multiple():
     class SomeResource:
         def __init__(self):

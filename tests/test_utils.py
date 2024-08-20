@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from datetime import datetime
 from datetime import timezone
 import functools
@@ -26,6 +24,11 @@ from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util import structures
 from falcon.util import uri
+
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None
 
 
 @pytest.fixture
@@ -645,25 +648,9 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('')
 
-    @pytest.mark.parametrize(
-        'string,expected_ascii',
-        [
-            ('', True),
-            ('/', True),
-            ('/api', True),
-            ('/data/items/something?query=apples%20and%20oranges', True),
-            ('/food?item=ð\x9f\x8d\x94', False),
-            ('\x00\x00\x7f\x00\x00\x7f\x00', True),
-            ('\x00\x00\x7f\x00\x00\x80\x00', False),
-        ],
-    )
-    @pytest.mark.parametrize('method', ['isascii', '_isascii'])
-    def test_misc_isascii(self, string, expected_ascii, method):
-        isascii = getattr(misc, method)
-        if expected_ascii:
-            assert isascii(string)
-        else:
-            assert not isascii(string)
+    def test_misc_isascii(self):
+        with pytest.warns(deprecation.DeprecatedWarning):
+            assert misc.isascii('foobar')
 
 
 @pytest.mark.parametrize(
@@ -1112,6 +1099,7 @@ class TestFalconTestingUtils:
             MEDIA_URLENCODED,
         ],
     )
+    @pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
     def test_simulate_content_type_extra_handler(self, asgi, content_type):
         class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):
@@ -1427,9 +1415,6 @@ class TestDeprecatedArgs:
         assert 'a_function(...)' in str(recwarn[0].message)
 
 
-@pytest.mark.skipif(
-    falcon.PYTHON_VERSION < (3, 7), reason='module __getattr__ requires python 3.7'
-)
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):
         util.json

@@ -15,13 +15,12 @@ Changes to Supported Platforms
 - CPython 3.11 is now fully supported. (`#2072 <https://github.com/falconry/falcon/issues/2072>`__)
 - CPython 3.12 is now fully supported. (`#2196 <https://github.com/falconry/falcon/issues/2196>`__)
 - CPython 3.13 is now fully supported. (`#2258 <https://github.com/falconry/falcon/issues/2258>`__)
-- End-of-life Python 3.5 & 3.6 are no longer supported. (`#2074 <https://github.com/falconry/falcon/pull/2074>`__)
-- End-of-life Python 3.7 and (soon end-of-life) 3.8 are no longer actively
-  supported, but the framework should still continue to install from source and
-  function.
+- End-of-life Python 3.5, 3.6 & 3.7 are no longer supported. (`#2074 <https://github.com/falconry/falcon/pull/2074>`__, `#2273 <https://github.com/falconry/falcon/pull/2273>`__)
+- Soon end-of-life Python 3.8 is no longer actively supported, but
+  the framework should still continue to install from source and function.
 - The Falcon 4.x series is guaranteed to support CPython 3.10 and
   PyPy3.10 (v7.3.16).
-  This means that we may drop the support for Python 3.7-3.9 altogether in a
+  This means that we may drop the support for Python 3.8 & 3.9 altogether in a
   later 4.x release, especially if we are faced with incompatible ecosystem
   changes in typing, Cython, etc.
 
@@ -33,17 +32,24 @@ Contributors to this Release
 Many thanks to all of our talented and stylish contributors for this release!
 
 - `aryaniyaps <https://github.com/aryaniyaps>`__
+- `bssyousefi <https://github.com/bssyousefi>`__
 - `CaselIT <https://github.com/CaselIT>`__
 - `cclauss <https://github.com/cclauss>`__
+- `copalco <https://github.com/copalco>`__
+- `derkweijers <https://github.com/derkweijers>`__
+- `e-io <https://github.com/e-io>`__
 - `euj1n0ng <https://github.com/euj1n0ng>`__
 - `jkapica <https://github.com/jkapica>`__
 - `jkklapp <https://github.com/jkklapp>`__
 - `john-g-g <https://github.com/john-g-g>`__
 - `kaichan1201 <https://github.com/kaichan1201>`__
+- `kentbull <https://github.com/kentbull>`__
 - `kgriffs <https://github.com/kgriffs>`__
+- `M-Mueller <https://github.com/M-Mueller>`__
 - `meetshah133 <https://github.com/meetshah133>`__
 - `mgorny <https://github.com/mgorny>`__
 - `mihaitodor <https://github.com/mihaitodor>`__
+- `MRLab12 <https://github.com/MRLab12>`__
 - `nfsec <https://github.com/nfsec>`__
 - `RioAtHome <https://github.com/RioAtHome>`__
 - `TigreModerata <https://github.com/TigreModerata>`__
