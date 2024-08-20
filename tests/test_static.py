@@ -4,7 +4,6 @@ import os
 import pathlib
 import posixpath
 
-import _util  # NOQA
 import pytest
 
 import falcon
@@ -30,11 +29,11 @@ def normalize_path(path):
 
 
 @pytest.fixture()
-def client(asgi, monkeypatch):
+def client(asgi, util, monkeypatch):
     def add_static_route_normalized(obj, prefix, directory, **kwargs):
         add_static_route_orig(obj, prefix, normalize_path(directory), **kwargs)
 
-    app = _util.create_app(asgi=asgi)
+    app = util.create_app(asgi=asgi)
 
     app_cls = type(app)
     add_static_route_orig = app_cls.add_static_route
@@ -135,14 +134,14 @@ def patch_open(monkeypatch):
         '/static/\ufffdsomething',
     ],
 )
-def test_bad_path(asgi, uri, patch_open):
+def test_bad_path(asgi, util, uri, patch_open):
     patch_open(b'')
 
     sr = create_sr(asgi, '/static', '/var/www/statics')
 
-    req = _util.create_req(asgi, host='test.com', path=uri, root_path='statics')
+    req = util.create_req(asgi, host='test.com', path=uri, root_path='statics')
 
-    resp = _util.create_resp(asgi)
+    resp = util.create_resp(asgi)
 
     with pytest.raises(falcon.HTTPNotFound):
         if asgi:
@@ -228,7 +227,7 @@ _MIME_ALTERNATIVE = {
         ),
     ],
 )
-def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, patch_open):
+def test_good_path(asgi, util, uri_prefix, uri_path, expected_path, mtype, patch_open):
     patch_open()
 
     sr = create_sr(asgi, uri_prefix, '/var/www/statics')
@@ -236,9 +235,9 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, patch_open)
     req_path = uri_prefix[:-1] if uri_prefix.endswith('/') else uri_prefix
     req_path += uri_path
 
-    req = _util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
+    req = util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
 
-    resp = _util.create_resp(asgi)
+    resp = util.create_resp(asgi)
 
     if asgi:
 
@@ -362,15 +361,15 @@ def test_bad_range_requests(client, range_header, exp_status, patch_open):
         assert response.headers.get('Content-Range') == 'bytes */16'
 
 
-def test_pathlib_path(asgi, patch_open):
+def test_pathlib_path(asgi, util, patch_open):
     patch_open()
 
     sr = create_sr(asgi, '/static/', pathlib.Path('/var/www/statics'))
     req_path = '/static/css/test.css'
 
-    req = _util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
+    req = util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
 
-    resp = _util.create_resp(asgi)
+    resp = util.create_resp(asgi)
 
     if asgi:
 
@@ -470,7 +469,15 @@ def test_downloadable_not_found(client):
 )
 @pytest.mark.parametrize('downloadable', [True, False])
 def test_fallback_filename(
-    asgi, uri, default, expected, content_type, downloadable, patch_open, monkeypatch
+    asgi,
+    util,
+    uri,
+    default,
+    expected,
+    content_type,
+    downloadable,
+    patch_open,
+    monkeypatch,
 ):
     def validate(path):
         if normalize_path(default) not in path:
@@ -490,8 +497,8 @@ def test_fallback_filename(
 
     req_path = '/static/' + uri
 
-    req = _util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
-    resp = _util.create_resp(asgi)
+    req = util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
+    resp = util.create_resp(asgi)
 
     if asgi:
 

@@ -1,8 +1,6 @@
 import functools
 import json
 
-from _util import create_app  # NOQA
-from _util import create_resp  # NOQA
 import pytest
 
 import falcon
@@ -19,8 +17,8 @@ def wrapped_resource_aware():
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     resource = WrappedRespondersResourceAsync() if asgi else WrappedRespondersResource()
     app.add_route('/', resource)
@@ -259,8 +257,8 @@ def test_resource_with_uri_fields(client, resource):
     assert resource.fields == ('82074', '58927')
 
 
-def test_resource_with_uri_fields_async():
-    app = create_app(asgi=True)
+def test_resource_with_uri_fields_async(util):
+    app = util.create_app(asgi=True)
 
     resource = ClassResourceWithURIFieldsAsync()
     app.add_route('/{field1}/{field2}', resource)
@@ -275,7 +273,7 @@ def test_resource_with_uri_fields_async():
         resource = ClassResourceWithURIFieldsAsync()
 
         req = testing.create_asgi_req()
-        resp = create_resp(True)
+        resp = util.create_resp(True)
 
         await resource.on_get(req, resp, '1', '2')
         assert resource.fields == ('1', '2')

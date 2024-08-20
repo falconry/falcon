@@ -2,7 +2,6 @@ import importlib
 import os
 import wsgiref.validate
 
-from _util import create_app  # NOQA
 from _util import has_cython  # NOQA
 import pytest
 
@@ -33,10 +32,10 @@ def cleanup_constants():
 
 
 @pytest.fixture
-def custom_http_client(asgi, request, cleanup_constants, resource_things):
+def custom_http_client(asgi, util, request, cleanup_constants, resource_things):
     falcon.constants.COMBINED_METHODS += FALCON_CUSTOM_HTTP_METHODS
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_route('/things', resource_things)
     return testing.TestClient(app)
 

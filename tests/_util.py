@@ -17,7 +17,6 @@ except ImportError:
 __all__ = [
     'create_app',
     'create_req',
-    'create_resp',
 ]
 
 
@@ -35,10 +34,3 @@ def create_req(asgi, options=None, **environ_or_scope_kwargs):
         req = falcon.testing.create_req(options=options, **environ_or_scope_kwargs)
 
     return req
-
-
-def create_resp(asgi):
-    if asgi:
-        return falcon.asgi.Response()
-
-    return falcon.Response()

@@ -7,6 +7,7 @@ import pytest
 
 import falcon
 import falcon.asgi
+import falcon.testing
 
 HERE = pathlib.Path(__file__).resolve().parent
 FALCON_ROOT = HERE.parent
