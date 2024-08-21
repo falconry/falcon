@@ -55,7 +55,6 @@ def test_app_missing():
     assert req.app == ''
 
 
-@pytest.mark.parametrize('asgi', [True, False])
 class TestRequestAttributes:
     def setup_method(self, method):
         asgi = self._item.callspec.getparam('asgi')
