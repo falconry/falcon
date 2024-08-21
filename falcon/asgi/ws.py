@@ -506,26 +506,34 @@ class WebSocketOptions:
 
     An instance of this class is exposed via :attr:`falcon.asgi.App.ws_options`
     for configuring certain :py:class:`~.WebSocket` behaviors.
+    """
 
-    Attributes:
-        error_close_code (int): The WebSocket close code to use when an
-            unhandled error is raised while handling a WebSocket connection
-            (default ``1011``). For a list of valid close codes and ranges,
-            see also: https://tools.ietf.org/html/rfc6455#section-7.4
-        media_handlers (dict): A dict-like object for configuring media handlers
-            according to the WebSocket payload type (TEXT vs. BINARY) of a
-            given message. See also: :ref:`ws_media_handlers`.
-        max_receive_queue (int): The maximum number of incoming messages to
-            enqueue if the reception rate exceeds the consumption rate of the
-            application (default ``4``). When this limit is reached, the
-            framework will wait to accept new messages from the ASGI server
-            until the application is able to catch up.
+    error_close_code: int
+    """The WebSocket close code to use when an unhandled error is raised while
+    handling a WebSocket connection (default ``1011``).
 
-            This limit applies to Falcon's incoming message queue, and should
-            generally be kept small since the ASGI server maintains its
-            own receive queue. Falcon's queue can be disabled altogether by
-            setting `max_receive_queue` to ``0`` (see also: :ref:`ws_lost_connection`).
+    For a list of valid close codes and ranges, see also:
+    https://tools.ietf.org/html/rfc6455#section-7.4.
+    """
+    media_handlers: Dict[
+        WebSocketPayloadType, Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS]
+    ]
+    """A dict-like object for configuring media handlers according to the WebSocket
+    payload type (TEXT vs. BINARY) of a given message.
 
+    See also: :ref:`ws_media_handlers`.
+    """
+    max_receive_queue: int
+    """The maximum number of incoming messages to enqueue if the reception rate
+    exceeds the consumption rate of the application (default ``4``).
+
+    When this limit is reached, the framework will wait to accept new messages
+    from the ASGI server until the application is able to catch up.
+
+    This limit applies to Falcon's incoming message queue, and should
+    generally be kept small since the ASGI server maintains its
+    own receive queue. Falcon's queue can be disabled altogether by
+    setting `max_receive_queue` to ``0`` (see also: :ref:`ws_lost_connection`).
     """
 
     __slots__ = ['error_close_code', 'max_receive_queue', 'media_handlers']
@@ -545,10 +553,7 @@ class WebSocketOptions:
                 'default WebSocket media handler for BINARY payloads', 'msgpack'
             )
 
-        self.media_handlers: Dict[
-            WebSocketPayloadType,
-            Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS],
-        ] = {
+        self.media_handlers = {
             WebSocketPayloadType.TEXT: media.JSONHandlerWS(),
             WebSocketPayloadType.BINARY: bin_handler,
         }
@@ -557,7 +562,7 @@ class WebSocketOptions:
         #
         #   See also: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
         #
-        self.error_close_code: int = WSCloseCode.SERVER_ERROR
+        self.error_close_code = WSCloseCode.SERVER_ERROR
 
         # NOTE(kgriffs): The websockets library itself will buffer, so we keep
         #   this value fairly small by default to mitigate buffer bloat. But in
@@ -571,7 +576,7 @@ class WebSocketOptions:
         #       * https://websockets.readthedocs.io/en/stable/design.html#buffers
         #       * https://websockets.readthedocs.io/en/stable/deployment.html#buffers
         #
-        self.max_receive_queue: int = 4
+        self.max_receive_queue = 4
 
 
 class _BufferedReceiver:
