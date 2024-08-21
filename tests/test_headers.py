@@ -1,7 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -13,8 +12,8 @@ SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     return testing.TestClient(app)
 
 
@@ -501,8 +500,8 @@ class TestHeaders:
             ('text/plain', 'Hello ISO-8859-1!'),
         ],
     )
-    def test_override_default_media_type(self, asgi, client, content_type, body):
-        client.app = create_app(asgi=asgi, media_type=content_type)
+    def test_override_default_media_type(self, asgi, util, client, content_type, body):
+        client.app = util.create_app(asgi=asgi, media_type=content_type)
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
@@ -510,10 +509,10 @@ class TestHeaders:
         assert result.headers['Content-Type'] == content_type
 
     @pytest.mark.parametrize('asgi', [True, False])
-    def test_override_default_media_type_missing_encoding(self, asgi, client):
+    def test_override_default_media_type_missing_encoding(self, asgi, util, client):
         body = '{"msg": "Hello Unicode! \U0001f638"}'
 
-        client.app = create_app(asgi=asgi, media_type='application/json')
+        client.app = util.create_app(asgi=asgi, media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 

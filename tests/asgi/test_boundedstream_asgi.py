@@ -166,7 +166,6 @@ def test_filelike():
     falcon.async_to_sync(test_iteration)
 
 
-@falcon.runs_sync
 async def test_iterate_streaming_request():
     events = iter(
         (
@@ -274,7 +273,6 @@ def test_exhaust_with_disconnect():
     falcon.async_to_sync(t)
 
 
-@falcon.runs_sync
 async def test_exhaust():
     emitter = testing.ASGIRequestEventEmitter(b'123456798' * 1024)
     stream = asgi.BoundedStream(emitter)

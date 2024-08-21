@@ -3,7 +3,6 @@ import itertools
 import os
 import random
 
-from _util import create_app  # NOQA: I100
 import pytest
 
 import falcon
@@ -401,7 +400,7 @@ class AsyncMultipartAnalyzer:
 
 
 @pytest.fixture
-def custom_client(asgi):
+def custom_client(asgi, util):
     def _factory(options):
         multipart_handler = media.MultipartFormHandler()
         for key, value in options.items():
@@ -416,7 +415,7 @@ def custom_client(asgi):
         if msgpack:
             resp_handlers[falcon.MEDIA_MSGPACK] = media.MessagePackHandler()
 
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.req_options.media_handlers = media.Handlers(req_handlers)
         app.resp_options.media_handlers = media.Handlers(resp_handlers)
 

@@ -4,7 +4,6 @@ import time
 
 import pytest
 
-from falcon import runs_sync
 from falcon import testing
 from falcon.asgi import App
 
@@ -138,7 +137,6 @@ def callback_app(simple_resource):
         ('GET', '/stream', 'One\nTwo\nThree\n'),
     ],
 )
-@runs_sync
 async def test_callback(callback_app, simple_resource, method, uri, expected):
     async with testing.ASGIConductor(callback_app) as conductor:
         resp = await conductor.simulate_request(method, uri)
