@@ -1226,35 +1226,34 @@ class ResponseOptions:
     An instance of this class is exposed via :attr:`falcon.App.resp_options`
     and :attr:`falcon.asgi.App.resp_options` for configuring certain
     :py:class:`~.Response` behaviors.
-
-    Attributes:
-        secure_cookies_by_default (bool): Set to ``False`` in development
-            environments to make the `secure` attribute for all cookies
-            default to ``False``. This can make testing easier by
-            not requiring HTTPS. Note, however, that this setting can
-            be overridden via `set_cookie()`'s `secure` kwarg.
-
-        default_media_type (str): The default Internet media type (RFC 2046) to
-            use when rendering a response, when the Content-Type header
-            is not set explicitly. This value is normally set to the
-            media type provided when a :class:`falcon.App` is initialized;
-            however, if created independently, this will default to
-            :attr:`falcon.DEFAULT_MEDIA_TYPE`..
-
-        media_handlers (Handlers): A dict-like object for configuring the
-            media-types to handle. By default, handlers are provided for the
-            ``application/json``, ``application/x-www-form-urlencoded`` and
-            ``multipart/form-data`` media types.
-
-        static_media_types (dict): A mapping of dot-prefixed file extensions to
-            Internet media types (RFC 2046). Defaults to ``mimetypes.types_map``
-            after calling ``mimetypes.init()``.
     """
 
     secure_cookies_by_default: bool
+    """Set to ``False`` in development environments to make the ``secure`` attribute
+    for all cookies. (Default to ``False``).
+
+    This can make testing easier by not requiring HTTPS. Note, however, that this
+    setting can be overridden via :meth:`~.Response.set_cookie()`'s ``secure`` kwarg.
+    """
     default_media_type: Optional[str]
+    """The default Internet media type (RFC 2046) to use when rendering a response,
+    when the Content-Type header is not set explicitly.
+
+    This value is normally set to the media type provided when a :class:`falcon.App`
+    is initialized; however, if created independently, this will default to
+    :attr:`falcon.DEFAULT_MEDIA_TYPE`.
+    """
     media_handlers: Handlers
+    """A dict-like object for configuring the media-types to handle.
+
+    default, handlers are provided for the ``application/json``,
+    ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
+    """
     static_media_types: Dict[str, str]
+    """A mapping of dot-prefixed file extensions to Internet media types (RFC 2046).
+
+    Defaults to ``mimetypes.types_map`` after calling ``mimetypes.init()``.
+    """
 
     __slots__ = (
         'secure_cookies_by_default',
