@@ -29,7 +29,6 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    import falcon as wsgi
     from falcon import asgi
     from falcon.request import Request
     from falcon.response import Response
@@ -73,8 +72,8 @@ class SyncResponderMethod(Protocol):
     def __call__(
         self,
         resource: Resource,
-        req: wsgi.Request,
-        resp: wsgi.Response,
+        req: Request,
+        resp: Response,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

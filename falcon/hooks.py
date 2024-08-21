@@ -46,55 +46,61 @@ if TYPE_CHECKING:
     from falcon.typing import Responder
     from falcon.typing import SyncResponderMethod
 
-    # TODO: if is_async is removed these protocol would no longer be needed, since
-    # ParamSpec could be used together with Concatenate to use a simple Callable
-    # to type the before and after functions. This approach was prototyped in
-    # https://github.com/falconry/falcon/pull/2234
-    class SyncBeforeFn(Protocol):
-        def __call__(
-            self,
-            req: wsgi.Request,
-            resp: wsgi.Response,
-            resource: Resource,
-            params: Dict[str, Any],
-            *args: Any,
-            **kwargs: Any,
-        ) -> None: ...
 
-    class AsyncBeforeFn(Protocol):
-        def __call__(
-            self,
-            req: asgi.Request,
-            resp: asgi.Response,
-            resource: Resource,
-            params: Dict[str, Any],
-            *args: Any,
-            **kwargs: Any,
-        ) -> Awaitable[None]: ...
+# TODO: if is_async is removed these protocol would no longer be needed, since
+# ParamSpec could be used together with Concatenate to use a simple Callable
+# to type the before and after functions. This approach was prototyped in
+# https://github.com/falconry/falcon/pull/2234
+class SyncBeforeFn(Protocol):
+    def __call__(
+        self,
+        req: wsgi.Request,
+        resp: wsgi.Response,
+        resource: Resource,
+        params: Dict[str, Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
 
-    BeforeFn = Union[SyncBeforeFn, AsyncBeforeFn]
 
-    class SyncAfterFn(Protocol):
-        def __call__(
-            self,
-            req: wsgi.Request,
-            resp: wsgi.Response,
-            resource: Resource,
-            *args: Any,
-            **kwargs: Any,
-        ) -> None: ...
+class AsyncBeforeFn(Protocol):
+    def __call__(
+        self,
+        req: asgi.Request,
+        resp: asgi.Response,
+        resource: Resource,
+        params: Dict[str, Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> Awaitable[None]: ...
 
-    class AsyncAfterFn(Protocol):
-        def __call__(
-            self,
-            req: asgi.Request,
-            resp: asgi.Response,
-            resource: Resource,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Awaitable[None]: ...
 
-    AfterFn = Union[SyncAfterFn, AsyncAfterFn]
+BeforeFn = Union[SyncBeforeFn, AsyncBeforeFn]
+
+
+class SyncAfterFn(Protocol):
+    def __call__(
+        self,
+        req: wsgi.Request,
+        resp: wsgi.Response,
+        resource: Resource,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+class AsyncAfterFn(Protocol):
+    def __call__(
+        self,
+        req: asgi.Request,
+        resp: asgi.Response,
+        resource: Resource,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Awaitable[None]: ...
+
+
+AfterFn = Union[SyncAfterFn, AsyncAfterFn]
 _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
 
 
