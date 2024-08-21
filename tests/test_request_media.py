@@ -1,6 +1,5 @@
 import json
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -8,6 +7,7 @@ from falcon import errors
 from falcon import media
 from falcon import testing
 from falcon import util
+import falcon.asgi
 
 try:
     import msgpack  # type: ignore
@@ -21,7 +21,8 @@ def create_client(asgi, handlers=None, resource=None):
             testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
         )
 
-    app = create_app(asgi)
+    app_cls = falcon.asgi.App if asgi else falcon.App
+    app = app_cls()
     app.add_route('/', resource)
 
     if handlers:

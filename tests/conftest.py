@@ -8,6 +8,19 @@ import pytest
 
 import falcon
 import falcon.asgi
+import falcon.testing
+
+try:
+    import cython  # noqa
+
+    has_cython = True
+except ImportError:
+    try:
+        import falcon.cyutil.reader  # noqa
+
+        has_cython = True
+    except ImportError:
+        has_cython = False
 
 HERE = pathlib.Path(__file__).resolve().parent
 FALCON_ROOT = HERE.parent
@@ -33,6 +46,8 @@ def app_kind(asgi):
 
 class _SuiteUtils:
     """Assorted utilities that previously resided in the _util.py module."""
+
+    HAS_CYTHON = has_cython
 
     @staticmethod
     def create_app(asgi, **app_kwargs):
@@ -74,17 +89,6 @@ class _SuiteUtils:
 
         if should_wrap:
             os.environ['FALCON_ASGI_WRAP_NON_COROUTINES'] = 'Y'
-
-    @staticmethod
-    def as_params(*values, prefix=None):
-        if not prefix:
-            prefix = ''
-        # NOTE(caselit): each value must be a tuple/list even when using one
-        #   single argument
-        return [
-            pytest.param(*value, id=f'{prefix}_{i}' if prefix else f'{i}')
-            for i, value in enumerate(values, 1)
-        ]
 
     @staticmethod
     def load_module(filename, parent_dir=None, suffix=None):

@@ -1,6 +1,5 @@
 import http
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -9,16 +8,16 @@ import falcon.testing as testing
 from falcon.util.deprecation import AttributeRemovedError
 
 
-@pytest.fixture(params=[True, False])
-def client(request):
-    app = create_app(asgi=request.param)
+@pytest.fixture()
+def client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/status', TestStatusResource())
     return testing.TestClient(app)
 
 
-@pytest.fixture(params=[True, False])
-def hook_test_client(request):
-    app = create_app(asgi=request.param)
+@pytest.fixture()
+def hook_test_client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/status', TestHookResource())
     return testing.TestClient(app)
 
@@ -202,8 +201,8 @@ class NoBodyResource:
 
 
 @pytest.fixture()
-def body_client(asgi):
-    app = create_app(asgi=asgi)
+def body_client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/status', NoBodyResource())
     return testing.TestClient(app)
 
@@ -229,7 +228,7 @@ class TestNoBodyWithStatus:
 
 
 @pytest.fixture()
-def custom_status_client(asgi):
+def custom_status_client(asgi, util):
     def client(status):
         class Resource:
             def on_get(self, req, resp):
@@ -237,7 +236,7 @@ def custom_status_client(asgi):
                 resp.data = b'Hello, World!'
                 resp.status = status
 
-        app = create_app(asgi=asgi)
+        app = util.create_app(asgi)
         app.add_route('/status', Resource())
         return testing.TestClient(app)
 
