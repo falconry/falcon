@@ -110,7 +110,6 @@ def test_sync_helpers():
         assert val[1] is None or (0 <= val[1] < 1000)
 
 
-@pytest.mark.asyncio
 async def test_sync_asyncio_aliases():
     async def dummy_async_func():
         pass
