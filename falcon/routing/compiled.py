@@ -921,8 +921,6 @@ class CompiledRouterOptions:
     :py:class:`~.CompiledRouter` behaviors.
     """
 
-    __slots__ = ('converters',)
-
     converters: ConverterDict
     """Represents the collection of named converters that may
     be referenced in URI template field expressions.
@@ -947,6 +945,8 @@ class CompiledRouterOptions:
 
     (See also: :ref:`Field Converters <routing_field_converters>`)
     """
+
+    __slots__ = ('converters',)
 
     def __init__(self):
         object.__setattr__(

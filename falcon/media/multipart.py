@@ -552,32 +552,28 @@ class MultipartParseOptions:
 
     default_charset: str
     """The default character encoding for
-    :meth:`text fields <BodyPart.get_text>` (default: ``utf-8``).
+    :meth:`text fields <BodyPart.get_text>` (default ``utf-8``).
     """
-
     max_body_part_count: int
-    """The maximum number of body parts in the form (default: 64).
+    """The maximum number of body parts in the form (default ``64``).
 
     If the form contains more parts than this number, an instance of
     :class:`.MultipartParseError` will be raised. If this option is set to 0,
     no limit will be imposed by the parser.
     """
-
     max_body_part_buffer_size: int
     """The maximum number of bytes to buffer and return when the
-    :meth:`BodyPart.get_data` method is called (default: 1 MiB).
+    :meth:`BodyPart.get_data` method is called (default ``1 MiB``).
 
     If the body part size exceeds this value, an instance of
     :class:`.MultipartParseError` will be raised.
     """
-
     max_body_part_headers_size: int
-    """The maximum size (in bytes) of the body part headers structure (default: 8192).
+    """The maximum size (in bytes) of the body part headers structure (default ``8192``).
 
     If the body part headers size exceeds this value, an instance of
     :class:`.MultipartParseError` will be raised.
     """
-
     media_handlers: Handlers
     """A dict-like object for configuring the media-types to handle.
 
