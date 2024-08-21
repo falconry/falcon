@@ -569,7 +569,8 @@ class MultipartParseOptions:
     :class:`.MultipartParseError` will be raised.
     """
     max_body_part_headers_size: int
-    """The maximum size (in bytes) of the body part headers structure (default ``8192``).
+    """The maximum size (in bytes) of the body part headers structure
+    (default ``8192``).
 
     If the body part headers size exceeds this value, an instance of
     :class:`.MultipartParseError` will be raised.
