@@ -1,6 +1,5 @@
 import inspect
 
-import falcon
 from falcon.asgi import _asgi_helpers
 
 
@@ -15,7 +14,6 @@ class IntricateApp:
     __call__ = _asgi_helpers._wrap_asgi_coroutine_func(unorthodox_call)
 
 
-@falcon.runs_sync
 async def test_intricate_app():
     async def receive():
         pass
