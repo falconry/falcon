@@ -19,7 +19,8 @@ from urllib.parse import unquote_to_bytes
 
 from falcon import errors
 from falcon.errors import MultipartParseError
-from falcon.media.base import BaseHandler
+from falcon.media import BaseHandler
+from falcon.media import Handlers
 from falcon.stream import BoundedStream
 from falcon.util import BufferedReader
 from falcon.util import misc
@@ -541,33 +542,44 @@ class MultipartParseOptions:
     it instantiates.
 
     See also: :ref:`multipart_parser_conf`.
-
-    Attributes:
-        default_charset (str): The default character encoding for
-            :meth:`text fields <BodyPart.get_text>` (default: ``utf-8``).
-
-        max_body_part_count (int): The maximum number of body parts in the form
-            (default: 64). If the form contains more parts than this number,
-            an instance of :class:`.MultipartParseError` will be raised. If this
-            option is set to 0, no limit will be imposed by the parser.
-
-        max_body_part_buffer_size (int): The maximum number of bytes to buffer
-            and return when the :meth:`BodyPart.get_data` method is called
-            (default: 1 MiB). If the body part size exceeds this value, an
-            instance of :class:`.MultipartParseError` will be raised.
-
-        max_body_part_headers_size (int): The maximum size (in bytes) of the
-            body part headers structure (default: 8192). If the body part
-            headers size exceeds this value, an instance of
-            :class:`.MultipartParseError` will be raised.
-
-        media_handlers (Handlers): A dict-like object for configuring the
-            media-types to handle. By default, handlers are provided for the
-            ``application/json`` and ``application/x-www-form-urlencoded``
-            media types.
     """
 
     _DEFAULT_HANDLERS = None
+
+    default_charset: str
+    """The default character encoding for
+    :meth:`text fields <BodyPart.get_text>` (default: ``utf-8``).
+    """
+
+    max_body_part_count: int
+    """The maximum number of body parts in the form (default: 64).
+
+    If the form contains more parts than this number, an instance of
+    :class:`.MultipartParseError` will be raised. If this option is set to 0,
+    no limit will be imposed by the parser.
+    """
+
+    max_body_part_buffer_size: int
+    """The maximum number of bytes to buffer and return when the
+    :meth:`BodyPart.get_data` method is called (default: 1 MiB).
+
+    If the body part size exceeds this value, an instance of
+    :class:`.MultipartParseError` will be raised.
+    """
+
+    max_body_part_headers_size: int
+    """The maximum size (in bytes) of the body part headers structure (default: 8192).
+
+    If the body part headers size exceeds this value, an instance of
+    :class:`.MultipartParseError` will be raised.
+    """
+
+    media_handlers: Handlers
+    """A dict-like object for configuring the media-types to handle.
+
+    By default, handlers are provided for the ``application/json`` and
+    ``application/x-www-form-urlencoded`` media types.
+    """
 
     __slots__ = (
         'default_charset',
