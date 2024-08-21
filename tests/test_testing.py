@@ -1,4 +1,3 @@
-from _util import create_app  # NOQA: I100
 import pytest
 
 import falcon
@@ -180,12 +179,12 @@ def test_missing_header_is_none():
 @pytest.mark.parametrize(
     'method', ['DELETE', 'GET', 'HEAD', 'LOCK', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 )
-def test_client_simulate_aliases(asgi, method):
+def test_client_simulate_aliases(asgi, method, util):
     def capture_method(req, resp):
         resp.content_type = falcon.MEDIA_TEXT
         resp.text = req.method
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_sink(capture_method)
 
     client = testing.TestClient(app)

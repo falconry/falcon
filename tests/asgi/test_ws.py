@@ -55,7 +55,6 @@ def conductor():
     return testing.ASGIConductor(app)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('path', ['/ws/yes', '/ws/no'])
 async def test_ws_not_accepted(path, conductor):
     class SomeResource:
@@ -113,7 +112,6 @@ async def test_ws_not_accepted(path, conductor):
             assert resource.caught_operation_not_allowed
 
 
-@pytest.mark.asyncio
 @pytest.mark.slow
 async def test_echo():  # noqa: C901
     consumer_sleep = 0.01
@@ -232,7 +230,6 @@ async def test_echo():  # noqa: C901
     assert resource.caught_operation_not_allowed
 
 
-@pytest.mark.asyncio
 async def test_path_not_found(conductor):
     async with conductor as c:
         with pytest.raises(falcon.WebSocketDisconnected) as exc_info:
@@ -242,7 +239,6 @@ async def test_path_not_found(conductor):
         assert exc_info.value.code == CloseCode.NOT_FOUND
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('clear_error_handlers', [True, False])
 async def test_responder_raises_unhandled_error(clear_error_handlers, conductor):
     class SomeResource:
@@ -302,7 +298,6 @@ async def test_responder_raises_unhandled_error(clear_error_handlers, conductor)
             assert exc_info.value.code == 3422
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('direction', ['send', 'receive'])
 @pytest.mark.parametrize('explicit_close_client', [True, False])
 @pytest.mark.parametrize('explicit_close_server', [True, False])
@@ -410,7 +405,6 @@ async def test_client_disconnect_early(  # noqa: C901
     assert resource.ws_ready is False
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
 @pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
@@ -525,7 +519,6 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
         assert doc == doc_expected
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('sample_data', [b'123', b'', b'\xe1\x9a\xa0\xe1', b'\0'])
 async def test_send_receive_data(sample_data, conductor):
     class Resource:
@@ -567,7 +560,6 @@ async def test_send_receive_data(sample_data, conductor):
     assert resource.error_count == 4
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'subprotocols',
     [
@@ -605,7 +597,6 @@ async def test_subprotocol(subprotocols, conductor):
                 resource.test_complete.set()
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'headers',
     [
@@ -654,7 +645,6 @@ async def test_accept_with_headers(headers, conductor):
                 resource.test_complete.set()
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'headers',
     [
@@ -688,7 +678,6 @@ async def test_accept_with_bad_headers(headers, conductor):
     assert isinstance(resource.raised_error, ValueError)
 
 
-@pytest.mark.asyncio
 async def test_accept_with_headers_not_supported(conductor):
     class Resource:
         def __init__(self):
@@ -714,7 +703,6 @@ async def test_accept_with_headers_not_supported(conductor):
     assert isinstance(resource.raised_error, falcon.OperationNotAllowed)
 
 
-@pytest.mark.asyncio
 async def test_missing_ws_handler(conductor):
     class Resource:
         async def on_get(self, req, resp):
@@ -728,7 +716,6 @@ async def test_missing_ws_handler(conductor):
                 pass
 
 
-@pytest.mark.asyncio
 async def test_unexpected_param(conductor):
     class Resource:
         async def on_websocket(self, req, ws):
@@ -742,7 +729,6 @@ async def test_unexpected_param(conductor):
                 pass
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'subprotocol',
     [
@@ -775,7 +761,6 @@ async def test_subprotocol_bad_type(subprotocol, conductor):
                     pass
 
 
-@pytest.mark.asyncio
 async def test_send_receive_wrong_type(conductor):
     class Resource:
         def __init__(self):
@@ -830,7 +815,6 @@ async def test_send_receive_wrong_type(conductor):
     assert resource.error_count == 4
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'options_code',
     [999, 100, 0, -1, 1004, 1005, 1006, 1015, 1016, 1017, 1050, 1099, 'NaN'],
@@ -883,7 +867,6 @@ def test_mw_methods_must_be_coroutines():
             App(middleware=mw)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('version', ['1.9', '20.5', '3.0', '3.1'])
 async def test_bad_spec_version(version, conductor):
     async with conductor as c:
@@ -892,7 +875,6 @@ async def test_bad_spec_version(version, conductor):
                 pass
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('version', ['1.0', '1'])
 async def test_bad_http_version(version, conductor):
     async with conductor as c:
@@ -901,7 +883,6 @@ async def test_bad_http_version(version, conductor):
                 pass
 
 
-@pytest.mark.asyncio
 async def test_bad_first_event():
     app = App()
 
@@ -928,7 +909,6 @@ async def test_bad_first_event():
     assert ws.close_code == CloseCode.SERVER_ERROR
 
 
-@pytest.mark.asyncio
 async def test_missing_http_version():
     app = App()
 
@@ -942,7 +922,6 @@ async def test_missing_http_version():
     await app(scope, ws._emit, ws._collect)
 
 
-@pytest.mark.asyncio
 async def test_missing_spec_version():
     app = App()
 
@@ -956,7 +935,6 @@ async def test_missing_spec_version():
     await app(scope, ws._emit, ws._collect)
 
 
-@pytest.mark.asyncio
 async def test_translate_webserver_error(conductor):
     class Resource:
         def __init__(self):
@@ -1025,7 +1003,6 @@ def test_ws_base_not_implemented():
         bh.deserialize(b'')
 
 
-@pytest.mark.asyncio
 @pytest.mark.slow
 async def test_ws_context_timeout(conductor):
     class Resource:
@@ -1040,7 +1017,6 @@ async def test_ws_context_timeout(conductor):
                 pass
 
 
-@pytest.mark.asyncio
 async def test_ws_simulator_client_require_accepted(conductor):
     class Resource:
         async def on_websocket(self, req, ws):
@@ -1059,7 +1035,6 @@ async def test_ws_simulator_client_require_accepted(conductor):
             await ws.receive_text()
 
 
-@pytest.mark.asyncio
 async def test_ws_simulator_collect_edge_cases(conductor):
     class Resource:
         pass
@@ -1098,7 +1073,6 @@ async def test_ws_simulator_collect_edge_cases(conductor):
             event = await ws._emit()
 
 
-@pytest.mark.asyncio
 @pytest.mark.slow
 async def test_ws_responder_never_ready(conductor, monkeypatch):
     async def noop_close(obj, code=None):
@@ -1139,7 +1113,6 @@ def test_msgpack_missing():
         handler.deserialize(b'{}')
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
 @pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
 @pytest.mark.parametrize('accept', [True, False])
@@ -1168,7 +1141,6 @@ async def test_ws_http_error_or_status_response(conductor, status, thing, accept
             assert err.value.code == exp_code
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
 @pytest.mark.parametrize(
     'thing',
@@ -1211,7 +1183,6 @@ class FooBarError(Exception):
     pass
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
 @pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
 @pytest.mark.parametrize(

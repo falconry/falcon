@@ -32,6 +32,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from falcon.asgi_spec import AsgiEvent
+    from falcon import asgi
     from falcon.request import Request
     from falcon.response import Response
 
@@ -79,3 +80,30 @@ class AsyncReadableIO(Protocol):
 
 
 AsgiReceive = Callable[[], Awaitable['AsgiEvent']]
+# ---
+Resource = object
+
+
+class SyncResponderMethod(Protocol):
+    def __call__(
+        self,
+        resource: Resource,
+        req: Request,
+        resp: Response,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+class AsyncResponderMethod(Protocol):
+    async def __call__(
+        self,
+        resource: Resource,
+        req: asgi.Request,
+        resp: asgi.Response,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+Responder = Union[SyncResponderMethod, AsyncResponderMethod]

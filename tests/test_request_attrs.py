@@ -1,7 +1,6 @@
 import datetime
 import itertools
 
-from _util import create_req  # NOQA
 import pytest
 
 import falcon
@@ -33,6 +32,13 @@ def _make_etag(value, is_weak=False):
     return etag
 
 
+# NOTE(vytas): create_req is very heavily used in this module in unittest-style
+#   classes, so we simply recreate the function here.
+def create_req(asgi, options=None, **environ_or_scope_kwargs):
+    create_method = testing.create_asgi_req if asgi else testing.create_req
+    return create_method(options=options, **environ_or_scope_kwargs)
+
+
 def test_missing_qs():
     env = testing.create_environ()
     if 'QUERY_STRING' in env:
@@ -52,7 +58,6 @@ def test_app_missing():
         assert req.app == ''
 
 
-@pytest.mark.parametrize('asgi', [True, False])
 class TestRequestAttributes:
     def setup_method(self, method):
         asgi = self._item.callspec.getparam('asgi')
