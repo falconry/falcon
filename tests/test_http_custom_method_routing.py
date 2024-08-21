@@ -2,7 +2,6 @@ import importlib
 import os
 import wsgiref.validate
 
-from _util import has_cython  # NOQA
 import pytest
 
 import falcon
@@ -61,7 +60,6 @@ def test_map_http_methods(custom_http_client, resource_things):
     assert 'BAR' not in method_map
 
 
-@pytest.mark.skipif(has_cython, reason='Reloading modules on Cython does not work')
 @pytest.mark.parametrize(
     'env_str,expected',
     [
@@ -73,7 +71,12 @@ def test_map_http_methods(custom_http_client, resource_things):
         (' foo , BAR ', ['FOO', 'BAR']),
     ],
 )
-def test_environment_override(cleanup_constants, resource_things, env_str, expected):
+def test_environment_override(
+    util, cleanup_constants, resource_things, env_str, expected
+):
+    if util.HAS_CYTHON:
+        pytest.skip(reason='Reloading modules on Cython does not work')
+
     # Make sure we don't have anything in there
     for method in expected:
         assert method not in falcon.constants.COMBINED_METHODS

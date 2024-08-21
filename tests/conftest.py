@@ -9,6 +9,18 @@ import falcon
 import falcon.asgi
 import falcon.testing
 
+try:
+    import cython  # noqa
+
+    has_cython = True
+except ImportError:
+    try:
+        import falcon.cyutil.reader  # noqa
+
+        has_cython = True
+    except ImportError:
+        has_cython = False
+
 HERE = pathlib.Path(__file__).resolve().parent
 FALCON_ROOT = HERE.parent
 
@@ -33,6 +45,8 @@ def app_kind(asgi):
 
 class _SuiteUtils:
     """Assorted utilities that previously resided in the _util.py module."""
+
+    HAS_CYTHON = has_cython
 
     @staticmethod
     def create_app(asgi, **app_kwargs):

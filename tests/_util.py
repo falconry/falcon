@@ -2,18 +2,6 @@ import falcon
 import falcon.asgi
 import falcon.testing
 
-try:
-    import cython  # noqa
-
-    has_cython = True
-except ImportError:
-    try:
-        import falcon.cyutil.reader  # noqa
-
-        has_cython = True
-    except ImportError:
-        has_cython = False
-
 __all__ = [
     'create_app',
     'create_req',
