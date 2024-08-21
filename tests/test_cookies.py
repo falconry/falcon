@@ -5,7 +5,6 @@ from datetime import tzinfo
 from http import cookies as http_cookies
 import re
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -107,8 +106,8 @@ class CookieUnsetSameSite:
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/', CookieResource())
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
     app.add_route('/same-site', CookieResourceSameSite())

@@ -2,11 +2,11 @@ from argparse import Namespace
 import io
 import sys
 
-from _util import create_app  # NOQA
 import pytest
 
 from falcon import App
 from falcon import inspect
+import falcon.asgi
 from falcon.cmd import inspect_app
 from falcon.testing import redirected
 
@@ -28,6 +28,11 @@ class DummyResourceAsync:
     async def on_get(self, req, resp):
         resp.text = 'Test\n'
         resp.status = '200 OK'
+
+
+def create_app(asgi):
+    app_cls = falcon.asgi.App if asgi else App
+    return app_cls()
 
 
 def make_app(asgi=False):

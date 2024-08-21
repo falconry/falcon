@@ -3,7 +3,6 @@ import io
 import json
 import platform
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -167,7 +166,7 @@ def test_deserialization(asgi, func, body, expected):
 
 @pytest.mark.parametrize('dumps, loads', ALL_JSON_IMPL, ids=ALL_JSON_IMPL_IDS)
 @pytest.mark.parametrize('subclass', (True, False))
-def test_full_app(asgi, dumps, loads, subclass):
+def test_full_app(asgi, util, dumps, loads, subclass):
     if subclass:
 
         class JSONHandlerSubclass(media.JSONHandler):
@@ -180,7 +179,7 @@ def test_full_app(asgi, dumps, loads, subclass):
         handler = media.JSONHandler(dumps=dumps, loads=loads)
         assert handler._serialize_sync is not None
         assert handler._deserialize_sync is not None
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.req_options.media_handlers[falcon.MEDIA_JSON] = handler
     app.resp_options.media_handlers[falcon.MEDIA_JSON] = handler
 
@@ -212,8 +211,8 @@ def test_full_app(asgi, dumps, loads, subclass):
         'application/json; answer=42',
     ],
 )
-def test_deserialization_raises(asgi, handler_mt, monkeypatch_resolver):
-    app = create_app(asgi)
+def test_deserialization_raises(asgi, util, handler_mt, monkeypatch_resolver):
+    app = util.create_app(asgi)
 
     class SuchException(Exception):
         pass
@@ -282,8 +281,8 @@ def test_deserialization_raises(asgi, handler_mt, monkeypatch_resolver):
         testing.simulate_post(app, '/', json={})
 
 
-def test_sync_methods_not_overridden(asgi):
-    app = create_app(asgi)
+def test_sync_methods_not_overridden(asgi, util):
+    app = util.create_app(asgi)
 
     class FaultyHandler(media.BaseHandler):
         pass
@@ -317,8 +316,8 @@ def test_sync_methods_not_overridden(asgi):
     assert result.status_code == 500
 
 
-def test_async_methods_not_overridden():
-    app = create_app(asgi=True)
+def test_async_methods_not_overridden(util):
+    app = util.create_app(asgi=True)
 
     class SimpleHandler(media.BaseHandler):
         def serialize(self, media, content_type):
@@ -343,8 +342,8 @@ def test_async_methods_not_overridden():
     assert result.json == doc
 
 
-def test_async_handler_returning_none():
-    app = create_app(asgi=True)
+def test_async_handler_returning_none(util):
+    app = util.create_app(asgi=True)
 
     class SimpleHandler(media.BaseHandler):
         def serialize(self, media, content_type):
@@ -370,8 +369,8 @@ def test_async_handler_returning_none():
 
 
 @pytest.mark.parametrize('monkeypatch_resolver', [True, False])
-def test_json_err_no_handler(asgi, monkeypatch_resolver):
-    app = create_app(asgi)
+def test_json_err_no_handler(asgi, util, monkeypatch_resolver):
+    app = util.create_app(asgi)
 
     handlers = media.Handlers({falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler()})
 
