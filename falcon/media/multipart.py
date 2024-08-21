@@ -14,18 +14,22 @@
 
 """Multipart form media handler."""
 
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
 from falcon.errors import MultipartParseError
-from falcon.media import BaseHandler
-from falcon.media import Handlers
+from falcon.media.base import BaseHandler
 from falcon.stream import BoundedStream
 from falcon.util import BufferedReader
 from falcon.util import misc
 from falcon.util.mediatypes import parse_header
 
+if TYPE_CHECKING:
+    from falcon.media.handlers import Handlers
 # TODO(vytas):
 #   * Better support for form-wide charset setting
 #   * Clean up, simplify, and optimize BufferedReader
