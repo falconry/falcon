@@ -31,8 +31,8 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from falcon.asgi_spec import AsgiEvent
     from falcon import asgi
+    from falcon.asgi_spec import AsgiEvent
     from falcon.request import Request
     from falcon.response import Response
 
@@ -68,6 +68,17 @@ Headers = Dict[str, str]
 HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArgument = Optional[Dict[str, Any]]
+Resource = object
+
+
+class ResponderMethod(Protocol):
+    def __call__(
+        self,
+        resource: Resource,
+        req: Request,
+        resp: Response,
+        **kwargs: Any,
+    ) -> None: ...
 
 
 class ReadableIO(Protocol):
@@ -79,31 +90,16 @@ class AsyncReadableIO(Protocol):
     async def read(self, n: Optional[int] = ..., /) -> bytes: ...
 
 
-AsgiReceive = Callable[[], Awaitable['AsgiEvent']]
-# ---
-Resource = object
-
-
-class SyncResponderMethod(Protocol):
-    def __call__(
-        self,
-        resource: Resource,
-        req: Request,
-        resp: Response,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None: ...
-
-
-class AsyncResponderMethod(Protocol):
+class AsgiResponderMethod(Protocol):
     async def __call__(
         self,
         resource: Resource,
         req: asgi.Request,
         resp: asgi.Response,
-        *args: Any,
         **kwargs: Any,
     ) -> None: ...
 
 
-Responder = Union[SyncResponderMethod, AsyncResponderMethod]
+AsgiReceive = Callable[[], Awaitable['AsgiEvent']]
+
+Responder = Union[ResponderMethod, AsgiResponderMethod]
