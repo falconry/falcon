@@ -8,9 +8,14 @@ See also: https://opencollective.com/falcon
 
 * [GOVCERT.LU](https://www.govcert.lu/)
 
-## Commercial Patrons
+## Gold Patron
+
+* [Sentry](https://sentry.io/)
+
+## Past Commercial Patrons
 
 * [Algolia](https://www.algolia.com/)
+* [EaseUS RecExperts](https://recorder.easeus.com/)
 * [Examination RU](https://www.kontrolnaya-rabota.ru/s/)
 * [Likalo](https://github.com/LikaloLLC)
 * [Misaka Network](https://www.misaka.io/)
@@ -25,6 +30,8 @@ See also: https://opencollective.com/falcon
 * Hagar Marmari
 * Ivan Petukhov
 * Konstantinos Mouratidis
-* Vlad Shulkevich
+* Markopoulos Spyros
 * Vincent Albanese
+* Vlad Shulkevich
+* William Fuener
 * Zach Riddle
