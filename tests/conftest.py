@@ -1,5 +1,6 @@
 import contextlib
 import importlib.util
+import inspect
 import os
 import pathlib
 
@@ -141,5 +142,15 @@ def pytest_sessionstart(session):
 def pytest_runtest_protocol(item, nextitem):
     if hasattr(item, 'cls') and item.cls:
         item.cls._item = item
+
+    yield
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_call(item):
+    # NOTE(vytas): We automatically wrap all coroutine functions with
+    #   falcon.runs_sync instead of the fragile pytest-asyncio package.
+    if isinstance(item, pytest.Function) and inspect.iscoroutinefunction(item.obj):
+        item.obj = falcon.runs_sync(item.obj)
 
     yield
