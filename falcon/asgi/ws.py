@@ -53,7 +53,7 @@ class WebSocket:
         '_close_code',
         '_close_reasons',
         '_supports_accept_headers',
-        '_spec_version',
+        '_supports_reason',
         '_mh_bin_deserialize',
         '_mh_bin_serialize',
         '_mh_text_deserialize',
@@ -76,7 +76,7 @@ class WebSocket:
         default_close_reasons: Dict[Optional[int], str],
     ):
         self._supports_accept_headers = ver != '2.0'
-        self._spec_version = ver
+        self._supports_reason = _supports_reason(ver)
 
         # NOTE(kgriffs): Normalize the iterable to a stable tuple; note that
         #   ordering is significant, and so we preserve it here.
@@ -283,10 +283,12 @@ class WebSocket:
 
         response = {'type': EventType.WS_CLOSE, 'code': code}
 
-        if _supports_reason(self._spec_version):
-            reason = reason or self._close_reasons.get(code)
-            if reason:
-                response['reason'] = reason
+        reason = reason or self._close_reasons.get(code)
+        if reason and self._supports_reason:  # pragma: nocover
+            # NOTE(vytas): I have verified that the below line is covered both
+            #   by multiple unit tests and E2E tests.
+            #   However, it is erroneously reported as missing on CPython 3.11.
+            response['reason'] = reason
 
         await self._asgi_send(response)
 
@@ -542,10 +544,9 @@ class WebSocketOptions:
             close code and the reason why the connection is close.
             Close codes corresponding to HTTP errors are also included in this
             mapping.
-        media_handlers (dict): A dict-like object for configuring media
-            handlers according to the WebSocket payload type
-            (``TEXT`` vs. ``BINARY``) of a given message.
-            See also: :ref:`ws_media_handlers`.
+        media_handlers (dict): A dict-like object for configuring media handlers
+            according to the WebSocket payload type (TEXT vs. BINARY) of a
+            given message. See also: :ref:`ws_media_handlers`.
         max_receive_queue (int): The maximum number of incoming messages to
             enqueue if the reception rate exceeds the consumption rate of the
             application (default ``4``). When this limit is reached, the
@@ -755,7 +756,7 @@ class _BufferedReceiver:
 
 
 @misc._lru_cache_for_simple_logic(maxsize=16)
-def _supports_reason(asgi_ver: str):
+def _supports_reason(asgi_ver: str) -> bool:
     """Check if the websocket version support a close reason."""
     target_ver = (2, 3)
     current_ver = tuple(map(int, asgi_ver.split('.')))

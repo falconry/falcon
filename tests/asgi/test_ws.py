@@ -1046,7 +1046,7 @@ async def test_ws_simulator_collect_edge_cases(conductor):
     conductor.app.add_route('/', Resource())
 
     async with conductor as c:
-        context = c.simulate_ws()
+        context = c.simulate_ws(spec_version='2.3')
         ws = context._ws
 
         m = 'must receive the first websocket.connect'
@@ -1147,12 +1147,37 @@ async def test_client_close_with_reason(reason, conductor):
 
 
 @pytest.mark.parametrize('reason', ['PEBCAK', 'wow such reason', '', None])
+async def test_close_with_reason_no_cm(conductor, reason):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            text = await ws.receive_text()
+            await ws.send_text(text.upper())
+            await ws.close(4001, reason)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    # NOTE(vytas): Here we don't use the async context manager pattern in order
+    #   to collect coverage under CPython 3.11. It doesn't seem to help though.
+    context = conductor.simulate_ws(spec_version='2.4')
+    ws = context._ws
+
+    await ws.wait_ready()
+    await ws.send_text('Hello, World!')
+    received = await ws.receive_text()
+    assert received == 'HELLO, WORLD!'
+
+    with pytest.raises(falcon.WebSocketDisconnected):
+        await ws.receive_text()
+
+    assert ws.close_reason == (reason or '')
+
+
+@pytest.mark.parametrize('reason', ['PEBCAK', 'wow such reason', '', None])
 @pytest.mark.parametrize('spec_version', ['2.2', '2.3', '2.4'])
 async def test_close_with_reason(conductor, reason, spec_version):
     class Resource:
-        def __init__(self):
-            pass
-
         async def on_websocket(self, req, ws):
             await ws.accept()
             await ws.close(3400, reason)
@@ -1162,8 +1187,8 @@ async def test_close_with_reason(conductor, reason, spec_version):
 
     async with conductor as c:
         async with c.simulate_ws('/', spec_version=spec_version) as ws:
-            # Make sure the responder has a chance to reach the raise point
-            for _ in range(7):
+            # Make sure the responder has a chance to reach the close() statement
+            for _ in range(3):
                 await asyncio.sleep(0)
             assert ws.closed
             assert ws.close_code == 3400
