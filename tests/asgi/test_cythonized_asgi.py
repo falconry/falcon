@@ -31,8 +31,6 @@ if pyximport:
 else:
     _CYTHON_FUNC_TEST_TYPES = []
 
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
-
 
 # NOTE(vytas): Cython 3.0+ now correctly marks cythonized coroutines as such,
 #   however, the relevant protocol is only available in Python 3.10+.
@@ -83,8 +81,8 @@ def test_not_cython_func(func):
 
 
 @pytest.mark.skipif(not pyximport, reason='Cython not installed')
-def test_jsonchema_validator(client):
-    with disable_asgi_non_coroutine_wrapping():
+def test_jsonchema_validator(client, util):
+    with util.disable_asgi_non_coroutine_wrapping():
         if CYTHON_COROUTINE_HINT:
             client.app.add_route('/', _cythonized.TestResourceWithValidationNoHint())
         else:
@@ -126,8 +124,8 @@ def test_scheduled_jobs_type_error(client):
 
 
 @pytest.mark.skipif(not pyximport, reason='Cython not installed')
-def test_hooks(client):
-    with disable_asgi_non_coroutine_wrapping():
+def test_hooks(client, util):
+    with util.disable_asgi_non_coroutine_wrapping():
         if CYTHON_COROUTINE_HINT:
             client.app.add_route('/', _cythonized.TestResourceWithHooksNoHint())
         else:
