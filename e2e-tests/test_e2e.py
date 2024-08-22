@@ -70,6 +70,9 @@ def test_chat(browser, clear_log):
     browser.type('#input1', '/quit')
     browser.slow_click('#button1')
     browser.assert_text('Bye, WS1!', 'div.ws1', timeout=5)
+    browser.assert_text('DISCONNECTED (4001 quit command)', '#input1')
+
     browser.type('#input2', '/quit')
     browser.slow_click('#button2')
     browser.assert_text('Bye, WS2!', 'div.ws2', timeout=5)
+    browser.assert_text('DISCONNECTED (4001 quit command)', '#input2')
