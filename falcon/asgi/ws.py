@@ -13,6 +13,7 @@ from typing import (
     Union,
 )
 
+import falcon
 from falcon import errors
 from falcon import media
 from falcon.asgi_spec import EventType
