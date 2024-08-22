@@ -567,6 +567,22 @@ class WebSocketOptions:
         'media_handlers',
     ]
 
+    _STANDARD_CLOSE_REASONS = (
+        (1000, 'Normal Closure'),
+        (1011, 'Internal Server Error'),
+        (3011, 'Internal Server Error'),
+    )
+
+    @classmethod
+    def _init_default_close_reasons(cls) -> Dict[int, str]:
+        reasons = dict(cls._STANDARD_CLOSE_REASONS)
+        for status_constant in dir(status_codes):
+            if 'HTTP_100' <= status_constant < 'HTTP_599':
+                status_line = getattr(status_codes, status_constant)
+                status_code, _, phrase = status_line.partition(' ')
+                reasons[http_status_to_ws_code(int(status_code))] = phrase
+        return reasons
+
     def __init__(self) -> None:
         try:
             import msgpack
@@ -595,19 +611,7 @@ class WebSocketOptions:
         #   See also: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
         #
         self.error_close_code: int = WSCloseCode.SERVER_ERROR
-
-        self.default_close_reasons: Dict[int, str] = {
-            1000: 'Normal Closure',
-            1011: 'Internal Server Error',
-            3011: 'Internal Server Error',
-        }
-        for status_constant in dir(status_codes):
-            if 'HTTP_100' <= status_constant < 'HTTP_599':
-                status_line = getattr(status_codes, status_constant)
-                status_code, _, phrase = status_line.partition(' ')
-                self.default_close_reasons[http_status_to_ws_code(int(status_code))] = (
-                    phrase
-                )
+        self.default_close_reasons: Dict[int, str] = self._init_default_close_reasons()
 
         # NOTE(kgriffs): The websockets library itself will buffer, so we keep
         #   this value fairly small by default to mitigate buffer bloat. But in
