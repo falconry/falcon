@@ -284,7 +284,7 @@ class WebSocket:
         response = {'type': EventType.WS_CLOSE, 'code': code}
 
         reason = reason or self._close_reasons.get(code)
-        if reason and self._supports_reason:  # pragma: nocover
+        if reason and self._supports_reason:  # pragma: no py311 cover
             # NOTE(vytas): I have verified that the below line is covered both
             #   by multiple unit tests and E2E tests.
             #   However, it is erroneously reported as missing on CPython 3.11.
