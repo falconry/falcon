@@ -12,5 +12,6 @@ exclude_also =
     if TYPE_CHECKING:
     pragma: nocover
     pragma: no py39,py310 cover
+    pragma: no py311 cover
     @overload
     class .*\bProtocol\):

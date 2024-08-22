@@ -15,9 +15,11 @@ from typing import (
 
 from falcon import errors
 from falcon import media
+from falcon import status_codes
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
+from falcon.util import misc
 
 _WebSocketState = Enum('_WebSocketState', 'HANDSHAKE ACCEPTED CLOSED')
 
@@ -49,7 +51,9 @@ class WebSocket:
         '_asgi_send',
         '_buffered_receiver',
         '_close_code',
+        '_close_reasons',
         '_supports_accept_headers',
+        '_supports_reason',
         '_mh_bin_deserialize',
         '_mh_bin_serialize',
         '_mh_text_deserialize',
@@ -69,8 +73,10 @@ class WebSocket:
             Union[media.BinaryBaseHandlerWS, media.TextBaseHandlerWS],
         ],
         max_receive_queue: int,
+        default_close_reasons: Dict[Optional[int], str],
     ):
         self._supports_accept_headers = ver != '2.0'
+        self._supports_reason = _supports_reason(ver)
 
         # NOTE(kgriffs): Normalize the iterable to a stable tuple; note that
         #   ordering is significant, and so we preserve it here.
@@ -94,6 +100,7 @@ class WebSocket:
         self._mh_bin_serialize = mh_bin.serialize
         self._mh_bin_deserialize = mh_bin.deserialize
 
+        self._close_reasons = default_close_reasons
         self._state = _WebSocketState.HANDSHAKE
         self._close_code = None  # type: Optional[int]
 
@@ -222,21 +229,38 @@ class WebSocket:
         #   ASGI spec committee and see if they can't come up with a better
         #   way to deal with this.
 
-    async def close(self, code: Optional[int] = None) -> None:
+    async def close(
+        self, code: Optional[int] = None, reason: Optional[str] = None
+    ) -> None:
         """Close the WebSocket connection.
 
-        This coroutine method sends a WebSocket ``CloseEvent`` to the client and
-        then proceeds to actually close the connection.
+        This coroutine method sends a WebSocket ``CloseEvent`` to the client
+        and then proceeds to actually close the connection.
 
         The responder can also use this method to deny a connection request
         simply by awaiting it instead of :meth:`~.accept`. In this case,
         the client will receive an HTTP 403 response to the handshake.
 
         Keyword Arguments:
-            code (int): The close code to use for the `CloseEvent` (default
-                1000). See also:
-                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+            code (int): The close code to use for the ``CloseEvent``
+                (default 1000). See also:
+                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code.
+            reason(str): The string reason indicating why the server closed the
+                connection. See also:
+                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/reason.
 
+                If there is no reason provided, Falcon will try to
+                automatically look it up from the above `code` and
+                :attr:`~WebSocketOptions.default_close_reasons`.
+
+        Note:
+            The close `reason` will only be propagated if the ASGI app server
+            supports this.
+
+            Version ``2.3``\\+ of the
+            `HTTP & WebSocket
+            <https://asgi.readthedocs.io/en/latest/specs/www.html>`__ ASGI
+            protocol is required for `reason`.
         """
 
         # NOTE(kgriffs): Do this first to be sure we clean things up
@@ -257,12 +281,16 @@ class WebSocket:
         if self.closed:
             return
 
-        await self._asgi_send(
-            {
-                'type': EventType.WS_CLOSE,
-                'code': code,
-            }
-        )
+        response = {'type': EventType.WS_CLOSE, 'code': code}
+
+        reason = reason or self._close_reasons.get(code)
+        if reason and self._supports_reason:  # pragma: no py311 cover
+            # NOTE(vytas): I have verified that the below line is covered both
+            #   by multiple unit tests and E2E tests.
+            #   However, it is erroneously reported as missing on CPython 3.11.
+            response['reason'] = reason
+
+        await self._asgi_send(response)
 
         self._state = _WebSocketState.CLOSED
         self._close_code = code
@@ -512,6 +540,10 @@ class WebSocketOptions:
             unhandled error is raised while handling a WebSocket connection
             (default ``1011``). For a list of valid close codes and ranges,
             see also: https://tools.ietf.org/html/rfc6455#section-7.4
+        default_close_reasons (dict): A default mapping between the Websocket
+            close code and the reason why the connection is close.
+            Close codes corresponding to HTTP errors are also included in this
+            mapping.
         media_handlers (dict): A dict-like object for configuring media handlers
             according to the WebSocket payload type (TEXT vs. BINARY) of a
             given message. See also: :ref:`ws_media_handlers`.
@@ -524,11 +556,32 @@ class WebSocketOptions:
             This limit applies to Falcon's incoming message queue, and should
             generally be kept small since the ASGI server maintains its
             own receive queue. Falcon's queue can be disabled altogether by
-            setting `max_receive_queue` to ``0`` (see also: :ref:`ws_lost_connection`).
-
+            setting `max_receive_queue` to ``0``
+            (see also: :ref:`ws_lost_connection`).
     """
 
-    __slots__ = ['error_close_code', 'max_receive_queue', 'media_handlers']
+    __slots__ = [
+        'error_close_code',
+        'default_close_reasons',
+        'max_receive_queue',
+        'media_handlers',
+    ]
+
+    _STANDARD_CLOSE_REASONS = (
+        (1000, 'Normal Closure'),
+        (1011, 'Internal Server Error'),
+        (3011, 'Internal Server Error'),
+    )
+
+    @classmethod
+    def _init_default_close_reasons(cls) -> Dict[int, str]:
+        reasons = dict(cls._STANDARD_CLOSE_REASONS)
+        for status_constant in dir(status_codes):
+            if 'HTTP_100' <= status_constant < 'HTTP_599':
+                status_line = getattr(status_codes, status_constant)
+                status_code, _, phrase = status_line.partition(' ')
+                reasons[http_status_to_ws_code(int(status_code))] = phrase
+        return reasons
 
     def __init__(self) -> None:
         try:
@@ -558,6 +611,7 @@ class WebSocketOptions:
         #   See also: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
         #
         self.error_close_code: int = WSCloseCode.SERVER_ERROR
+        self.default_close_reasons: Dict[int, str] = self._init_default_close_reasons()
 
         # NOTE(kgriffs): The websockets library itself will buffer, so we keep
         #   this value fairly small by default to mitigate buffer bloat. But in
@@ -703,6 +757,14 @@ class _BufferedReceiver:
             if self._pop_message_waiter is not None:
                 self._pop_message_waiter.set_result(None)
                 self._pop_message_waiter = None
+
+
+@misc._lru_cache_for_simple_logic(maxsize=16)
+def _supports_reason(asgi_ver: str) -> bool:
+    """Check if the websocket version support a close reason."""
+    target_ver = (2, 3)
+    current_ver = tuple(map(int, asgi_ver.split('.')))
+    return current_ver >= target_ver
 
 
 def http_status_to_ws_code(http_status: int) -> int:
