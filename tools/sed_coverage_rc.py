@@ -23,7 +23,7 @@ def sed_coverage_rc():
         for directive in DIRECTIVES:
             if version_short in directive:
                 continue
-            content = content.replace('    pragma: no py39,py310 cover\n', '')
+            content = content.replace(directive, '')
 
         fp.seek(0)
         fp.truncate()
