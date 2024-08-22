@@ -29,7 +29,7 @@ def sed_coverage_rc():
         fp.truncate()
         fp.write(content)
 
-    print(f'.coveragerc content after adjustments for {version_short}:\n')
+    print(f'.coveragerc content after adjustment for {version_short}:\n')
     print(content)
 
 
