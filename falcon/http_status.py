@@ -11,11 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """HTTPStatus exception class."""
+
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
 
 from falcon.util import http_status_to_code
 from falcon.util.deprecation import AttributeRemovedError
+
+if TYPE_CHECKING:
+    from falcon.typing import HeaderList
+    from falcon.typing import ResponseStatus
 
 
 class HTTPStatus(Exception):
@@ -46,7 +53,12 @@ class HTTPStatus(Exception):
 
     __slots__ = ('status', 'headers', 'text')
 
-    def __init__(self, status, headers=None, text=None):
+    def __init__(
+        self,
+        status: ResponseStatus,
+        headers: Optional[HeaderList] = None,
+        text: Optional[str] = None,
+    ) -> None:
         self.status = status
         self.headers = headers
         self.text = text

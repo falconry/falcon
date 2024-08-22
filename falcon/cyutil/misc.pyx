@@ -13,33 +13,6 @@
 # limitations under the License.
 
 
-def isascii(unicode string not None):
-    """Return ``True`` if all characters in the string are ASCII.
-
-    ASCII characters have code points in the range U+0000-U+007F.
-
-    Note:
-        On Python 3.7+, this function is just aliased to ``str.isascii``.
-
-    This is a Cython fallback for older CPython versions. For longer strings,
-    it is slightly less performant than the built-in ``str.isascii``.
-
-    Args:
-        string (str): A string to test.
-
-    Returns:
-        ``True`` if all characters are ASCII, ``False`` otherwise.
-    """
-
-    cdef Py_UCS4 ch
-
-    for ch in string:
-        if ch > 0x007F:
-            return False
-
-    return True
-
-
 def encode_items_to_latin1(dict data not None):
     cdef list result = []
     cdef unicode key

@@ -33,6 +33,17 @@ except ImportError:
     _cy_uri = None
 
 
+__all__ = (
+    'decode',
+    'encode',
+    'encode_value',
+    'encode_check_escaped',
+    'encode_value_check_escaped',
+    'parse_host',
+    'parse_query_string',
+    'unquote_string',
+)
+
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
@@ -543,19 +554,7 @@ def unquote_string(quoted: str) -> str:
 
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
-if not TYPE_CHECKING:
+if not TYPE_CHECKING:  # pragma: nocover
     if _cy_uri is not None:
         decode = _cy_uri.decode  # NOQA
         parse_query_string = _cy_uri.parse_query_string  # NOQA
-
-
-__all__ = [
-    'decode',
-    'encode',
-    'encode_value',
-    'encode_check_escaped',
-    'encode_value_check_escaped',
-    'parse_host',
-    'parse_query_string',
-    'unquote_string',
-]

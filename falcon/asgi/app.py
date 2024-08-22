@@ -47,11 +47,12 @@ from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
+from .ws import _supports_reason
 from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
 
-__all__ = ['App']
+__all__ = ('App',)
 
 
 # TODO(vytas): Clean up these foul workarounds before the 4.0 release.
@@ -987,7 +988,11 @@ class App(falcon.app.App):
             #   we don't support, so bail out. This also fulfills the ASGI
             #   spec requirement to only process the request after
             #   receiving and verifying the first event.
-            await send({'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR})
+            response = {'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR}
+            if _supports_reason(ver):
+                response['reason'] = 'Internal Server Error'
+
+            await send(response)
             return
 
         req = self._request_type(scope, receive, options=self.req_options)
@@ -999,6 +1004,7 @@ class App(falcon.app.App):
             send,
             self.ws_options.media_handlers,
             self.ws_options.max_receive_queue,
+            self.ws_options.default_close_reasons,
         )
 
         on_websocket = None

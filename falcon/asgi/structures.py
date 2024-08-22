@@ -1,7 +1,10 @@
+from typing import Optional
+
 from falcon.constants import MEDIA_JSON
 from falcon.media.json import _DEFAULT_JSON_HANDLER
+from falcon.typing import JSONSerializable
 
-__all__ = ['SSEvent']
+__all__ = ('SSEvent',)
 
 
 class SSEvent:
@@ -71,14 +74,14 @@ class SSEvent:
 
     def __init__(
         self,
-        data=None,
-        text=None,
-        json=None,
-        event=None,
-        event_id=None,
-        retry=None,
-        comment=None,
-    ):
+        data: Optional[bytes] = None,
+        text: Optional[str] = None,
+        json: JSONSerializable = None,
+        event: Optional[str] = None,
+        event_id: Optional[str] = None,
+        retry: Optional[int] = None,
+        comment: Optional[str] = None,
+    ) -> None:
         # NOTE(kgriffs): Check up front since this makes it a lot easier
         #   to debug the source of the problem in the app vs. waiting for
         #   an error to be raised from the framework when it calls serialize()
@@ -111,7 +114,7 @@ class SSEvent:
 
         self.comment = comment
 
-    def serialize(self, handler=None):
+    def serialize(self, handler=None) -> bytes:
         """Serialize this event to string.
 
         Args:

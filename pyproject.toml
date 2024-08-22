@@ -3,11 +3,14 @@
     requires = [
         "setuptools>=47",
         "wheel>=0.34",
-        "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
+        "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
     ]
 
 [tool.mypy]
-    exclude = "falcon/bench/|falcon/cmd/"
+    exclude = [
+        "falcon/bench/|falcon/cmd/",
+        "falcon/vendor"
+    ]
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
@@ -35,8 +38,20 @@
 
     [[tool.mypy.overrides]]
         module = [
+            "falcon.util.*",
+            "falcon.app_helpers",
+            "falcon.asgi_spec",
+            "falcon.constants",
+            "falcon.errors",
+            "falcon.forwarded",
+            "falcon.hooks",
+            "falcon.http_error",
+            "falcon.http_status",
+            "falcon.http_status",
+            "falcon.inspect",
+            "falcon.middleware",
+            "falcon.redirects",
             "falcon.stream",
-            "falcon.util.*"
         ]
         disallow_untyped_defs = true
 
@@ -76,7 +91,7 @@
 [tool.black]
     # this is kept to avoid reformatting all the code if one were to
     # inadvertently run black on the project
-    target-version = ["py37"]
+    target-version = ["py38"]
     skip-string-normalization = true
     line-length = 88
     extend-exclude = "falcon/vendor"
@@ -85,12 +100,12 @@
     # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
     #   With the below settings, accidentally running blue should yield
     #   only minor cosmetic changes in a handful of files.
-    target-version = ["py37"]
+    target-version = ["py38"]
     line-length = 88
     extend-exclude = "falcon/vendor"
 
 [tool.ruff]
-    target-version = "py37"
+    target-version = "py38"
     format.quote-style = "single"
     line-length = 88
     extend-exclude = ["falcon/vendor"]
@@ -153,6 +168,14 @@ filterwarnings = [
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
     "ignore:This process \\(.+\\) is multi-threaded",
 ]
+markers = [
+    "slow: mark Falcon tests as slower (potentially taking more than ~500ms).",
+]
 testpaths = [
     "tests"
 ]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+test-requires = ["-r requirements/cibwtest"]
+test-command = "pytest {project}/tests"
