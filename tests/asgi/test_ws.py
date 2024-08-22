@@ -1146,9 +1146,49 @@ async def test_client_close_with_reason(reason, conductor):
         assert ws.close_reason == ''
 
 
+@pytest.mark.parametrize('reason', ['PEBCAK', 'wow such reason', '', None])
+@pytest.mark.parametrize('spec_version', ['2.2', '2.3', '2.4'])
+async def test_close_with_reason(conductor, reason, spec_version):
+    class Resource:
+        def __init__(self):
+            pass
+
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            await ws.close(3400, reason)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    async with conductor as c:
+        async with c.simulate_ws('/', spec_version=spec_version) as ws:
+            # Make sure the responder has a chance to reach the raise point
+            for _ in range(7):
+                await asyncio.sleep(0)
+            assert ws.closed
+            assert ws.close_code == 3400
+
+    assert ws.close_code == 3400
+    if spec_version == '2.2':
+        assert ws.close_reason == ''
+    else:
+        assert ws.close_reason == reason or 'Bad Request'
+
+
 @pytest.mark.parametrize('no_default', [True, False])
-@pytest.mark.parametrize('code', [None, 1011, 4099, 4042, 3405])
-async def test_no_reason_mapping(no_default, code, conductor):
+@pytest.mark.parametrize(
+    'code,expected',
+    [
+        (None, 'Normal Closure'),
+        (1011, 'Internal Server Error'),
+        (3405, 'Method Not Allowed'),
+        (3701, ''),
+        (3702, 'Emacs'),
+        (4042, ''),
+        (4099, 'wow such reason'),
+    ],
+)
+async def test_reason_mapping(no_default, code, expected, conductor):
     class Resource:
         def __init__(self):
             pass
@@ -1162,7 +1202,10 @@ async def test_no_reason_mapping(no_default, code, conductor):
     if no_default:
         conductor.app.ws_options.default_close_reasons = {}
     else:
-        conductor.app.ws_options.default_close_reasons[4099] = '4099 reason'
+        # NOTE(vytas): Although it would be fun, we opt not to provide reasons
+        #   for 7xx errors by default.
+        conductor.app.ws_options.default_close_reasons[3702] = 'Emacs'
+        conductor.app.ws_options.default_close_reasons[4099] = 'wow such reason'
 
     async with conductor as c:
         with pytest.raises(falcon.WebSocketDisconnected):
@@ -1174,16 +1217,10 @@ async def test_no_reason_mapping(no_default, code, conductor):
     else:
         assert ws.close_code == CloseCode.NORMAL
 
-    if 3100 <= ws.close_code <= 3999:
-        assert ws.close_reason == falcon.util.code_to_http_status(ws.close_code - 3000)
-    elif (
-        no_default
-        or ws.close_code not in conductor.app.ws_options.default_close_reasons
-    ):
+    if no_default:
         assert ws.close_reason == ''
     else:
-        reason = conductor.app.ws_options.default_close_reasons[ws.close_code]
-        assert ws.close_reason == reason
+        assert ws.close_reason == expected
 
 
 @pytest.mark.parametrize('status', [200, 500, 422, 400])

@@ -47,7 +47,7 @@ from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
-from .ws import check_support_reason
+from .ws import _supports_reason
 from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
@@ -989,7 +989,7 @@ class App(falcon.app.App):
             #   spec requirement to only process the request after
             #   receiving and verifying the first event.
             response = {'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR}
-            if check_support_reason(ver):
+            if _supports_reason(ver):
                 response['reason'] = 'Internal Server Error'
 
             await send(response)
