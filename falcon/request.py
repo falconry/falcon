@@ -2400,96 +2400,88 @@ class RequestOptions:
     :attr:`falcon.asgi.App.req_options` for configuring certain
     :class:`~.Request` and :class:`falcon.asgi.Request` behaviors,
     respectively.
-
-    Attributes:
-        keep_blank_qs_values (bool): Set to ``False`` to ignore query string
-            params that have missing or blank values (default ``True``).
-            For comma-separated values, this option also determines
-            whether or not empty elements in the parsed list are
-            retained.
-
-        auto_parse_form_urlencoded: Set to ``True`` in order to
-            automatically consume the request stream and merge the
-            results into the request's query string params when the
-            request's content type is
-            *application/x-www-form-urlencoded* (default ``False``).
-
-            Enabling this option for WSGI apps makes the form parameters
-            accessible via :attr:`~falcon.Request.params`,
-            :meth:`~falcon.Request.get_param`, etc.
-
-            Warning:
-                The `auto_parse_form_urlencoded` option is not supported for
-                ASGI apps, and is considered deprecated for WSGI apps as of
-                Falcon 3.0, in favor of accessing URL-encoded forms
-                through :attr:`~Request.media`.
-
-                See also: :ref:`access_urlencoded_form`
-
-            Warning:
-                When this option is enabled, the request's body
-                stream will be left at EOF. The original data is
-                not retained by the framework.
-
-            Note:
-                The character encoding for fields, before
-                percent-encoding non-ASCII bytes, is assumed to be
-                UTF-8. The special `_charset_` field is ignored if
-                present.
-
-                Falcon expects form-encoded request bodies to be
-                encoded according to the standard W3C algorithm (see
-                also http://goo.gl/6rlcux).
-
-        auto_parse_qs_csv: Set to ``True`` to split query string values on
-            any non-percent-encoded commas (default ``False``).
-
-            When ``False``,
-            values containing commas are left as-is. In this mode, list items
-            are taken only from multiples of the same parameter name within the
-            query string (i.e. ``t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
-
-            When `auto_parse_qs_csv` is set to ``True``, the query string value
-            is also split on non-percent-encoded commas and these items
-            are added to the final list (i.e. ``t=1,2,3&t=4,5``
-            becomes ``['1', '2', '3', '4', '5']``).
-
-            Warning:
-                Enabling this option will cause the framework to misinterpret
-                any JSON values that include literal (non-percent-encoded)
-                commas. If the query string may include JSON, you can
-                use JSON array syntax in lieu of CSV as a workaround.
-
-        strip_url_path_trailing_slash: Set to ``True`` in order to
-            strip the trailing slash, if present, at the end of the URL
-            path (default ``False``). When this option is enabled,
-            the URL path is normalized by stripping the trailing slash
-            character. This lets the application define a single route
-            to a resource for a path that may or may not end in a
-            forward slash. However, this behavior can be problematic in
-            certain cases, such as when working with authentication
-            schemes that employ URL-based signatures.
-
-        default_media_type (str): The default media-type used to
-            deserialize a request body, when the Content-Type header is
-            missing or ambiguous. This value is normally
-            set to the media type provided to the :class:`falcon.App` or
-            :class:`falcon.asgi.App` initializer; however, if created
-            independently, this will default to
-            :attr:`falcon.DEFAULT_MEDIA_TYPE`.
-
-        media_handlers (Handlers): A dict-like object for configuring the
-            media-types to handle. By default, handlers are provided for the
-            ``application/json``, ``application/x-www-form-urlencoded`` and
-            ``multipart/form-data`` media types.
     """
 
     keep_black_qs_values: bool
+    """Set to ``False`` to ignore query string params that have missing or blank
+    values (default ``True``).
+
+    For comma-separated values, this option also determines whether or not
+    empty elements in the parsed list are retained.
+    """
     auto_parse_form_urlencoded: bool
+    """Set to ``True`` in order to automatically consume the request stream and merge
+    the results into the request's query string params when the request's content
+    type is ``application/x-www-form-urlencoded``` (default ``False``).
+
+    Enabling this option for WSGI apps makes the form parameters accessible via
+    :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`, etc.
+
+    Warning:
+        The `auto_parse_form_urlencoded` option is not supported for
+        ASGI apps, and is considered deprecated for WSGI apps as of
+        Falcon 3.0, in favor of accessing URL-encoded forms
+        through :attr:`~Request.media`.
+
+        See also: :ref:`access_urlencoded_form`
+
+    Warning:
+        When this option is enabled, the request's body
+        stream will be left at EOF. The original data is
+        not retained by the framework.
+
+    Note:
+        The character encoding for fields, before
+        percent-encoding non-ASCII bytes, is assumed to be
+        UTF-8. The special `_charset_` field is ignored if
+        present.
+
+        Falcon expects form-encoded request bodies to be
+        encoded according to the standard W3C algorithm (see
+        also https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm).
+    """
     auto_parse_qs_csv: bool
+    """Set to ``True`` to split query string values on any non-percent-encoded
+    commas (default ``False``).
+
+    When ``False``, values containing commas are left as-is. In this mode, list items
+    are taken only from multiples of the same parameter name within the
+    query string (i.e. ``t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
+
+    When `auto_parse_qs_csv` is set to ``True``, the query string value is also
+    split on non-percent-encoded commas and these items are added to the final
+    list (i.e. ``t=1,2,3&t=4,5`` becomes ``['1', '2', '3', '4', '5']``).
+
+    Warning:
+        Enabling this option will cause the framework to misinterpret
+        any JSON values that include literal (non-percent-encoded)
+        commas. If the query string may include JSON, you can
+        use JSON array syntax in lieu of CSV as a workaround.
+    """
     strip_url_path_trailing_slash: bool
+    """Set to ``True`` in order to strip the trailing slash, if present, at the
+    end of the URL path (default ``False``).
+
+    When this option is enabled, the URL path is normalized by stripping the
+    trailing slash character. This lets the application define a single route
+    to a resource for a path that may or may not end in a forward slash.
+    However, this behavior can be problematic in certain cases, such as when
+    working with authentication schemes that employ URL-based signatures.
+    """
     default_media_type: str
+    """The default media-type used to deserialize a request body, when the
+    Content-Type header is missing or ambiguous.
+
+    This value is normally set to the media type provided to the :class:`falcon.App`
+    or :class:`falcon.asgi.App` initializer; however, if created independently,
+    this will default to :attr:`falcon.DEFAULT_MEDIA_TYPE`.
+    """
     media_handlers: Handlers
+    """A dict-like object for configuring the media-types to handle.
+
+    By default, handlers are provided for the ``application/json``,
+    ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
+    """
 
     __slots__ = (
         'keep_blank_qs_values',

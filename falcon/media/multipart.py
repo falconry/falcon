@@ -547,42 +547,44 @@ class MultipartParseOptions:
     it instantiates.
 
     See also: :ref:`multipart_parser_conf`.
+    """
 
-    Attributes:
-        default_charset (str): The default character encoding for
-            :meth:`text fields <BodyPart.get_text>` (default: ``utf-8``).
+    default_charset: str
+    """The default character encoding for
+    :meth:`text fields <BodyPart.get_text>` (default ``utf-8``).
+    """
+    max_body_part_count: int
+    """The maximum number of body parts in the form (default ``64``).
 
-        max_body_part_count (int): The maximum number of body parts in the form
-            (default: 64). If the form contains more parts than this number,
-            an instance of :class:`.MultipartParseError` will be raised. If this
-            option is set to 0, no limit will be imposed by the parser.
+    If the form contains more parts than this number, an instance of
+    :class:`.MultipartParseError` will be raised. If this option is set to 0,
+    no limit will be imposed by the parser.
+    """
+    max_body_part_buffer_size: int
+    """The maximum number of bytes to buffer and return when the
+    :meth:`BodyPart.get_data` method is called (default ``1 MiB``).
 
-        max_body_part_buffer_size (int): The maximum number of bytes to buffer
-            and return when the :meth:`BodyPart.get_data` method is called
-            (default: 1 MiB). If the body part size exceeds this value, an
-            instance of :class:`.MultipartParseError` will be raised.
+    If the body part size exceeds this value, an instance of
+    :class:`.MultipartParseError` will be raised.
+    """
+    max_body_part_headers_size: int
+    """The maximum size (in bytes) of the body part headers structure
+    (default ``8192``).
 
-        max_body_part_headers_size (int): The maximum size (in bytes) of the
-            body part headers structure (default: 8192). If the body part
-            headers size exceeds this value, an instance of
-            :class:`.MultipartParseError` will be raised.
-
-        media_handlers (Handlers): A dict-like object for configuring the
-            media-types to handle. By default, handlers are provided for the
-            ``application/json`` and ``application/x-www-form-urlencoded``
-            media types.
+    If the body part headers size exceeds this value, an instance of
+    :class:`.MultipartParseError` will be raised.
+    """
+    media_handlers: Handlers
+    """A dict-like object for configuring the media-types to handle.
+    
+    By default, handlers are provided for the ``application/json`` and
+    ``application/x-www-form-urlencoded`` media types.
     """
 
     if TYPE_CHECKING:
         _DEFAULT_HANDLERS: ClassVar[Handlers]
     else:
         _DEFAULT_HANDLERS = None
-
-    default_charset: str
-    max_body_part_buffer_size: int
-    max_body_part_count: int
-    max_body_part_headers_size: int
-    media_handlers: Handlers
 
     __slots__ = (
         'default_charset',
