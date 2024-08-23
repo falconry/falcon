@@ -543,11 +543,10 @@ class WebSocketOptions:
     For a list of valid close codes and ranges, see also:
     https://tools.ietf.org/html/rfc6455#section-7.4.
     """
-    default_close_reasons: dict
-    """A default mapping between the Websocket
-    close code and the reason why the connection is close.
-    Close codes corresponding to HTTP errors are also included in this
-    mapping.
+    default_close_reasons: Dict[int, str]
+    """A default mapping between the Websocket close code, and the reason why
+    the connection is closed.
+    Close codes corresponding to HTTP errors are also included in this mapping.
     """
     media_handlers: Dict[
         WebSocketPayloadType, Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS]
