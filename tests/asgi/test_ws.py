@@ -883,11 +883,11 @@ async def test_bad_http_version(version, conductor):
                 pass
 
 
-async def test_bad_first_event():
+@pytest.mark.parametrize('version', ['2.1', '2.3', '2.10.3'])
+async def test_bad_first_event(version):
     app = App()
 
-    scope = testing.create_scope_ws()
-    del scope['asgi']['spec_version']
+    scope = testing.create_scope_ws(spec_version=version)
 
     ws = testing.ASGIWebSocketSimulator()
     wrapped_emit = ws._emit
@@ -907,6 +907,10 @@ async def test_bad_first_event():
 
     assert ws.closed
     assert ws.close_code == CloseCode.SERVER_ERROR
+    if version != '2.1':
+        assert ws.close_reason == 'Internal Server Error'
+    else:
+        assert ws.close_reason == ''
 
 
 async def test_missing_http_version():
@@ -1042,7 +1046,7 @@ async def test_ws_simulator_collect_edge_cases(conductor):
     conductor.app.add_route('/', Resource())
 
     async with conductor as c:
-        context = c.simulate_ws()
+        context = c.simulate_ws(spec_version='2.3')
         ws = context._ws
 
         m = 'must receive the first websocket.connect'
@@ -1111,6 +1115,137 @@ def test_msgpack_missing():
 
     with pytest.raises(RuntimeError):
         handler.deserialize(b'{}')
+
+
+@pytest.mark.parametrize('reason', ['Client closing connection', '', None])
+async def test_client_close_with_reason(reason, conductor):
+    class Resource:
+        def __init__(self):
+            pass
+
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            while True:
+                try:
+                    await ws.receive_data()
+
+                except falcon.WebSocketDisconnected:
+                    break
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    async with conductor as c:
+        async with c.simulate_ws('/', spec_version='2.3') as ws:
+            await ws.close(4099, reason)
+
+    assert ws.close_code == 4099
+    if reason:
+        assert ws.close_reason == reason
+    else:
+        assert ws.close_reason == ''
+
+
+@pytest.mark.parametrize('reason', ['PEBCAK', 'wow such reason', '', None])
+async def test_close_with_reason_no_cm(conductor, reason):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            text = await ws.receive_text()
+            await ws.send_text(text.upper())
+            await ws.close(4001, reason)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    # NOTE(vytas): Here we don't use the async context manager pattern in order
+    #   to collect coverage under CPython 3.11. It doesn't seem to help though.
+    context = conductor.simulate_ws(spec_version='2.4')
+    ws = context._ws
+
+    await ws.wait_ready()
+    await ws.send_text('Hello, World!')
+    received = await ws.receive_text()
+    assert received == 'HELLO, WORLD!'
+
+    with pytest.raises(falcon.WebSocketDisconnected):
+        await ws.receive_text()
+
+    assert ws.close_reason == (reason or '')
+
+
+@pytest.mark.parametrize('reason', ['PEBCAK', 'wow such reason', '', None])
+@pytest.mark.parametrize('spec_version', ['2.2', '2.3', '2.4'])
+async def test_close_with_reason(conductor, reason, spec_version):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            await ws.close(3400, reason)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    async with conductor as c:
+        async with c.simulate_ws('/', spec_version=spec_version) as ws:
+            # Make sure the responder has a chance to reach the close() statement
+            for _ in range(3):
+                await asyncio.sleep(0)
+            assert ws.closed
+            assert ws.close_code == 3400
+
+    assert ws.close_code == 3400
+    if spec_version == '2.2':
+        assert ws.close_reason == ''
+    else:
+        assert ws.close_reason == reason or 'Bad Request'
+
+
+@pytest.mark.parametrize('no_default', [True, False])
+@pytest.mark.parametrize(
+    'code,expected',
+    [
+        (None, 'Normal Closure'),
+        (1011, 'Internal Server Error'),
+        (3405, 'Method Not Allowed'),
+        (3701, ''),
+        (3702, 'Emacs'),
+        (4042, ''),
+        (4099, 'wow such reason'),
+    ],
+)
+async def test_reason_mapping(no_default, code, expected, conductor):
+    class Resource:
+        def __init__(self):
+            pass
+
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            await ws.close(code)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+    if no_default:
+        conductor.app.ws_options.default_close_reasons = {}
+    else:
+        # NOTE(vytas): Although it would be fun, we opt not to provide reasons
+        #   for 7xx errors by default.
+        conductor.app.ws_options.default_close_reasons[3702] = 'Emacs'
+        conductor.app.ws_options.default_close_reasons[4099] = 'wow such reason'
+
+    async with conductor as c:
+        with pytest.raises(falcon.WebSocketDisconnected):
+            async with c.simulate_ws('/', spec_version='2.10.3') as ws:
+                await ws.receive_data()
+
+    if code:
+        assert ws.close_code == code
+    else:
+        assert ws.close_code == CloseCode.NORMAL
+
+    if no_default:
+        assert ws.close_reason == ''
+    else:
+        assert ws.close_reason == expected
 
 
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
