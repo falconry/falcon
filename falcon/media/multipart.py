@@ -576,7 +576,7 @@ class MultipartParseOptions:
     """
     media_handlers: Handlers
     """A dict-like object for configuring the media-types to handle.
-    
+
     By default, handlers are provided for the ``application/json`` and
     ``application/x-www-form-urlencoded`` media types.
     """
