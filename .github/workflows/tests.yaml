@@ -38,7 +38,10 @@ jobs:
           - "look"
           - "asgilook"
           - "ws_tutorial"
-          - "check_vendored"
+          # NOTE(vytas): Temporarily disabled while we are releasing a
+          #   new version of python-mimeparse, and haven't decided yet whether
+          #   to keep vendoring or reimplement.
+          # - "check_vendored"
           - "twine_check"
           - "daphne"
           - "hypercorn"
