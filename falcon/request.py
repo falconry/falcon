@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from io import BytesIO
+from typing import TypeVar
 from uuid import UUID
 
 from falcon import errors
@@ -45,6 +46,9 @@ WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
 strptime = datetime.strptime
 now = datetime.now
+
+
+ParamType = TypeVar('ParamType')
 
 
 class Request:
@@ -1340,27 +1344,23 @@ class Request:
 
         """
 
-        params = self._params
+        param = self._param(name, required, default)
+        if param and store is not None:
+            store[name] = param
+        return param
 
+    def _param(self, name: str, required: bool, default: ParamType) -> str:
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in params:
-            # NOTE(warsaw): If the key appeared multiple times, it will be
-            # stored internally as a list.  We do not define which one
-            # actually gets returned, but let's pick the last one for grins.
-            param = params[name]
-            if isinstance(param, list):
-                param = param[-1]
-
-            if store is not None:
-                store[name] = param
-
-            return param
-
-        if not required:
-            return default
-
-        raise errors.HTTPMissingParam(name)
+        if name in self._params:
+            val = self._params[name]
+            if isinstance(val, list):
+                return val[-1]
+            else:
+                return val
+        if required:
+            raise errors.HTTPMissingParam(name)
+        return default
 
     def get_param_as_int(
         self,
@@ -1407,16 +1407,8 @@ class Request:
                 triggering an error.
 
         """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
-
+        val = self._param(name, required, default)
+        if val:
             try:
                 val = int(val)
             except ValueError:
@@ -1433,13 +1425,7 @@ class Request:
 
             if store is not None:
                 store[name] = val
-
-            return val
-
-        if not required:
-            return default
-
-        raise errors.HTTPMissingParam(name)
+        return val
 
     def get_param_as_float(
         self,
@@ -1486,16 +1472,8 @@ class Request:
                 triggering an error.
 
         """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
-
+        val = self._param(name, required, default)
+        if val:
             try:
                 val = float(val)
             except ValueError:
@@ -1513,12 +1491,7 @@ class Request:
             if store is not None:
                 store[name] = val
 
-            return val
-
-        if not required:
-            return default
-
-        raise errors.HTTPMissingParam(name)
+        return val
 
     def get_param_as_uuid(self, name, required=False, store=None, default=None):
         """Return the value of a query string parameter as an UUID.
@@ -1560,16 +1533,8 @@ class Request:
                 it was required to be there, or it was found but could not
                 be converted to a ``UUID``.
         """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
-
+        val = self._param(name, required, default)
+        if val:
             try:
                 val = UUID(val)
             except ValueError:
@@ -1579,12 +1544,7 @@ class Request:
             if store is not None:
                 store[name] = val
 
-            return val
-
-        if not required:
-            return default
-
-        raise errors.HTTPMissingParam(name)
+        return val
 
     def get_param_as_bool(
         self, name, required=False, store=None, blank_as_true=True, default=None
@@ -1632,16 +1592,8 @@ class Request:
                 can not be converted to a ``bool``.
 
         """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
-
+        val = self._param(name, required, default)
+        if val:
             if val in TRUE_STRINGS:
                 val = True
             elif val in FALSE_STRINGS:
@@ -1655,12 +1607,7 @@ class Request:
             if store is not None:
                 store[name] = val
 
-            return val
-
-        if not required:
-            return default
-
-        raise errors.HTTPMissingParam(name)
+        return val
 
     def get_param_as_list(
         self, name, transform=None, required=False, store=None, default=None
@@ -1788,10 +1735,7 @@ class Request:
                 the value could not be converted to a ``datetime``.
         """
 
-        param_value = self.get_param(name, required=required)
-
-        if param_value is None:
-            return default
+        param_value = self._param(name, required, default)
 
         try:
             date_time = strptime(param_value, format_string)
@@ -1839,7 +1783,7 @@ class Request:
         if date_time:
             date = date_time.date()
         else:
-            return default
+            date = datetime
 
         if store is not None:
             store[name] = date
@@ -1881,10 +1825,7 @@ class Request:
                 the value could not be parsed as JSON.
         """
 
-        param_value = self.get_param(name, required=required)
-
-        if param_value is None:
-            return default
+        param_value = self._param(name, required, default)
 
         handler, _, _ = self.options.media_handlers._resolve(
             MEDIA_JSON, MEDIA_JSON, raise_not_found=False
