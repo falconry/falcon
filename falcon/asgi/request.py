@@ -35,11 +35,11 @@ from falcon import errors
 from falcon import request
 from falcon import request_helpers as helpers
 from falcon.asgi_spec import AsgiEvent
-from falcon.constants import MISSING
-from falcon.constants import MissingOr
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import Forwarded
 from falcon.typing import AsgiReceive
+from falcon.typing import MISSING
+from falcon.typing import MissingOr
 from falcon.typing import StoreArgument
 from falcon.util import deprecated
 from falcon.util import ETag

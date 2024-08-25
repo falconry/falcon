@@ -15,6 +15,8 @@
 
 from __future__ import annotations
 
+from enum import auto
+from enum import Enum
 import http
 from typing import (
     Any,
@@ -22,11 +24,13 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Pattern,
     Protocol,
     Tuple,
     TYPE_CHECKING,
+    TypeVar,
     Union,
 )
 
@@ -36,6 +40,14 @@ if TYPE_CHECKING:
     from falcon.request import Request
     from falcon.response import Response
 
+
+class _Missing(Enum):
+    MISSING = auto()
+
+
+_T = TypeVar('_T')
+MISSING = _Missing.MISSING
+MissingOr = Union[Literal[_Missing.MISSING], _T]
 
 Link = Dict[str, str]
 

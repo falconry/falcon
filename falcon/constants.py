@@ -1,8 +1,6 @@
-from enum import auto
 from enum import Enum
 import os
 import sys
-from typing import Literal, TypeVar, Union
 
 __all__ = (
     'HTTP_METHODS',
@@ -186,16 +184,8 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using
 #   None would be ambiguous.
-_UNSET = object()
+_UNSET = object()  # TODO: remove once replaced with missing
 
-
-class Missing(Enum):
-    MISSING = auto()
-
-
-_T = TypeVar('_T')
-MISSING = Missing.MISSING
-MissingOr = Union[Literal[Missing.MISSING], _T]
 
 WebSocketPayloadType = Enum('WebSocketPayloadType', 'TEXT BINARY')
 """Enum representing the two possible WebSocket payload types."""
