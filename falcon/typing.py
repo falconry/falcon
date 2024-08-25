@@ -22,12 +22,14 @@ from typing import (
     Dict,
     List,
     Pattern,
+    Protocol,
     Tuple,
     TYPE_CHECKING,
     Union,
 )
 
 if TYPE_CHECKING:
+    from falcon import asgi
     from falcon.request import Request
     from falcon.response import Response
 
@@ -62,3 +64,30 @@ SinkPrefix = Union[str, Pattern]
 Headers = Dict[str, str]
 HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
+
+Resource = object
+
+
+class SyncResponderMethod(Protocol):
+    def __call__(
+        self,
+        resource: Resource,
+        req: Request,
+        resp: Response,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+class AsyncResponderMethod(Protocol):
+    async def __call__(
+        self,
+        resource: Resource,
+        req: asgi.Request,
+        resp: asgi.Response,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
+
+
+Responder = Union[SyncResponderMethod, AsyncResponderMethod]

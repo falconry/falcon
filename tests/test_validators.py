@@ -1,16 +1,15 @@
 import typing  # NOQA: F401
 
-try:
-    import jsonschema
-except ImportError:
-    jsonschema = None  # type: ignore
-from _util import create_app  # NOQA
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
 from falcon.media import validators
+
+try:
+    import jsonschema
+except ImportError:
+    jsonschema = None  # type: ignore
 
 _VALID_MEDIA = {'message': 'something'}
 _INVALID_MEDIA = {}  # type: typing.Dict[str, str]
@@ -150,7 +149,7 @@ def test_resp_schema_validation_failure(asgi):
 
 
 @skip_missing_dep
-def test_both_schemas_validation_success(asgi):
+def test_both_schemas_validation_success(asgi, util):
     req = MockReq(asgi)
     resp = MockResp()
 
@@ -159,7 +158,7 @@ def test_both_schemas_validation_success(asgi):
     assert result[0] is req
     assert result[1] is resp
 
-    client = testing.TestClient(create_app(asgi))
+    client = testing.TestClient(util.create_app(asgi))
     resource = ResourceAsync() if asgi else Resource()
     client.app.add_route('/test', resource)
 
@@ -168,7 +167,7 @@ def test_both_schemas_validation_success(asgi):
 
 
 @skip_missing_dep
-def test_both_schemas_validation_failure(asgi):
+def test_both_schemas_validation_failure(asgi, util):
     bad_resp = MockResp(False)
 
     with pytest.raises(falcon.HTTPInternalServerError) as excinfo:
@@ -181,10 +180,10 @@ def test_both_schemas_validation_failure(asgi):
 
     assert excinfo.value.title == 'Request data failed validation'
 
-    client = testing.TestClient(create_app(asgi))
+    client = testing.TestClient(util.create_app(asgi))
     resource = ResourceAsync() if asgi else Resource()
 
-    with disable_asgi_non_coroutine_wrapping():
+    with util.disable_asgi_non_coroutine_wrapping():
         client.app.add_route('/test', resource)
 
     result = client.simulate_put('/test', json=_INVALID_MEDIA)

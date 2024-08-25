@@ -1,15 +1,14 @@
 from unittest.mock import MagicMock
 
-from _util import create_resp  # NOQA
 import pytest
 
 from falcon import MEDIA_TEXT
 from falcon import ResponseOptions
 
 
-@pytest.fixture(params=[True, False])
-def resp(request):
-    return create_resp(asgi=request.param)
+@pytest.fixture()
+def resp(asgi, util):
+    return util.create_resp(asgi)
 
 
 def test_response_set_content_type_set(resp):

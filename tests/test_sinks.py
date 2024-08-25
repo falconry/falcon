@@ -1,7 +1,5 @@
 import re
 
-from _util import create_app  # NOQA
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
@@ -50,8 +48,8 @@ def sink(asgi):
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     return testing.TestClient(app)
 
 
@@ -163,9 +161,9 @@ class TestSinkMethodCompatibility:
             client.app.add_sink(async_kitchen_sink, '/features')
             self._verify_kitchen_sink(client)
 
-    def test_add_sync_sink(self, client, asgi):
+    def test_add_sync_sink(self, client, asgi, util):
         if asgi:
-            with disable_asgi_non_coroutine_wrapping():
+            with util.disable_asgi_non_coroutine_wrapping():
                 with pytest.raises(falcon.CompatibilityError):
                     client.app.add_sink(kitchen_sink)
         else:

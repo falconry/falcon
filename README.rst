@@ -86,8 +86,10 @@ A Big Thank You to Our Patrons!
 
 |Backer:GovCert| |Backer:Sentry|
 
-Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
-prioritized support.
+Has Falcon helped you make an awesome app? Show your support today with a
+one-time donation or by becoming a patron.
+Supporters get cool gear, an opportunity to promote their brand to Python
+developers, and prioritized support.
 
 * `Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
 
@@ -966,7 +968,8 @@ we invite you to take a look at the issues listed under our
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
 
-Please note that all contributors and maintainers of this project are subject to our `Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
+Please note that all contributors and maintainers of this project are subject to our
+`Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
 
 Before submitting a pull request, please ensure you have added/updated
 the appropriate tests (and that all existing tests still pass with your
