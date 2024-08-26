@@ -21,7 +21,6 @@ while remaining highly effective.
     import falcon
 
     class QuoteResource:
-
         def on_get(self, req, resp):
             """Handles GET requests"""
             quote = {

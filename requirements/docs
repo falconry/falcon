@@ -1,9 +1,9 @@
-docutils
 doc2dash
-jinja2
-markupsafe
-pygments
+falconry-pygments-theme
+pydata-sphinx-theme
 pygments-style-github
-sphinx
-sphinx_rtd_theme
+Sphinx
+sphinx-copybutton
 sphinx-tabs
+sphinx_design
+sphinx_rtd_theme
