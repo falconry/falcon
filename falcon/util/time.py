@@ -11,9 +11,8 @@ for convenience::
 
 import datetime
 from typing import Optional
-import warnings
 
-from .deprecation import DeprecatedWarning
+from .deprecation import deprecated
 
 __all__ = ('TimezoneGMT',)
 
@@ -23,11 +22,8 @@ class TimezoneGMT(datetime.tzinfo):
 
     GMT_ZERO = datetime.timedelta(hours=0)
 
+    @deprecated('TimezoneGMT is deprecated, use datetime.timezone.utc instead')
     def __init__(self) -> None:
-        warnings.warn(
-            'TimezoneGMT is deprecated, use datetime.timezone.utc instead',
-            category=DeprecatedWarning,
-        )
         super().__init__()
 
     def utcoffset(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:

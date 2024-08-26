@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
 import functools
 import http
@@ -22,6 +23,7 @@ from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util import structures
 from falcon.util import uri
+from falcon.util.time import TimezoneGMT
 
 try:
     import msgpack  # type: ignore
@@ -1419,3 +1421,13 @@ def test_json_deprecation():
 
     with pytest.raises(AttributeError):
         falcon.util.some_imaginary_module
+
+
+def test_TimezoneGMT():
+    with pytest.warns(deprecation.DeprecatedWarning):
+        tz = TimezoneGMT()
+
+    z = timedelta(0)
+    assert tz.tzname(None) == 'GMT'
+    assert tz.dst(None) == z
+    assert tz.utcoffset(None) == z

@@ -8,9 +8,7 @@ import pytest
 
 import falcon
 import falcon.testing as testing
-from falcon.util import DeprecatedWarning
 from falcon.util import http_date_to_dt
-from falcon.util import TimezoneGMT
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
@@ -329,12 +327,6 @@ def test_response_unset_cookie():
 
     expiration = http_date_to_dt(match.group(1), obs_date=True)
     assert expiration < utcnow_naive()
-
-
-def test_cookie_timezone():
-    with pytest.warns(DeprecatedWarning):
-        tz = TimezoneGMT()
-    assert tz.tzname(timedelta(0)) == 'GMT'
 
 
 # =====================================================================
