@@ -1,0 +1,1 @@
+Deprecate ``TimezoneGMT`` class. Use :attr:`datetime.timezone.utc` instead.
