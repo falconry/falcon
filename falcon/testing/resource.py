@@ -206,7 +206,7 @@ class SimpleTestResource:
         ] = None
         self.captured_kwargs: typing.Optional[typing.Any] = None
         self.captured_req_media: typing.Optional[typing.Any] = None
-        self.captured_req_body: typing.Optional[str] = None
+        self.captured_req_body: typing.Optional[bytes] = None
 
     @property
     def called(self):

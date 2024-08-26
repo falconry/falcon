@@ -15,24 +15,39 @@
 
 from __future__ import annotations
 
+from enum import auto
+from enum import Enum
 import http
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     List,
+    Literal,
+    Optional,
     Pattern,
     Protocol,
     Tuple,
     TYPE_CHECKING,
+    TypeVar,
     Union,
 )
 
 if TYPE_CHECKING:
     from falcon import asgi
+    from falcon.asgi_spec import AsgiEvent
     from falcon.request import Request
     from falcon.response import Response
 
+
+class _Missing(Enum):
+    MISSING = auto()
+
+
+_T = TypeVar('_T')
+MISSING = _Missing.MISSING
+MissingOr = Union[Literal[_Missing.MISSING], _T]
 
 Link = Dict[str, str]
 
@@ -64,30 +79,39 @@ SinkPrefix = Union[str, Pattern]
 Headers = Dict[str, str]
 HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
-
+StoreArgument = Optional[Dict[str, Any]]
 Resource = object
 
 
-class SyncResponderMethod(Protocol):
+class ResponderMethod(Protocol):
     def __call__(
         self,
         resource: Resource,
         req: Request,
         resp: Response,
-        *args: Any,
         **kwargs: Any,
     ) -> None: ...
 
 
-class AsyncResponderMethod(Protocol):
+class ReadableIO(Protocol):
+    def read(self, n: Optional[int] = ..., /) -> bytes: ...
+
+
+# ASGI
+class AsyncReadableIO(Protocol):
+    async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+
+
+class AsgiResponderMethod(Protocol):
     async def __call__(
         self,
         resource: Resource,
         req: asgi.Request,
         resp: asgi.Response,
-        *args: Any,
         **kwargs: Any,
     ) -> None: ...
 
 
-Responder = Union[SyncResponderMethod, AsyncResponderMethod]
+AsgiReceive = Callable[[], Awaitable['AsgiEvent']]
+
+Responder = Union[ResponderMethod, AsgiResponderMethod]

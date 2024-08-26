@@ -13,3 +13,9 @@ def test_log_error_not_supported():
     req = testing.create_asgi_req()
     with pytest.raises(NotImplementedError):
         req.log_error('Boink')
+
+
+def test_env_not_supported():
+    req = testing.create_asgi_req()
+    with pytest.raises(AttributeError):
+        req.env
