@@ -1306,7 +1306,10 @@ Inspecting the application now returns:
 
 Query Strings
 -------------
-Now that we are able to get the images from the service, we need a way to get a list available images. We have already set up this route. Before testing this route let's change its output format back to JSON to have a more terminal-friendly output. The top of file ``images.py`` should look like this:
+Now that we are able to get the images from the service, we need a way to get
+a list available images. We have already set up this route. Before testing this
+route let's change its output format back to JSON to have a more
+terminal-friendly output. The top of file ``images.py`` should look like this:
 
 .. code:: python
 
@@ -1363,7 +1366,11 @@ In response you should get the following data that we statically have put in the
         ]
     }
 
-Let's go back to the ``on_get`` method and create a dynamic response. We can use query strings to set maximum image size and get the list of all images smaller than the specified value. We will use method ``get_param_as_int`` to set a default value of ``-1`` in case no ``maxsize`` query string was provided and also to enable a minimum value validation.
+Let's go back to the ``on_get`` method and create a dynamic response. We can
+use query strings to set maximum image size and get the list of all images
+smaller than the specified value. We will use method ``get_param_as_int`` to
+set a default value of ``-1`` in case no ``maxsize`` query string was provided
+and also to enable a minimum value validation.
 
 .. code:: python
 
@@ -1459,8 +1466,13 @@ Let's go back to the ``on_get`` method and create a dynamic response. We can use
             ]
             return images
 
-As you can see the method ``list`` has been added to ``ImageStore`` in order to return list of available images smaller than ``max_size`` unless it is not ``-1``, in which case it will behave like there was no predicament of image size.
-Let's try to save some binary data as images in the service and then try to retrieve their list. Execute the following commands in order to simulate the creation of 3 files as images with different sizes. While these are not valid PNG files, they will work for this tutorial.
+As you can see the method ``list`` has been added to ``ImageStore`` in order
+to return list of available images smaller than ``max_size`` unless it is not
+``-1``, in which case it will behave like there was no predicament of image size.
+Let's try to save some binary data as images in the service and then try to
+retrieve their list. Execute the following commands in order to simulate the
+creation of 3 files as images with different sizes. While these are not valid
+PNG files, they will work for this tutorial.
 
 .. code:: bash
 
@@ -1476,7 +1488,9 @@ Now we need to store these files using ``POST`` request:
    http POST localhost:8000/images Content-Type:image/png < pseudo-image-2.png
    http POST localhost:8000/images Content-Type:image/png < pseudo-image-3.png
 
-If we check the size of these files, we will see that they are 11, 12, 9 bytes respectively. Let's try to get the list of the images which are smaller or equal to 11 bytes.
+If we check the size of these files, we will see that they are 11, 12, 9 bytes
+respectively. Let's try to get the list of the images which are smaller or
+equal to 11 bytes.
 
 .. code:: bash
 
@@ -1497,7 +1511,8 @@ We expect to get a list of 2 files, which will be similar to the following:
         ]
     }
 
-You could also now validate the response with getting the image files using the ``href`` value in the response and compare them with the original files.
+You could also now validate the response with getting the image files using
+the ``href`` value in the response and compare them with the original files.
 
 
 Introducing Hooks
