@@ -365,7 +365,7 @@ class Request(request.Request):
         Note:
             If the request was proxied, the scheme may not
             match what was originally requested by the client.
-            :py:attr:`forwarded_scheme` can be used, instead,
+            :attr:`forwarded_scheme` can be used, instead,
             to handle such cases.
         """
         # PERF(kgriffs): Use try...except because we normally expect the
@@ -526,7 +526,7 @@ class Request(request.Request):
         the ASGI server, or ``'127.0.0.1'`` if unknown.
 
         This property's value is equivalent to the last element of the
-        :py:attr:`~.access_route` property.
+        :attr:`~.access_route` property.
         """  # noqa: D205
         route = self.access_route
         return route[-1]

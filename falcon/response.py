@@ -416,7 +416,7 @@ class Response:
                 Note:
                     The default value for this argument is normally
                     ``True``, but can be modified by setting
-                    :py:attr:`~.ResponseOptions.secure_cookies_by_default`
+                    :attr:`~.ResponseOptions.secure_cookies_by_default`
                     via :any:`App.resp_options`.
 
                 Warning:
@@ -734,7 +734,7 @@ class Response:
         Note:
             While this method can be used to efficiently append raw
             Set-Cookie headers to the response, you may find
-            :py:meth:`~.set_cookie` to be more convenient.
+            :meth:`~.set_cookie` to be more convenient.
 
         Args:
             name (str): Header name (case-insensitive). The name may contain
@@ -1225,7 +1225,7 @@ class ResponseOptions:
 
     An instance of this class is exposed via :attr:`falcon.App.resp_options`
     and :attr:`falcon.asgi.App.resp_options` for configuring certain
-    :py:class:`~.Response` behaviors.
+    :class:`~.Response` behaviors.
     """
 
     secure_cookies_by_default: bool
