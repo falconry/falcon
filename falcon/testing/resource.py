@@ -149,10 +149,10 @@ class SimpleTestResource:
     Only noop ``on_get()`` and ``on_post()`` responders are implemented;
     when overriding these, or adding additional responders in child
     classes, they can be decorated with the
-    :py:meth:`falcon.testing.capture_responder_args` hook in
+    :meth:`falcon.testing.capture_responder_args` hook in
     order to capture the *req*, *resp*, and *params* arguments that
     are passed to the responder. Responders may also be decorated with
-    the :py:meth:`falcon.testing.set_resp_defaults` hook in order to
+    the :meth:`falcon.testing.set_resp_defaults` hook in order to
     set *resp* properties to default *status*, *body*, and *header*
     values.
 
@@ -238,10 +238,10 @@ class SimpleTestResourceAsync(SimpleTestResource):
     Only noop ``on_get()`` and ``on_post()`` responders are implemented;
     when overriding these, or adding additional responders in child
     classes, they can be decorated with the
-    :py:meth:`falcon.testing.capture_responder_args` hook in
+    :meth:`falcon.testing.capture_responder_args` hook in
     order to capture the *req*, *resp*, and *params* arguments that
     are passed to the responder. Responders may also be decorated with
-    the :py:meth:`falcon.testing.set_resp_defaults` hook in order to
+    the :meth:`falcon.testing.set_resp_defaults` hook in order to
     set *resp* properties to default *status*, *body*, and *header*
     values.
 
