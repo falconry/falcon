@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from datetime import timezone
 import functools
 import mimetypes
 from typing import Dict, Optional
@@ -35,13 +36,10 @@ from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import http_status_to_code
 from falcon.util import structures
-from falcon.util import TimezoneGMT
 from falcon.util.deprecation import AttributeRemovedError
 from falcon.util.deprecation import deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
-
-GMT_TIMEZONE = TimezoneGMT()
 
 _STREAM_LEN_REMOVED_MSG = (
     'The deprecated stream_len property was removed in Falcon 3.0. '
@@ -503,7 +501,7 @@ class Response:
                 self._cookies[name]['expires'] = expires.strftime(fmt)
             else:
                 # aware
-                gmt_expires = expires.astimezone(GMT_TIMEZONE)
+                gmt_expires = expires.astimezone(timezone.utc)
                 self._cookies[name]['expires'] = gmt_expires.strftime(fmt)
 
         if max_age:
