@@ -6,7 +6,9 @@ from typing import Optional, Union
 
 from falcon.constants import MEDIA_JSON
 from falcon.typing import AsyncReadableIO
+from falcon.typing import DeserializeSync
 from falcon.typing import ReadableIO
+from falcon.typing import SerializeSync
 
 
 class BaseHandler(metaclass=abc.ABCMeta):
@@ -19,10 +21,10 @@ class BaseHandler(metaclass=abc.ABCMeta):
     #   might make it part of the public interface for use by custom
     #   media type handlers.
 
-    _serialize_sync = None
+    _serialize_sync: Optional[SerializeSync] = None
     """Override to provide a synchronous serialization method that takes an object."""
 
-    _deserialize_sync = None
+    _deserialize_sync: Optional[DeserializeSync] = None
     """Override to provide a synchronous deserialization method that
     takes a byte string."""
 
