@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from typing import Any, Mapping
+
 
 class EventType:
     """Standard ASGI event type strings."""
@@ -48,7 +50,6 @@ class ScopeType:
     LIFESPAN = 'lifespan'
 
 
-#
 class WSCloseCode:
     """WebSocket close codes used by the Falcon ASGI framework.
 
@@ -60,3 +61,7 @@ class WSCloseCode:
     FORBIDDEN = 3403
     PATH_NOT_FOUND = 3404
     HANDLER_NOT_FOUND = 3405
+
+
+# TODO: use a typed dict for event dicts
+AsgiEvent = Mapping[str, Any]

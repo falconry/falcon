@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import ClassVar, TYPE_CHECKING
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
@@ -29,7 +29,8 @@ from falcon.util import misc
 from falcon.util.mediatypes import parse_header
 
 if TYPE_CHECKING:
-    from falcon.media.handlers import Handlers
+    from falcon.media import Handlers
+
 # TODO(vytas):
 #   * Better support for form-wide charset setting
 #   * Clean up, simplify, and optimize BufferedReader
@@ -548,8 +549,6 @@ class MultipartParseOptions:
     See also: :ref:`multipart_parser_conf`.
     """
 
-    _DEFAULT_HANDLERS = None
-
     default_charset: str
     """The default character encoding for
     :meth:`text fields <BodyPart.get_text>` (default ``utf-8``).
@@ -581,6 +580,11 @@ class MultipartParseOptions:
     By default, handlers are provided for the ``application/json`` and
     ``application/x-www-form-urlencoded`` media types.
     """
+
+    if TYPE_CHECKING:
+        _DEFAULT_HANDLERS: ClassVar[Handlers]
+    else:
+        _DEFAULT_HANDLERS = None
 
     __slots__ = (
         'default_charset',

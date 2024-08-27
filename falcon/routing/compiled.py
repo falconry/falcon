@@ -916,9 +916,9 @@ class ConverterDict(UserDict):
 class CompiledRouterOptions:
     """Defines a set of configurable router options.
 
-    An instance of this class is exposed via :py:attr:`falcon.App.router_options`
-    and :py:attr:`falcon.asgi.App.router_options` for configuring certain
-    :py:class:`~.CompiledRouter` behaviors.
+    An instance of this class is exposed via :attr:`falcon.App.router_options`
+    and :attr:`falcon.asgi.App.router_options` for configuring certain
+    :class:`~.CompiledRouter` behaviors.
     """
 
     converters: ConverterDict

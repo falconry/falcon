@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from typing import Optional
 
 from falcon.constants import MEDIA_JSON
+from falcon.media import BaseHandler
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.typing import JSONSerializable
 
@@ -114,7 +117,7 @@ class SSEvent:
 
         self.comment = comment
 
-    def serialize(self, handler=None) -> bytes:
+    def serialize(self, handler: Optional[BaseHandler] = None) -> bytes:
         """Serialize this event to string.
 
         Args:

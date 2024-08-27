@@ -8,9 +8,12 @@
 
 [tool.mypy]
     exclude = [
-        "falcon/bench/|falcon/cmd/",
-        "falcon/vendor"
+        "falcon/bench",
+        "falcon/cmd",
+        "falcon/vendor",
     ]
+    disallow_untyped_defs = true
+
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
@@ -38,22 +41,28 @@
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.util.*",
-            "falcon.app_helpers",
-            "falcon.asgi_spec",
-            "falcon.constants",
-            "falcon.errors",
-            "falcon.forwarded",
-            "falcon.hooks",
-            "falcon.http_error",
-            "falcon.http_status",
-            "falcon.http_status",
-            "falcon.inspect",
-            "falcon.middleware",
-            "falcon.redirects",
-            "falcon.stream",
+            "falcon.app",
+            "falcon.asgi._asgi_helpers",
+            "falcon.asgi.app",
+            "falcon.asgi.multipart",
+            "falcon.asgi.reader",
+            "falcon.asgi.response",
+            "falcon.asgi.stream",
+            "falcon.asgi.ws",
+            "falcon.media.json",
+            "falcon.media.msgpack",
+            "falcon.media.multipart",
+            "falcon.media.urlencoded",
+            "falcon.media.validators.*",
+            "falcon.responders",
+            "falcon.response_helpers",
+            "falcon.response",
+            "falcon.routing.*",
+            "falcon.routing.converters",
+            "falcon.testing.*",
+            "falcon.vendor.*",
         ]
-        disallow_untyped_defs = true
+        disallow_untyped_defs = false
 
 [tool.towncrier]
     package = "falcon"

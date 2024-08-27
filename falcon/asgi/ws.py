@@ -533,7 +533,7 @@ class WebSocketOptions:
     """Defines a set of configurable WebSocket options.
 
     An instance of this class is exposed via :attr:`falcon.asgi.App.ws_options`
-    for configuring certain :py:class:`~.WebSocket` behaviors.
+    for configuring certain :class:`~.WebSocket` behaviors.
     """
 
     error_close_code: int

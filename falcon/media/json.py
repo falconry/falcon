@@ -10,7 +10,7 @@ from falcon.media.base import TextBaseHandlerWS
 class JSONHandler(BaseHandler):
     """JSON media handler.
 
-    This handler uses Python's standard :py:mod:`json` library by default, but
+    This handler uses Python's standard :mod:`json` library by default, but
     can be easily configured to use any of a number of third-party JSON
     libraries, depending on your needs. For example, you can often
     realize a significant performance boost under CPython by using an
@@ -202,7 +202,7 @@ class JSONHandler(BaseHandler):
 class JSONHandlerWS(TextBaseHandlerWS):
     """WebSocket media handler for de(serializing) JSON to/from TEXT payloads.
 
-    This handler uses Python's standard :py:mod:`json` library by default, but
+    This handler uses Python's standard :mod:`json` library by default, but
     can be easily configured to use any of a number of third-party JSON
     libraries, depending on your needs. For example, you can often
     realize a significant performance boost under CPython by using an

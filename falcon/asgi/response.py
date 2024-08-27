@@ -99,7 +99,7 @@ class Response(response.Response):
 
                 resp.stream = await aiofiles.open('resp_data.bin', 'rb')
 
-            If the object assigned to :py:attr:`~.stream` holds any resources
+            If the object assigned to :attr:`~.stream` holds any resources
             (such as a file handle) that must be explicitly released, the
             object must implement a ``close()`` method. The ``close()`` method
             will be called after exhausting the iterable or file-like object.
@@ -107,7 +107,7 @@ class Response(response.Response):
             Note:
                 In order to be compatible with Python 3.7+ and PEP 479,
                 async iterators must return ``None`` instead of raising
-                :py:class:`StopIteration`. This requirement does not
+                :class:`StopIteration`. This requirement does not
                 apply to async generators (PEP 525).
 
             Note:
@@ -116,7 +116,7 @@ class Response(response.Response):
 
         sse (coroutine): A Server-Sent Event (SSE) emitter, implemented as
             an async iterator or generator that yields a series of
-            of :py:class:`falcon.asgi.SSEvent` instances. Each event will be
+            of :class:`falcon.asgi.SSEvent` instances. Each event will be
             serialized and sent to the client as HTML5 Server-Sent Events::
 
                 async def emitter():

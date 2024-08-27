@@ -226,7 +226,7 @@ one or both payload types, as in the following example.
     cbor_handler = ProtocolBuffersHandler()
     app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = cbor_handler
 
-The ``falcon`` module defines the following :py:class:`~enum.Enum` values for
+The ``falcon`` module defines the following :class:`~enum.Enum` values for
 specifying the WebSocket payload type:
 
 .. code:: python
