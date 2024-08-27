@@ -8,7 +8,7 @@ from falcon.media.base import BinaryBaseHandlerWS
 
 
 class MessagePackHandler(BaseHandler):
-    """Handler built using the :py:mod:`msgpack` module.
+    """Handler built using the :mod:`msgpack` module.
 
     This handler uses ``msgpack.unpackb()`` and ``msgpack.Packer().pack()``. The
     MessagePack ``bin`` type is used to distinguish between Unicode strings

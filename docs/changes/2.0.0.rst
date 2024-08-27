@@ -219,7 +219,7 @@ New & Improved
 - Numerous changes were made to the docs to improve clarity and to provide
   better recommendations on how to best use various parts of the framework.
 - Added a new :attr:`~falcon.Response.headers` property to the :class:`~falcon.Response` class.
-- Removed the :py:mod:`six` and :py:mod:`python-mimeparse` dependencies.
+- Removed the :mod:`six` and :mod:`python-mimeparse` dependencies.
 - Added a new :attr:`~falcon.Response.complete` property to the :class:`~falcon.Response`
   class. This can be used to short-circuit request processing when the response
   has been pre-constructed.

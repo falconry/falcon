@@ -23,7 +23,7 @@ in the `falcon` module, and so must be explicitly imported::
     name, port = uri.parse_host('example.org:8080')
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Callable, Dict, List, Optional, overload, Tuple, Union
 
 from falcon.constants import PYPY
 
@@ -467,6 +467,16 @@ def parse_query_string(
     return params
 
 
+@overload
+def parse_host(host: str, default_port: int) -> Tuple[str, int]: ...
+
+
+@overload
+def parse_host(
+    host: str, default_port: Optional[int] = None
+) -> Tuple[str, Optional[int]]: ...
+
+
 def parse_host(
     host: str, default_port: Optional[int] = None
 ) -> Tuple[str, Optional[int]]:
@@ -554,7 +564,6 @@ def unquote_string(quoted: str) -> str:
 
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
-if not TYPE_CHECKING:
-    if _cy_uri is not None:
-        decode = _cy_uri.decode  # NOQA
-        parse_query_string = _cy_uri.parse_query_string  # NOQA
+if _cy_uri is not None:  # pragma: nocover
+    decode = _cy_uri.decode  # NOQA
+    parse_query_string = _cy_uri.parse_query_string  # NOQA

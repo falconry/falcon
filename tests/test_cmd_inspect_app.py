@@ -2,16 +2,20 @@ from argparse import Namespace
 import io
 import sys
 
-from _util import create_app  # NOQA
 import pytest
 
 from falcon import App
 from falcon import inspect
+import falcon.asgi
 from falcon.cmd import inspect_app
 from falcon.testing import redirected
 
 _WIN32 = sys.platform.startswith('win')
-_MODULE = 'tests.test_cmd_inspect_app'
+
+# NOTE(vytas): This is not the cleanest way to import as we lack __init__.py,
+#   but it works as pytest (when operating in the default "prepend" import mode)
+#   inserts the directory of every test file into sys.path.
+_MODULE = 'test_cmd_inspect_app'
 
 
 class DummyResource:
@@ -24,6 +28,11 @@ class DummyResourceAsync:
     async def on_get(self, req, resp):
         resp.text = 'Test\n'
         resp.status = '200 OK'
+
+
+def create_app(asgi):
+    app_cls = falcon.asgi.App if asgi else App
+    return app_cls()
 
 
 def make_app(asgi=False):

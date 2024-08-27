@@ -916,40 +916,37 @@ class ConverterDict(UserDict):
 class CompiledRouterOptions:
     """Defines a set of configurable router options.
 
-    An instance of this class is exposed via :py:attr:`falcon.App.router_options`
-    and :py:attr:`falcon.asgi.App.router_options` for configuring certain
-    :py:class:`~.CompiledRouter` behaviors.
+    An instance of this class is exposed via :attr:`falcon.App.router_options`
+    and :attr:`falcon.asgi.App.router_options` for configuring certain
+    :class:`~.CompiledRouter` behaviors.
+    """
 
-    Attributes:
-        converters: Represents the collection of named
-            converters that may be referenced in URI template field
-            expressions. Adding additional converters is simply a
-            matter of mapping an identifier to a converter class::
+    converters: ConverterDict
+    """Represents the collection of named converters that may
+    be referenced in URI template field expressions.
 
-                app.router_options.converters['mc'] = MyConverter
+    Adding additional converters is simply a matter of mapping an identifier to
+    a converter class::
 
-            The identifier can then be used to employ the converter
-            within a URI template::
+        app.router_options.converters['mc'] = MyConverter
 
-                app.add_route('/{some_field:mc}', some_resource)
+    The identifier can then be used to employ the converter within a URI template::
 
-            Converter names may only contain ASCII letters, digits,
-            and underscores, and must start with either a letter or
-            an underscore.
+        app.add_route('/{some_field:mc}', some_resource)
 
-            Warning:
+    Converter names may only contain ASCII letters, digits, and underscores, and
+    must start with either a letter or an underscore.
 
-                Converter instances are shared between requests.
-                Therefore, in threaded deployments, care must be taken
-                to implement custom converters in a thread-safe
-                manner.
+    Warning:
 
-            (See also: :ref:`Field Converters <routing_field_converters>`)
+        Converter instances are shared between requests.
+        Therefore, in threaded deployments, care must be taken to implement custom
+        converters in a thread-safe manner.
+
+    (See also: :ref:`Field Converters <routing_field_converters>`)
     """
 
     __slots__ = ('converters',)
-
-    converters: ConverterDict
 
     def __init__(self):
         object.__setattr__(

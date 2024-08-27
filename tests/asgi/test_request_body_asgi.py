@@ -63,7 +63,6 @@ class TestRequestBody:
             (8192, 50),
         ],
     )
-    @pytest.mark.asyncio
     async def test_content_length_smaller_than_body(self, body_length, content_length):
         body_in = os.urandom(body_length)
 

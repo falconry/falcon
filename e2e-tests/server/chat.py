@@ -27,6 +27,7 @@ class Chat:
 
                 if message == '/quit':
                     await ws.send_text(f'Bye, {name}!')
+                    await ws.close(4001, 'quit command')
                     break
 
                 command = self.ALL.match(message)

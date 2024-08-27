@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import os.path
 import time
 from wsgiref.simple_server import make_server
 
@@ -9,6 +10,7 @@ import requests
 import falcon
 import falcon.testing as testing
 
+_HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = 'localhost'
 _SERVER_PORT = 9800 + os.getpid() % 100  # Facilitates parallel test execution
 _SERVER_BASE_URL = 'http://{}:{}/'.format(_SERVER_HOST, _SERVER_PORT)
@@ -21,6 +23,13 @@ class TestWSGIServer:
         resp = requests.get(_SERVER_BASE_URL)
         assert resp.status_code == 200
         assert resp.text == '127.0.0.1'
+
+    def test_get_file(self):
+        # NOTE(vytas): There was a breaking change in the behaviour of
+        #   ntpath.isabs() in CPython 3.13, let us verify basic file serving.
+        resp = requests.get(_SERVER_BASE_URL + 'tests/test_wsgi.py')
+        assert resp.status_code == 200
+        assert 'class TestWSGIServer:' in resp.text
 
     def test_put(self):
         body = '{}'
@@ -91,6 +100,7 @@ def _run_server(stop_event, host, port):
     api = application = falcon.App()
     api.add_route('/', Things())
     api.add_route('/bucket', Bucket())
+    api.add_static_route('/tests', _HERE)
 
     server = make_server(host, port, application)
 
