@@ -44,10 +44,7 @@
         module = [
             "falcon.asgi.multipart",
             "falcon.asgi.response",
-            "falcon.media.json",
-            "falcon.media.msgpack",
             "falcon.media.multipart",
-            "falcon.media.urlencoded",
             "falcon.media.validators.*",
             "falcon.responders",
             "falcon.response_helpers",
