@@ -46,7 +46,6 @@
             "falcon.asgi.reader",
             "falcon.asgi.response",
             "falcon.asgi.stream",
-            "falcon.asgi.ws",
             "falcon.media.json",
             "falcon.media.msgpack",
             "falcon.media.multipart",
