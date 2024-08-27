@@ -291,7 +291,7 @@ def test_body_part_properties():
         if part.content_type == 'application/json':
             assert part.name == part.name == 'document'
         elif part.name == 'file1':
-            assert part.filename == part.filename == 'test.txt'
+            assert part.filename == 'test.txt'
             assert part.secure_filename == part.filename
 
 

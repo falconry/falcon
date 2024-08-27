@@ -42,9 +42,7 @@
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.asgi.multipart",
             "falcon.asgi.response",
-            "falcon.media.multipart",
             "falcon.media.validators.*",
             "falcon.responders",
             "falcon.response_helpers",
