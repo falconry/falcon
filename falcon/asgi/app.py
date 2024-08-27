@@ -77,8 +77,8 @@ class App(falcon.app.App):
 
     Keyword Arguments:
         media_type (str): Default media type to use when initializing
-            :py:class:`~.RequestOptions` and
-            :py:class:`~.ResponseOptions`. The ``falcon``
+            :class:`~.RequestOptions` and
+            :class:`~.ResponseOptions`. The ``falcon``
             module provides a number of constants for common media types,
             such as ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
@@ -231,7 +231,7 @@ class App(falcon.app.App):
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests. An instance of :py:class:`..CORSMiddleware` can instead be
+            requests. An instance of :class:`..CORSMiddleware` can instead be
             passed to the middleware argument to customize its behaviour.
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
@@ -242,11 +242,11 @@ class App(falcon.app.App):
 
     Attributes:
         req_options: A set of behavioral options related to incoming
-            requests. (See also: :py:class:`~.RequestOptions`)
+            requests. (See also: :class:`~.RequestOptions`)
         resp_options: A set of behavioral options related to outgoing
-            responses. (See also: :py:class:`~.ResponseOptions`)
+            responses. (See also: :class:`~.ResponseOptions`)
         ws_options: A set of behavioral options related to WebSocket
-            connections. (See also: :py:class:`~.WebSocketOptions`)
+            connections. (See also: :class:`~.WebSocketOptions`)
         router_options: Configuration options for the router. If a
             custom router is in use, and it does not expose any
             configurable options, referencing this attribute will raise
@@ -567,7 +567,7 @@ class App(falcon.app.App):
             if resp._registered_callbacks:
                 self._schedule_callbacks(resp)
 
-            handler, _, _ = self.resp_options.media_handlers._resolve(
+            sse_handler, _, _ = self.resp_options.media_handlers._resolve(
                 MEDIA_JSON, MEDIA_JSON, raise_not_found=False
             )
 
@@ -583,7 +583,7 @@ class App(falcon.app.App):
                 await send(
                     {
                         'type': EventType.HTTP_RESPONSE_BODY,
-                        'body': event.serialize(handler),
+                        'body': event.serialize(sse_handler),
                         'more_body': True,
                     }
                 )

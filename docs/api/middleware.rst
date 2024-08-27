@@ -254,7 +254,7 @@ the following example:
 .. Tip::
     The *process_resource* method is only called when the request matches
     a route to a resource. To take action when a route is not found, a
-    :py:meth:`sink <falcon.App.add_sink>` may be used instead.
+    :meth:`sink <falcon.App.add_sink>` may be used instead.
 
 .. Tip::
     In order to pass data from a middleware function to a resource function

@@ -14,23 +14,44 @@
 
 from __future__ import annotations
 
+from datetime import date as py_date
 from datetime import datetime
 from io import BytesIO
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    overload,
+    Sequence,
+    TextIO,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
-from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
 from falcon.forwarded import _parse_forwarded_header
-
-# TODO: remove import in falcon 4
-from falcon.forwarded import Forwarded  # NOQA
+from falcon.forwarded import Forwarded
 from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
+from falcon.typing import MISSING
+from falcon.typing import MissingOr
+from falcon.typing import ReadableIO
+from falcon.typing import StoreArgument
+from falcon.util import deprecated
+from falcon.util import ETag
 from falcon.util import structures
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
@@ -46,6 +67,8 @@ WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 strptime = datetime.strptime
 now = datetime.now
 
+_T = TypeVar('_T')
+
 
 class Request:
     """Represents a client's HTTP request.
@@ -58,364 +81,6 @@ class Request:
             also PEP-3333.
 
     Keyword Arguments:
-        options (dict): Set of global options passed from the App handler.
-
-    Attributes:
-        env (dict): Reference to the WSGI environ ``dict`` passed in from the
-            server. (See also PEP-3333.)
-        context (object): Empty object to hold any data (in its attributes)
-            about the request which is specific to your app (e.g. session
-            object). Falcon itself will not interact with this attribute after
-            it has been initialized.
-
-            Note:
-                **New in 2.0:** The default `context_type` (see below) was
-                changed from :class:`dict` to a bare class; the preferred way to
-                pass request-specific data is now to set attributes directly on
-                the `context` object. For example::
-
-                    req.context.role = 'trial'
-                    req.context.user = 'guest'
-
-        context_type (class): Class variable that determines the factory or
-            type to use for initializing the `context` attribute. By default,
-            the framework will instantiate bare objects (instances of the bare
-            :class:`falcon.Context` class). However, you may override this
-            behavior by creating a custom child class of ``falcon.Request``,
-            and then passing that new class to `falcon.App()` by way of the
-            latter's `request_type` parameter.
-
-            Note:
-                When overriding `context_type` with a factory function (as
-                opposed to a class), the function is called like a method of
-                the current Request instance. Therefore the first argument is
-                the Request instance itself (self).
-        scheme (str): URL scheme used for the request. Either 'http' or
-            'https'.
-
-            Note:
-                If the request was proxied, the scheme may not
-                match what was originally requested by the client.
-                :py:attr:`forwarded_scheme` can be used, instead,
-                to handle such cases.
-
-        forwarded_scheme (str): Original URL scheme requested by the
-            user agent, if the request was proxied. Typical values are
-            'http' or 'https'.
-
-            The following request headers are checked, in order of
-            preference, to determine the forwarded scheme:
-
-                - ``Forwarded``
-                - ``X-Forwarded-For``
-
-            If none of these headers are available, or if the
-            Forwarded header is available but does not contain a
-            "proto" parameter in the first hop, the value of
-            :attr:`scheme` is returned instead.
-
-            (See also: RFC 7239, Section 1)
-
-        method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
-        host (str): Host request header field
-        forwarded_host (str): Original host request header as received
-            by the first proxy in front of the application server.
-
-            The following request headers are checked, in order of
-            preference, to determine the forwarded scheme:
-
-                - ``Forwarded``
-                - ``X-Forwarded-Host``
-
-            If none of the above headers are available, or if the
-            Forwarded header is available but the "host"
-            parameter is not included in the first hop, the value of
-            :attr:`host` is returned instead.
-
-            Note:
-                Reverse proxies are often configured to set the Host
-                header directly to the one that was originally
-                requested by the user agent; in that case, using
-                :attr:`host` is sufficient.
-
-            (See also: RFC 7239, Section 4)
-
-        port (int): Port used for the request. If the Host header is present
-            in the request, but does not specify a port, the default one for the
-            given schema is returned (80 for HTTP and 443 for HTTPS). If the
-            request does not include a Host header, the listening port for the
-            WSGI server is returned instead.
-        netloc (str): Returns the "host:port" portion of the request
-            URL. The port may be omitted if it is the default one for
-            the URL's schema (80 for HTTP and 443 for HTTPS).
-        subdomain (str): Leftmost (i.e., most specific) subdomain from the
-            hostname. If only a single domain name is given, `subdomain`
-            will be ``None``.
-
-            Note:
-                If the hostname in the request is an IP address, the value
-                for `subdomain` is undefined.
-
-        root_path (str): The initial portion of the request URI's path that
-            corresponds to the application object, so that the
-            application knows its virtual "location". This may be an
-            empty string, if the application corresponds to the "root"
-            of the server.
-
-            (Corresponds to the "SCRIPT_NAME" environ variable defined
-            by PEP-3333.)
-        app (str): Deprecated alias for :attr:`root_path`.
-        uri (str): The fully-qualified URI for the request.
-        url (str): Alias for :attr:`uri`.
-        forwarded_uri (str): Original URI for proxied requests. Uses
-            :attr:`forwarded_scheme` and :attr:`forwarded_host` in
-            order to reconstruct the original URI requested by the user
-            agent.
-        relative_uri (str): The path and query string portion of the
-            request URI, omitting the scheme and host.
-        prefix (str): The prefix of the request URI, including scheme,
-            host, and WSGI app (if any).
-        forwarded_prefix (str): The prefix of the original URI for
-            proxied requests. Uses :attr:`forwarded_scheme` and
-            :attr:`forwarded_host` in order to reconstruct the
-            original URI.
-        path (str): Path portion of the request URI (not including query
-            string).
-
-            Warning:
-                If this attribute is to be used by the app for any upstream
-                requests, any non URL-safe characters in the path must be URL
-                encoded back before making the request.
-
-            Note:
-                ``req.path`` may be set to a new value by a
-                ``process_request()`` middleware method in order to influence
-                routing. If the original request path was URL encoded, it will
-                be decoded before being returned by this attribute.
-
-        query_string (str): Query string portion of the request URI, without
-            the preceding '?' character.
-        uri_template (str): The template for the route that was matched for
-            this request. May be ``None`` if the request has not yet been
-            routed, as would be the case for ``process_request()`` middleware
-            methods. May also be ``None`` if your app uses a custom routing
-            engine and the engine does not provide the URI template when
-            resolving a route.
-        remote_addr(str): IP address of the closest client or proxy to
-            the WSGI server.
-
-            This property is determined by the value of ``REMOTE_ADDR``
-            in the WSGI environment dict. Since this address is not
-            derived from an HTTP header, clients and proxies can not
-            forge it.
-
-            Note:
-                If your application is behind one or more reverse
-                proxies, you can use :py:attr:`~.access_route`
-                to retrieve the real IP address of the client.
-        access_route(list): IP address of the original client, as well
-            as any known addresses of proxies fronting the WSGI server.
-
-            The following request headers are checked, in order of
-            preference, to determine the addresses:
-
-                - ``Forwarded``
-                - ``X-Forwarded-For``
-                - ``X-Real-IP``
-
-            If none of these headers are available, the value of
-            :py:attr:`~.remote_addr` is used instead.
-
-            Note:
-                Per `RFC 7239`_, the access route may contain "unknown"
-                and obfuscated identifiers, in addition to IPv4 and
-                IPv6 addresses
-
-                .. _RFC 7239: https://tools.ietf.org/html/rfc7239
-
-            Warning:
-                Headers can be forged by any client or proxy. Use this
-                property with caution and validate all values before
-                using them. Do not rely on the access route to authorize
-                requests.
-
-        forwarded (list): Value of the Forwarded header, as a parsed list
-            of :class:`falcon.Forwarded` objects, or ``None`` if the header
-            is missing. If the header value is malformed, Falcon will
-            make a best effort to parse what it can.
-
-            (See also: RFC 7239, Section 4)
-        date (datetime): Value of the Date header, converted to a
-            ``datetime`` instance. The header value is assumed to
-            conform to RFC 1123.
-        auth (str): Value of the Authorization header, or ``None`` if the
-            header is missing.
-        user_agent (str): Value of the User-Agent header, or ``None`` if the
-            header is missing.
-        referer (str): Value of the Referer header, or ``None`` if
-            the header is missing.
-        accept (str): Value of the Accept header, or ``'*/*'`` if the header is
-            missing.
-        client_accepts_json (bool): ``True`` if the Accept header indicates
-            that the client is willing to receive JSON, otherwise ``False``.
-        client_accepts_msgpack (bool): ``True`` if the Accept header indicates
-            that the client is willing to receive MessagePack, otherwise
-            ``False``.
-        client_accepts_xml (bool): ``True`` if the Accept header indicates that
-            the client is willing to receive XML, otherwise ``False``.
-        cookies (dict):
-            A dict of name/value cookie pairs. The returned object should be
-            treated as read-only to avoid unintended side-effects.
-            If a cookie appears more than once in the request, only the first
-            value encountered will be made available here.
-
-            See also: :meth:`~falcon.Request.get_cookie_values`
-        content_type (str): Value of the Content-Type header, or ``None`` if
-            the header is missing.
-        content_length (int): Value of the Content-Length header converted
-            to an ``int``, or ``None`` if the header is missing.
-        stream: File-like input object for reading the body of the
-            request, if any. This object provides direct access to the
-            server's data stream and is non-seekable. In order to
-            avoid unintended side effects, and to provide maximum
-            flexibility to the application, Falcon itself does not
-            buffer or spool the data in any way.
-
-            Since this object is provided by the WSGI
-            server itself, rather than by Falcon, it may behave
-            differently depending on how you host your app. For example,
-            attempting to read more bytes than are expected (as
-            determined by the Content-Length header) may or may not
-            block indefinitely. It's a good idea to test your WSGI
-            server to find out how it behaves.
-
-            This can be particularly problematic when a request body is
-            expected, but none is given. In this case, the following
-            call blocks under certain WSGI servers::
-
-                # Blocks if Content-Length is 0
-                data = req.stream.read()
-
-            The workaround is fairly straightforward, if verbose::
-
-                # If Content-Length happens to be 0, or the header is
-                # missing altogether, this will not block.
-                data = req.stream.read(req.content_length or 0)
-
-            Alternatively, when passing the stream directly to a
-            consumer, it may be necessary to branch off the
-            value of the Content-Length header::
-
-                if req.content_length:
-                    doc = json.load(req.stream)
-
-            For a slight performance cost, you may instead wish to use
-            :py:attr:`bounded_stream`, which wraps the native WSGI
-            input object to normalize its behavior.
-
-            Note:
-                If an HTML form is POSTed to the API using the
-                *application/x-www-form-urlencoded* media type, and
-                the :py:attr:`~.RequestOptions.auto_parse_form_urlencoded`
-                option is set, the framework
-                will consume `stream` in order to parse the parameters
-                and merge them into the query string parameters. In this
-                case, the stream will be left at EOF.
-
-        bounded_stream: File-like wrapper around `stream` to normalize
-            certain differences between the native input objects
-            employed by different WSGI servers. In particular,
-            `bounded_stream` is aware of the expected Content-Length of
-            the body, and will never block on out-of-bounds reads,
-            assuming the client does not stall while transmitting the
-            data to the server.
-
-            For example, the following will not block when
-            Content-Length is 0 or the header is missing altogether::
-
-                data = req.bounded_stream.read()
-
-            This is also safe::
-
-                doc = json.load(req.bounded_stream)
-
-        media (object): Property that acts as an alias for
-            :meth:`~.get_media`. This alias provides backwards-compatibility
-            for apps that were built for versions of the framework prior to
-            3.0::
-
-                # Equivalent to: deserialized_media = req.get_media()
-                deserialized_media = req.media
-
-        expect (str): Value of the Expect header, or ``None`` if the
-            header is missing.
-
-        range (tuple of int): A 2-member ``tuple`` parsed from the value of the
-            Range header, or ``None`` if the header is missing.
-
-            The two members correspond to the first and last byte
-            positions of the requested resource, inclusive. Negative
-            indices indicate offset from the end of the resource,
-            where -1 is the last byte, -2 is the second-to-last byte,
-            and so forth.
-
-            Only continuous ranges are supported (e.g., "bytes=0-0,-1" would
-            result in an HTTPBadRequest exception when the attribute is
-            accessed.)
-        range_unit (str): Unit of the range parsed from the value of the
-            Range header, or ``None`` if the header is missing
-        if_match (list): Value of the If-Match header, as a parsed list of
-            :class:`falcon.ETag` objects or ``None`` if the header is missing
-            or its value is blank.
-
-            This property provides a list of all ``entity-tags`` in the
-            header, both strong and weak, in the same order as listed in
-            the header.
-
-            (See also: RFC 7232, Section 3.1)
-
-        if_none_match (list): Value of the If-None-Match header, as a parsed
-            list of :class:`falcon.ETag` objects or ``None`` if the header is
-            missing or its value is blank.
-
-            This property provides a list of all ``entity-tags`` in the
-            header, both strong and weak, in the same order as listed in
-            the header.
-
-            (See also: RFC 7232, Section 3.2)
-
-        if_modified_since (datetime): Value of the If-Modified-Since header,
-            or ``None`` if the header is missing.
-        if_unmodified_since (datetime): Value of the If-Unmodified-Since
-            header, or ``None`` if the header is missing.
-        if_range (str): Value of the If-Range header, or ``None`` if the
-            header is missing.
-
-        headers (dict): Raw HTTP headers from the request with dash-separated
-            names normalized to uppercase.
-
-            Note:
-                This property differs from the ASGI version of ``Request.headers``
-                in that the latter returns *lowercase* names. Middleware, such
-                as tracing and logging components, that need to be compatible with
-                both WSGI and ASGI apps should use :attr:`headers_lower` instead.
-
-            Warning:
-                Parsing all the headers to create this dict is done the first
-                time this attribute is accessed, and the returned object should
-                be treated as read-only. Note that this parsing can be costly,
-                so unless you need all the headers in this format, you should
-                instead use the ``get_header()`` method or one of the
-                convenience attributes to get a value for a specific header.
-
-        headers_lower (dict): Same as :attr:`headers` except header names
-            are normalized to lowercase.
-
-        params (dict): The mapping of request query parameter names to their
-            values.  Where the parameter appears multiple times in the query
-            string, the value mapped to that parameter key will be a list of
-            all the values in the order seen.
-
         options (dict): Set of global options passed from the App handler.
     """
 
@@ -446,33 +111,152 @@ class Request:
         '_media_error',
         'is_websocket',
     )
-
-    _cookies = None
-    _cookies_collapsed = None
-    _cached_if_match = None
-    _cached_if_none_match = None
+    _cookies: Optional[Dict[str, List[str]]] = None
+    _cookies_collapsed: Optional[Dict[str, str]] = None
+    _cached_if_match: MissingOr[Optional[List[Union[ETag, Literal['*']]]]] = MISSING
+    _cached_if_none_match: MissingOr[Optional[List[Union[ETag, Literal['*']]]]] = (
+        MISSING
+    )
 
     # Child classes may override this
-    context_type = structures.Context
+    context_type: ClassVar[Type[structures.Context]] = structures.Context
+    """Class variable that determines the factory or
+    type to use for initializing the `context` attribute. By default,
+    the framework will instantiate bare objects (instances of the bare
+    :class:`falcon.Context` class). However, you may override this
+    behavior by creating a custom child class of
+    ``Request``, and then passing that new class to
+    ``App()`` by way of the latter's `request_type` parameter.
 
-    _wsgi_input_type_known = False
+    Note:
+        When overriding `context_type` with a factory function (as
+        opposed to a class), the function is called like a method of
+        the current ``Request`` instance. Therefore the first argument
+        is the Request instance itself (i.e., `self`).
 
-    def __init__(self, env, options=None):
-        self.is_websocket = False
+    """
+
+    # Attribute declaration
+    env: Dict[str, Any]
+    """Reference to the WSGI environ ``dict`` passed in from the
+    server. (See also PEP-3333.)
+    """
+    context: structures.Context
+    """Empty object to hold any data (in its attributes)
+    about the request which is specific to your app (e.g. session
+    object). Falcon itself will not interact with this attribute after
+    it has been initialized.
+
+    Note:
+        The preferred way to pass request-specific data, when using the
+        default context type, is to set attributes directly on the
+        `context` object. For example::
+
+            req.context.role = 'trial'
+            req.context.user = 'guest'
+    """
+    method: str
+    """HTTP method requested, uppercase (e.g., ``'GET'``, ``'POST'``, etc.)"""
+    path: str
+    """Path portion of the request URI (not including query string).
+
+    Warning:
+        If this attribute is to be used by the app for any upstream
+        requests, any non URL-safe characters in the path must be URL
+        encoded back before making the request.
+
+    Note:
+        ``req.path`` may be set to a new value by a
+        ``process_request()`` middleware method in order to influence
+        routing. If the original request path was URL encoded, it will
+        be decoded before being returned by this attribute.
+    """
+    query_string: str
+    """Query string portion of the request URI, without the preceding
+    '?' character.
+    """
+    uri_template: Optional[str]
+    """The template for the route that was matched for
+    this request. May be ``None`` if the request has not yet been
+    routed, as would be the case for ``process_request()`` middleware
+    methods. May also be ``None`` if your app uses a custom routing
+    engine and the engine does not provide the URI template when
+    resolving a route.
+    """
+    content_type: Optional[str]
+    """Value of the Content-Type header, or ``None`` if the header is missing."""
+    stream: ReadableIO
+    """File-like input object for reading the body of the
+    request, if any. This object provides direct access to the
+    server's data stream and is non-seekable. In order to
+    avoid unintended side effects, and to provide maximum
+    flexibility to the application, Falcon itself does not
+    buffer or spool the data in any way.
+
+    Since this object is provided by the WSGI
+    server itself, rather than by Falcon, it may behave
+    differently depending on how you host your app. For example,
+    attempting to read more bytes than are expected (as
+    determined by the Content-Length header) may or may not
+    block indefinitely. It's a good idea to test your WSGI
+    server to find out how it behaves.
+
+    This can be particularly problematic when a request body is
+    expected, but none is given. In this case, the following
+    call blocks under certain WSGI servers::
+
+        # Blocks if Content-Length is 0
+        data = req.stream.read()
+
+    The workaround is fairly straightforward, if verbose::
+
+        # If Content-Length happens to be 0, or the header is
+        # missing altogether, this will not block.
+        data = req.stream.read(req.content_length or 0)
+
+    Alternatively, when passing the stream directly to a
+    consumer, it may be necessary to branch off the
+    value of the Content-Length header::
+
+        if req.content_length:
+            doc = json.load(req.stream)
+
+    For a slight performance cost, you may instead wish to use
+    :attr:`bounded_stream`, which wraps the native WSGI
+    input object to normalize its behavior.
+
+    Note:
+        If an HTML form is POSTed to the API using the
+        *application/x-www-form-urlencoded* media type, and
+        the :attr:`~.RequestOptions.auto_parse_form_urlencoded`
+        option is set, the framework
+        will consume `stream` in order to parse the parameters
+        and merge them into the query string parameters. In this
+        case, the stream will be left at EOF.
+    """
+    options: RequestOptions
+    """Set of global options passed from the App handler."""
+    is_websocket: bool
+    """Always ``False`` in a sync ``Request``."""
+
+    def __init__(
+        self, env: Dict[str, Any], options: Optional[RequestOptions] = None
+    ) -> None:
+        self.is_websocket: bool = False
 
         self.env = env
         self.options = options if options else RequestOptions()
 
-        self._wsgierrors = env['wsgi.errors']
+        self._wsgierrors: TextIO = env['wsgi.errors']
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
-        self._media = _UNSET
-        self._media_error = None
+        self._media: MissingOr[Any] = MISSING
+        self._media_error: Optional[Exception] = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
-        path = env['PATH_INFO'] or '/'
+        path: str = env['PATH_INFO'] or '/'
 
         # PEP 3333 specifies that the PATH_INFO variable is always
         # "bytes tunneled as latin-1" and must be encoded back.
@@ -496,7 +280,7 @@ class Request:
             and len(path) != 1
             and path.endswith('/')
         ):
-            self.path = path[:-1]
+            self.path: str = path[:-1]
         else:
             self.path = path
 
@@ -505,7 +289,7 @@ class Request:
             self.query_string = env['QUERY_STRING']
         except KeyError:
             self.query_string = ''
-            self._params = {}
+            self._params: Dict[str, Union[str, List[str]]] = {}
         else:
             if self.query_string:
                 self._params = parse_query_string(
@@ -517,23 +301,23 @@ class Request:
             else:
                 self._params = {}
 
-        self._cached_access_route = None
-        self._cached_forwarded = None
-        self._cached_forwarded_prefix = None
-        self._cached_forwarded_uri = None
-        self._cached_headers = None
-        self._cached_headers_lower = None
-        self._cached_prefix = None
-        self._cached_relative_uri = None
-        self._cached_uri = None
+        self._cached_access_route: Optional[List[str]] = None
+        self._cached_forwarded: Optional[List[Forwarded]] = None
+        self._cached_forwarded_prefix: Optional[str] = None
+        self._cached_forwarded_uri: Optional[str] = None
+        self._cached_headers: Optional[Dict[str, str]] = None
+        self._cached_headers_lower: Optional[Dict[str, str]] = None
+        self._cached_prefix: Optional[str] = None
+        self._cached_relative_uri: Optional[str] = None
+        self._cached_uri: Optional[str] = None
 
         try:
-            self.content_type = self.env['CONTENT_TYPE']
+            self.content_type: Union[str, None] = self.env['CONTENT_TYPE']
         except KeyError:
             self.content_type = None
 
         self.stream = env['wsgi.input']
-        self._bounded_stream = None  # Lazy wrapping
+        self._bounded_stream: Optional[BoundedStream] = None  # Lazy wrapping
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
@@ -553,24 +337,33 @@ class Request:
 
         self.context = self.context_type()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)
 
     # ------------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------------
 
-    user_agent = helpers.header_property('HTTP_USER_AGENT')
-    auth = helpers.header_property('HTTP_AUTHORIZATION')
-
-    expect = helpers.header_property('HTTP_EXPECT')
-
-    if_range = helpers.header_property('HTTP_IF_RANGE')
-
-    referer = helpers.header_property('HTTP_REFERER')
+    user_agent: Optional[str] = helpers.header_property('HTTP_USER_AGENT')
+    """Value of the User-Agent header, or ``None`` if the header is missing."""
+    auth: Optional[str] = helpers.header_property('HTTP_AUTHORIZATION')
+    """Value of the Authorization header, or ``None`` if the header is missing."""
+    expect: Optional[str] = helpers.header_property('HTTP_EXPECT')
+    """Value of the Expect header, or ``None`` if the header is missing."""
+    if_range: Optional[str] = helpers.header_property('HTTP_IF_RANGE')
+    """Value of the If-Range header, or ``None`` if the header is missing."""
+    referer: Optional[str] = helpers.header_property('HTTP_REFERER')
+    """Value of the Referer header, or ``None`` if the header is missing."""
 
     @property
-    def forwarded(self):
+    def forwarded(self) -> Optional[List[Forwarded]]:
+        """Value of the Forwarded header, as a parsed list
+        of :class:`falcon.Forwarded` objects, or ``None`` if the header
+        is missing. If the header value is malformed, Falcon will
+        make a best effort to parse what it can.
+
+        (See also: RFC 7239, Section 4)
+        """  # noqa: D205
         # PERF(kgriffs): We could DRY up this memoization pattern using
         # a decorator, but that would incur additional overhead without
         # resorting to some trickery to rewrite the body of the method
@@ -587,21 +380,31 @@ class Request:
         return self._cached_forwarded
 
     @property
-    def client_accepts_json(self):
+    def client_accepts_json(self) -> bool:
+        """``True`` if the Accept header indicates that the client is
+        willing to receive JSON, otherwise ``False``.
+        """  # noqa: D205
         return self.client_accepts('application/json')
 
     @property
-    def client_accepts_msgpack(self):
+    def client_accepts_msgpack(self) -> bool:
+        """``True`` if the Accept header indicates that the client is
+        willing to receive MessagePack, otherwise ``False``.
+        """  # noqa: D205
         return self.client_accepts('application/x-msgpack') or self.client_accepts(
             'application/msgpack'
         )
 
     @property
-    def client_accepts_xml(self):
+    def client_accepts_xml(self) -> bool:
+        """``True`` if the Accept header indicates that the client is
+        willing to receive XML, otherwise ``False``.
+        """  # noqa: D205
         return self.client_accepts('application/xml')
 
     @property
-    def accept(self):
+    def accept(self) -> str:
+        """Value of the Accept header, or ``'*/*'`` if the header is missing."""
         # NOTE(kgriffs): Per RFC, a missing accept header is
         # equivalent to '*/*'
         try:
@@ -610,7 +413,11 @@ class Request:
             return '*/*'
 
     @property
-    def content_length(self):
+    def content_length(self) -> Optional[int]:
+        """Value of the Content-Length header converted to an ``int``.
+
+        Returns ``None`` if the header is missing.
+        """
         try:
             value = self.env['CONTENT_LENGTH']
         except KeyError:
@@ -638,53 +445,113 @@ class Request:
         return value_as_int
 
     @property
-    def bounded_stream(self):
+    def bounded_stream(self) -> BoundedStream:
+        """File-like wrapper around `stream` to normalize
+        certain differences between the native input objects
+        employed by different WSGI servers. In particular,
+        `bounded_stream` is aware of the expected Content-Length of
+        the body, and will never block on out-of-bounds reads,
+        assuming the client does not stall while transmitting the
+        data to the server.
+
+        For example, the following will not block when
+        Content-Length is 0 or the header is missing altogether::
+
+            data = req.bounded_stream.read()
+
+        This is also safe::
+
+            doc = json.load(req.bounded_stream)
+        """  # noqa: D205
         if self._bounded_stream is None:
             self._bounded_stream = self._get_wrapped_wsgi_input()
 
         return self._bounded_stream
 
     @property
-    def date(self):
+    def date(self) -> Optional[datetime]:
+        """Value of the Date header, converted to a ``datetime`` instance.
+
+        The header value is assumed to conform to RFC 1123.
+        """
         return self.get_header_as_datetime('Date')
 
     @property
-    def if_match(self):
+    def if_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
+        """Value of the If-Match header, as a parsed list of
+        :class:`falcon.ETag` objects or ``None`` if the header is missing
+        or its value is blank.
+
+        This property provides a list of all ``entity-tags`` in the
+        header, both strong and weak, in the same order as listed in
+        the header.
+
+        (See also: RFC 7232, Section 3.1)
+        """  # noqa: D205
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
-        # PERF(kgriffs): It probably isn't worth it to set
-        #   self._cached_if_match to a special type/object to distinguish
-        #   between the variable being unset and the header not being
-        #   present in the request. The reason is that if the app
-        #   gets a None back on the first reference to property, it
-        #   probably isn't going to access the property again (TBD).
-        if self._cached_if_match is None:
+        if self._cached_if_match is MISSING:
             header_value = self.env.get('HTTP_IF_MATCH')
             if header_value:
                 self._cached_if_match = helpers._parse_etags(header_value)
+            else:
+                self._cached_if_match = None
 
         return self._cached_if_match
 
     @property
-    def if_none_match(self):
-        if self._cached_if_none_match is None:
+    def if_none_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
+        """Value of the If-None-Match header, as a parsed
+        list of :class:`falcon.ETag` objects or ``None`` if the header is
+        missing or its value is blank.
+
+        This property provides a list of all ``entity-tags`` in the
+        header, both strong and weak, in the same order as listed in
+        the header.
+
+        (See also: RFC 7232, Section 3.2)
+        """  # noqa: D205
+        if self._cached_if_none_match is MISSING:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
             if header_value:
                 self._cached_if_none_match = helpers._parse_etags(header_value)
+            else:
+                self._cached_if_none_match = None
 
         return self._cached_if_none_match
 
     @property
-    def if_modified_since(self):
+    def if_modified_since(self) -> Optional[datetime]:
+        """Value of the If-Modified-Since header.
+
+        Returns ``None`` if the header is missing.
+        """
         return self.get_header_as_datetime('If-Modified-Since')
 
     @property
-    def if_unmodified_since(self):
+    def if_unmodified_since(self) -> Optional[datetime]:
+        """Value of the If-Unmodified-Since header.
+
+        Returns ``None`` if the header is missing.
+        """
         return self.get_header_as_datetime('If-Unmodified-Since')
 
     @property
-    def range(self):
+    def range(self) -> Optional[Tuple[int, int]]:
+        """A 2-member ``tuple`` parsed from the value of the
+        Range header, or ``None`` if the header is missing.
+
+        The two members correspond to the first and last byte
+        positions of the requested resource, inclusive. Negative
+        indices indicate offset from the end of the resource,
+        where -1 is the last byte, -2 is the second-to-last byte,
+        and so forth.
+
+        Only continuous ranges are supported (e.g., "bytes=0-0,-1" would
+        result in an HTTPBadRequest exception when the attribute is
+        accessed).
+        """  # noqa: D205
         value = self.get_header('Range')
         if value is None:
             return None
@@ -706,20 +573,20 @@ class Request:
                 raise ValueError()
 
             if first and last:
-                first, last = (int(first), int(last))
-                if last < first:
+                first_num, last_num = (int(first), int(last))
+                if last_num < first_num:
                     raise ValueError()
             elif first:
-                first, last = (int(first), -1)
+                first_num, last_num = (int(first), -1)
             elif last:
-                first, last = (-int(last), -1)
-                if first >= 0:
+                first_num, last_num = (-int(last), -1)
+                if first_num >= 0:
                     raise ValueError()
             else:
                 msg = 'The range offsets are missing.'
                 raise errors.HTTPInvalidHeader(msg, 'Range')
 
-            return first, last
+            return first_num, last_num
 
         except ValueError:
             href = 'https://tools.ietf.org/html/rfc7233'
@@ -728,7 +595,11 @@ class Request:
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
 
     @property
-    def range_unit(self):
+    def range_unit(self) -> Optional[str]:
+        """Unit of the range parsed from the value of the Range header.
+
+        Returns ``None`` if the header is missing.
+        """
         value = self.get_header('Range')
         if value is None:
             return None
@@ -741,7 +612,17 @@ class Request:
             raise errors.HTTPInvalidHeader(msg, 'Range')
 
     @property
-    def root_path(self):
+    def root_path(self) -> str:
+        """The initial portion of the request URI's path that
+        corresponds to the application object, so that the
+        application knows its virtual "location". This may be an
+        empty string, if the application corresponds to the "root"
+        of the server.
+
+        (In WSGI it corresponds to the "SCRIPT_NAME" environ variable defined
+        by PEP-3333; in ASGI it Corresponds to the "root_path"ASGI HTTP
+        scope field.)
+        """  # noqa: D205
         # PERF(kgriffs): try..except is faster than get() assuming that
         # we normally expect the key to exist. Even though PEP-3333
         # allows WSGI servers to omit the key when the value is an
@@ -752,14 +633,44 @@ class Request:
         except KeyError:
             return ''
 
-    app = root_path
+    @property
+    # NOTE(caselit): Deprecated long ago. Warns since 4.0
+    @deprecated('Use `root_path` instead', is_property=True)
+    def app(self) -> str:
+        """Deprecated alias for :attr:`root_path`."""
+        return self.root_path
 
     @property
-    def scheme(self):
+    def scheme(self) -> str:
+        """URL scheme used for the request. Either 'http' or 'https'.
+
+        Note:
+            If the request was proxied, the scheme may not
+            match what was originally requested by the client.
+            :attr:`forwarded_scheme` can be used, instead,
+            to handle such cases.
+        """
         return self.env['wsgi.url_scheme']
 
     @property
-    def forwarded_scheme(self):
+    def forwarded_scheme(self) -> str:
+        """Original URL scheme requested by the user agent, if the request was proxied.
+
+        Typical values are 'http' or 'https'.
+
+        The following request headers are checked, in order of
+        preference, to determine the forwarded scheme:
+
+            - ``Forwarded``
+            - ``X-Forwarded-For``
+
+        If none of these headers are available, or if the
+        Forwarded header is available but does not contain a
+        "proto" parameter in the first hop, the value of
+        :attr:`scheme` is returned instead.
+
+        (See also: RFC 7239, Section 1)
+        """
         # PERF(kgriffs): Since the Forwarded header is still relatively
         # new, we expect X-Forwarded-Proto to be more common, so
         # try to avoid calling self.forwarded if we can, since it uses a
@@ -785,7 +696,8 @@ class Request:
         return scheme
 
     @property
-    def uri(self):
+    def uri(self) -> str:
+        """The fully-qualified URI for the request."""
         if self._cached_uri is None:
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
@@ -797,9 +709,15 @@ class Request:
         return self._cached_uri
 
     url = uri
+    """Alias for :attr:`Request.uri`."""
 
     @property
-    def forwarded_uri(self):
+    def forwarded_uri(self) -> str:
+        """Original URI for proxied requests.
+
+        Uses :attr:`forwarded_scheme` and :attr:`forwarded_host` in order
+        to reconstruct the original URI requested by the user agent.
+        """
         if self._cached_forwarded_uri is None:
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
@@ -813,35 +731,47 @@ class Request:
         return self._cached_forwarded_uri
 
     @property
-    def relative_uri(self):
+    def relative_uri(self) -> str:
+        """The path and query string portion of the
+        request URI, omitting the scheme and host.
+        """  # noqa: D205
         if self._cached_relative_uri is None:
             if self.query_string:
                 self._cached_relative_uri = (
-                    self.app + self.path + '?' + self.query_string
+                    self.root_path + self.path + '?' + self.query_string
                 )
             else:
-                self._cached_relative_uri = self.app + self.path
+                self._cached_relative_uri = self.root_path + self.path
 
         return self._cached_relative_uri
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
+        """The prefix of the request URI, including scheme,
+        host, and app :attr:`~.root_path` (if any).
+        """  # noqa: D205
         if self._cached_prefix is None:
-            self._cached_prefix = self.scheme + '://' + self.netloc + self.app
+            self._cached_prefix = self.scheme + '://' + self.netloc + self.root_path
 
         return self._cached_prefix
 
     @property
-    def forwarded_prefix(self):
+    def forwarded_prefix(self) -> str:
+        """The prefix of the original URI for proxied requests.
+
+        Uses :attr:`forwarded_scheme` and :attr:`forwarded_host` in order
+        to reconstruct the original URI.
+        """
         if self._cached_forwarded_prefix is None:
             self._cached_forwarded_prefix = (
-                self.forwarded_scheme + '://' + self.forwarded_host + self.app
+                self.forwarded_scheme + '://' + self.forwarded_host + self.root_path
             )
 
         return self._cached_forwarded_prefix
 
     @property
-    def host(self):
+    def host(self) -> str:
+        """Host request header field."""
         try:
             # NOTE(kgriffs): Prefer the host header; the web server
             # isn't supposed to mess with it, so it should be what
@@ -856,7 +786,29 @@ class Request:
         return host
 
     @property
-    def forwarded_host(self):
+    def forwarded_host(self) -> str:
+        """Original host request header as received
+        by the first proxy in front of the application server.
+
+        The following request headers are checked, in order of
+        preference, to determine the forwarded scheme:
+
+            - ``Forwarded``
+            - ``X-Forwarded-Host``
+
+        If none of the above headers are available, or if the
+        Forwarded header is available but the "host"
+        parameter is not included in the first hop, the value of
+        :attr:`host` is returned instead.
+
+        Note:
+            Reverse proxies are often configured to set the Host
+            header directly to the one that was originally
+            requested by the user agent; in that case, using
+            :attr:`host` is sufficient.
+
+        (See also: RFC 7239, Section 4)
+        """  # noqa: D205
         # PERF(kgriffs): Since the Forwarded header is still relatively
         # new, we expect X-Forwarded-Host to be more common, so
         # try to avoid calling self.forwarded if we can, since it uses a
@@ -882,18 +834,42 @@ class Request:
         return host
 
     @property
-    def subdomain(self):
+    def subdomain(self) -> Optional[str]:
+        """Leftmost (i.e., most specific) subdomain from the hostname.
+
+        If only a single domain name is given, `subdomain` will be ``None``.
+
+        Note:
+            If the hostname in the request is an IP address, the value
+            for `subdomain` is undefined.
+        """
         # PERF(kgriffs): .partition is slightly faster than .split
         subdomain, sep, remainder = self.host.partition('.')
         return subdomain if sep else None
 
     @property
-    def headers(self):
+    def headers(self) -> Mapping[str, str]:
+        """Raw HTTP headers from the request with dash-separated
+        names normalized to uppercase.
+
+        Note:
+            This property differs from the ASGI version of ``Request.headers``
+            in that the latter returns *lowercase* names. Middleware, such
+            as tracing and logging components, that need to be compatible with
+            both WSGI and ASGI apps should use :attr:`headers_lower` instead.
+
+        Warning:
+            Parsing all the headers to create this dict is done the first
+            time this attribute is accessed, and the returned object should
+            be treated as read-only. Note that this parsing can be costly,
+            so unless you need all the headers in this format, you should
+            instead use the ``get_header()`` method or one of the
+            convenience attributes to get a value for a specific header.
+        """  # noqa: D205
         if self._cached_headers is None:
             headers = self._cached_headers = {}
 
-            env = self.env
-            for name, value in env.items():
+            for name, value in self.env.items():
                 if name.startswith('HTTP_'):
                     # NOTE(kgriffs): Don't take the time to fix the case
                     # since headers are supposed to be case-insensitive
@@ -906,7 +882,8 @@ class Request:
         return self._cached_headers
 
     @property
-    def headers_lower(self):
+    def headers_lower(self) -> Mapping[str, str]:
+        """Same as :attr:`headers` except header names are normalized to lowercase."""
         if self._cached_headers_lower is None:
             self._cached_headers_lower = {
                 key.lower(): value for key, value in self.headers.items()
@@ -915,11 +892,26 @@ class Request:
         return self._cached_headers_lower
 
     @property
-    def params(self):
+    def params(self) -> Mapping[str, Union[str, List[str]]]:
+        """The mapping of request query parameter names to their values.
+
+        Where the parameter appears multiple times in the query
+        string, the value mapped to that parameter key will be a list of
+        all the values in the order seen.
+        """
         return self._params
 
     @property
-    def cookies(self):
+    def cookies(self) -> Mapping[str, str]:
+        """A dict of name/value cookie pairs.
+
+        The returned object should be treated as read-only to avoid unintended
+        side-effects. If a cookie appears more than once in the request, only
+        the first value encountered will be made available here.
+
+        See also: :meth:`~falcon.Request.get_cookie_values` or
+        :meth:`~falcon.asgi.Request.get_cookie_values`.
+        """
         if self._cookies_collapsed is None:
             if self._cookies is None:
                 header_value = self.get_header('Cookie')
@@ -933,7 +925,33 @@ class Request:
         return self._cookies_collapsed
 
     @property
-    def access_route(self):
+    def access_route(self) -> List[str]:
+        """IP address of the original client, as well
+        as any known addresses of proxies fronting the WSGI server.
+
+        The following request headers are checked, in order of
+        preference, to determine the addresses:
+
+            - ``Forwarded``
+            - ``X-Forwarded-For``
+            - ``X-Real-IP``
+
+        If none of these headers are available, the value of
+        :attr:`~.remote_addr` is used instead.
+
+        Note:
+            Per `RFC 7239`_, the access route may contain "unknown"
+            and obfuscated identifiers, in addition to IPv4 and
+            IPv6 addresses
+
+            .. _RFC 7239: https://tools.ietf.org/html/rfc7239
+
+        Warning:
+            Headers can be forged by any client or proxy. Use this
+            property with caution and validate all values before
+            using them. Do not rely on the access route to authorize
+            requests.
+        """  # noqa: D205
         if self._cached_access_route is None:
             # NOTE(kgriffs): Try different headers in order of
             # preference; if none are found, fall back to REMOTE_ADDR.
@@ -948,7 +966,7 @@ class Request:
 
             if 'HTTP_FORWARDED' in self.env:
                 self._cached_access_route = []
-                for hop in self.forwarded:
+                for hop in self.forwarded or ():
                     if hop.src is not None:
                         host, __ = parse_host(hop.src)
                         self._cached_access_route.append(host)
@@ -967,21 +985,40 @@ class Request:
         return self._cached_access_route
 
     @property
-    def remote_addr(self):
+    def remote_addr(self) -> str:
+        """IP address of the closest client or proxy to the WSGI server.
+
+        This property is determined by the value of ``REMOTE_ADDR``
+        in the WSGI environment dict. Since this address is not
+        derived from an HTTP header, clients and proxies can not
+        forge it.
+
+        Note:
+            If your application is behind one or more reverse
+            proxies, you can use :attr:`~.access_route`
+            to retrieve the real IP address of the client.
+        """
         try:
-            value = self.env['REMOTE_ADDR']
+            value: str = self.env['REMOTE_ADDR']
         except KeyError:
             value = '127.0.0.1'
 
         return value
 
     @property
-    def port(self):
+    def port(self) -> int:
+        """Port used for the request.
+
+        If the Host header is present in the request, but does not specify a port,
+        the default one for the given schema is returned (80 for HTTP and 443
+        for HTTPS). If the request does not include a Host header, the listening
+        port for the server is returned instead.
+        """
         try:
             host_header = self.env['HTTP_HOST']
 
             default_port = 80 if self.env['wsgi.url_scheme'] == 'http' else 443
-            host, port = parse_host(host_header, default_port=default_port)
+            _, port = parse_host(host_header, default_port=default_port)
         except KeyError:
             # NOTE(kgriffs): Normalize to an int, since that is the type
             # returned by parse_host().
@@ -993,7 +1030,12 @@ class Request:
         return port
 
     @property
-    def netloc(self):
+    def netloc(self) -> str:
+        """Returns the "host:port" portion of the request URL.
+
+        The port may be omitted if it is the default one for the URL's schema
+        (80 for HTTP and 443 for HTTPS).
+        """
         env = self.env
         # NOTE(kgriffs): According to PEP-3333 we should first
         # try to use the Host header if present.
@@ -1001,11 +1043,11 @@ class Request:
         # PERF(kgriffs): try..except is faster than get() when we
         # expect the key to be present most of the time.
         try:
-            netloc_value = env['HTTP_HOST']
+            netloc_value: str = env['HTTP_HOST']
         except KeyError:
             netloc_value = env['SERVER_NAME']
 
-            port = env['SERVER_PORT']
+            port: str = env['SERVER_PORT']
             if self.scheme == 'https':
                 if port != '443':
                     netloc_value += ':' + port
@@ -1015,7 +1057,7 @@ class Request:
 
         return netloc_value
 
-    def get_media(self, default_when_empty=_UNSET):
+    def get_media(self, default_when_empty: MissingOr[Any] = MISSING) -> Any:
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -1056,10 +1098,10 @@ class Request:
         Returns:
             media (object): The deserialized media representation.
         """
-        if self._media is not _UNSET:
+        if self._media is not MISSING:
             return self._media
         if self._media_error is not None:
-            if default_when_empty is not _UNSET and isinstance(
+            if default_when_empty is not MISSING and isinstance(
                 self._media_error, errors.MediaNotFoundError
             ):
                 return default_when_empty
@@ -1075,7 +1117,7 @@ class Request:
             )
         except errors.MediaNotFoundError as err:
             self._media_error = err
-            if default_when_empty is not _UNSET:
+            if default_when_empty is not MISSING:
                 return default_when_empty
             raise
         except Exception as err:
@@ -1087,13 +1129,21 @@ class Request:
 
         return self._media
 
-    media = property(get_media)
+    media: Any = property(get_media)
+    """Property that acts as an alias for
+    :meth:`~.get_media`. This alias provides backwards-compatibility
+    for apps that were built for versions of the framework prior to
+    3.0::
+
+        # Equivalent to: deserialized_media = req.get_media()
+        deserialized_media = req.media
+    """
 
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
 
-    def client_accepts(self, media_type):
+    def client_accepts(self, media_type: str) -> bool:
         """Determine whether or not the client accepts a given media type.
 
         Args:
@@ -1118,7 +1168,7 @@ class Request:
         except ValueError:
             return False
 
-    def client_prefers(self, media_types):
+    def client_prefers(self, media_types: Sequence[str]) -> Optional[str]:
         """Return the client's preferred media type, given several choices.
 
         Args:
@@ -1141,7 +1191,22 @@ class Request:
 
         return preferred_type if preferred_type else None
 
-    def get_header(self, name, required=False, default=None):
+    @overload
+    def get_header(
+        self, name: str, required: Literal[True], default: Optional[str] = ...
+    ) -> str: ...
+
+    @overload
+    def get_header(self, name: str, required: bool = ..., *, default: str) -> str: ...
+
+    @overload
+    def get_header(
+        self, name: str, required: bool = ..., default: Optional[str] = ...
+    ) -> Optional[str]: ...
+
+    def get_header(
+        self, name: str, required: bool = False, default: Optional[str] = None
+    ) -> Optional[str]:
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -1190,7 +1255,13 @@ class Request:
 
             raise errors.HTTPMissingHeader(name)
 
-    def get_header_as_int(self, header, required=False):
+    @overload
+    def get_header_as_int(self, header: str, required: Literal[True]) -> int: ...
+
+    @overload
+    def get_header_as_int(self, header: str, required: bool = ...) -> Optional[int]: ...
+
+    def get_header_as_int(self, header: str, required: bool = False) -> Optional[int]:
         """Retrieve the int value for the given header.
 
         Args:
@@ -1213,15 +1284,24 @@ class Request:
 
         http_int = self.get_header(header, required=required)
         try:
-            return int(http_int)
-        except TypeError:
-            # When the header does not exist and isn't required
-            return None
+            return int(http_int) if http_int is not None else None
         except ValueError:
             msg = 'The value of the header must be an integer.'
             raise errors.HTTPInvalidHeader(msg, header)
 
-    def get_header_as_datetime(self, header, required=False, obs_date=False):
+    @overload
+    def get_header_as_datetime(
+        self, header: str, required: Literal[True], obs_date: bool = ...
+    ) -> datetime: ...
+
+    @overload
+    def get_header_as_datetime(
+        self, header: str, required: bool = ..., obs_date: bool = ...
+    ) -> Optional[datetime]: ...
+
+    def get_header_as_datetime(
+        self, header: str, required: bool = False, obs_date: bool = False
+    ) -> Optional[datetime]:
         """Return an HTTP header with HTTP-Date values as a datetime.
 
         Args:
@@ -1247,15 +1327,15 @@ class Request:
 
         http_date = self.get_header(header, required=required)
         try:
-            return util.http_date_to_dt(http_date, obs_date=obs_date)
-        except TypeError:
-            # When the header does not exist and isn't required
-            return None
+            if http_date is not None:
+                return util.http_date_to_dt(http_date, obs_date=obs_date)
+            else:
+                return None
         except ValueError:
             msg = 'It must be formatted according to RFC 7231, Section 7.1.1.1'
             raise errors.HTTPInvalidHeader(msg, header)
 
-    def get_cookie_values(self, name):
+    def get_cookie_values(self, name: str) -> Optional[List[str]]:
         """Return all values provided in the Cookie header for the named cookie.
 
         (See also: :ref:`Getting Cookies <getting-cookies>`)
@@ -1286,7 +1366,41 @@ class Request:
 
         return self._cookies.get(name)
 
-    def get_param(self, name, required=False, store=None, default=None):
+    @overload
+    def get_param(
+        self,
+        name: str,
+        required: Literal[True],
+        store: StoreArgument = ...,
+        default: Optional[str] = ...,
+    ) -> str: ...
+
+    @overload
+    def get_param(
+        self,
+        name: str,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        *,
+        default: str,
+    ) -> str: ...
+
+    @overload
+    def get_param(
+        self,
+        name: str,
+        required: bool = False,
+        store: StoreArgument = None,
+        default: Optional[str] = None,
+    ) -> Optional[str]: ...
+
+    def get_param(
+        self,
+        name: str,
+        required: bool = False,
+        store: StoreArgument = None,
+        default: Optional[str] = None,
+    ) -> Optional[str]:
         """Return the raw value of a query string parameter as a string.
 
         Note:
@@ -1295,7 +1409,7 @@ class Request:
             automatically parse the parameters from the request body
             and merge them into the query string parameters. To enable
             this functionality, set
-            :py:attr:`~.RequestOptions.auto_parse_form_urlencoded` to
+            :attr:`~.RequestOptions.auto_parse_form_urlencoded` to
             ``True`` via :any:`App.req_options`.
 
             Note, however, that the
@@ -1362,15 +1476,49 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
+    @overload
     def get_param_as_int(
         self,
-        name,
-        required=False,
-        min_value=None,
-        max_value=None,
-        store=None,
-        default=None,
-    ):
+        name: str,
+        required: Literal[True],
+        min_value: Optional[int] = ...,
+        max_value: Optional[int] = ...,
+        store: StoreArgument = ...,
+        default: Optional[int] = ...,
+    ) -> int: ...
+
+    @overload
+    def get_param_as_int(
+        self,
+        name: str,
+        required: bool = ...,
+        min_value: Optional[int] = ...,
+        max_value: Optional[int] = ...,
+        store: StoreArgument = ...,
+        *,
+        default: int,
+    ) -> int: ...
+
+    @overload
+    def get_param_as_int(
+        self,
+        name: str,
+        required: bool = ...,
+        min_value: Optional[int] = ...,
+        max_value: Optional[int] = ...,
+        store: StoreArgument = ...,
+        default: Optional[int] = ...,
+    ) -> Optional[int]: ...
+
+    def get_param_as_int(
+        self,
+        name: str,
+        required: bool = False,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None,
+        store: StoreArgument = None,
+        default: Optional[int] = None,
+    ) -> Optional[int]:
         """Return the value of a query string parameter as an int.
 
         Args:
@@ -1413,12 +1561,12 @@ class Request:
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
+            val_str = params[name]
+            if isinstance(val_str, list):
+                val_str = val_str[-1]
 
             try:
-                val = int(val)
+                val = int(val_str)
             except ValueError:
                 msg = 'The value must be an integer.'
                 raise errors.HTTPInvalidParam(msg, name)
@@ -1441,15 +1589,49 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
+    @overload
     def get_param_as_float(
         self,
-        name,
-        required=False,
-        min_value=None,
-        max_value=None,
-        store=None,
-        default=None,
-    ):
+        name: str,
+        required: Literal[True],
+        min_value: Optional[float] = ...,
+        max_value: Optional[float] = ...,
+        store: StoreArgument = ...,
+        default: Optional[float] = ...,
+    ) -> float: ...
+
+    @overload
+    def get_param_as_float(
+        self,
+        name: str,
+        required: bool = ...,
+        min_value: Optional[float] = ...,
+        max_value: Optional[float] = ...,
+        store: StoreArgument = ...,
+        *,
+        default: float,
+    ) -> float: ...
+
+    @overload
+    def get_param_as_float(
+        self,
+        name: str,
+        required: bool = ...,
+        min_value: Optional[float] = ...,
+        max_value: Optional[float] = ...,
+        store: StoreArgument = ...,
+        default: Optional[float] = ...,
+    ) -> Optional[float]: ...
+
+    def get_param_as_float(
+        self,
+        name: str,
+        required: bool = False,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
+        store: StoreArgument = None,
+        default: Optional[float] = None,
+    ) -> Optional[float]:
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1492,12 +1674,12 @@ class Request:
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
+            val_str = params[name]
+            if isinstance(val_str, list):
+                val_str = val_str[-1]
 
             try:
-                val = float(val)
+                val = float(val_str)
             except ValueError:
                 msg = 'The value must be a float.'
                 raise errors.HTTPInvalidParam(msg, name)
@@ -1520,7 +1702,41 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_uuid(self, name, required=False, store=None, default=None):
+    @overload
+    def get_param_as_uuid(
+        self,
+        name: str,
+        required: Literal[True],
+        store: StoreArgument = ...,
+        default: Optional[UUID] = ...,
+    ) -> UUID: ...
+
+    @overload
+    def get_param_as_uuid(
+        self,
+        name: str,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        *,
+        default: UUID,
+    ) -> UUID: ...
+
+    @overload
+    def get_param_as_uuid(
+        self,
+        name: str,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        default: Optional[UUID] = ...,
+    ) -> Optional[UUID]: ...
+
+    def get_param_as_uuid(
+        self,
+        name: str,
+        required: bool = False,
+        store: StoreArgument = None,
+        default: Optional[UUID] = None,
+    ) -> Optional[UUID]:
         """Return the value of a query string parameter as an UUID.
 
         The value to convert must conform to the standard UUID string
@@ -1566,12 +1782,12 @@ class Request:
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
+            val_str = params[name]
+            if isinstance(val_str, list):
+                val_str = val_str[-1]
 
             try:
-                val = UUID(val)
+                val = UUID(val_str)
             except ValueError:
                 msg = 'The value must be a UUID string.'
                 raise errors.HTTPInvalidParam(msg, name)
@@ -1586,9 +1802,45 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
+    @overload
     def get_param_as_bool(
-        self, name, required=False, store=None, blank_as_true=True, default=None
-    ):
+        self,
+        name: str,
+        required: Literal[True],
+        store: StoreArgument = ...,
+        blank_as_true: bool = ...,
+        default: Optional[bool] = ...,
+    ) -> bool: ...
+
+    @overload
+    def get_param_as_bool(
+        self,
+        name: str,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        blank_as_true: bool = ...,
+        *,
+        default: bool,
+    ) -> bool: ...
+
+    @overload
+    def get_param_as_bool(
+        self,
+        name: str,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        blank_as_true: bool = ...,
+        default: Optional[bool] = ...,
+    ) -> Optional[bool]: ...
+
+    def get_param_as_bool(
+        self,
+        name: str,
+        required: bool = False,
+        store: StoreArgument = None,
+        blank_as_true: bool = True,
+        default: Optional[bool] = None,
+    ) -> Optional[bool]:
         """Return the value of a query string parameter as a boolean.
 
         This method treats valueless parameters as flags. By default, if no
@@ -1638,15 +1890,15 @@ class Request:
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
+            val_str = params[name]
+            if isinstance(val_str, list):
+                val_str = val_str[-1]
 
-            if val in TRUE_STRINGS:
+            if val_str in TRUE_STRINGS:
                 val = True
-            elif val in FALSE_STRINGS:
+            elif val_str in FALSE_STRINGS:
                 val = False
-            elif not val:
+            elif not val_str:
                 val = blank_as_true
             else:
                 msg = 'The value of the parameter must be "true" or "false".'
@@ -1662,9 +1914,77 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
+    @overload
     def get_param_as_list(
-        self, name, transform=None, required=False, store=None, default=None
-    ):
+        self,
+        name: str,
+        transform: None = ...,
+        *,
+        required: Literal[True],
+        store: StoreArgument = ...,
+        default: Optional[List[str]] = ...,
+    ) -> List[str]: ...
+
+    @overload
+    def get_param_as_list(
+        self,
+        name: str,
+        transform: Callable[[str], _T],
+        required: Literal[True],
+        store: StoreArgument = ...,
+        default: Optional[List[_T]] = ...,
+    ) -> List[_T]: ...
+
+    @overload
+    def get_param_as_list(
+        self,
+        name: str,
+        transform: None = ...,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        *,
+        default: List[str],
+    ) -> List[str]: ...
+
+    @overload
+    def get_param_as_list(
+        self,
+        name: str,
+        transform: Callable[[str], _T],
+        required: bool = ...,
+        store: StoreArgument = ...,
+        *,
+        default: List[_T],
+    ) -> List[_T]: ...
+
+    @overload
+    def get_param_as_list(
+        self,
+        name: str,
+        transform: None = ...,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        default: Optional[List[str]] = ...,
+    ) -> Optional[List[str]]: ...
+
+    @overload
+    def get_param_as_list(
+        self,
+        name: str,
+        transform: Callable[[str], _T],
+        required: bool = ...,
+        store: StoreArgument = ...,
+        default: Optional[List[_T]] = ...,
+    ) -> Optional[List[_T]]: ...
+
+    def get_param_as_list(
+        self,
+        name: str,
+        transform: Optional[Callable[[str], _T]] = None,
+        required: bool = False,
+        store: StoreArgument = None,
+        default: Optional[List[_T]] = None,
+    ) -> Optional[List[_T] | List[str]]:
         """Return the value of a query string parameter as a list.
 
         List items must be comma-separated or must be provided
@@ -1731,35 +2051,70 @@ class Request:
             if not isinstance(items, list):
                 items = [items]
 
+            items_ret: List[str] | List[_T]
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
             # function calling overhead.
             if transform is not None:
                 try:
-                    items = [transform(i) for i in items]
+                    items_ret = [transform(i) for i in items]
 
                 except ValueError:
                     msg = 'The value is not formatted correctly.'
                     raise errors.HTTPInvalidParam(msg, name)
+            else:
+                items_ret = items
 
             if store is not None:
-                store[name] = items
+                store[name] = items_ret
 
-            return items
+            return items_ret
 
         if not required:
             return default
 
         raise errors.HTTPMissingParam(name)
 
+    @overload
     def get_param_as_datetime(
         self,
-        name,
-        format_string='%Y-%m-%dT%H:%M:%SZ',
-        required=False,
-        store=None,
-        default=None,
-    ):
+        name: str,
+        format_string: str = ...,
+        *,
+        required: Literal[True],
+        store: StoreArgument = ...,
+        default: Optional[datetime] = ...,
+    ) -> datetime: ...
+
+    @overload
+    def get_param_as_datetime(
+        self,
+        name: str,
+        format_string: str = ...,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        *,
+        default: datetime,
+    ) -> datetime: ...
+
+    @overload
+    def get_param_as_datetime(
+        self,
+        name: str,
+        format_string: str = ...,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        default: Optional[datetime] = ...,
+    ) -> Optional[datetime]: ...
+
+    def get_param_as_datetime(
+        self,
+        name: str,
+        format_string: str = '%Y-%m-%dT%H:%M:%SZ',
+        required: bool = False,
+        store: StoreArgument = None,
+        default: Optional[datetime] = None,
+    ) -> Optional[datetime]:
         """Return the value of a query string parameter as a datetime.
 
         Args:
@@ -1804,9 +2159,46 @@ class Request:
 
         return date_time
 
+    @overload
     def get_param_as_date(
-        self, name, format_string='%Y-%m-%d', required=False, store=None, default=None
-    ):
+        self,
+        name: str,
+        format_string: str = ...,
+        *,
+        required: Literal[True],
+        store: StoreArgument = ...,
+        default: Optional[py_date] = ...,
+    ) -> py_date: ...
+
+    @overload
+    def get_param_as_date(
+        self,
+        name: str,
+        format_string: str = ...,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        *,
+        default: py_date,
+    ) -> py_date: ...
+
+    @overload
+    def get_param_as_date(
+        self,
+        name: str,
+        format_string: str = ...,
+        required: bool = ...,
+        store: StoreArgument = ...,
+        default: Optional[py_date] = ...,
+    ) -> Optional[py_date]: ...
+
+    def get_param_as_date(
+        self,
+        name: str,
+        format_string: str = '%Y-%m-%d',
+        required: bool = False,
+        store: StoreArgument = None,
+        default: Optional[py_date] = None,
+    ) -> Optional[py_date]:
         """Return the value of a query string parameter as a date.
 
         Args:
@@ -1846,7 +2238,13 @@ class Request:
 
         return date
 
-    def get_param_as_json(self, name, required=False, store=None, default=None):
+    def get_param_as_json(
+        self,
+        name: str,
+        required: bool = False,
+        store: StoreArgument = None,
+        default: Optional[Any] = None,
+    ) -> Any:
         """Return the decoded JSON value of a query string parameter.
 
         Given a JSON value, decode it to an appropriate Python type,
@@ -1907,7 +2305,7 @@ class Request:
 
         return val
 
-    def has_param(self, name):
+    def has_param(self, name: str) -> bool:
         """Determine whether or not the query string parameter already exists.
 
         Args:
@@ -1924,7 +2322,7 @@ class Request:
         else:
             return False
 
-    def log_error(self, message):
+    def log_error(self, message: str) -> None:
         """Write an error message to the server's log.
 
         Prepends timestamp and request info to message, and writes the
@@ -1950,7 +2348,7 @@ class Request:
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _get_wrapped_wsgi_input(self):
+    def _get_wrapped_wsgi_input(self) -> BoundedStream:
         try:
             content_length = self.content_length or 0
 
@@ -1963,18 +2361,18 @@ class Request:
 
         return BoundedStream(self.env['wsgi.input'], content_length)
 
-    def _parse_form_urlencoded(self):
+    def _parse_form_urlencoded(self) -> None:
         content_length = self.content_length
         if not content_length:
             return
 
-        body = self.stream.read(content_length)
+        body_bytes = self.stream.read(content_length)
 
         # NOTE(kgriffs): According to http://goo.gl/6rlcux the
         # body should be US-ASCII. Enforcing this also helps
         # catch malicious input.
         try:
-            body = body.decode('ascii')
+            body = body_bytes.decode('ascii')
         except UnicodeDecodeError:
             body = None
             self.log_error(
@@ -2094,7 +2492,7 @@ class RequestOptions:
         'media_handlers',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.keep_blank_qs_values = True
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = False

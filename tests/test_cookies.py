@@ -1,7 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
-from datetime import tzinfo
 from http import cookies as http_cookies
 import re
 
@@ -10,23 +9,8 @@ import pytest
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt
-from falcon.util import TimezoneGMT
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
-
-
-class TimezoneGMTPlus1(tzinfo):
-    def utcoffset(self, dt):
-        return timedelta(hours=1)
-
-    def tzname(self, dt):
-        return 'GMT+1'
-
-    def dst(self, dt):
-        return timedelta(hours=1)
-
-
-GMT_PLUS_ONE = TimezoneGMTPlus1()
 
 
 def utcnow_naive():
@@ -49,7 +33,9 @@ class CookieResource:
         resp.unset_cookie('bad')
 
     def on_put(self, req, resp):
-        e = datetime(year=2050, month=1, day=1, tzinfo=GMT_PLUS_ONE)  # aware
+        e = datetime(
+            year=2050, month=1, day=1, tzinfo=timezone(timedelta(hours=1))
+        )  # aware
         resp.set_cookie('foo', 'bar', http_only=False, secure=False, expires=e)
         resp.unset_cookie('bad')
 
@@ -289,7 +275,7 @@ def test_cookie_expires_aware(client):
     assert not cookie.secure
 
 
-def test_cookies_setable(client):
+def test_cookies_setable():
     resp = falcon.Response()
 
     assert resp._cookies is None
@@ -321,14 +307,14 @@ def test_cookie_max_age_float_and_string(client, cookie_name):
     assert not cookie.secure
 
 
-def test_response_unset_cookie(client):
+def test_response_unset_cookie():
     resp = falcon.Response()
     resp.unset_cookie('bad')
     resp.set_cookie('bad', 'cookie', max_age=300)
     resp.unset_cookie('bad')
 
     morsels = list(resp._cookies.values())
-    len(morsels) == 1
+    assert len(morsels) == 1
 
     bad_cookie = morsels[0]
     assert bad_cookie['expires'] == -1
@@ -341,11 +327,6 @@ def test_response_unset_cookie(client):
 
     expiration = http_date_to_dt(match.group(1), obs_date=True)
     assert expiration < utcnow_naive()
-
-
-def test_cookie_timezone(client):
-    tz = TimezoneGMT()
-    assert tz.tzname(timedelta(0)) == 'GMT'
 
 
 # =====================================================================
