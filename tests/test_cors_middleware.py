@@ -28,6 +28,12 @@ class CORSHeaderResource:
         resp.text = "I'm a CORS test response"
 
 
+class CORSOptionsResource:
+    def on_options(self, req, resp):
+        # No allow header set
+        resp.set_header('Content-Length', '0')
+
+
 class TestCorsMiddleware:
     def test_disabled_cors_should_not_add_any_extra_headers(self, client):
         client.app.add_route('/', CORSHeaderResource())
@@ -79,6 +85,22 @@ class TestCorsMiddleware:
         assert (
             result.headers['Access-Control-Max-Age'] == '86400'
         )  # 24 hours in seconds
+
+    def test_enabled_cors_handles_preflighting_custom_option(self, cors_client):
+        cors_client.app.add_route('/', CORSOptionsResource())
+        result = cors_client.simulate_options(
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+                ('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type'),
+            )
+        )
+        assert 'Access-Control-Allow-Methods' not in result.headers
+        assert (
+            result.headers['Access-Control-Allow-Headers']
+            == 'X-PINGOTHER, Content-Type'
+        )
+        assert result.headers['Access-Control-Max-Age'] == '86400'
 
     def test_enabled_cors_handles_preflighting_no_headers_in_req(self, cors_client):
         cors_client.app.add_route('/', CORSHeaderResource())

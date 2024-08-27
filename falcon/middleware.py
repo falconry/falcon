@@ -120,7 +120,11 @@ class CORSMiddleware(object):
                 'Access-Control-Request-Headers', default='*'
             )
 
-            resp.set_header('Access-Control-Allow-Methods', allow)
+            if allow is not None:
+                # NOTE: not sure if it's more appropriate to raise an exception here
+                # This can happen only when a responder class defines a custom
+                # on_option responder method and does not set the 'Allow' header.
+                resp.set_header('Access-Control-Allow-Methods', allow)
             resp.set_header('Access-Control-Allow-Headers', allow_headers)
             resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 

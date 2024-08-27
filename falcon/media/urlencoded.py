@@ -52,7 +52,9 @@ class URLEncodedFormHandler(BaseHandler):
 
     def _deserialize(self, body: bytes) -> Any:
         try:
-            # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+            # NOTE(kgriffs): According to
+            # https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm
+            # the
             # body should be US-ASCII. Enforcing this also helps
             # catch malicious input.
             body_str = body.decode('ascii')

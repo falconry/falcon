@@ -46,6 +46,7 @@ except ImportError:
 if TYPE_CHECKING:
     from falcon.asgi import Request as AsgiRequest
     from falcon.asgi import Response as AsgiResponse
+    from falcon.asgi import SSEvent
     from falcon.asgi import WebSocket
     from falcon.asgi_spec import AsgiEvent
     from falcon.asgi_spec import AsgiSendMsg
@@ -118,6 +119,7 @@ HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArgument = Optional[Dict[str, Any]]
 Resource = object
+RangeSetHeader = Union[Tuple[int, int, int], Tuple[int, int, int, str]]
 
 
 class ResponderMethod(Protocol):
@@ -174,6 +176,11 @@ AsgiProcessResponseMethod = Callable[
 AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[None]]
 AsgiProcessResourceWsMethod = Callable[
     ['AsgiRequest', 'WebSocket', Resource, Dict[str, Any]], Awaitable[None]
+]
+SseEmitter = AsyncIterator[Optional['SSEvent']]
+ResponseCallbacks = Union[
+    Tuple[Callable[[], None], Literal[False]],
+    Tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
 
 
