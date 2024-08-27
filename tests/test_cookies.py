@@ -9,6 +9,7 @@ import pytest
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt
+from falcon.util.misc import _utcnow
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
