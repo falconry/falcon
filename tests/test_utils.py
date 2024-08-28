@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
 import functools
 import http
@@ -22,6 +23,7 @@ from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util import structures
 from falcon.util import uri
+from falcon.util.time import TimezoneGMT
 
 try:
     import msgpack  # type: ignore
@@ -127,21 +129,22 @@ class TestFalconUtils:
 
     def test_dt_to_http(self):
         assert (
-            falcon.dt_to_http(datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
+            falcon.dt_to_http(datetime(2013, 4, 4, tzinfo=timezone.utc))
+            == 'Thu, 04 Apr 2013 00:00:00 GMT'
         )
 
         assert (
-            falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54))
+            falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc))
             == 'Thu, 04 Apr 2013 10:28:54 GMT'
         )
 
     def test_http_date_to_dt(self):
         assert falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT') == datetime(
-            2013, 4, 4
+            2013, 4, 4, tzinfo=timezone.utc
         )
 
         assert falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 GMT') == datetime(
-            2013, 4, 4, 10, 28, 54
+            2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc
         )
 
         with pytest.raises(ValueError):
@@ -149,7 +152,7 @@ class TestFalconUtils:
 
         assert falcon.http_date_to_dt(
             'Thu, 04-Apr-2013 10:28:54 GMT', obs_date=True
-        ) == datetime(2013, 4, 4, 10, 28, 54)
+        ) == datetime(2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc)
 
         with pytest.raises(ValueError):
             falcon.http_date_to_dt('Sun Nov  6 08:49:37 1994')
@@ -159,11 +162,14 @@ class TestFalconUtils:
 
         assert falcon.http_date_to_dt(
             'Sun Nov  6 08:49:37 1994', obs_date=True
-        ) == datetime(1994, 11, 6, 8, 49, 37)
+        ) == datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc)
 
         assert falcon.http_date_to_dt(
             'Sunday, 06-Nov-94 08:49:37 GMT', obs_date=True
-        ) == datetime(1994, 11, 6, 8, 49, 37)
+        ) == datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc)
+
+        with pytest.raises(ValueError):
+            falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 EST')
 
     def test_pack_query_params_none(self):
         assert falcon.to_query_str({}) == ''
@@ -1419,3 +1425,13 @@ def test_json_deprecation():
 
     with pytest.raises(AttributeError):
         falcon.util.some_imaginary_module
+
+
+def test_TimezoneGMT():
+    with pytest.warns(deprecation.DeprecatedWarning):
+        tz = TimezoneGMT()
+
+    z = timedelta(0)
+    assert tz.tzname(None) == 'GMT'
+    assert tz.dst(None) == z
+    assert tz.utcoffset(None) == z

@@ -1,4 +1,4 @@
-Added kwarg ``partitioned`` to :py:meth:`~falcon.Response.set_cookie`
+Added kwarg ``partitioned`` to :meth:`~falcon.Response.set_cookie`
 to opt a cookie into partitioned storage, with a separate cookie jar per
 top-level site.
 See also

@@ -41,10 +41,10 @@ from falcon.util.sync import _wrap_non_coroutine_unsafe
 if TYPE_CHECKING:
     import falcon as wsgi
     from falcon import asgi
-    from falcon.typing import AsyncResponderMethod
+    from falcon.typing import AsgiResponderMethod
     from falcon.typing import Resource
     from falcon.typing import Responder
-    from falcon.typing import SyncResponderMethod
+    from falcon.typing import ResponderMethod
 
 
 # TODO: if is_async is removed these protocol would no longer be needed, since
@@ -282,7 +282,7 @@ def _wrap_with_after(
             async_action = cast('AsyncAfterFn', _wrap_non_coroutine_unsafe(action))
         else:
             async_action = cast('AsyncAfterFn', action)
-        async_responder = cast('AsyncResponderMethod', responder)
+        async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
         async def do_after(
@@ -298,10 +298,10 @@ def _wrap_with_after(
             await async_responder(self, req, resp, **kwargs)
             await async_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = cast('AsyncResponderMethod', do_after)
+        do_after_responder = cast('AsgiResponderMethod', do_after)
     else:
         sync_action = cast('SyncAfterFn', action)
-        sync_responder = cast('SyncResponderMethod', responder)
+        sync_responder = cast('ResponderMethod', responder)
 
         @wraps(sync_responder)
         def do_after(
@@ -317,7 +317,7 @@ def _wrap_with_after(
             sync_responder(self, req, resp, **kwargs)
             sync_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = cast('SyncResponderMethod', do_after)
+        do_after_responder = cast('ResponderMethod', do_after)
     return do_after_responder
 
 
@@ -354,7 +354,7 @@ def _wrap_with_before(
             async_action = cast('AsyncBeforeFn', _wrap_non_coroutine_unsafe(action))
         else:
             async_action = cast('AsyncBeforeFn', action)
-        async_responder = cast('AsyncResponderMethod', responder)
+        async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
         async def do_before(
@@ -370,10 +370,10 @@ def _wrap_with_before(
             await async_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await async_responder(self, req, resp, **kwargs)
 
-        do_before_responder = cast('AsyncResponderMethod', do_before)
+        do_before_responder = cast('AsgiResponderMethod', do_before)
     else:
         sync_action = cast('SyncBeforeFn', action)
-        sync_responder = cast('SyncResponderMethod', responder)
+        sync_responder = cast('ResponderMethod', responder)
 
         @wraps(sync_responder)
         def do_before(
@@ -389,7 +389,7 @@ def _wrap_with_before(
             sync_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             sync_responder(self, req, resp, **kwargs)
 
-        do_before_responder = cast('SyncResponderMethod', do_before)
+        do_before_responder = cast('ResponderMethod', do_before)
     return do_before_responder
 
 

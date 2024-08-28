@@ -186,7 +186,7 @@ class _ResultBase:
                 will "win" and be represented in `headers`.
 
         cookies (dict): A dictionary of
-            :py:class:`falcon.testing.Cookie` values parsed from the
+            :class:`falcon.testing.Cookie` values parsed from the
             response, by name.
 
             The cookies dictionary can be used directly in subsequent requests::
@@ -306,7 +306,7 @@ class Result(_ResultBase):
                 will "win" and be represented in `headers`.
 
         cookies (dict): A dictionary of
-            :py:class:`falcon.testing.Cookie` values parsed from the
+            :class:`falcon.testing.Cookie` values parsed from the
             response, by name.
         encoding (str): Text encoding of the response body, or ``None``
             if the encoding can not be determined.
@@ -400,7 +400,7 @@ class StreamedResult(_ResultBase):
                 will "win" and be represented in `headers`.
 
         cookies (dict): A dictionary of
-            :py:class:`falcon.testing.Cookie` values parsed from the
+            :class:`falcon.testing.Cookie` values parsed from the
             response, by name.
         encoding (str): Text encoding of the response body, or ``None``
             if the encoding can not be determined.
@@ -565,7 +565,7 @@ def simulate_request(
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
 
     if _is_asgi_app(app):
@@ -765,7 +765,7 @@ async def _simulate_request_asgi(
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
 
     path, query_string, headers, body, extras = _prepare_sim_args(
@@ -1048,14 +1048,14 @@ class ASGIConductor:
     async def simulate_get(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a GET request to an ASGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_get`)
+        (See also: :meth:`falcon.testing.simulate_get`)
         """
         return await self.simulate_request('GET', path, **kwargs)
 
     def simulate_get_stream(self, path='/', **kwargs):
         """Simulate a GET request to an ASGI application with a streamed response.
 
-        (See also: :py:meth:`falcon.testing.simulate_get` for a list of
+        (See also: :meth:`falcon.testing.simulate_get` for a list of
         supported keyword arguments.)
 
         This method returns an async context manager that can be used to obtain
@@ -1090,7 +1090,7 @@ class ASGIConductor:
         """Simulate a WebSocket connection to an ASGI application.
 
         All keyword arguments are passed through to
-        :py:meth:`falcon.testing.create_scope_ws`.
+        :meth:`falcon.testing.create_scope_ws`.
 
         This method returns an async context manager that can be used to obtain
         a managed :class:`falcon.testing.ASGIWebSocketSimulator` instance.
@@ -1117,49 +1117,49 @@ class ASGIConductor:
     async def simulate_head(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a HEAD request to an ASGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_head`)
+        (See also: :meth:`falcon.testing.simulate_head`)
         """
         return await self.simulate_request('HEAD', path, **kwargs)
 
     async def simulate_post(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a POST request to an ASGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_post`)
+        (See also: :meth:`falcon.testing.simulate_post`)
         """
         return await self.simulate_request('POST', path, **kwargs)
 
     async def simulate_put(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a PUT request to an ASGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_put`)
+        (See also: :meth:`falcon.testing.simulate_put`)
         """
         return await self.simulate_request('PUT', path, **kwargs)
 
     async def simulate_options(self, path='/', **kwargs) -> _ResultBase:
         """Simulate an OPTIONS request to an ASGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_options`)
+        (See also: :meth:`falcon.testing.simulate_options`)
         """
         return await self.simulate_request('OPTIONS', path, **kwargs)
 
     async def simulate_patch(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a PATCH request to an ASGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_patch`)
+        (See also: :meth:`falcon.testing.simulate_patch`)
         """
         return await self.simulate_request('PATCH', path, **kwargs)
 
     async def simulate_delete(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a DELETE request to an ASGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_delete`)
+        (See also: :meth:`falcon.testing.simulate_delete`)
         """
         return await self.simulate_request('DELETE', path, **kwargs)
 
     async def simulate_request(self, *args, **kwargs) -> _ResultBase:
         """Simulate a request to an ASGI application.
 
-        Wraps :py:meth:`falcon.testing.simulate_request` to perform a
+        Wraps :meth:`falcon.testing.simulate_request` to perform a
         WSGI request directly against ``self.app``. Equivalent to::
 
             falcon.testing.simulate_request(self.app, *args, **kwargs)
@@ -1289,7 +1289,7 @@ def simulate_get(app, path, **kwargs) -> _ResultBase:
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
 
     return simulate_request(app, 'GET', path, **kwargs)
@@ -1387,7 +1387,7 @@ def simulate_head(app, path, **kwargs) -> _ResultBase:
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'HEAD', path, **kwargs)
 
@@ -1498,7 +1498,7 @@ def simulate_post(app, path, **kwargs) -> _ResultBase:
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'POST', path, **kwargs)
 
@@ -1609,7 +1609,7 @@ def simulate_put(app, path, **kwargs) -> _ResultBase:
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'PUT', path, **kwargs)
 
@@ -1698,7 +1698,7 @@ def simulate_options(app, path, **kwargs) -> _ResultBase:
             (default: ``None``)
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'OPTIONS', path, **kwargs)
 
@@ -1804,7 +1804,7 @@ def simulate_patch(app, path, **kwargs) -> _ResultBase:
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'PATCH', path, **kwargs)
 
@@ -1910,7 +1910,7 @@ def simulate_delete(app, path, **kwargs) -> _ResultBase:
             for the 'Set-Cookie' header.
 
     Returns:
-        :py:class:`~.Result`: The result of the request
+        :class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'DELETE', path, **kwargs)
 
@@ -2012,56 +2012,56 @@ class TestClient:
     def simulate_get(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a GET request to a WSGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_get`)
+        (See also: :meth:`falcon.testing.simulate_get`)
         """
         return self.simulate_request('GET', path, **kwargs)
 
     def simulate_head(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a HEAD request to a WSGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_head`)
+        (See also: :meth:`falcon.testing.simulate_head`)
         """
         return self.simulate_request('HEAD', path, **kwargs)
 
     def simulate_post(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a POST request to a WSGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_post`)
+        (See also: :meth:`falcon.testing.simulate_post`)
         """
         return self.simulate_request('POST', path, **kwargs)
 
     def simulate_put(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a PUT request to a WSGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_put`)
+        (See also: :meth:`falcon.testing.simulate_put`)
         """
         return self.simulate_request('PUT', path, **kwargs)
 
     def simulate_options(self, path='/', **kwargs) -> _ResultBase:
         """Simulate an OPTIONS request to a WSGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_options`)
+        (See also: :meth:`falcon.testing.simulate_options`)
         """
         return self.simulate_request('OPTIONS', path, **kwargs)
 
     def simulate_patch(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a PATCH request to a WSGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_patch`)
+        (See also: :meth:`falcon.testing.simulate_patch`)
         """
         return self.simulate_request('PATCH', path, **kwargs)
 
     def simulate_delete(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a DELETE request to a WSGI application.
 
-        (See also: :py:meth:`falcon.testing.simulate_delete`)
+        (See also: :meth:`falcon.testing.simulate_delete`)
         """
         return self.simulate_request('DELETE', path, **kwargs)
 
     def simulate_request(self, *args, **kwargs) -> _ResultBase:
         """Simulate a request to a WSGI application.
 
-        Wraps :py:meth:`falcon.testing.simulate_request` to perform a
+        Wraps :meth:`falcon.testing.simulate_request` to perform a
         WSGI request directly against ``self.app``. Equivalent to::
 
             falcon.testing.simulate_request(self.app, *args, **kwargs)

@@ -32,19 +32,19 @@ from falcon.testing.client import TestClient
 
 
 class TestCase(unittest.TestCase, TestClient):
-    """Extends :py:mod:`unittest` to support WSGI/ASGI functional testing.
+    """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
-        If available, uses :py:mod:`testtools` in lieu of
-        :py:mod:`unittest`.
+        If available, uses :mod:`testtools` in lieu of
+        :mod:`unittest`.
 
     This base class provides some extra plumbing for unittest-style
     test cases, to help simulate WSGI or ASGI requests without having
     to spin up an actual web server. Various simulation methods are
-    derived from :py:class:`falcon.testing.TestClient`.
+    derived from :class:`falcon.testing.TestClient`.
 
     Simply inherit from this class in your test case classes instead of
-    :py:class:`unittest.TestCase` or :py:class:`testtools.TestCase`.
+    :class:`unittest.TestCase` or :class:`testtools.TestCase`.
 
     Attributes:
         app (object): A WSGI or ASGI application to target when simulating
