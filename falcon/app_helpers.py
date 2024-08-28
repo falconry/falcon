@@ -14,13 +14,16 @@
 
 """Utilities for the App class."""
 
+from __future__ import annotations
+
 from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Tuple
 
 from falcon import util
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
-from falcon.errors import CompatibilityError, HTTPError
+from falcon.errors import CompatibilityError
+from falcon.errors import HTTPError
 from falcon.request import Request
 from falcon.response import Response
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -201,7 +204,7 @@ def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
     return request_mw, resource_mw
 
 
-def default_serialize_error(req: Request, resp: Response, exception: HTTPError):
+def default_serialize_error(req: Request, resp: Response, exception: HTTPError) -> None:
     """Serialize the given instance of HTTPError.
 
     This function determines which of the supported media types, if
@@ -280,14 +283,14 @@ class CloseableStreamIterator:
         block_size (int): Number of bytes to read per iteration.
     """
 
-    def __init__(self, stream: IO, block_size: int):
+    def __init__(self, stream: IO, block_size: int) -> None:
         self._stream = stream
         self._block_size = block_size
 
-    def __iter__(self):
+    def __iter__(self) -> CloseableStreamIterator:
         return self
 
-    def __next__(self):
+    def __next__(self) -> bytes:
         data = self._stream.read(self._block_size)
 
         if data == b'':
@@ -295,7 +298,7 @@ class CloseableStreamIterator:
         else:
             return data
 
-    def close(self):
+    def close(self) -> None:
         try:
             self._stream.close()
         except (AttributeError, TypeError):

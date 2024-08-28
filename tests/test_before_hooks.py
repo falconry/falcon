@@ -7,8 +7,6 @@ import pytest
 import falcon
 import falcon.testing as testing
 
-from _util import create_app, create_resp, disable_asgi_non_coroutine_wrapping  # NOQA
-
 
 def validate(req, resp, resource, params):
     assert resource
@@ -245,8 +243,8 @@ def resource():
 
 
 @pytest.fixture
-def client(asgi, request, resource):
-    app = create_app(asgi)
+def client(asgi, util, request, resource):
+    app = util.create_app(asgi)
     app.add_route('/', resource)
     return testing.TestClient(app)
 
@@ -336,8 +334,8 @@ def test_parser_sync(body, doc):
         (None, None),
     ],
 )
-def test_parser_async(body, doc):
-    with disable_asgi_non_coroutine_wrapping():
+def test_parser_async(body, doc, util):
+    with util.disable_asgi_non_coroutine_wrapping():
 
         class WrappedRespondersBodyParserAsyncResource:
             @falcon.before(validate_param_async, 'limit', 100, is_async=True)
@@ -349,7 +347,7 @@ def test_parser_async(body, doc):
             async def on_put(self, req, resp, doc=None):
                 self.doc = doc
 
-    app = create_app(asgi=True)
+    app = util.create_app(asgi=True)
 
     resource = WrappedRespondersBodyParserAsyncResource()
     app.add_route('/', resource)
@@ -364,7 +362,7 @@ def test_parser_async(body, doc):
         resource = WrappedRespondersBodyParserAsyncResource()
 
         req = testing.create_asgi_req()
-        resp = create_resp(True)
+        resp = util.create_resp(True)
 
         await resource.on_get(req, resp, doc)
         assert resource.doc == doc
@@ -478,11 +476,11 @@ class PiggybackingCollectionAsync(PiggybackingCollection):
         resp.status = falcon.HTTP_CREATED
 
 
-@pytest.fixture(params=[True, False])
-def app_client(request):
-    items = PiggybackingCollectionAsync() if request.param else PiggybackingCollection()
+@pytest.fixture()
+def app_client(asgi, util):
+    items = PiggybackingCollectionAsync() if asgi else PiggybackingCollection()
 
-    app = create_app(asgi=request.param)
+    app = util.create_app(asgi)
     app.add_route('/items', items, suffix='collection')
     app.add_route('/items/{itemid:int}', items)
 

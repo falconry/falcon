@@ -34,24 +34,25 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
-from falcon.typing import ErrorHandler, SinkPrefix
+from falcon.typing import ErrorHandler
+from falcon.typing import SinkPrefix
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
-from falcon.util.sync import get_running_loop
 from falcon.util.sync import wrap_sync_to_async
+
 from ._asgi_helpers import _validate_asgi_scope
 from ._asgi_helpers import _wrap_asgi_coroutine_func
 from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
+from .ws import _supports_reason
 from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
 
-
-__all__ = ['App']
+__all__ = ('App',)
 
 
 # TODO(vytas): Clean up these foul workarounds before the 4.0 release.
@@ -67,7 +68,7 @@ _FALLBACK_WS_ERROR_CODE = 3011
 
 
 class App(falcon.app.App):
-    """This class is the main entry point into a Falcon-based ASGI app.
+    """The main entry point into a Falcon-based ASGI app.
 
     Each App instance provides a callable
     `ASGI <https://asgi.readthedocs.io/en/latest/>`_ interface
@@ -76,8 +77,8 @@ class App(falcon.app.App):
 
     Keyword Arguments:
         media_type (str): Default media type to use when initializing
-            :py:class:`~.RequestOptions` and
-            :py:class:`~.ResponseOptions`. The ``falcon``
+            :class:`~.RequestOptions` and
+            :class:`~.ResponseOptions`. The ``falcon``
             module provides a number of constants for common media types,
             such as ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
@@ -230,7 +231,7 @@ class App(falcon.app.App):
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests. An instance of :py:class:`..CORSMiddleware` can instead be
+            requests. An instance of :class:`..CORSMiddleware` can instead be
             passed to the middleware argument to customize its behaviour.
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
@@ -241,11 +242,11 @@ class App(falcon.app.App):
 
     Attributes:
         req_options: A set of behavioral options related to incoming
-            requests. (See also: :py:class:`~.RequestOptions`)
+            requests. (See also: :class:`~.RequestOptions`)
         resp_options: A set of behavioral options related to outgoing
-            responses. (See also: :py:class:`~.ResponseOptions`)
+            responses. (See also: :class:`~.ResponseOptions`)
         ws_options: A set of behavioral options related to WebSocket
-            connections. (See also: :py:class:`~.WebSocketOptions`)
+            connections. (See also: :class:`~.WebSocketOptions`)
         router_options: Configuration options for the router. If a
             custom router is in use, and it does not expose any
             configurable options, referencing this attribute will raise
@@ -551,7 +552,7 @@ class App(falcon.app.App):
                     if received_event['type'] == EventType.HTTP_DISCONNECT:
                         break
 
-            watcher = falcon.create_task(watch_disconnect())
+            watcher = asyncio.create_task(watch_disconnect())
 
             await send(
                 {
@@ -566,7 +567,7 @@ class App(falcon.app.App):
             if resp._registered_callbacks:
                 self._schedule_callbacks(resp)
 
-            handler, _, _ = self.resp_options.media_handlers._resolve(
+            sse_handler, _, _ = self.resp_options.media_handlers._resolve(
                 MEDIA_JSON, MEDIA_JSON, raise_not_found=False
             )
 
@@ -582,7 +583,7 @@ class App(falcon.app.App):
                 await send(
                     {
                         'type': EventType.HTTP_RESPONSE_BODY,
-                        'body': event.serialize(handler),
+                        'body': event.serialize(sse_handler),
                         'more_body': True,
                     }
                 )
@@ -904,7 +905,7 @@ class App(falcon.app.App):
         # if not callbacks:
         #     return
 
-        loop = get_running_loop()
+        loop = asyncio.get_running_loop()
 
         for cb, is_async in callbacks:
             if is_async:
@@ -987,7 +988,11 @@ class App(falcon.app.App):
             #   we don't support, so bail out. This also fulfills the ASGI
             #   spec requirement to only process the request after
             #   receiving and verifying the first event.
-            await send({'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR})
+            response = {'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR}
+            if _supports_reason(ver):
+                response['reason'] = 'Internal Server Error'
+
+            await send(response)
             return
 
         req = self._request_type(scope, receive, options=self.req_options)
@@ -999,6 +1004,7 @@ class App(falcon.app.App):
             send,
             self.ws_options.media_handlers,
             self.ws_options.max_receive_queue,
+            self.ws_options.default_close_reasons,
         )
 
         on_websocket = None

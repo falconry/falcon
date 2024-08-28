@@ -3,22 +3,31 @@ import io
 import json
 import platform
 
-import mujson
 import pytest
-import ujson
 
 import falcon
-from falcon import media, testing
+from falcon import media
+from falcon import testing
 from falcon.asgi.stream import BoundedStream
 from falcon.util.deprecation import DeprecatedWarning
 
-from _util import create_app  # NOQA
-
-
+mujson = None
 orjson = None
 rapidjson = None
+ujson = None
+
+try:
+    import mujson  # type: ignore
+except ImportError:
+    pass
+
 try:
     import rapidjson  # type: ignore
+except ImportError:
+    pass
+
+try:
+    import ujson  # type: ignore
 except ImportError:
     pass
 
@@ -33,8 +42,6 @@ YEN = b'\xc2\xa5'
 SERIALIZATION_PARAM_LIST = [
     # Default json.dumps, with only ascii
     (None, {'test': 'value'}, b'{"test":"value"}'),
-    (partial(mujson.dumps, ensure_ascii=True), {'test': 'value'}, b'{"test":"value"}'),
-    (ujson.dumps, {'test': 'value'}, b'{"test":"value"}'),
     (
         partial(lambda media, **kwargs: json.dumps([media, kwargs]), ensure_ascii=True),
         {'test': 'value'},
@@ -53,15 +60,25 @@ DESERIALIZATION_PARAM_LIST = [
         b'{"key": "value"}',
         {'key': 'VALUE'},
     ),
-    (mujson.loads, b'{"test": "value"}', {'test': 'value'}),
-    (ujson.loads, b'{"test": "value"}', {'test': 'value'}),
-]
-ALL_JSON_IMPL = [
-    (json.dumps, json.loads),
-    (partial(mujson.dumps, ensure_ascii=True), mujson.loads),
-    (ujson.dumps, ujson.loads),
 ]
 
+ALL_JSON_IMPL = [(json.dumps, json.loads)]
+ALL_JSON_IMPL_IDS = ['stdlib']
+
+
+if mujson:
+    SERIALIZATION_PARAM_LIST += [
+        (
+            partial(mujson.dumps, ensure_ascii=True),
+            {'test': 'value'},
+            b'{"test":"value"}',
+        ),
+    ]
+    DESERIALIZATION_PARAM_LIST += [
+        (mujson.loads, b'{"test": "value"}', {'test': 'value'}),
+    ]
+    ALL_JSON_IMPL += [(partial(mujson.dumps, ensure_ascii=True), mujson.loads)]
+    ALL_JSON_IMPL_IDS += ['mujson']
 
 if orjson:
     SERIALIZATION_PARAM_LIST += [
@@ -71,6 +88,7 @@ if orjson:
         (orjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
     ALL_JSON_IMPL += [(orjson.dumps, orjson.loads)]
+    ALL_JSON_IMPL_IDS += ['orjson']
 
 if rapidjson:
     SERIALIZATION_PARAM_LIST += [
@@ -80,6 +98,36 @@ if rapidjson:
         (rapidjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
     ALL_JSON_IMPL += [(rapidjson.dumps, rapidjson.loads)]
+    ALL_JSON_IMPL_IDS += ['rapidjson']
+
+if ujson:
+    SERIALIZATION_PARAM_LIST += [
+        (ujson.dumps, {'test': 'value'}, b'{"test":"value"}'),
+    ]
+    DESERIALIZATION_PARAM_LIST += [
+        (ujson.loads, b'{"test": "value"}', {'test': 'value'}),
+    ]
+    ALL_JSON_IMPL += [(ujson.dumps, ujson.loads)]
+    ALL_JSON_IMPL_IDS += ['ujson']
+
+
+@pytest.mark.parametrize(
+    'library, name',
+    [
+        (mujson, 'mujson'),
+        (orjson, 'orjson'),
+        (rapidjson, 'rapidjson'),
+        (ujson, 'ujson'),
+    ],
+    ids=['mujson', 'orjson', 'rapidjson', 'ujson'],
+)
+def test_check_json_library(library, name):
+    # NOTE(vytas): A synthetic test just to visualize which JSON libraries
+    #   are absent and skipped.
+    if library is None:
+        pytest.skip(f'{name} is not installed')
+    assert hasattr(library, 'dumps')
+    assert hasattr(library, 'loads')
 
 
 @pytest.mark.parametrize('func, body, expected', SERIALIZATION_PARAM_LIST)
@@ -116,9 +164,9 @@ def test_deserialization(asgi, func, body, expected):
     assert result == expected
 
 
-@pytest.mark.parametrize('dumps, loads', ALL_JSON_IMPL)
+@pytest.mark.parametrize('dumps, loads', ALL_JSON_IMPL, ids=ALL_JSON_IMPL_IDS)
 @pytest.mark.parametrize('subclass', (True, False))
-def test_full_app(asgi, dumps, loads, subclass):
+def test_full_app(asgi, util, dumps, loads, subclass):
     if subclass:
 
         class JSONHandlerSubclass(media.JSONHandler):
@@ -131,7 +179,7 @@ def test_full_app(asgi, dumps, loads, subclass):
         handler = media.JSONHandler(dumps=dumps, loads=loads)
         assert handler._serialize_sync is not None
         assert handler._deserialize_sync is not None
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.req_options.media_handlers[falcon.MEDIA_JSON] = handler
     app.resp_options.media_handlers[falcon.MEDIA_JSON] = handler
 
@@ -163,8 +211,8 @@ def test_full_app(asgi, dumps, loads, subclass):
         'application/json; answer=42',
     ],
 )
-def test_deserialization_raises(asgi, handler_mt, monkeypatch_resolver):
-    app = create_app(asgi)
+def test_deserialization_raises(asgi, util, handler_mt, monkeypatch_resolver):
+    app = util.create_app(asgi)
 
     class SuchException(Exception):
         pass
@@ -233,8 +281,8 @@ def test_deserialization_raises(asgi, handler_mt, monkeypatch_resolver):
         testing.simulate_post(app, '/', json={})
 
 
-def test_sync_methods_not_overridden(asgi):
-    app = create_app(asgi)
+def test_sync_methods_not_overridden(asgi, util):
+    app = util.create_app(asgi)
 
     class FaultyHandler(media.BaseHandler):
         pass
@@ -268,8 +316,8 @@ def test_sync_methods_not_overridden(asgi):
     assert result.status_code == 500
 
 
-def test_async_methods_not_overridden():
-    app = create_app(asgi=True)
+def test_async_methods_not_overridden(util):
+    app = util.create_app(asgi=True)
 
     class SimpleHandler(media.BaseHandler):
         def serialize(self, media, content_type):
@@ -294,8 +342,8 @@ def test_async_methods_not_overridden():
     assert result.json == doc
 
 
-def test_async_handler_returning_none():
-    app = create_app(asgi=True)
+def test_async_handler_returning_none(util):
+    app = util.create_app(asgi=True)
 
     class SimpleHandler(media.BaseHandler):
         def serialize(self, media, content_type):
@@ -321,8 +369,8 @@ def test_async_handler_returning_none():
 
 
 @pytest.mark.parametrize('monkeypatch_resolver', [True, False])
-def test_json_err_no_handler(asgi, monkeypatch_resolver):
-    app = create_app(asgi)
+def test_json_err_no_handler(asgi, util, monkeypatch_resolver):
+    app = util.create_app(asgi)
 
     handlers = media.Handlers({falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler()})
 

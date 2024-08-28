@@ -16,6 +16,8 @@
 
 import typing
 
+__all__ = ('parse_header',)
+
 
 def _parse_param_old_stdlib(s):  # type: ignore
     while s[:1] == ';':

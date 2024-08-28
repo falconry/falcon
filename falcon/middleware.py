@@ -1,6 +1,6 @@
-from typing import Iterable
-from typing import Optional
-from typing import Union
+from __future__ import annotations
+
+from typing import Any, Iterable, Optional, Union
 
 from .request import Request
 from .response import Response
@@ -75,7 +75,9 @@ class CORSMiddleware(object):
                 )
         self.allow_credentials = allow_credentials
 
-    def process_response(self, req: Request, resp: Response, resource, req_succeeded):
+    def process_response(
+        self, req: Request, resp: Response, resource: object, req_succeeded: bool
+    ) -> None:
         """Implement the CORS policy for all routes.
 
         This middleware provides a simple out-of-the box CORS policy,
@@ -122,5 +124,5 @@ class CORSMiddleware(object):
             resp.set_header('Access-Control-Allow-Headers', allow_headers)
             resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
-    async def process_response_async(self, *args):
+    async def process_response_async(self, *args: Any) -> None:
         self.process_response(*args)

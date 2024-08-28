@@ -3,21 +3,19 @@ import pytest
 import falcon
 from falcon import testing
 
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
-
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     return testing.TestClient(app)
 
 
 @pytest.fixture(scope='function')
-def cors_client(asgi):
+def cors_client(asgi, util):
     # NOTE(kgriffs): Disable wrapping to test that built-in middleware does
     #   not require it (since this will be the case for non-test apps).
-    with disable_asgi_non_coroutine_wrapping():
-        app = create_app(asgi, cors_enable=True)
+    with util.disable_asgi_non_coroutine_wrapping():
+        app = util.create_app(asgi, cors_enable=True)
     return testing.TestClient(app)
 
 
@@ -98,9 +96,9 @@ class TestCorsMiddleware:
 
 
 @pytest.fixture(scope='function')
-def make_cors_client(asgi):
+def make_cors_client(asgi, util):
     def make(middleware):
-        app = create_app(asgi, middleware=middleware)
+        app = util.create_app(asgi, middleware=middleware)
         return testing.TestClient(app)
 
     return make

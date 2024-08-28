@@ -1,5 +1,4 @@
-"""
-WSGI config for dj project.
+"""WSGI config for dj project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

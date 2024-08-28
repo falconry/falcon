@@ -2,6 +2,27 @@ from enum import Enum
 import os
 import sys
 
+__all__ = (
+    'HTTP_METHODS',
+    'WEBDAV_METHODS',
+    'COMBINED_METHODS',
+    'DEFAULT_MEDIA_TYPE',
+    'MEDIA_BMP',
+    'MEDIA_GIF',
+    'MEDIA_HTML',
+    'MEDIA_JPEG',
+    'MEDIA_JS',
+    'MEDIA_JSON',
+    'MEDIA_MSGPACK',
+    'MEDIA_MULTIPART',
+    'MEDIA_PNG',
+    'MEDIA_TEXT',
+    'MEDIA_URLENCODED',
+    'MEDIA_XML',
+    'MEDIA_YAML',
+    'SINGLETON_HEADERS',
+    'WebSocketPayloadType',
+)
 
 PYPY = sys.implementation.name == 'pypy'
 """Evaluates to ``True`` when the current Python implementation is PyPy."""
@@ -9,12 +30,12 @@ PYPY = sys.implementation.name == 'pypy'
 PYTHON_VERSION = tuple(sys.version_info[:3])
 """Python version information triplet: (major, minor, micro)."""
 
-FALCON_SUPPORTED = PYTHON_VERSION >= (3, 7, 0)
+FALCON_SUPPORTED = PYTHON_VERSION >= (3, 8, 0)
 """Whether this version of Falcon supports the current Python version."""
 
 if not FALCON_SUPPORTED:  # pragma: nocover
     raise ImportError(
-        'Falcon requires Python 3.7+. '
+        'Falcon requires Python 3.8+. '
         '(Recent Pip should automatically pick a suitable Falcon version.)'
     )
 
@@ -163,7 +184,8 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using
 #   None would be ambiguous.
-_UNSET = object()
+_UNSET = object()  # TODO: remove once replaced with missing
+
 
 WebSocketPayloadType = Enum('WebSocketPayloadType', 'TEXT BINARY')
 """Enum representing the two possible WebSocket payload types."""

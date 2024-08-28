@@ -334,14 +334,14 @@ Custom Routers
 --------------
 
 A custom routing engine may be specified when instantiating
-:py:meth:`falcon.App` or :py:meth:`falcon.asgi.App`. For example:
+:meth:`falcon.App` or :meth:`falcon.asgi.App`. For example:
 
 .. code:: python
 
     router = MyRouter()
     app = App(router=router)
 
-Custom routers may derive from the default :py:class:`~.CompiledRouter`
+Custom routers may derive from the default :class:`~.CompiledRouter`
 engine, or implement a completely different routing strategy (such as
 object-based routing).
 

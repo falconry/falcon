@@ -1,6 +1,7 @@
 import re
 
-from falcon.asgi import Request, WebSocket
+from falcon.asgi import Request
+from falcon.asgi import WebSocket
 
 from .hub import Hub
 
@@ -26,6 +27,7 @@ class Chat:
 
                 if message == '/quit':
                     await ws.send_text(f'Bye, {name}!')
+                    await ws.close(4001, 'quit command')
                     break
 
                 command = self.ALL.match(message)

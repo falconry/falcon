@@ -226,7 +226,7 @@ one or both payload types, as in the following example.
     cbor_handler = ProtocolBuffersHandler()
     app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = cbor_handler
 
-The ``falcon`` module defines the following :py:class:`~enum.Enum` values for
+The ``falcon`` module defines the following :class:`~enum.Enum` values for
 specifying the WebSocket payload type:
 
 .. code:: python
@@ -423,6 +423,10 @@ by the framework.
 
     app = falcon.asgi.App(middleware=SomeMiddleware())
     app.add_route('/{account_id}/messages', SomeResource())
+
+.. tip::
+   If you prefer to learn by doing, feel free to continue experimenting along
+   the lines of our :ref:`WebSocket tutorial <tutorial-ws>`!
 
 Testing
 -------

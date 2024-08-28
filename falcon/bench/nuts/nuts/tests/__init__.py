@@ -3,7 +3,7 @@ from unittest import TestCase
 from pecan import set_config
 from pecan.testing import load_test_app
 
-__all__ = ['FunctionalTest']
+__all__ = ('FunctionalTest',)
 
 
 class FunctionalTest(TestCase):

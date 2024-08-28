@@ -6,8 +6,6 @@ import falcon
 import falcon.constants
 import falcon.testing as testing
 
-from _util import create_app  # NOQA
-
 # RFC 7231, 5789 methods
 HTTP_METHODS = [
     'CONNECT',
@@ -60,8 +58,8 @@ def resource_get_with_faulty_put():
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     app.add_route('/stonewall', Stonewall())
 

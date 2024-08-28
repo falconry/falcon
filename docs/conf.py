@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Falcon documentation build configuration file, created by
 # sphinx-quickstart on Wed Mar 12 14:14:02 2014.
 #
@@ -12,12 +10,12 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-from datetime import datetime
 from collections import OrderedDict
 import configparser
+from datetime import datetime
 import multiprocessing
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 

@@ -5,18 +5,18 @@ import pytest
 import falcon
 import falcon.util
 
-from _util import has_cython  # NOQA
-
 
 class TestCythonized:
-    @pytest.mark.skipif(not has_cython, reason='Cython not installed')
-    def test_imported_from_c_modules(self):
+    def test_imported_from_c_modules(self, util):
+        if not util.HAS_CYTHON:
+            pytest.skip(reason='Cython not installed')
+
         assert 'falcon/app.py' not in str(falcon.app)
 
-    def test_stream_has_private_read(self):
+    def test_stream_has_private_read(self, util):
         stream = falcon.util.BufferedReader(io.BytesIO().read, 8)
 
-        if has_cython and falcon.util.IS_64_BITS:
+        if util.HAS_CYTHON and falcon.util.IS_64_BITS:
             assert not hasattr(stream, '_read')
         else:
             assert hasattr(stream, '_read')

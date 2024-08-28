@@ -1,11 +1,10 @@
 import pytest
 
 import falcon
-from falcon import constants, testing
+from falcon import constants
+from falcon import testing
 import falcon.asgi
 from falcon.util.deprecation import DeprecatedWarning
-
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 def capture_error(req, resp, ex, params):
@@ -50,8 +49,8 @@ class ErroredClassResource:
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/', ErroredClassResource())
     return testing.TestClient(app)
 
@@ -194,7 +193,7 @@ class TestErrorHandler:
         with pytest.raises(TypeError):
             client.app.add_error_handler(exceptions, capture_error)
 
-    def test_handler_signature_shim(self):
+    def test_handler_signature_shim(self, util):
         def check_args(ex, req, resp):
             assert isinstance(ex, BaseException)
             assert isinstance(req, falcon.Request)
@@ -209,7 +208,7 @@ class TestErrorHandler:
         def legacy_handler3(err, rq, rs, prms):
             check_args(err, rq, rs)
 
-        app = create_app(asgi=False)
+        app = util.create_app(asgi=False)
         app.add_route('/', ErroredClassResource())
         client = testing.TestClient(app)
 
@@ -224,17 +223,17 @@ class TestErrorHandler:
         client.simulate_get()
         client.simulate_head()
 
-    def test_handler_must_be_coroutine_for_asgi(self):
+    def test_handler_must_be_coroutine_for_asgi(self, util):
         async def legacy_handler(err, rq, rs, prms):
             pass
 
-        app = create_app(True)
+        app = util.create_app(True)
 
-        with disable_asgi_non_coroutine_wrapping():
+        with util.disable_asgi_non_coroutine_wrapping():
             with pytest.raises(ValueError):
                 app.add_error_handler(Exception, capture_error)
 
-    def test_catch_http_no_route_error(self, asgi):
+    def test_catch_http_no_route_error(self, asgi, util):
         class Resource:
             def on_get(self, req, resp):
                 raise falcon.HTTPNotFound()
@@ -243,7 +242,7 @@ class TestErrorHandler:
             resp.set_header('X-name', ex.__class__.__name__)
             raise ex
 
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/', Resource())
         app.add_error_handler(falcon.HTTPError, capture_error)
 
@@ -274,8 +273,8 @@ class NoBodyResource:
 
 class TestNoBodyWithStatus:
     @pytest.fixture()
-    def body_client(self, asgi):
-        app = create_app(asgi=asgi)
+    def body_client(self, asgi, util):
+        app = util.create_app(asgi=asgi)
         app.add_route('/error', NoBodyResource())
 
         def no_reps(req, resp, exception):
@@ -317,8 +316,8 @@ class CustomErrorResource:
 
 class TestCustomError:
     @pytest.fixture()
-    def body_client(self, asgi):
-        app = create_app(asgi=asgi)
+    def body_client(self, asgi, util):
+        app = util.create_app(asgi=asgi)
         app.add_route('/error', CustomErrorResource())
 
         if asgi:

@@ -1,7 +1,8 @@
 import os
 import pathlib
-import redis.asyncio
 import uuid
+
+import redis.asyncio
 
 
 class Config:

@@ -11,15 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """HTTPError exception class."""
 
+from __future__ import annotations
+
 from collections import OrderedDict
+from typing import MutableMapping, Optional, Type, TYPE_CHECKING, Union
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
-from falcon.util import code_to_http_status, http_status_to_code, uri
+from falcon.util import code_to_http_status
+from falcon.util import http_status_to_code
+from falcon.util import uri
 from falcon.util.deprecation import deprecated_args
+
+if TYPE_CHECKING:
+    from falcon.media import BaseHandler
+    from falcon.typing import HeaderList
+    from falcon.typing import Link
+    from falcon.typing import ResponseStatus
 
 
 class HTTPError(Exception):
@@ -110,13 +120,13 @@ class HTTPError(Exception):
     @deprecated_args(allowed_positional=1)
     def __init__(
         self,
-        status,
-        title=None,
-        description=None,
-        headers=None,
-        href=None,
-        href_text=None,
-        code=None,
+        status: ResponseStatus,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        headers: Optional[HeaderList] = None,
+        href: Optional[str] = None,
+        href_text: Optional[str] = None,
+        code: Optional[int] = None,
     ):
         self.status = status
 
@@ -129,6 +139,7 @@ class HTTPError(Exception):
         self.description = description
         self.headers = headers
         self.code = code
+        self.link: Optional[Link]
 
         if href:
             link = self.link = OrderedDict()
@@ -138,7 +149,7 @@ class HTTPError(Exception):
         else:
             self.link = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
     __str__ = __repr__
@@ -147,7 +158,9 @@ class HTTPError(Exception):
     def status_code(self) -> int:
         return http_status_to_code(self.status)
 
-    def to_dict(self, obj_type=dict):
+    def to_dict(
+        self, obj_type: Type[MutableMapping[str, Union[str, int, None, Link]]] = dict
+    ) -> MutableMapping[str, Union[str, int, None, Link]]:
         """Return a basic dictionary representing the error.
 
         This method can be useful when serializing the error to hash-like
@@ -178,7 +191,7 @@ class HTTPError(Exception):
 
         return obj
 
-    def to_json(self, handler=None):
+    def to_json(self, handler: Optional[BaseHandler] = None) -> bytes:
         """Return a JSON representation of the error.
 
         Args:
@@ -196,7 +209,7 @@ class HTTPError(Exception):
             handler = _DEFAULT_JSON_HANDLER
         return handler.serialize(obj, MEDIA_JSON)
 
-    def to_xml(self):
+    def to_xml(self) -> bytes:
         """Return an XML-encoded representation of the error.
 
         Returns:
@@ -227,4 +240,7 @@ class HTTPError(Exception):
 
 # NOTE: initialized in falcon.media.json, that is always imported since Request/Response
 # are imported by falcon init.
-_DEFAULT_JSON_HANDLER = None
+if TYPE_CHECKING:
+    _DEFAULT_JSON_HANDLER: BaseHandler
+else:
+    _DEFAULT_JSON_HANDLER = None
