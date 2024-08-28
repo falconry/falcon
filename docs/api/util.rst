@@ -38,6 +38,7 @@ Media types
 -----------
 
 .. autofunction:: falcon.parse_header
+.. autofunction:: falcon.mediatypes.quality
 .. autofunction:: falcon.mediatypes.best_match
 
 Async

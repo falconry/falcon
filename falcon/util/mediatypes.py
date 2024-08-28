@@ -14,9 +14,10 @@
 
 """Media (aka MIME) type parsing and matching utilities."""
 
+import functools
 import typing
 
-__all__ = ('parse_header',)
+__all__ = ('best_match', 'parse_header', 'quality')
 
 
 def _parse_param_old_stdlib(s):  # type: ignore
@@ -88,7 +89,41 @@ def parse_header(line: str) -> typing.Tuple[str, dict]:
     return _parse_header_old_stdlib(line)
 
 
-def best_match(media_types: typing.Iterable[str], header: str) -> str:
+class _MediaRange(tuple):
+    @classmethod
+    def parse(cls, media_range):
+        pass
+
+    def matches(self, media_type):
+        pass
+
+
+@functools.lru_cache()
+def _parse_media_ranges(header):
+    return tuple(_MediaRange.parse(media_range) for media_range in header.split(','))
+
+
+@functools.lru_cache()
+def quality(media_type: str, header: str) -> float:
+    """Get quality of the most specific matching media range.
+
+    Media-ranges are parsed from the provided `header` value according to
+    RFC 9110, Section 12.5.1 (The ``Accept`` header).
+
+    Args:
+        media_type: The Internet media type to match against the provided
+            HTTP ``Accept`` header value.
+        header: The value of a header that conforms to the format of the
+            HTTP ``Accept`` header.
+
+    Returns:
+        Quality of the most specific media range matching the provided
+        `media_type`.
+    """
+    return 0.0
+
+
+def best_match(media_types: typing.Iterable[str], header: str) -> typing.Optional[str]:
     """Choose media type with the highest quality from a list of candidates.
 
     Args:
@@ -99,9 +134,7 @@ def best_match(media_types: typing.Iterable[str], header: str) -> str:
 
     Returns:
         Best match from the supported candidates, or ``None`` if the provided
-        ``Accept`` header value does not match any of the given types.
+        header value does not match any of the given types.
     """
-    return ''
-
-
-__all__ = ['best_match', 'parse_header']
+    # media_ranges = _parse_media_ranges(header)
+    return None
