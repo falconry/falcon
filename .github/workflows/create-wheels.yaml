@@ -1,9 +1,8 @@
 name: Create wheel
 
 on:
-  # run when a release has been created
-  release:
-    types: [created]
+  # TODO(vytas): Phase out this workflow in favour of cibuildwheel.yaml.
+  workflow_dispatch:
 
 env:
   # set this so the falcon test uses the installed version and not the local one

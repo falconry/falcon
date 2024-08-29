@@ -9,6 +9,11 @@ on:
   # NOTE(vytas): Also allow to release to Test PyPi manually.
   workflow_dispatch:
 
+  # TODO(vytas): Remove later (temporary testing).
+  pull_request:
+    branches:
+      - master
+
 jobs:
   build-sdist:
     name: sdist
@@ -27,7 +32,8 @@ jobs:
 
       - name: Build sdist
         run: |
-          pip install build
+          pip install --upgrade pip
+          pip install --upgrade build
           python -m build --sdist
 
       - name: Upload artifacts
@@ -35,6 +41,13 @@ jobs:
         with:
           name: cibw-sdist
           path: dist/*.tar.gz
+
+      - name: Nuclear testing
+        run: |
+          echo ${{ github.event_name }}
+          echo ${{ github.event_name == 'release' }}
+          echo ${{ github.ref }}
+          python -c '0/0'
 
   build-wheels:
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
@@ -107,35 +120,93 @@ jobs:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/*.whl
 
-  publish-wheels:
-    name: publish
+  publish-sdist:
+    name: publish-sdist
     needs:
       - build-sdist
       - build-wheels
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download packages
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: cibw-*
+          pattern: cibw-sdist
           path: dist
-          merge-multiple: true
 
       - name: Check collected artifacts
-        # TODO(vytas): Run a script to perform version sanity checks instead.
-        run: ls -l dist/
+        run: |
+          python tools/check_dist.py --dist-dir dist/
 
-      - name: Publish artifacts to TestPyPI
+      - name: Upload sdist to release
+        uses: AButler/upload-release-assets@v2.0
+        if: github.event_name == 'release'
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          files: 'dist/*.tar.gz'
+
+      - name: Publish sdist to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
           password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
-      # TODO(vytas): Enable this nuclear option once happy with other tests.
-      # - name: Publish artifacts to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   if: github.event_name == 'release'
-      #   with:
-      #     password: ${{ secrets.PYPI_TOKEN }}
+      - name: Publish sdist to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'release'
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+
+  publish-wheels:
+    name: publish-wheels
+    needs:
+      - build-sdist
+      - build-wheels
+      - publish-sdist
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-wheel-*
+          path: dist
+          merge-multiple: true
+
+      - name: Check collected artifacts
+        run: |
+          python tools/check_dist.py --dist-dir dist/
+
+      - name: Publish wheels to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish wheels to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'release'
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
