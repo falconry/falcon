@@ -42,11 +42,6 @@ jobs:
           name: cibw-sdist
           path: dist/*.tar.gz
 
-      - name: Nuclear testing
-        run: |
-          tools/check_dist.py -d dist/ -r ${{ github.ref }} -t ${{ github.event_name }}
-          python -c '0/0'
-
   build-wheels:
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
     needs: build-sdist
@@ -144,7 +139,7 @@ jobs:
 
       - name: Check collected artifacts
         run: |
-          python tools/check_dist.py --dist-dir dist/
+          tools/check_dist.py -d dist/ -r ${{ github.ref }} -t ${{ github.event_name }}
 
       - name: Upload sdist to release
         uses: AButler/upload-release-assets@v2.0
@@ -194,7 +189,7 @@ jobs:
 
       - name: Check collected artifacts
         run: |
-          python tools/check_dist.py --dist-dir dist/
+          tools/check_dist.py -d dist/ -r ${{ github.ref }} -t ${{ github.event_name }}
 
       - name: Publish wheels to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1

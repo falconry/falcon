@@ -83,7 +83,7 @@ def main():
 
     args = parser.parse_args()
     git_ref = args.git_ref if args.build_type == 'release' else None
-    check_dist(pathlib.Path(args.dist_dir), git_ref)
+    check_dist(pathlib.Path(args.dist_dir).resolve(), git_ref)
 
 
 if __name__ == '__main__':
