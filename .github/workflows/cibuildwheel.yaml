@@ -44,9 +44,7 @@ jobs:
 
       - name: Nuclear testing
         run: |
-          echo ${{ github.event_name }}
-          echo ${{ github.event_name == 'release' }}
-          echo ${{ github.ref }}
+          tools/check_dist.py -d dist/ -r ${{ github.ref }} -t ${{ github.event_name }}
           python -c '0/0'
 
   build-wheels:

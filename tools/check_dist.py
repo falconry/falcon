@@ -8,10 +8,13 @@ HERE = pathlib.Path(__file__).resolve().parent
 DIST = HERE.parent / 'dist'
 
 
-def check_dist(dist):
+def check_dist(dist, git_ref):
     sdist = None
     versions = set()
     wheels = []
+
+    if git_ref:
+        git_ref = git_ref.split('/')[-1].lower()
 
     for path in dist.iterdir():
         if not path.is_file():
@@ -32,6 +35,12 @@ def check_dist(dist):
         falcon, version, *_ = package.split('-')
         assert falcon == 'falcon', 'Unexpected package name: {path.name}'
         versions.add(version)
+
+        if git_ref and version != git_ref:
+            sys.stderr.write(
+                f'Unexpected version: {path.name} ({version} != {git_ref})\n'
+            )
+            sys.exit(1)
 
     if not versions:
         sys.stderr.write('No artifacts collected!\n')
@@ -61,9 +70,20 @@ def main():
         default=str(DIST),
         help='dist directory to check (default: %(default)s)',
     )
+    parser.add_argument(
+        '-r',
+        '--git-ref',
+        help='git branch/tag ref, only checked for the "release" build type',
+    )
+    parser.add_argument(
+        '-t',
+        '--build-type',
+        help='build type, e.g., "release", "tag"',
+    )
 
     args = parser.parse_args()
-    check_dist(pathlib.Path(args.dist_dir))
+    git_ref = args.git_ref if args.build_type == 'release' else None
+    check_dist(pathlib.Path(args.dist_dir), git_ref)
 
 
 if __name__ == '__main__':
