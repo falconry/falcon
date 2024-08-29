@@ -87,6 +87,13 @@ these issues by setting additional Clang C compiler flags as follows:
 
     $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
 
+Binary Wheels
+-------------
+
+Tell the story about CIBW...
+
+.. wheels:: .github/workflows/cibuildwheel
+
 Dependencies
 ------------
 
