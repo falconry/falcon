@@ -103,12 +103,16 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0
+        # TODO: temp testing
+        if: ${{ matrix.python == 'cp38' }}
         env:
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        # TODO: temp testing
+        if: ${{ matrix.python == 'cp38' }}
         with:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/*.whl
@@ -136,6 +140,7 @@ jobs:
         with:
           pattern: cibw-sdist
           path: dist
+          merge-multiple: true
 
       - name: Check collected artifacts
         run: |
