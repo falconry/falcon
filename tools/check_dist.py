@@ -73,17 +73,11 @@ def main():
     parser.add_argument(
         '-r',
         '--git-ref',
-        help='git branch/tag ref, only checked for the "release" build type',
-    )
-    parser.add_argument(
-        '-t',
-        '--build-type',
-        help='build type, e.g., "release", "tag"',
+        help='check version against git branch/tag ref (e.g. $GITHUB_REF)',
     )
 
     args = parser.parse_args()
-    git_ref = args.git_ref if args.build_type == 'release' else None
-    check_dist(pathlib.Path(args.dist_dir).resolve(), git_ref)
+    check_dist(pathlib.Path(args.dist_dir).resolve(), args.git_ref)
 
 
 if __name__ == '__main__':
