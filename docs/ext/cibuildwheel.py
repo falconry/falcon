@@ -1,3 +1,17 @@
+# Copyright 2024 by Vytautas Liuolia.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Binary wheels table extension for Sphinx.
 
@@ -44,29 +58,20 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
         assert all(
             len(row) == columns for row in data
         ), 'All rows must have the same number of columns'
-
-        width = max(len(cell) for cell in itertools.chain(*data))
-        # Leave padding to cell borders
-        width += 2
-
+        # NOTE(vytas): +2 is padding inside cell borders.
+        width = max(len(cell) for cell in itertools.chain(*data)) + 2
         hline = ('+' + '-' * width) * columns + '+\n'
         output = [hline]
-        header_line = True
 
         for row in data:
             for cell in row:
                 # NOTE(vytas): Emojis take two spaces...
                 padded_width = width - 1 if cell == _CHECKBOX else width
-                output.append('|')
-                output.append(cell.center(padded_width))
-
+                output.append('|' + cell.center(padded_width))
             output.append('|\n')
 
-            if header_line:
-                output.append(hline.replace('-', '='))
-                header_line = False
-            else:
-                output.append(hline)
+            header_line = row == data[0]
+            output.append(hline.replace('-', '=') if header_line else hline)
 
         return ''.join(output)
 
@@ -78,25 +83,24 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
             workflow = yaml.safe_load(fp)
 
         matrix = workflow['jobs']['build-wheels']['strategy']['matrix']
+        platforms = matrix['platform']
         include = matrix['include']
         assert not matrix.get('exclude'), 'TODO: exclude is not supported yet'
-
         supported = set(
             itertools.product(
-                [platform['name'] for platform in matrix['platform']], matrix['python']
+                [platform['name'] for platform in platforms], matrix['python']
             )
         )
         supported.update((item['platform']['name'], item['python']) for item in include)
+        cpythons = sorted({cp for _, cp in supported}, key=lambda val: (len(val), val))
 
-        table = [
-            ('Platform / CPython version', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13')
-        ]
-        for name, description in _CPYTHON_PLATFORMS.items():
-            row = [description]
-            for cpython in ('cp38', 'cp39', 'cp310', 'cp311', 'cp312', 'cp313'):
-                value = _CHECKBOX if (name, cpython) in supported else ''
-                row.append(value)
-            table.append(row)
+        header = ['Platform / CPython version']
+        table = [header + [cp.replace('cp3', '3.') for cp in cpythons]]
+        table.extend(
+            [description]
+            + [(_CHECKBOX if (name, cp) in supported else '') for cp in cpythons]
+            for name, description in _CPYTHON_PLATFORMS.items()
+        )
 
         return self.parse_text_to_nodes(self._emit_table(table))
 
