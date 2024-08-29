@@ -39,9 +39,13 @@ Or, to install the latest beta or release candidate, if any:
 
 In order to provide an extra speed boost, Falcon can compile itself with
 Cython. Wheels containing pre-compiled binaries are available from PyPI for
-several common platforms. However, if a wheel for your platform of choice is not
-available, you can choose to stick with the source distribution, or use the
-instructions below to cythonize Falcon for your environment.
+several common platforms (see :ref:`binary_wheels` below for the complete list
+of the platforms that we target, or simply check
+`Falcon files on PyPI <https://pypi.org/project/falcon/#files>`__).
+
+However, even if a wheel for your platform of choice is not available, you can
+choose to stick with the source distribution, or use the instructions below to
+cythonize Falcon for your environment.
 
 The following commands tell pip to install Cython, and then to invoke
 Falcon's ``setup.py``, which will in turn detect the presence of Cython
@@ -64,7 +68,8 @@ pass `-v` to pip in order to echo the compilation commands:
 
     $ pip install -v --no-build-isolation --no-binary :all: falcon
 
-**Installing on OS X**
+Installing on OS X
+^^^^^^^^^^^^^^^^^^
 
 Xcode Command Line Tools are required to compile Cython. Install them
 with this command:
@@ -87,12 +92,27 @@ these issues by setting additional Clang C compiler flags as follows:
 
     $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
 
+.. _binary_wheels:
+
 Binary Wheels
--------------
+^^^^^^^^^^^^^
 
-Tell the story about CIBW...
+Binary Falcon wheels for are automatically built for many CPython platforms,
+courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/en/stable/>`__.
 
-.. wheels:: .github/workflows/cibuildwheel
+The following table summarizes the wheel availability on different combinations
+of CPython versions vs CPython platforms:
+
+.. wheels:: .github/workflows/cibuildwheel.yaml
+
+.. note::
+    The `free-threaded build
+    <https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
+    mode is not enabled for our wheels at this time.
+
+While we believe that the above configuration covers the most common
+development and deployment scenarios, :ref:`let us known <chat>` if you are
+interested in any builds that are currently missing from our selection!
 
 Dependencies
 ------------
