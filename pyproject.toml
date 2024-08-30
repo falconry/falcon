@@ -45,8 +45,6 @@
             "falcon.asgi.multipart",
             "falcon.asgi.response",
             "falcon.asgi.stream",
-            "falcon.media.json",
-            "falcon.media.msgpack",
             "falcon.media.multipart",
             "falcon.media.validators.*",
             "falcon.responders",
