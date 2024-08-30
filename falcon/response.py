@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import timezone
 import functools
 import mimetypes
-from typing import Dict, Optional
+from typing import Dict
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
@@ -208,14 +208,14 @@ class Response:
     def status_code(self, value):
         self.status = value
 
-    @property  # type: ignore
+    @property
     def body(self):
         raise AttributeRemovedError(
             'The body attribute is no longer supported. '
             'Please use the text attribute instead.'
         )
 
-    @body.setter  # type: ignore
+    @body.setter
     def body(self, value):
         raise AttributeRemovedError(
             'The body attribute is no longer supported. '
@@ -1233,7 +1233,7 @@ class ResponseOptions:
     This can make testing easier by not requiring HTTPS. Note, however, that this
     setting can be overridden via :meth:`~.Response.set_cookie()`'s ``secure`` kwarg.
     """
-    default_media_type: Optional[str]
+    default_media_type: str
     """The default Internet media type (RFC 2046) to use when rendering a response,
     when the Content-Type header is not set explicitly.
 

@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import re
-from typing import ClassVar, TYPE_CHECKING
+from typing import Any, ClassVar, Dict, Optional, Tuple, Type, TYPE_CHECKING
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
@@ -29,6 +29,7 @@ from falcon.util import misc
 from falcon.util.mediatypes import parse_header
 
 if TYPE_CHECKING:
+    from falcon.asgi.multipart import MultipartForm as AsgiMultipartForm
     from falcon.media import Handlers
 
 # TODO(vytas):
@@ -189,11 +190,11 @@ class BodyPart:
                         decoded_text = await part.text
     """
 
-    _content_disposition = None
-    _data = None
-    _filename = None
-    _media = None
-    _name = None
+    _content_disposition: Optional[Tuple[str, Dict[str, str]]] = None
+    _data: Optional[bytes] = None
+    _filename: Optional[str] = None
+    _media: Optional[Any] = None
+    _name: Optional[str] = None
 
     def __init__(self, stream, headers, parse_options):
         self.stream = stream
@@ -488,7 +489,7 @@ class MultipartFormHandler(BaseHandler):
             See also: :ref:`multipart_parser_conf`.
     """
 
-    _ASGI_MULTIPART_FORM = None
+    _ASGI_MULTIPART_FORM: ClassVar[Type[AsgiMultipartForm]]
 
     def __init__(self, parse_options=None):
         self.parse_options = parse_options or MultipartParseOptions()

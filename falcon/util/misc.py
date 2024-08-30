@@ -101,7 +101,7 @@ def _lru_cache_nop(maxsize: int) -> Callable[[Callable], Callable]:  # pragma: n
 if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = functools.lru_cache  # type: ignore
+    _lru_cache_for_simple_logic = functools.lru_cache
 
 
 def is_python_func(func: Union[Callable, Any]) -> bool:
@@ -300,7 +300,7 @@ def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[...,
     return method
 
 
-def get_argnames(func: Callable) -> List[str]:
+def get_argnames(func: Callable[..., Any]) -> List[str]:
     """Introspect the arguments of a callable.
 
     Args:
