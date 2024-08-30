@@ -43,7 +43,6 @@
     [[tool.mypy.overrides]]
         module = [
             "falcon.asgi.multipart",
-            "falcon.asgi.reader",
             "falcon.asgi.response",
             "falcon.asgi.stream",
             "falcon.media.json",
