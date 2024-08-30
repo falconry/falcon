@@ -36,6 +36,10 @@ jobs:
           pip install --upgrade build
           python -m build --sdist
 
+      - name: Check built artifacts
+        run: |
+          tools/check_dist.py ${{ github.event_name != 'release' && format('-r {0}', github.ref) || '' }}
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -140,7 +144,7 @@ jobs:
 
       - name: Check collected artifacts
         run: |
-          tools/check_dist.py -d dist/ ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
       - name: Upload sdist to release
         uses: AButler/upload-release-assets@v2.0
@@ -190,7 +194,7 @@ jobs:
 
       - name: Check collected artifacts
         run: |
-          tools/check_dist.py -d dist/ ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
       - name: Publish wheels to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
