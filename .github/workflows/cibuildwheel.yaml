@@ -1,5 +1,5 @@
 # Build wheels using cibuildwheel (https://cibuildwheel.pypa.io/)
-name: Build wheels
+name: build-wheels
 
 on:
   # Run when a release has been created
@@ -38,7 +38,7 @@ jobs:
 
       - name: Check built artifacts
         run: |
-          tools/check_dist.py ${{ github.event_name != 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
