@@ -26,6 +26,7 @@ import asyncio
 from collections import defaultdict
 from collections import deque
 import contextlib
+from enum import auto
 from enum import Enum
 import io
 import itertools
@@ -365,7 +366,12 @@ class ASGIResponseEventCollector:
     __call__ = collect
 
 
-_WebSocketState = Enum('_WebSocketState', 'CONNECT HANDSHAKE ACCEPTED DENIED CLOSED')
+class _WebSocketState(Enum):
+    CONNECT = auto()
+    HANDSHAKE = auto()
+    ACCEPTED = auto()
+    DENIED = auto()
+    CLOSED = auto()
 
 
 class ASGIWebSocketSimulator:
