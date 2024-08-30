@@ -9,11 +9,6 @@ on:
   # NOTE(vytas): Also allow to release to Test PyPi manually.
   workflow_dispatch:
 
-  # TODO(vytas): Remove later (temporary testing).
-  pull_request:
-    branches:
-      - master
-
 jobs:
   build-sdist:
     name: sdist
