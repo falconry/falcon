@@ -61,6 +61,7 @@ extensions = [
     'sphinx_tabs.tabs',
     'sphinx_tabs.tabs',
     # Falcon-specific extensions
+    'ext.cibuildwheel',
     'ext.doorway',
     'ext.private_args',
     'ext.rfc',
