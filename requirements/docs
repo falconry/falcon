@@ -4,6 +4,7 @@ jinja2
 markupsafe
 pygments
 pygments-style-github
+PyYAML
 sphinx
 sphinx_rtd_theme
 sphinx-tabs
