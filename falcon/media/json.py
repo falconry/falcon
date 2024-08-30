@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 from functools import partial
 import json
+from typing import Any, Callable, Optional, Union
 
 from falcon import errors
 from falcon import http_error
 from falcon.media.base import BaseHandler
 from falcon.media.base import TextBaseHandlerWS
+from falcon.typing import AsyncReadableIO
+from falcon.typing import ReadableIO
 
 
 class JSONHandler(BaseHandler):
@@ -148,7 +153,11 @@ class JSONHandler(BaseHandler):
         loads (func): Function to use when deserializing JSON requests.
     """
 
-    def __init__(self, dumps=None, loads=None):
+    def __init__(
+        self,
+        dumps: Optional[Callable[[Any], Union[str, bytes]]] = None,
+        loads: Optional[Callable[[str], Any]] = None,
+    ) -> None:
         self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self._loads = loads or json.loads
 
@@ -156,11 +165,11 @@ class JSONHandler(BaseHandler):
         #     proper serialize implementation.
         result = self._dumps({'message': 'Hello World'})
         if isinstance(result, str):
-            self.serialize = self._serialize_s
-            self.serialize_async = self._serialize_async_s
+            self.serialize = self._serialize_s  # type: ignore[method-assign]
+            self.serialize_async = self._serialize_async_s  # type: ignore[method-assign]
         else:
-            self.serialize = self._serialize_b
-            self.serialize_async = self._serialize_async_b
+            self.serialize = self._serialize_b  # type: ignore[method-assign]
+            self.serialize_async = self._serialize_async_b  # type: ignore[method-assign]
 
         # NOTE(kgriffs): To be safe, only enable the optimized protocol when
         #   not subclassed.
@@ -168,7 +177,7 @@ class JSONHandler(BaseHandler):
             self._serialize_sync = self.serialize
             self._deserialize_sync = self._deserialize
 
-    def _deserialize(self, data):
+    def _deserialize(self, data: bytes) -> Any:
         if not data:
             raise errors.MediaNotFoundError('JSON')
         try:
@@ -176,27 +185,41 @@ class JSONHandler(BaseHandler):
         except ValueError as err:
             raise errors.MediaMalformedError('JSON') from err
 
-    def deserialize(self, stream, content_type, content_length):
+    def deserialize(
+        self,
+        stream: ReadableIO,
+        content_type: Optional[str],
+        content_length: Optional[int],
+    ) -> Any:
         return self._deserialize(stream.read())
 
-    async def deserialize_async(self, stream, content_type, content_length):
+    async def deserialize_async(
+        self,
+        stream: AsyncReadableIO,
+        content_type: Optional[str],
+        content_length: Optional[int],
+    ) -> Any:
         return self._deserialize(await stream.read())
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def _serialize_s(self, media, content_type=None) -> bytes:
-        return self._dumps(media).encode()
+    def _serialize_s(self, media: Any, content_type: Optional[str] = None) -> bytes:
+        return self._dumps(media).encode()  # type: ignore[union-attr]
 
-    async def _serialize_async_s(self, media, content_type) -> bytes:
-        return self._dumps(media).encode()
+    async def _serialize_async_s(
+        self, media: Any, content_type: Optional[str]
+    ) -> bytes:
+        return self._dumps(media).encode()  # type: ignore[union-attr]
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def _serialize_b(self, media, content_type=None) -> bytes:
-        return self._dumps(media)
+    def _serialize_b(self, media: Any, content_type: Optional[str] = None) -> bytes:
+        return self._dumps(media)  # type: ignore[return-value]
 
-    async def _serialize_async_b(self, media, content_type) -> bytes:
-        return self._dumps(media)
+    async def _serialize_async_b(
+        self, media: Any, content_type: Optional[str]
+    ) -> bytes:
+        return self._dumps(media)  # type: ignore[return-value]
 
 
 class JSONHandlerWS(TextBaseHandlerWS):
@@ -257,7 +280,11 @@ class JSONHandlerWS(TextBaseHandlerWS):
 
     __slots__ = ['dumps', 'loads']
 
-    def __init__(self, dumps=None, loads=None):
+    def __init__(
+        self,
+        dumps: Optional[Callable[[Any], str]] = None,
+        loads: Optional[Callable[[str], Any]] = None,
+    ) -> None:
         self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self._loads = loads or json.loads
 
@@ -268,4 +295,4 @@ class JSONHandlerWS(TextBaseHandlerWS):
         return self._loads(payload)
 
 
-http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()  # type: ignore
+http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()

@@ -8,7 +8,7 @@ from falcon import media
 from falcon import testing
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
     msgpack = None
 

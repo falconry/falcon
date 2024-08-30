@@ -702,7 +702,7 @@ class TestRequestAttributes:
         ],
     )
     def test_date(self, asgi, header, attr):
-        date = datetime.datetime(2013, 4, 4, 5, 19, 18)
+        date = datetime.datetime(2013, 4, 4, 5, 19, 18, tzinfo=datetime.timezone.utc)
         date_str = 'Thu, 04 Apr 2013 05:19:18 GMT'
 
         headers = {header: date_str}

@@ -4,7 +4,6 @@ from collections import UserDict
 import functools
 from typing import (
     Any,
-    Callable,
     cast,
     Dict,
     Literal,
@@ -29,6 +28,8 @@ from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
 from falcon.media.multipart import MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
+from falcon.typing import DeserializeSync
+from falcon.typing import SerializeSync
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.vendor import mimeparse
@@ -54,9 +55,7 @@ class MissingDependencyHandler(BinaryBaseHandlerWS):
 
 
 _ResolverMethodReturnTuple = Tuple[
-    BaseHandler,
-    Optional[Callable[[Any, Optional[str]], bytes]],
-    Optional[Callable[[bytes], Any]],
+    BaseHandler, Optional[SerializeSync], Optional[DeserializeSync]
 ]
 
 

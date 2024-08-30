@@ -13,6 +13,7 @@
         "falcon/vendor",
     ]
     disallow_untyped_defs = true
+    warn_unused_ignores = true
 
     [[tool.mypy.overrides]]
         module = [
@@ -41,18 +42,10 @@
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.app",
-            "falcon.asgi._asgi_helpers",
-            "falcon.asgi.app",
             "falcon.asgi.multipart",
-            "falcon.asgi.reader",
             "falcon.asgi.response",
             "falcon.asgi.stream",
-            "falcon.asgi.ws",
-            "falcon.media.json",
-            "falcon.media.msgpack",
             "falcon.media.multipart",
-            "falcon.media.urlencoded",
             "falcon.media.validators.*",
             "falcon.responders",
             "falcon.response_helpers",

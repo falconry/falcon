@@ -1,5 +1,5 @@
 # Build wheels using cibuildwheel (https://cibuildwheel.pypa.io/)
-name: Build wheels
+name: build-wheels
 
 on:
   # Run when a release has been created
@@ -11,6 +11,7 @@ on:
 
 jobs:
   build-sdist:
+    # NOTE(vytas): We actually build sdist and pure-Python wheel.
     name: sdist
     runs-on: ubuntu-latest
 
@@ -25,16 +26,31 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build sdist
+      - name: Build sdist and pure-Python wheel
+        env:
+          FALCON_DISABLE_CYTHON: "Y"
         run: |
-          pip install build
-          python -m build --sdist
+          pip install --upgrade pip
+          pip install --upgrade build
+          python -m build
+
+      - name: Check built artifacts
+        run: |
+          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+
+      - name: Test sdist
+        run: |
+          tools/test_dist.py dist/*.tar.gz
+
+      - name: Test pure-Python wheel
+        run: |
+          tools/test_dist.py dist/*.whl
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: cibw-sdist
-          path: dist/*.tar.gz
+          path: dist/falcon-*
 
   build-wheels:
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
@@ -105,37 +121,96 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
-          path: wheelhouse/*.whl
+          path: wheelhouse/falcon-*.whl
 
-  publish-wheels:
-    name: publish
+  publish-sdist:
+    name: publish-sdist
     needs:
       - build-sdist
       - build-wheels
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download packages
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: cibw-*
+          pattern: cibw-sdist
           path: dist
           merge-multiple: true
 
       - name: Check collected artifacts
-        # TODO(vytas): Run a script to perform version sanity checks instead.
-        run: ls -l dist/
+        run: |
+          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
-      - name: Publish artifacts to TestPyPI
+      - name: Upload sdist to release
+        uses: AButler/upload-release-assets@v2.0
+        if: github.event_name == 'release'
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          files: 'dist/*.tar.gz'
+
+      - name: Publish sdist and pure-Python wheel to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
           password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
-      # TODO(vytas): Enable this nuclear option once happy with other tests.
-      # - name: Publish artifacts to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   if: github.event_name == 'release'
-      #   with:
-      #     password: ${{ secrets.PYPI_TOKEN }}
+      - name: Publish sdist and pure-Python wheel to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'release'
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+
+  publish-wheels:
+    name: publish-wheels
+    needs:
+      - build-sdist
+      - build-wheels
+      - publish-sdist
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-wheel-*
+          path: dist
+          merge-multiple: true
+
+      - name: Check collected artifacts
+        run: |
+          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+
+      - name: Publish binary wheels to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish binary wheels to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'release'
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}

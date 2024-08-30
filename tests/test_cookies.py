@@ -9,6 +9,7 @@ import pytest
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt
+from falcon.util.misc import _utcnow
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
@@ -172,7 +173,7 @@ def test_response_complex_case(client):
     assert cookie.domain is None
     assert cookie.same_site == 'Lax'
 
-    assert cookie.expires < utcnow_naive()
+    assert cookie.expires < _utcnow()
 
     # NOTE(kgriffs): I know accessing a private attr like this is
     # naughty of me, but we just need to sanity-check that the
@@ -194,7 +195,7 @@ def test_unset_cookies(client):
         assert cookie.domain == domain
         assert cookie.path == path
         assert cookie.same_site == samesite
-        assert cookie.expires < utcnow_naive()
+        assert cookie.expires < _utcnow()
 
     test(result.cookies['foo'], path=None, domain=None)
     test(result.cookies['bar'], path='/bar', domain=None)
@@ -232,7 +233,7 @@ def test_unset_cookies_samesite(client):
     def test_unset(cookie, samesite='Lax'):
         assert cookie.value == ''  # An unset cookie has an empty value
         assert cookie.same_site == samesite
-        assert cookie.expires < utcnow_naive()
+        assert cookie.expires < _utcnow()
 
     test_unset(result_unset.cookies['foo'], samesite='Strict')
     # default: bar is unset with no samesite param, so should go to Lax
@@ -255,7 +256,7 @@ def test_cookie_expires_naive(client):
     cookie = result.cookies['foo']
     assert cookie.value == 'bar'
     assert cookie.domain is None
-    assert cookie.expires == datetime(year=2050, month=1, day=1)
+    assert cookie.expires == datetime(year=2050, month=1, day=1, tzinfo=timezone.utc)
     assert not cookie.http_only
     assert cookie.max_age is None
     assert cookie.path is None
@@ -268,7 +269,9 @@ def test_cookie_expires_aware(client):
     cookie = result.cookies['foo']
     assert cookie.value == 'bar'
     assert cookie.domain is None
-    assert cookie.expires == datetime(year=2049, month=12, day=31, hour=23)
+    assert cookie.expires == datetime(
+        year=2049, month=12, day=31, hour=23, tzinfo=timezone.utc
+    )
     assert not cookie.http_only
     assert cookie.max_age is None
     assert cookie.path is None
@@ -326,7 +329,7 @@ def test_response_unset_cookie():
     assert match
 
     expiration = http_date_to_dt(match.group(1), obs_date=True)
-    assert expiration < utcnow_naive()
+    assert expiration < _utcnow()
 
 
 # =====================================================================
