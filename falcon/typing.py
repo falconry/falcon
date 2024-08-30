@@ -21,6 +21,7 @@ import http
 import sys
 from typing import (
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -150,6 +151,7 @@ class ResponderCallable(Protocol):
 # ASGI
 class AsyncReadableIO(Protocol):
     async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    def __aiter__(self) -> AsyncIterator[bytes]: ...
 
 
 class AsgiResponderMethod(Protocol):
