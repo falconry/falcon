@@ -1,28 +1,39 @@
-# -*- coding: utf-8 -*-
-
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 import functools
 import http
 import itertools
 import json
 import random
-from urllib.parse import quote, unquote_plus
+from urllib.parse import quote
+from urllib.parse import unquote_plus
 
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
-from falcon import util
-from falcon.constants import MEDIA_JSON, MEDIA_MSGPACK, MEDIA_URLENCODED, MEDIA_YAML
-from falcon.util import deprecation, misc, structures, uri
+from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_MSGPACK
+from falcon.constants import MEDIA_URLENCODED
+from falcon.constants import MEDIA_YAML
+import falcon.util
+from falcon.util import deprecation
+from falcon.util import misc
+from falcon.util import structures
+from falcon.util import uri
+from falcon.util.time import TimezoneGMT
 
-from _util import create_app, to_coroutine  # NOQA
+try:
+    import msgpack
+except ImportError:
+    msgpack = None
 
 
 @pytest.fixture
-def app(asgi):
-    return create_app(asgi)
+def app(asgi, util):
+    return util.create_app(asgi)
 
 
 def _arbitrary_uris(count, length):
@@ -98,7 +109,7 @@ class TestFalconUtils:
     def test_deprecated_decorator(self):
         msg = 'Please stop using this thing. It is going away.'
 
-        @util.deprecated(msg)
+        @falcon.util.deprecated(msg)
         def old_thing():
             pass
 
@@ -118,21 +129,22 @@ class TestFalconUtils:
 
     def test_dt_to_http(self):
         assert (
-            falcon.dt_to_http(datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
+            falcon.dt_to_http(datetime(2013, 4, 4, tzinfo=timezone.utc))
+            == 'Thu, 04 Apr 2013 00:00:00 GMT'
         )
 
         assert (
-            falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54))
+            falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc))
             == 'Thu, 04 Apr 2013 10:28:54 GMT'
         )
 
     def test_http_date_to_dt(self):
         assert falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT') == datetime(
-            2013, 4, 4
+            2013, 4, 4, tzinfo=timezone.utc
         )
 
         assert falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 GMT') == datetime(
-            2013, 4, 4, 10, 28, 54
+            2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc
         )
 
         with pytest.raises(ValueError):
@@ -140,7 +152,7 @@ class TestFalconUtils:
 
         assert falcon.http_date_to_dt(
             'Thu, 04-Apr-2013 10:28:54 GMT', obs_date=True
-        ) == datetime(2013, 4, 4, 10, 28, 54)
+        ) == datetime(2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc)
 
         with pytest.raises(ValueError):
             falcon.http_date_to_dt('Sun Nov  6 08:49:37 1994')
@@ -150,11 +162,14 @@ class TestFalconUtils:
 
         assert falcon.http_date_to_dt(
             'Sun Nov  6 08:49:37 1994', obs_date=True
-        ) == datetime(1994, 11, 6, 8, 49, 37)
+        ) == datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc)
 
         assert falcon.http_date_to_dt(
             'Sunday, 06-Nov-94 08:49:37 GMT', obs_date=True
-        ) == datetime(1994, 11, 6, 8, 49, 37)
+        ) == datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc)
+
+        with pytest.raises(ValueError):
+            falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 EST')
 
     def test_pack_query_params_none(self):
         assert falcon.to_query_str({}) == ''
@@ -637,25 +652,9 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('')
 
-    @pytest.mark.parametrize(
-        'string,expected_ascii',
-        [
-            ('', True),
-            ('/', True),
-            ('/api', True),
-            ('/data/items/something?query=apples%20and%20oranges', True),
-            ('/food?item=ð\x9f\x8d\x94', False),
-            ('\x00\x00\x7f\x00\x00\x7f\x00', True),
-            ('\x00\x00\x7f\x00\x00\x80\x00', False),
-        ],
-    )
-    @pytest.mark.parametrize('method', ['isascii', '_isascii'])
-    def test_misc_isascii(self, string, expected_ascii, method):
-        isascii = getattr(misc, method)
-        if expected_ascii:
-            assert isascii(string)
-        else:
-            assert not isascii(string)
+    def test_misc_isascii(self):
+        with pytest.warns(deprecation.DeprecatedWarning):
+            assert misc.isascii('foobar')
 
 
 @pytest.mark.parametrize(
@@ -665,7 +664,7 @@ class TestFalconUtils:
         falcon.HTTP_METHODS * 2,
     ),
 )
-def test_simulate_request_protocol(asgi, protocol, method):
+def test_simulate_request_protocol(asgi, protocol, method, util):
     sink_called = [False]
 
     def sink(req, resp):
@@ -673,9 +672,9 @@ def test_simulate_request_protocol(asgi, protocol, method):
         assert req.protocol == protocol
 
     if asgi:
-        sink = to_coroutine(sink)
+        sink = util.to_coroutine(sink)
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_sink(sink, '/test')
 
     client = testing.TestClient(app)
@@ -701,16 +700,16 @@ def test_simulate_request_protocol(asgi, protocol, method):
         testing.simulate_delete,
     ],
 )
-def test_simulate_free_functions(asgi, simulate):
+def test_simulate_free_functions(asgi, simulate, util):
     sink_called = [False]
 
     def sink(req, resp):
         sink_called[0] = True
 
     if asgi:
-        sink = to_coroutine(sink)
+        sink = util.to_coroutine(sink)
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_sink(sink, '/test')
 
     simulate(app, '/test')
@@ -742,7 +741,7 @@ class TestFalconTestingUtils:
         assert response.json == falcon.HTTPNotFound().to_dict()
 
     def test_httpnow_alias_for_backwards_compat(self):
-        assert testing.httpnow is util.http_now
+        assert testing.httpnow is falcon.util.http_now
 
     def test_default_headers(self, app):
         resource = testing.SimpleTestResource()
@@ -806,7 +805,7 @@ class TestFalconTestingUtils:
             '\xe9\xe8',
         ),
     )
-    def test_repr_result_when_body_varies(self, asgi, value, simulate):
+    def test_repr_result_when_body_varies(self, asgi, util, value, simulate):
         if isinstance(value, str):
             value = bytes(value, 'UTF-8')
 
@@ -815,7 +814,7 @@ class TestFalconTestingUtils:
         else:
             resource = testing.SimpleTestResource(body=value)
 
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/hello', resource)
 
         result = simulate(app, '/hello')
@@ -965,11 +964,11 @@ class TestFalconTestingUtils:
             },
         ],
     )
-    def test_simulate_json_body(self, asgi, document):
+    def test_simulate_json_body(self, asgi, util, document):
         resource = (
             testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
         )
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/', resource)
 
         json_types = ('application/json', 'application/json; charset=UTF-8')
@@ -1050,8 +1049,8 @@ class TestFalconTestingUtils:
         for header, value in expected_headers:
             assert resource.captured_req.get_header(header) == value
 
-    def test_override_method_with_extras(self, asgi):
-        app = create_app(asgi)
+    def test_override_method_with_extras(self, asgi, util):
+        app = util.create_app(asgi)
         app.add_route('/', testing.SimpleTestResource(body='test'))
         client = testing.TestClient(app)
 
@@ -1073,12 +1072,12 @@ class TestFalconTestingUtils:
             'application/yaml',
         ],
     )
-    def test_simulate_content_type(self, content_type):
+    def test_simulate_content_type(self, util, content_type):
         class MediaMirror:
             def on_post(self, req, resp):
                 resp.media = req.media
 
-        app = create_app(asgi=False)
+        app = util.create_app(asgi=False)
         app.add_route('/', MediaMirror())
 
         client = testing.TestClient(app)
@@ -1104,7 +1103,8 @@ class TestFalconTestingUtils:
             MEDIA_URLENCODED,
         ],
     )
-    def test_simulate_content_type_extra_handler(self, asgi, content_type):
+    @pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
+    def test_simulate_content_type_extra_handler(self, asgi, util, content_type):
         class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):
                 super().__init__()
@@ -1126,7 +1126,7 @@ class TestFalconTestingUtils:
                 resp.content_type = content_type
 
         resource = TestResourceAsync() if asgi else TestResource()
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/', resource)
 
         json_handler = TrackingJSONHandler()
@@ -1419,12 +1419,19 @@ class TestDeprecatedArgs:
         assert 'a_function(...)' in str(recwarn[0].message)
 
 
-@pytest.mark.skipif(
-    falcon.PYTHON_VERSION < (3, 7), reason='module __getattr__ requires python 3.7'
-)
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):
-        util.json
+        falcon.util.json
 
     with pytest.raises(AttributeError):
-        util.some_imaginary_module
+        falcon.util.some_imaginary_module
+
+
+def test_TimezoneGMT():
+    with pytest.warns(deprecation.DeprecatedWarning):
+        tz = TimezoneGMT()
+
+    z = timedelta(0)
+    assert tz.tzname(None) == 'GMT'
+    assert tz.dst(None) == z
+    assert tz.utcoffset(None) == z

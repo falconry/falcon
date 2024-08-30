@@ -3,11 +3,18 @@
     requires = [
         "setuptools>=47",
         "wheel>=0.34",
-        "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
+        "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
     ]
 
 [tool.mypy]
-    exclude = "falcon/bench/|falcon/cmd/"
+    exclude = [
+        "falcon/bench",
+        "falcon/cmd",
+        "falcon/vendor",
+    ]
+    disallow_untyped_defs = true
+    warn_unused_ignores = true
+
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
@@ -35,10 +42,20 @@
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.stream",
-            "falcon.util.*"
+            "falcon.asgi.multipart",
+            "falcon.asgi.response",
+            "falcon.asgi.stream",
+            "falcon.media.multipart",
+            "falcon.media.validators.*",
+            "falcon.responders",
+            "falcon.response_helpers",
+            "falcon.response",
+            "falcon.routing.*",
+            "falcon.routing.converters",
+            "falcon.testing.*",
+            "falcon.vendor.*",
         ]
-        disallow_untyped_defs = true
+        disallow_untyped_defs = false
 
 [tool.towncrier]
     package = "falcon"
@@ -76,7 +93,7 @@
 [tool.black]
     # this is kept to avoid reformatting all the code if one were to
     # inadvertently run black on the project
-    target-version = ["py37"]
+    target-version = ["py38"]
     skip-string-normalization = true
     line-length = 88
     extend-exclude = "falcon/vendor"
@@ -85,15 +102,62 @@
     # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
     #   With the below settings, accidentally running blue should yield
     #   only minor cosmetic changes in a handful of files.
-    target-version = ["py37"]
+    target-version = ["py38"]
     line-length = 88
     extend-exclude = "falcon/vendor"
 
 [tool.ruff]
-    target-version = "py37"
+    target-version = "py38"
     format.quote-style = "single"
     line-length = 88
     extend-exclude = ["falcon/vendor"]
+    builtins = [
+        "ignore",
+        "attr",
+        "defined",
+    ]
+    exclude = [
+        ".ecosystem",
+        ".eggs",
+        ".git",
+        ".tox",
+        ".venv",
+        "build",
+        "dist",
+        "docs",
+        "examples",
+        "falcon/bench/nuts",
+    ]
+
+[tool.ruff.lint]
+    select = [
+        "C9",
+        "E",
+        "F",
+        "W",
+        "I"
+    ]
+
+[tool.ruff.lint.mccabe]
+    max-complexity = 15
+
+[tool.ruff.lint.per-file-ignores]
+    "**/__init__.py" = [
+        "F401",
+        "E402",
+        "F403"
+    ]
+    "falcon/uri.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+    case-sensitive = false
+    force-single-line = true
+    order-by-type = false
+    single-line-exclusions = [
+        "typing"
+    ]
+    force-sort-within-sections = true
+    known-local-folder = ["asgilook", "look"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
@@ -106,6 +170,14 @@ filterwarnings = [
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
     "ignore:This process \\(.+\\) is multi-threaded",
 ]
+markers = [
+    "slow: mark Falcon tests as slower (potentially taking more than ~500ms).",
+]
 testpaths = [
     "tests"
 ]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+test-requires = ["-r requirements/cibwtest"]
+test-command = "pytest {project}/tests"

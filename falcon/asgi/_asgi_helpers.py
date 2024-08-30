@@ -12,14 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import functools
 import inspect
+from typing import Any, Callable, Optional, TypeVar
 
-from falcon.errors import UnsupportedError, UnsupportedScopeError
+from falcon.errors import UnsupportedError
+from falcon.errors import UnsupportedScopeError
 
 
 @functools.lru_cache(maxsize=16)
-def _validate_asgi_scope(scope_type, spec_version, http_version):
+def _validate_asgi_scope(
+    scope_type: str, spec_version: Optional[str], http_version: str
+) -> str:
     if scope_type == 'http':
         spec_version = spec_version or '2.0'
         if not spec_version.startswith('2.'):
@@ -59,7 +65,10 @@ def _validate_asgi_scope(scope_type, spec_version, http_version):
     raise UnsupportedScopeError(f'The ASGI "{scope_type}" scope type is not supported.')
 
 
-def _wrap_asgi_coroutine_func(asgi_impl):
+_C = TypeVar('_C', bound=Callable[..., Any])
+
+
+def _wrap_asgi_coroutine_func(asgi_impl: _C) -> _C:
     """Wrap an ASGI application in another coroutine.
 
     This utility is used to wrap the cythonized ``App.__call__`` in order to
@@ -83,10 +92,10 @@ def _wrap_asgi_coroutine_func(asgi_impl):
     #   "self" parameter.
     # NOTE(vytas): Intentionally not using functools.wraps as it erroneously
     #   inherits the cythonized method's traits.
-    async def __call__(self, scope, receive, send):
+    async def __call__(self: Any, scope: Any, receive: Any, send: Any) -> None:
         await asgi_impl(self, scope, receive, send)
 
     if inspect.iscoroutinefunction(asgi_impl):
         return asgi_impl
 
-    return __call__
+    return __call__  # type: ignore[return-value]

@@ -73,7 +73,6 @@ class Things:
             safely_values.append((a, b, c))
 
         cms = falcon.util.wrap_sync_to_async(callmesafely, threadsafe=False)
-        loop = falcon.util.get_running_loop()
 
         # NOTE(caselit): on windows it takes more time so create less tasks
         # NOTE(vytas): Tests on non-x86 platforms are run using software
@@ -86,7 +85,7 @@ class Things:
             #   are scheduled immediately in the order created; under Python
             #   3.6, asyncio.gather() does not seem to always schedule
             #   them in order, so we do it this way to make it predictable.
-            safely_tasks.append(loop.create_task(cms(i, i + 1, c=i + 2)))
+            safely_tasks.append(asyncio.create_task(cms(i, i + 1, c=i + 2)))
 
         await asyncio.gather(*safely_tasks)
 

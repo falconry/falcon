@@ -3,8 +3,9 @@ import datetime
 import io
 
 import aiofiles
-import falcon
 import PIL.Image
+
+import falcon
 
 
 class Image:

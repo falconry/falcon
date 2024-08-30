@@ -26,6 +26,7 @@ import asyncio
 from collections import defaultdict
 from collections import deque
 import contextlib
+from enum import auto
 from enum import Enum
 import io
 import itertools
@@ -35,11 +36,7 @@ import re
 import socket
 import sys
 import time
-from typing import Any
-from typing import Dict
-from typing import Iterable
-from typing import Optional
-from typing import Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import falcon
 from falcon import errors as falcon_errors
@@ -369,7 +366,12 @@ class ASGIResponseEventCollector:
     __call__ = collect
 
 
-_WebSocketState = Enum('_WebSocketState', 'CONNECT HANDSHAKE ACCEPTED DENIED CLOSED')
+class _WebSocketState(Enum):
+    CONNECT = auto()
+    HANDSHAKE = auto()
+    ACCEPTED = auto()
+    DENIED = auto()
+    CLOSED = auto()
 
 
 class ASGIWebSocketSimulator:
@@ -393,6 +395,8 @@ class ASGIWebSocketSimulator:
             denied or closed by the app, or the client has disconnected.
         close_code (int): The WebSocket close code provided by the app if
             the connection is closed, or ``None`` if the connection is open.
+        close_reason (str): The WebSocket close reason provided by the app if
+            the connection is closed, or ``None`` if the connection is open.
         subprotocol (str): The subprotocol the app wishes to accept, or
             ``None`` if not specified.
         headers (Iterable[Iterable[bytes]]): An iterable of ``[name, value]``
@@ -410,6 +414,7 @@ class ASGIWebSocketSimulator:
         self._state = _WebSocketState.CONNECT
         self._disconnect_emitted = False
         self._close_code = None
+        self._close_reason = None
         self._accepted_subprotocol = None
         self._accepted_headers = None
         self._collected_server_events = deque()
@@ -428,6 +433,10 @@ class ASGIWebSocketSimulator:
     @property
     def close_code(self) -> int:
         return self._close_code
+
+    @property
+    def close_reason(self) -> str:
+        return self._close_reason
 
     @property
     def subprotocol(self) -> str:
@@ -467,12 +476,14 @@ class ASGIWebSocketSimulator:
     # NOTE(kgriffs): This is a coroutine just in case we need it to be
     #   in a future code revision. It also makes it more consistent
     #   with the other methods.
-    async def close(self, code: Optional[int] = None):
+    async def close(self, code: Optional[int] = None, reason: Optional[str] = None):
         """Close the simulated connection.
 
         Keyword Args:
             code (int): The WebSocket close code to send to the application
                 per the WebSocket spec (default: ``1000``).
+            reason (str): The WebSocket close reason to send to the application
+                per the WebSocket spec (default: empty string).
         """
 
         # NOTE(kgriffs): Give our collector a chance in case the
@@ -491,8 +502,12 @@ class ASGIWebSocketSimulator:
         if code is None:
             code = WSCloseCode.NORMAL
 
+        if reason is None:
+            reason = ''
+
         self._state = _WebSocketState.CLOSED
         self._close_code = code
+        self._close_reason = reason
 
     async def send_text(self, payload: str):
         """Send a message to the app with a Unicode string payload.
@@ -730,6 +745,7 @@ class ASGIWebSocketSimulator:
                 self._state = _WebSocketState.DENIED
 
                 desired_code = event.get('code', WSCloseCode.NORMAL)
+                reason = event.get('reason', '')
                 if desired_code == WSCloseCode.SERVER_ERROR or (
                     3000 <= desired_code < 4000
                 ):
@@ -738,12 +754,16 @@ class ASGIWebSocketSimulator:
                     #   different raised error types or to pass through a
                     #   raised HTTPError status code.
                     self._close_code = desired_code
+                    self._close_reason = reason
                 else:
                     # NOTE(kgriffs): Force the close code to this since it is
                     #   similar to what happens with a real web server (the HTTP
                     #   connection is closed with a 403 and there is no websocket
                     #   close code).
                     self._close_code = WSCloseCode.FORBIDDEN
+                    self._close_reason = falcon.util.code_to_http_status(
+                        WSCloseCode.FORBIDDEN - 3000
+                    )
 
                 self._event_handshake_complete.set()
 
@@ -758,6 +778,7 @@ class ASGIWebSocketSimulator:
             if event_type == EventType.WS_CLOSE:
                 self._state = _WebSocketState.CLOSED
                 self._close_code = event.get('code', WSCloseCode.NORMAL)
+                self._close_reason = event.get('reason', '')
             else:
                 assert event_type == EventType.WS_SEND
                 self._collected_server_events.append(event)
@@ -783,7 +804,12 @@ class ASGIWebSocketSimulator:
             )
 
         self._disconnect_emitted = True
-        return {'type': EventType.WS_DISCONNECT, 'code': self._close_code}
+        response = {'type': EventType.WS_DISCONNECT, 'code': self._close_code}
+
+        if self._close_reason:
+            response['reason'] = self._close_reason
+
+        return response
 
 
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
@@ -1248,12 +1274,12 @@ def create_req(options=None, **kwargs) -> falcon.Request:
     """Create and return a new Request instance.
 
     This function can be used to conveniently create a WSGI environ
-    and use it to instantiate a :py:class:`falcon.Request` object in one go.
+    and use it to instantiate a :class:`falcon.Request` object in one go.
 
     The arguments for this function are identical to those
-    of :py:meth:`falcon.testing.create_environ`, except an additional
+    of :meth:`falcon.testing.create_environ`, except an additional
     `options` keyword argument may be set to an instance of
-    :py:class:`falcon.RequestOptions` to configure certain
+    :class:`falcon.RequestOptions` to configure certain
     aspects of request parsing in lieu of the defaults.
     """
 
@@ -1261,26 +1287,28 @@ def create_req(options=None, **kwargs) -> falcon.Request:
     return falcon.request.Request(env, options=options)
 
 
-def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.Request:
+def create_asgi_req(
+    body=None, req_type=None, options=None, **kwargs
+) -> falcon.asgi.Request:
     """Create and return a new ASGI Request instance.
 
     This function can be used to conveniently create an ASGI scope
-    and use it to instantiate a :py:class:`falcon.asgi.Request` object
+    and use it to instantiate a :class:`falcon.asgi.Request` object
     in one go.
 
     The arguments for this function are identical to those
-    of :py:meth:`falcon.testing.create_scope`, with the addition of
+    of :meth:`falcon.testing.create_scope`, with the addition of
     `body`, `req_type`, and `options` arguments as documented below.
 
     Keyword Arguments:
         body (bytes): The body data to use for the request (default b''). If
-            the value is a :py:class:`str`, it will be UTF-8 encoded to
+            the value is a :class:`str`, it will be UTF-8 encoded to
             a byte string.
-        req_type (object): A subclass of :py:class:`falcon.asgi.Request`
+        req_type (object): A subclass of :class:`falcon.asgi.Request`
             to instantiate. If not specified, the standard
-            :py:class:`falcon.asgi.Request` class will simply be used.
+            :class:`falcon.asgi.Request` class will simply be used.
         options (falcon.RequestOptions): An instance of
-            :py:class:`falcon.RequestOptions` that should be used to determine
+            :class:`falcon.RequestOptions` that should be used to determine
             certain aspects of request parsing in lieu of the defaults.
     """
 

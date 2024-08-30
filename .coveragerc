@@ -7,9 +7,11 @@ parallel = True
 
 [report]
 show_missing = True
-exclude_lines =
+# https://coverage.readthedocs.io/en/latest/excluding.html#advanced-exclusion
+exclude_also =
     if TYPE_CHECKING:
-    if not TYPE_CHECKING:
     pragma: nocover
-    pragma: no cover
     pragma: no py39,py310 cover
+    pragma: no py311 cover
+    @overload
+    class .*\bProtocol\):

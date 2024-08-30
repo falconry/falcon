@@ -14,15 +14,26 @@
 
 """Utilities for the App class."""
 
+from __future__ import annotations
+
 from inspect import iscoroutinefunction
-from typing import IO, Iterable, List, Tuple
+from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
 
 from falcon import util
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
-from falcon.errors import CompatibilityError, HTTPError
+from falcon.errors import CompatibilityError
+from falcon.errors import HTTPError
 from falcon.request import Request
 from falcon.response import Response
+from falcon.typing import AsgiProcessRequestMethod as APRequest
+from falcon.typing import AsgiProcessRequestWsMethod
+from falcon.typing import AsgiProcessResourceMethod as APResource
+from falcon.typing import AsgiProcessResourceWsMethod
+from falcon.typing import AsgiProcessResponseMethod as APResponse
+from falcon.typing import ProcessRequestMethod as PRequest
+from falcon.typing import ProcessResourceMethod as PResource
+from falcon.typing import ProcessResponseMethod as PResponse
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 __all__ = (
@@ -32,10 +43,46 @@ __all__ = (
     'CloseableStreamIterator',
 )
 
+PreparedMiddlewareResult = Tuple[
+    Union[
+        Tuple[PRequest, ...], Tuple[Tuple[Optional[PRequest], Optional[PResource]], ...]
+    ],
+    Tuple[PResource, ...],
+    Tuple[PResponse, ...],
+]
+AsyncPreparedMiddlewareResult = Tuple[
+    Union[
+        Tuple[APRequest, ...],
+        Tuple[Tuple[Optional[APRequest], Optional[APResource]], ...],
+    ],
+    Tuple[APResource, ...],
+    Tuple[APResponse, ...],
+]
+
+
+@overload
+def prepare_middleware(
+    middleware: Iterable, independent_middleware: bool = ..., asgi: Literal[False] = ...
+) -> PreparedMiddlewareResult: ...
+
+
+@overload
+def prepare_middleware(
+    middleware: Iterable, independent_middleware: bool = ..., *, asgi: Literal[True]
+) -> AsyncPreparedMiddlewareResult: ...
+
+
+@overload
+def prepare_middleware(
+    middleware: Iterable, independent_middleware: bool = ..., asgi: bool = ...
+) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]: ...
+
 
 def prepare_middleware(
-    middleware: Iterable, independent_middleware: bool = False, asgi: bool = False
-) -> Tuple[tuple, tuple, tuple]:
+    middleware: Iterable[object],
+    independent_middleware: bool = False,
+    asgi: bool = False,
+) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]:
     """Check middleware interfaces and prepare the methods for request handling.
 
     Note:
@@ -57,9 +104,14 @@ def prepare_middleware(
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    request_mw: List = []
-    resource_mw: List = []
-    response_mw: List = []
+    request_mw: Union[
+        List[PRequest],
+        List[Tuple[Optional[PRequest], Optional[PResource]]],
+        List[APRequest],
+        List[Tuple[Optional[APRequest], Optional[APResource]]],
+    ] = []
+    resource_mw: Union[List[APResource], List[PResource]] = []
+    response_mw: Union[List[APResponse], List[PResponse]] = []
 
     for component in middleware:
         # NOTE(kgriffs): Middleware that supports both WSGI and ASGI can
@@ -67,22 +119,25 @@ def prepare_middleware(
         #   to distinguish the two. Otherwise, the prefix is unnecessary.
 
         if asgi:
-            process_request = util.get_bound_method(
-                component, 'process_request_async'
-            ) or _wrap_non_coroutine_unsafe(
-                util.get_bound_method(component, 'process_request')
+            process_request: Union[Optional[APRequest], Optional[PRequest]] = (
+                util.get_bound_method(component, 'process_request_async')
+                or _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_request')
+                )
             )
 
-            process_resource = util.get_bound_method(
-                component, 'process_resource_async'
-            ) or _wrap_non_coroutine_unsafe(
-                util.get_bound_method(component, 'process_resource')
+            process_resource: Union[Optional[APResource], Optional[PResource]] = (
+                util.get_bound_method(component, 'process_resource_async')
+                or _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_resource')
+                )
             )
 
-            process_response = util.get_bound_method(
-                component, 'process_response_async'
-            ) or _wrap_non_coroutine_unsafe(
-                util.get_bound_method(component, 'process_response')
+            process_response: Union[Optional[APResponse], Optional[PResponse]] = (
+                util.get_bound_method(component, 'process_response_async')
+                or _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_response')
+                )
             )
 
             for m in (process_request, process_resource, process_response):
@@ -140,20 +195,27 @@ def prepare_middleware(
         # together or separately.
         if independent_middleware:
             if process_request:
-                request_mw.append(process_request)
+                request_mw.append(process_request)  # type: ignore[arg-type]
             if process_response:
-                response_mw.insert(0, process_response)
+                response_mw.insert(0, process_response)  # type: ignore[arg-type]
         else:
             if process_request or process_response:
-                request_mw.append((process_request, process_response))
+                request_mw.append((process_request, process_response))  # type: ignore[arg-type]
 
         if process_resource:
-            resource_mw.append(process_resource)
+            resource_mw.append(process_resource)  # type: ignore[arg-type]
 
-    return (tuple(request_mw), tuple(resource_mw), tuple(response_mw))
+    return tuple(request_mw), tuple(resource_mw), tuple(response_mw)  # type: ignore[return-value]
 
 
-def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
+AsyncPreparedMiddlewareWsResult = Tuple[
+    Tuple[AsgiProcessRequestWsMethod, ...], Tuple[AsgiProcessResourceWsMethod, ...]
+]
+
+
+def prepare_middleware_ws(
+    middleware: Iterable[object],
+) -> AsyncPreparedMiddlewareWsResult:
     """Check middleware interfaces and prepare WebSocket methods for request handling.
 
     Note:
@@ -171,8 +233,11 @@ def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    request_mw = []
-    resource_mw = []
+    request_mw: List[AsgiProcessRequestWsMethod] = []
+    resource_mw: List[AsgiProcessResourceWsMethod] = []
+
+    process_request_ws: Optional[AsgiProcessRequestWsMethod]
+    process_resource_ws: Optional[AsgiProcessResourceWsMethod]
 
     for component in middleware:
         process_request_ws = util.get_bound_method(component, 'process_request_ws')
@@ -198,10 +263,10 @@ def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
         if process_resource_ws:
             resource_mw.append(process_resource_ws)
 
-    return request_mw, resource_mw
+    return tuple(request_mw), tuple(resource_mw)
 
 
-def default_serialize_error(req: Request, resp: Response, exception: HTTPError):
+def default_serialize_error(req: Request, resp: Response, exception: HTTPError) -> None:
     """Serialize the given instance of HTTPError.
 
     This function determines which of the supported media types, if
@@ -280,14 +345,14 @@ class CloseableStreamIterator:
         block_size (int): Number of bytes to read per iteration.
     """
 
-    def __init__(self, stream: IO, block_size: int):
+    def __init__(self, stream: IO[bytes], block_size: int) -> None:
         self._stream = stream
         self._block_size = block_size
 
-    def __iter__(self):
+    def __iter__(self) -> CloseableStreamIterator:
         return self
 
-    def __next__(self):
+    def __next__(self) -> bytes:
         data = self._stream.read(self._block_size)
 
         if data == b'':
@@ -295,7 +360,7 @@ class CloseableStreamIterator:
         else:
             return data
 
-    def close(self):
+    def close(self) -> None:
         try:
             self._stream.close()
         except (AttributeError, TypeError):

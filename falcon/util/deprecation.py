@@ -18,11 +18,8 @@ This module provides decorators to mark functions and classes as deprecated.
 """
 
 import functools
-from typing import Any
-from typing import Callable
-from typing import Optional
+from typing import Any, Callable, Optional
 import warnings
-
 
 __all__ = (
     'AttributeRemovedError',

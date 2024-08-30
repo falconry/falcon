@@ -1,13 +1,13 @@
 import functools
 import json
+import typing
 
 import pytest
 
 import falcon
+from falcon import app as wsgi
 from falcon import testing
-
-from _util import create_app, create_resp  # NOQA
-
+from falcon.typing import Resource
 
 # --------------------------------------------------------------------
 # Fixtures
@@ -20,8 +20,8 @@ def wrapped_resource_aware():
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     resource = WrappedRespondersResourceAsync() if asgi else WrappedRespondersResource()
     app.add_route('/', resource)
@@ -260,8 +260,8 @@ def test_resource_with_uri_fields(client, resource):
     assert resource.fields == ('82074', '58927')
 
 
-def test_resource_with_uri_fields_async():
-    app = create_app(asgi=True)
+def test_resource_with_uri_fields_async(util):
+    app = util.create_app(asgi=True)
 
     resource = ClassResourceWithURIFieldsAsync()
     app.add_route('/{field1}/{field2}', resource)
@@ -276,7 +276,7 @@ def test_resource_with_uri_fields_async():
         resource = ClassResourceWithURIFieldsAsync()
 
         req = testing.create_asgi_req()
-        resp = create_resp(True)
+        resp = util.create_resp(True)
 
         await resource.on_get(req, resp, '1', '2')
         assert resource.fields == ('1', '2')
@@ -343,8 +343,9 @@ class ResourceAwareGameHook:
     VALUES = ('rock', 'scissors', 'paper')
 
     @classmethod
-    def __call__(cls, req, resp, resource):
+    def __call__(cls, req: wsgi.Request, resp: wsgi.Response, resource: Resource):
         assert resource
+        resource = typing.cast(HandGame, resource)
         assert resource.seed in cls.VALUES
         assert resp.text == 'Responder called.'
 

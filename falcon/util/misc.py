@@ -28,12 +28,7 @@ import functools
 import http
 import inspect
 import re
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Tuple
-from typing import Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 import unicodedata
 
 from falcon import status_codes
@@ -48,12 +43,6 @@ try:
     from falcon.cyutil.misc import encode_items_to_latin1 as _cy_encode_items_to_latin1
 except ImportError:
     _cy_encode_items_to_latin1 = None
-
-try:
-    from falcon.cyutil.misc import isascii as _cy_isascii
-except ImportError:
-    _cy_isascii = None
-
 
 __all__ = (
     'is_python_func',
@@ -73,6 +62,8 @@ __all__ = (
 _DEFAULT_HTTP_REASON = 'Unknown'
 
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
+
+_UTC_TIMEZONE = datetime.timezone.utc
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
 _strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
@@ -110,7 +101,7 @@ def _lru_cache_nop(maxsize: int) -> Callable[[Callable], Callable]:  # pragma: n
 if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = functools.lru_cache  # type: ignore
+    _lru_cache_for_simple_logic = functools.lru_cache
 
 
 def is_python_func(func: Union[Callable, Any]) -> bool:
@@ -181,15 +172,20 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
     Raises:
         ValueError: http_date doesn't match any of the available time formats
+        ValueError: http_date doesn't match allowed timezones
     """
-
     if not obs_date:
         # PERF(kgriffs): This violates DRY, but we do it anyway
         #   to avoid the overhead of setting up a tuple, looping
         #   over it, and setting up exception handling blocks each
         #   time around the loop, in the case that we don't actually
         #   need to check for multiple formats.
-        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+        # NOTE(vytas): According to RFC 9110, Section 5.6.7, the only allowed
+        #   value for the TIMEZONE field [of IMF-fixdate] is %s"GMT", so we
+        #   simply hardcode GMT in the strptime expression.
+        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S GMT').replace(
+            tzinfo=_UTC_TIMEZONE
+        )
 
     time_formats = (
         '%a, %d %b %Y %H:%M:%S %Z',
@@ -201,7 +197,15 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
     # Loop through the formats and return the first that matches
     for time_format in time_formats:
         try:
-            return _strptime(http_date, time_format)
+            # NOTE(chgad,vytas): As per now-obsolete RFC 850, Section 2.1.4
+            #   (and later references in newer RFCs) the TIMEZONE field may be
+            #   be one of many abbreviations such as EST, MDT, etc; which are
+            #   not equivalent to UTC.
+            #   However, Python seems unable to parse any such abbreviations
+            #   except GMT and UTC due to a bug/lacking implementation
+            #   (see https://github.com/python/cpython/issues/66571); so we can
+            #   indiscriminately assume UTC after all.
+            return _strptime(http_date, time_format).replace(tzinfo=_UTC_TIMEZONE)
         except ValueError:
             continue
 
@@ -296,7 +300,7 @@ def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[...,
     return method
 
 
-def get_argnames(func: Callable) -> List[str]:
+def get_argnames(func: Callable[..., Any]) -> List[str]:
     """Introspect the arguments of a callable.
 
     Args:
@@ -511,30 +515,8 @@ def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
     return result
 
 
-def _isascii(string: str) -> bool:
-    """Return ``True`` if all characters in the string are ASCII.
-
-    ASCII characters have code points in the range U+0000-U+007F.
-
-    Note:
-        On Python 3.7+, this function is just aliased to ``str.isascii``.
-
-    This is a pure-Python fallback for older CPython (where Cython is
-    unavailable) and PyPy versions.
-
-    Args:
-        string (str): A string to test.
-
-    Returns:
-        ``True`` if all characters are ASCII, ``False`` otherwise.
-    """
-
-    try:
-        string.encode('ascii')
-        return True
-    except ValueError:
-        return False
-
-
 _encode_items_to_latin1 = _cy_encode_items_to_latin1 or _encode_items_to_latin1
-isascii = getattr(str, 'isascii', _cy_isascii or _isascii)
+
+isascii = deprecated('This will be removed in V5. Please use `str.isascii`')(
+    str.isascii
+)

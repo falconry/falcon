@@ -53,14 +53,17 @@ from falcon.util.sync import wrap_sync_to_async
 from falcon.util.sync import wrap_sync_to_async_unsafe
 from falcon.util.time import TimezoneGMT
 
-
 # NOTE(kgriffs): Backport support for the new 'SameSite' attribute
 #   for Python versions prior to 3.8. We do it this way because
 #   SimpleCookie does not give us a simple way to specify our own
 #   subclass of Morsel.
 _reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
 if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
-    _reserved_cookie_attrs['samesite'] = 'SameSite'  # type: ignore
+    _reserved_cookie_attrs['samesite'] = 'SameSite'
+# NOTE(m-mueller): Same for the 'partitioned' attribute that will
+#   probably be added in Python 3.13.
+if 'partitioned' not in _reserved_cookie_attrs:  # pragma: no cover
+    _reserved_cookie_attrs['partitioned'] = 'Partitioned'
 
 
 IS_64_BITS = sys.maxsize > 2**32
@@ -81,8 +84,8 @@ BufferedReader = (
 
 def __getattr__(name: str) -> ModuleType:
     if name == 'json':
-        import warnings
         import json  # NOQA
+        import warnings
 
         warnings.warn(
             'Importing json from "falcon.util" is deprecated.', DeprecatedWarning

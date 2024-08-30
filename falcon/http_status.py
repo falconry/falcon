@@ -11,11 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """HTTPStatus exception class."""
+
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
 
 from falcon.util import http_status_to_code
 from falcon.util.deprecation import AttributeRemovedError
+
+if TYPE_CHECKING:
+    from falcon.typing import HeaderList
+    from falcon.typing import ResponseStatus
 
 
 class HTTPStatus(Exception):
@@ -33,30 +40,38 @@ class HTTPStatus(Exception):
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-
-    Attributes:
-        status (Union[str,int]): The HTTP status line or integer code for
-            the status that this exception represents.
-        status_code (int): HTTP status code normalized from :attr:`status`.
-        headers (dict): Extra headers to add to the response.
-        text (str): String representing response content. Falcon will encode
-            this value as UTF-8 in the response.
-
     """
 
     __slots__ = ('status', 'headers', 'text')
 
-    def __init__(self, status, headers=None, text=None):
+    status: ResponseStatus
+    """The HTTP status line or integer code for the status that this exception
+    represents.
+    """
+    headers: Optional[HeaderList]
+    """Extra headers to add to the response."""
+    text: Optional[str]
+    """String representing response content.
+    Falcon will encode this value as UTF-8 in the response.
+    """
+
+    def __init__(
+        self,
+        status: ResponseStatus,
+        headers: Optional[HeaderList] = None,
+        text: Optional[str] = None,
+    ) -> None:
         self.status = status
         self.headers = headers
         self.text = text
 
     @property
     def status_code(self) -> int:
+        """HTTP status code normalized from :attr:`status`."""
         return http_status_to_code(self.status)
 
-    @property  # type: ignore
-    def body(self):
+    @property
+    def body(self) -> None:
         raise AttributeRemovedError(
             'The body attribute is no longer supported. '
             'Please use the text attribute instead.'

@@ -4,10 +4,11 @@ import pytest
 
 import falcon
 from falcon import testing
+
 from . import _asgi_test_app
 
 
-@pytest.mark.asyncio
+@pytest.mark.slow
 async def test_asgi_request_event_emitter_hang():
     # NOTE(kgriffs): This tests the ASGI server behavior that
     #   ASGIRequestEventEmitter simulates when emit() is called
@@ -34,7 +35,6 @@ async def test_asgi_request_event_emitter_hang():
     assert (elapsed + 0.1) > expected_elapsed_min
 
 
-@pytest.mark.asyncio
 async def test_ignore_extra_asgi_events():
     collect = testing.ASGIResponseEventCollector()
 
@@ -47,7 +47,6 @@ async def test_ignore_extra_asgi_events():
     assert len(collect.events) == 2
 
 
-@pytest.mark.asyncio
 async def test_invalid_asgi_events():
     collect = testing.ASGIResponseEventCollector()
 
