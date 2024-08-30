@@ -43,6 +43,14 @@ jobs:
         run: |
           tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
+      - name: Test sdist
+        run: |
+          tools/test_dist.py dist/*.tar.gz
+
+      - name: Test pure-Python wheel
+        run: |
+          tools/test_dist.py dist/*.whl
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
