@@ -9,11 +9,6 @@ on:
   # NOTE(vytas): Also allow to release to Test PyPi manually.
   workflow_dispatch:
 
-  # TODO(vytas): Just testing in a PR.
-  pull_request:
-    branches:
-      - master
-
 jobs:
   build-sdist:
     # NOTE(vytas): We actually build sdist and pure-Python wheel.
