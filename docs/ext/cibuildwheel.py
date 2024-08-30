@@ -26,6 +26,7 @@ import sphinx.util.docutils
 import yaml
 
 FALCON_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+DOT_GITHUB = FALCON_ROOT / '.github'
 
 _CHECKBOX = '\u2705'
 _CPYTHON_PLATFORMS = {
@@ -51,6 +52,7 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
     """Directive to tabulate build info from a YAML workflow."""
 
     required_arguments = 1
+    has_content = True
 
     @classmethod
     def _emit_table(cls, data):
@@ -79,6 +81,12 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
         workflow_path = pathlib.Path(self.arguments[0])
         if not workflow_path.is_absolute():
             workflow_path = FALCON_ROOT / workflow_path
+
+        # TODO(vytas): Should we package cibuildwheel.yaml into sdist too?
+        #   For now, if .github is missing, we simply hide the table.
+        if not workflow_path.is_file() and not DOT_GITHUB.exists():
+            return []
+
         with open(workflow_path) as fp:
             workflow = yaml.safe_load(fp)
 
@@ -102,7 +110,8 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
             for name, description in _CPYTHON_PLATFORMS.items()
         )
 
-        return self.parse_text_to_nodes(self._emit_table(table))
+        content = '\n'.join(self.content) + '\n\n' + self._emit_table(table)
+        return self.parse_text_to_nodes(content)
 
 
 def setup(app):

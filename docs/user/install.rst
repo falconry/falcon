@@ -100,17 +100,17 @@ Binary Wheels
 Binary Falcon wheels for are automatically built for many CPython platforms,
 courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/en/stable/>`__.
 
-The following table summarizes the wheel availability on different combinations
-of CPython versions vs CPython platforms:
-
 .. wheels:: .github/workflows/cibuildwheel.yaml
+
+   The following table summarizes the wheel availability on different
+   combinations of CPython versions vs CPython platforms:
 
 .. note::
     The `free-threaded build
     <https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
     mode is not enabled for our wheels at this time.
 
-While we believe that the above configuration covers the most common
+While we believe that our build configuration covers the most common
 development and deployment scenarios, :ref:`let us known <chat>` if you are
 interested in any builds that are currently missing from our selection!
 
