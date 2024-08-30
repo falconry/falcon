@@ -109,7 +109,6 @@ class _SuiteUtils:
         return module
 
 
-# TODO(vytas): Migrate all cases to use this fixture instead of _util.
 @pytest.fixture(scope='session')
 def util():
     return _SuiteUtils()

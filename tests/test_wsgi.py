@@ -5,7 +5,11 @@ import time
 from wsgiref.simple_server import make_server
 
 import pytest
-import requests
+
+try:
+    import requests
+except ImportError:
+    requests = None  # type: ignore
 
 import falcon
 import falcon.testing as testing
@@ -17,6 +21,9 @@ _SERVER_BASE_URL = 'http://{}:{}/'.format(_SERVER_HOST, _SERVER_PORT)
 _SIZE_1_KB = 1024
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
 @pytest.mark.usefixtures('_setup_wsgi_server')
 class TestWSGIServer:
     def test_get(self):

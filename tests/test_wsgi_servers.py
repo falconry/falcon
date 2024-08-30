@@ -6,7 +6,11 @@ import sys
 import time
 
 import pytest
-import requests
+
+try:
+    import requests
+except ImportError:
+    requests = None  # type: ignore
 
 from falcon import testing
 
@@ -190,6 +194,9 @@ def server_url(server_args):
         )
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
 class TestWSGIServer:
     def test_get(self, server_url):
         resp = requests.get(server_url + '/hello', timeout=_REQUEST_TIMEOUT)
