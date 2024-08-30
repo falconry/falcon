@@ -131,7 +131,7 @@ class Response(response.Response):
             When hosting an app that emits Server-Sent Events, the web
             server should be set with a relatively long keep-alive TTL to
             minimize the overhead of connection renegotiations.
-        """
+        """  # noqa: D400 D205
         return self._sse
 
     @sse.setter

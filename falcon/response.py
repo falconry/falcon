@@ -266,7 +266,7 @@ class Response:
         Note:
             See also :ref:`media` for more information regarding media
             handling.
-        """
+        """  # noqa D205
         return self._media
 
     @media.setter
