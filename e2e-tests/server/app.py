@@ -13,8 +13,7 @@ STATIC = HERE.parent / 'static'
 
 
 def create_app() -> falcon.asgi.App:
-    # TODO(vytas): Type to App's constructor.
-    app = falcon.asgi.App()  # type: ignore
+    app = falcon.asgi.App()
 
     hub = Hub()
     app.add_route('/ping', Pong())

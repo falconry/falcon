@@ -10,9 +10,9 @@ import falcon.asgi
 from falcon.util.deprecation import DeprecatedWarning
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
-    msgpack = None  # type: ignore
+    msgpack = None
 
 
 def create_client(resource, handlers=None):

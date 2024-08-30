@@ -224,9 +224,6 @@ class TestErrorHandler:
         client.simulate_head()
 
     def test_handler_must_be_coroutine_for_asgi(self, util):
-        async def legacy_handler(err, rq, rs, prms):
-            pass
-
         app = util.create_app(True)
 
         with util.disable_asgi_non_coroutine_wrapping():

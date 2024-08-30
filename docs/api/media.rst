@@ -115,16 +115,20 @@ middleware. Here is an example of how this can be done:
 
         .. code:: python
 
+            from falcon import Request, Response
+
             class NegotiationMiddleware:
-                def process_request(self, req, resp):
+                def process_request(self, req: Request, resp: Response) -> None:
                     resp.content_type = req.accept
 
     .. tab:: ASGI
 
         .. code:: python
 
+            from falcon.asgi import Request, Response
+
             class NegotiationMiddleware:
-                async def process_request(self, req, resp):
+                async def process_request(self, req: Request, resp: Response) -> None:
                     resp.content_type = req.accept
 
 

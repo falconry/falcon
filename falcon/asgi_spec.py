@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Dict, Mapping
 
 
 class EventType:
@@ -65,3 +65,5 @@ class WSCloseCode:
 
 # TODO: use a typed dict for event dicts
 AsgiEvent = Mapping[str, Any]
+# TODO: use a typed dict for send msg dicts
+AsgiSendMsg = Dict[str, Any]

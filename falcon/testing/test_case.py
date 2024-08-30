@@ -21,7 +21,7 @@ utilities for simulating and validating HTTP requests.
 try:
     import testtools as unittest
 except ImportError:  # pragma: nocover
-    import unittest  # type: ignore
+    import unittest
 
 import falcon
 import falcon.request
