@@ -40,18 +40,20 @@ class HTTPStatus(Exception):
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-
-    Attributes:
-        status (Union[str,int]): The HTTP status line or integer code for
-            the status that this exception represents.
-        status_code (int): HTTP status code normalized from :attr:`status`.
-        headers (dict): Extra headers to add to the response.
-        text (str): String representing response content. Falcon will encode
-            this value as UTF-8 in the response.
-
     """
 
     __slots__ = ('status', 'headers', 'text')
+
+    status: ResponseStatus
+    """The HTTP status line or integer code for the status that this exception
+    represents.
+    """
+    headers: Optional[HeaderList]
+    """Extra headers to add to the response."""
+    text: Optional[str]
+    """String representing response content.
+    Falcon will encode this value as UTF-8 in the response.
+    """
 
     def __init__(
         self,
@@ -65,10 +67,11 @@ class HTTPStatus(Exception):
 
     @property
     def status_code(self) -> int:
+        """HTTP status code normalized from :attr:`status`."""
         return http_status_to_code(self.status)
 
-    @property  # type: ignore
-    def body(self):
+    @property
+    def body(self) -> None:
         raise AttributeRemovedError(
             'The body attribute is no longer supported. '
             'Please use the text attribute instead.'

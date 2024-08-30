@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import collections
 from enum import Enum
 from typing import (
     Any,
-    Awaitable,
-    Callable,
     Deque,
     Dict,
     Iterable,
@@ -16,9 +16,12 @@ from typing import (
 from falcon import errors
 from falcon import media
 from falcon import status_codes
+from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
+from falcon.typing import AsgiReceive
+from falcon.typing import AsgiSend
 from falcon.util import misc
 
 _WebSocketState = Enum('_WebSocketState', 'HANDSHAKE ACCEPTED CLOSED')
@@ -65,15 +68,15 @@ class WebSocket:
     def __init__(
         self,
         ver: str,
-        scope: dict,
-        receive: Callable[[], Awaitable[dict]],
-        send: Callable[[dict], Awaitable],
+        scope: Dict[str, Any],
+        receive: AsgiReceive,
+        send: AsgiSend,
         media_handlers: Mapping[
             WebSocketPayloadType,
             Union[media.BinaryBaseHandlerWS, media.TextBaseHandlerWS],
         ],
         max_receive_queue: int,
-        default_close_reasons: Dict[Optional[int], str],
+        default_close_reasons: Dict[int, str],
     ):
         self._supports_accept_headers = ver != '2.0'
         self._supports_reason = _supports_reason(ver)
@@ -653,13 +656,13 @@ class _BufferedReceiver:
         'client_disconnected_code',
     ]
 
-    def __init__(self, asgi_receive: Callable[[], Awaitable[dict]], max_queue: int):
+    def __init__(self, asgi_receive: AsgiReceive, max_queue: int):
         self._asgi_receive = asgi_receive
         self._max_queue = max_queue
 
         self._loop = asyncio.get_running_loop()
 
-        self._messages: Deque[dict] = collections.deque()
+        self._messages: Deque[AsgiEvent] = collections.deque()
         self._pop_message_waiter = None
         self._put_message_waiter = None
 

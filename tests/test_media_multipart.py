@@ -11,7 +11,7 @@ from falcon import testing
 from falcon.util import BufferedReader
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
     msgpack = None
 
