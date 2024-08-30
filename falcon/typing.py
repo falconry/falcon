@@ -18,6 +18,7 @@ from __future__ import annotations
 from enum import auto
 from enum import Enum
 import http
+import sys
 from typing import (
     Any,
     Awaitable,
@@ -34,13 +35,14 @@ from typing import (
     Union,
 )
 
-try:
+# NOTE(vytas): Mypy still struggles to handle a conditional import in the EAFP
+#   fashion, so we branch on Py version instead (which it does understand).
+if sys.version_info >= (3, 11):
     from wsgiref.types import StartResponse as StartResponse
     from wsgiref.types import WSGIEnvironment as WSGIEnvironment
-except ImportError:
-    if not TYPE_CHECKING:
-        WSGIEnvironment = Dict[str, Any]
-        StartResponse = Callable[[str, List[Tuple[str, str]]], Callable[[bytes], None]]
+else:
+    WSGIEnvironment = Dict[str, Any]
+    StartResponse = Callable[[str, List[Tuple[str, str]]], Callable[[bytes], None]]
 
 if TYPE_CHECKING:
     from falcon.asgi import Request as AsgiRequest
