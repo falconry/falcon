@@ -69,12 +69,26 @@ default, allowing you to use ``req.get_media()`` to iterate over the
    <multipart_cloud_upload>`. Falcon offers straightforward support for all
    of these scenarios.
 
-Body Part Type
---------------
+Multipart Form and Body Part Types
+----------------------------------
 
-.. autoclass:: falcon.media.multipart.BodyPart
-    :members:
-    :exclude-members: data, media, text
+.. tabs::
+
+    .. group-tab:: WSGI
+
+        .. autoclass:: falcon.media.multipart.MultipartForm
+            :members:
+
+        .. autoclass:: falcon.media.multipart.BodyPart
+            :members:
+
+    .. group-tab:: ASGI
+
+        .. autoclass:: falcon.asgi.multipart.MultipartForm
+            :members:
+
+        .. autoclass:: falcon.asgi.multipart.BodyPart
+            :members:
 
 .. _multipart_parser_conf:
 

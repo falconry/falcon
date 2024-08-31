@@ -120,7 +120,7 @@ class BufferedReader:
             return max_size
         return size
 
-    def read(self, size: int = -1) -> bytes:
+    def read(self, size: Optional[int] = -1) -> bytes:
         return self._read(self._normalize_size(size))
 
     def _read(self, size: int) -> bytes:

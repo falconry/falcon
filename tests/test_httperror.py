@@ -11,9 +11,9 @@ import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
 
 try:
-    import yaml  # type: ignore
+    import yaml
 except ImportError:
-    yaml = None  # type: ignore
+    yaml = None  # type: ignore[assignment]
 
 
 @pytest.fixture

@@ -14,21 +14,21 @@ from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 
 try:
-    import cbor2  # type: ignore
+    import cbor2
 except ImportError:
-    cbor2 = None  # type: ignore
+    cbor2 = None  # type: ignore[assignment]
 
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
-    msgpack = None  # type: ignore
+    msgpack = None
 
 
 try:
-    import rapidjson  # type: ignore
+    import rapidjson
 except ImportError:
-    rapidjson = None  # type: ignore
+    rapidjson = None  # type: ignore[assignment]
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -1346,12 +1346,12 @@ async def test_ws_http_error_or_status_error_handler(
 
     if handler_has_ws:
 
-        async def handle_foobar(req, resp, ex, param, ws=None):  # type: ignore
+        async def handle_foobar(req, resp, ex, param, ws=None):
             raise thing(status)
 
     else:
 
-        async def handle_foobar(req, resp, ex, param):  # type: ignore
+        async def handle_foobar(req, resp, ex, param):  # type: ignore[misc]
             raise thing(status)
 
     conductor.app.add_route('/', Resource())
