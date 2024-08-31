@@ -23,12 +23,14 @@ framework itself. These functions are hoisted into the front-door
     now = falcon.http_now()
 """
 
+from __future__ import annotations
+
 import datetime
 import functools
 import http
 import inspect
 import re
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import unicodedata
 
 from falcon import status_codes
@@ -214,7 +216,7 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
 
 def to_query_str(
-    params: dict, comma_delimited_lists: bool = True, prefix: bool = True
+    params: Dict[str, Any], comma_delimited_lists: bool = True, prefix: bool = True
 ) -> str:
     """Convert a dictionary of parameters to a query string.
 
@@ -370,7 +372,7 @@ def get_http_status(
         return str(code) + ' ' + default_reason
 
 
-def secure_filename(filename: str) -> str:
+def secure_filename(filename: Optional[str]) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
