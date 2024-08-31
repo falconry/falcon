@@ -53,6 +53,9 @@ keywords = [
     "cloud",
 ]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.scripts]
 falcon-bench = "falcon.cmd.bench:main"
 falcon-inspect-app = "falcon.cmd.inspect_app:main"
