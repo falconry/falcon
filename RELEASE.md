@@ -2,7 +2,7 @@
 
 Release Process:
 
-1. Bump version and update tag.
+1. Bump version (including the suffix for pre-release, if applicable).
 2. Update changelog and render towncrier fragments.
 3. Release beta or rc.
 4. Run benchmark and check for regressions.
@@ -12,16 +12,30 @@ Release Process:
 8. Announce the new version in Gitter channels and on the socials.
 9. Improve this document.
 
-### Bump version and update tag
+### Bump version
 
 Modify `falcon/version.py` if it has not been updated since the previous
 release. Examine the rendered changelog to determine the appropriate SEMVER
 field to modify.
 
-Update changelog filename in `pyproject.toml` to suit.
+Note that we have dropped `setup.cfg` altogether, so `__version__` in
+`falcon/version.py` must contain the **whole version**
+(including the previously separately managed `tag_build`), for instance:
+```python
+# Development version
+__version__ = '4.0.0.dev1'
 
-Update the build tag in `setup.cfg` under `[egg_info]` for pre-release builds,
-or remove it (leaving it blank as in `tag_build =`) for a final release.
+# First alpha
+__version__ = '4.0.0a1'
+
+# Release candidate
+__version__ = '4.0.0rc1'
+
+# Stable release
+__version__ = '4.0.0'
+```
+
+Update changelog filename in `pyproject.toml` to suit.
 
 ### Update changelog and render towncrier fragments
 
@@ -30,22 +44,14 @@ the following template, and update the summary and changes to supported
 platforms to suit:
 
 ```rst
-Changelog for Falcon 3.0.1
+Changelog for Falcon 4.0.1
 ==========================
 
 Summary
 -------
 
 This is a minor point release to take care of a couple of bugs that we did
-not catch for 3.0.0.
-
-Changes to Supported Platforms
-------------------------------
-
-- CPython 3.10 is now fully supported. (`#1966 <https://github.com/falconry/falcon/issues/1966>`__)
-- Support for Python 3.6 is now deprecated and will be removed in Falcon 4.0.
-- As with the previous release, Python 3.5 support remains deprecated and will
-  no longer be supported in Falcon 4.0.
+not catch for 4.0.0.
 
 
 .. towncrier release notes start
