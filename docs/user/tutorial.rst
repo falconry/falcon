@@ -1174,7 +1174,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
 
         _CHUNK_SIZE_BYTES = 4096
         _IMAGE_NAME_PATTERN = re.compile(
-            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
         )
 
         def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
@@ -1307,7 +1307,7 @@ Inspecting the application now returns:
 Query Strings
 -------------
 Now that we are able to get the images from the service, we need a way to get
-a list available images. We have already set up this route. Before testing this
+a list of available images. We have already set up this route. Before testing this
 route let's change its output format back to JSON to have a more
 terminal-friendly output. The top of file ``images.py`` should look like this:
 
@@ -1390,7 +1390,7 @@ and also to enable a minimum value validation.
             self._image_store = image_store
 
         def on_get(self, req, resp):
-            max_size = req.get_param_as_int("maxsize", min_value=1, default=-1))
+            max_size = req.get_param_as_int("maxsize", min_value=1, default=-1)
             images = self._image_store.list(max_size)
             doc = {
                 'images': [
@@ -1421,7 +1421,7 @@ and also to enable a minimum value validation.
 
         _CHUNK_SIZE_BYTES = 4096
         _IMAGE_NAME_PATTERN = re.compile(
-            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
         )
 
         def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
