@@ -59,6 +59,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx_tabs.tabs',
     'sphinx_tabs.tabs',
+    'myst_parser',
     # Falcon-specific extensions
     'ext.cibuildwheel',
     'ext.doorway',
