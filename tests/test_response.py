@@ -1,3 +1,4 @@
+from io import BytesIO
 from unittest.mock import MagicMock
 
 import pytest
@@ -53,14 +54,6 @@ def test_response_attempt_to_set_read_only_headers(resp):
     assert headers['x-things3'] == 'thing-3a, thing-3b'
 
 
-def test_response_removed_stream_len(resp):
-    with pytest.raises(AttributeError):
-        resp.stream_len = 128
-
-    with pytest.raises(AttributeError):
-        resp.stream_len
-
-
 def test_response_option_mimetype_init(monkeypatch):
     mock = MagicMock()
     mock.inited = False
@@ -81,3 +74,25 @@ def test_response_option_mimetype_init(monkeypatch):
     assert ro.static_media_types['.js'] == 'text/javascript'
     assert ro.static_media_types['.json'] == 'application/json'
     assert ro.static_media_types['.mjs'] == 'text/javascript'
+
+
+def test_response_set_stream(resp):
+    stream = BytesIO(b'dummy content')
+    content_length = 12
+
+    resp.set_stream(stream, content_length)
+
+    assert resp.stream == stream
+
+    assert resp._headers['content-length'] == str(content_length)
+
+
+def test_response_set_stream_with_zero_content_length(resp):
+    stream = BytesIO(b'')
+    content_length = 0
+
+    resp.set_stream(stream, content_length)
+
+    assert resp.stream == stream
+
+    assert resp._headers['content-length'] == str(content_length)
