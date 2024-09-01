@@ -26,7 +26,6 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import falcon  # noqa: E402
 
-
 # -- Build tweaks -------------------------------------------------------------
 
 # NOTE(kgriffs): Work around the change in Python 3.8 that breaks sphinx
@@ -136,6 +135,10 @@ if _dash_build:
 
 
 # -- Options for LaTeX output -------------------------------------------------
+
+# NOTE(vytas): The default engine fails to build citing unsupported Unicode
+# characters.
+latex_engine = 'xelatex'
 
 latex_elements = {
     'papersize': 'a4paper',
