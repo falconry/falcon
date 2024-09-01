@@ -17,7 +17,6 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import configparser
 import datetime
 import multiprocessing
 import os
@@ -54,16 +53,18 @@ sys.path.insert(0, os.path.abspath('.'))
 # -- Project information ------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-_cfg = configparser.ConfigParser()
-_cfg.read('../setup.cfg')
-_tag = _cfg.get('egg_info', 'tag_build')
-_prerelease_version = bool(_tag)
+_version_components = falcon.__version__.split('.')
+_prerelease_version = any(
+    not component.isdigit() and not component.startswith('post')
+    for component in _version_components
+)
+
 
 project = 'Falcon'
 copyright = '{year} Falcon Contributors'.format(year=datetime.datetime.now().year)
 author = 'Kurt Griffiths et al.'
-version = '.'.join(falcon.__version__.split('.')[0:2]) + _tag
-release = falcon.__version__ + _tag
+version = '.'.join(_version_components[0:2])
+release = falcon.__version__
 
 # -- General configuration ----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -77,6 +78,7 @@ extensions = [
     'sphinx_design',
     'sphinx_tabs.tabs',
     # Falcon-specific extensions
+    'ext.cibuildwheel',
     'ext.doorway',
     'ext.private_args',
     'ext.rfc',

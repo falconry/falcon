@@ -2,6 +2,7 @@ doc2dash
 falconry-pygments-theme
 pydata-sphinx-theme
 pygments-style-github
+PyYAML
 Sphinx
 sphinx-copybutton
 sphinx-tabs

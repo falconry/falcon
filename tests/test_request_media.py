@@ -10,7 +10,7 @@ from falcon import util
 import falcon.asgi
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
     msgpack = None
 

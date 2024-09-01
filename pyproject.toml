@@ -1,10 +1,84 @@
 [build-system]
-    build-backend = "setuptools.build_meta"
-    requires = [
-        "setuptools>=47",
-        "wheel>=0.34",
-        "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
-    ]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=61",
+    "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
+]
+
+[project]
+name = "falcon"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+dynamic = ["version"]
+dependencies = []
+requires-python = ">=3.8"
+description = "The ultra-reliable, fast ASGI+WSGI framework for building data plane APIs at scale."
+authors = [
+  {name = "Kurt Griffiths", email = "mail@kgriffs.com"},
+]
+license = {text = "Apache 2.0"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Natural Language :: English",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Topic :: Internet :: WWW/HTTP :: WSGI",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Cython",
+    "Typing :: Typed",
+]
+keywords = [
+    "asgi",
+    "wsgi",
+    "web",
+    "api",
+    "framework",
+    "rest",
+    "http",
+    "cloud",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+falcon-bench = "falcon.cmd.bench:main"
+falcon-inspect-app = "falcon.cmd.inspect_app:main"
+falcon-print-routes = "falcon.cmd.inspect_app:route_main"
+
+[project.urls]
+Homepage = "https://falconframework.org"
+Documentation = "https://falcon.readthedocs.io/en/stable/"
+"Release Notes" = "https://falcon.readthedocs.io/en/stable/changes/"
+"Source" = "https://github.com/falconry/falcon"
+"Issue Tracker" = "https://github.com/falconry/falcon/issues"
+Funding = "https://opencollective.com/falcon"
+Chat = "https://gitter.im/falconry/user"
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+zip-safe = false
+
+[tool.setuptools.dynamic]
+version = {attr = "falcon.version.__version__"}
+
+[tool.setuptools.packages.find]
+exclude = ["examples", "tests"]
 
 [tool.mypy]
     exclude = [
@@ -13,6 +87,7 @@
         "falcon/vendor",
     ]
     disallow_untyped_defs = true
+    warn_unused_ignores = true
 
     [[tool.mypy.overrides]]
         module = [
@@ -41,18 +116,7 @@
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.app",
-            "falcon.asgi._asgi_helpers",
-            "falcon.asgi.app",
-            "falcon.asgi.multipart",
-            "falcon.asgi.reader",
             "falcon.asgi.response",
-            "falcon.asgi.stream",
-            "falcon.asgi.ws",
-            "falcon.media.json",
-            "falcon.media.msgpack",
-            "falcon.media.multipart",
-            "falcon.media.urlencoded",
             "falcon.media.validators.*",
             "falcon.responders",
             "falcon.response_helpers",

@@ -1,0 +1,5 @@
+``setup.cfg`` was dropped in favor of consolidating all static project
+configuration in ``pyproject.toml`` (``setup.py`` is still needed for
+programmatic control of the build process). While this change should not impact
+the framework's end-users directly, some ``setuptools``\-based legacy workflows
+(such as the obsolete ``setup.py test``) will no longer work.
