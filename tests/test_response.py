@@ -84,4 +84,4 @@ def test_response_set_stream(resp, content):
     resp.set_stream(stream, content_length)
 
     assert resp.stream == stream
-    assert resp._headers['content-length'] == str(content_length)
+    assert resp.headers['content-length'] == str(content_length)
