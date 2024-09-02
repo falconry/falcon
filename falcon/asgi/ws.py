@@ -1,55 +1,44 @@
+from __future__ import annotations
+
 import asyncio
 import collections
+from enum import auto
 from enum import Enum
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Deque,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Union,
-)
+from typing import Any, Deque, Dict, Iterable, Mapping, Optional, Tuple, Union
 
 from falcon import errors
 from falcon import media
+from falcon import status_codes
+from falcon.asgi_spec import AsgiEvent
+from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
-
-_WebSocketState = Enum('_WebSocketState', 'HANDSHAKE ACCEPTED CLOSED')
-
+from falcon.typing import AsgiReceive
+from falcon.typing import AsgiSend
+from falcon.typing import HeaderList
+from falcon.util import misc
 
 __all__ = ('WebSocket',)
 
 
+class _WebSocketState(Enum):
+    HANDSHAKE = auto()
+    ACCEPTED = auto()
+    CLOSED = auto()
+
+
 class WebSocket:
-    """Represents a single WebSocket connection with a client.
-
-    Attributes:
-        ready (bool): ``True`` if the WebSocket connection has been
-            accepted and the client is still connected, ``False`` otherwise.
-        unaccepted (bool)): ``True`` if the WebSocket connection has not yet
-            been accepted, ``False`` otherwise.
-        closed (bool): ``True`` if the WebSocket connection has been closed
-            by the server or the client has disconnected.
-        subprotocols (tuple[str]): The list of subprotocol strings advertised
-            by the client, or an empty tuple if no subprotocols were
-            specified.
-        supports_accept_headers (bool): ``True`` if the ASGI server hosting
-            the app supports sending headers when accepting the WebSocket
-            connection, ``False`` otherwise.
-
-    """
+    """Represents a single WebSocket connection with a client."""
 
     __slots__ = (
         '_asgi_receive',
         '_asgi_send',
         '_buffered_receiver',
         '_close_code',
+        '_close_reasons',
         '_supports_accept_headers',
+        '_supports_reason',
         '_mh_bin_deserialize',
         '_mh_bin_serialize',
         '_mh_text_deserialize',
@@ -58,19 +47,28 @@ class WebSocket:
         'subprotocols',
     )
 
+    _state: _WebSocketState
+    _close_code: Optional[int]
+    subprotocols: Tuple[str, ...]
+    """The list of subprotocol strings advertised by the client, or an empty tuple if
+    no subprotocols were specified.
+    """
+
     def __init__(
         self,
         ver: str,
-        scope: dict,
-        receive: Callable[[], Awaitable[dict]],
-        send: Callable[[dict], Awaitable],
+        scope: Dict[str, Any],
+        receive: AsgiReceive,
+        send: AsgiSend,
         media_handlers: Mapping[
             WebSocketPayloadType,
             Union[media.BinaryBaseHandlerWS, media.TextBaseHandlerWS],
         ],
         max_receive_queue: int,
+        default_close_reasons: Dict[int, str],
     ):
         self._supports_accept_headers = ver != '2.0'
+        self._supports_reason = _supports_reason(ver)
 
         # NOTE(kgriffs): Normalize the iterable to a stable tuple; note that
         #   ordering is significant, and so we preserve it here.
@@ -94,15 +92,22 @@ class WebSocket:
         self._mh_bin_serialize = mh_bin.serialize
         self._mh_bin_deserialize = mh_bin.deserialize
 
+        self._close_reasons = default_close_reasons
         self._state = _WebSocketState.HANDSHAKE
-        self._close_code = None  # type: Optional[int]
+        self._close_code = None
 
     @property
     def unaccepted(self) -> bool:
+        """``True`` if the WebSocket connection has not yet been accepted,
+        ``False`` otherwise.
+        """  # noqa: D205
         return self._state == _WebSocketState.HANDSHAKE
 
     @property
     def closed(self) -> bool:
+        """``True`` if the WebSocket connection has been closed by the server or the
+        client has disconnected.
+        """  # noqa: D205
         return (
             self._state == _WebSocketState.CLOSED
             or self._buffered_receiver.client_disconnected
@@ -110,6 +115,9 @@ class WebSocket:
 
     @property
     def ready(self) -> bool:
+        """``True`` if the WebSocket connection has been accepted and the client is
+        still connected, ``False`` otherwise.
+        """  # noqa: D205
         return (
             self._state == _WebSocketState.ACCEPTED
             and not self._buffered_receiver.client_disconnected
@@ -117,13 +125,16 @@ class WebSocket:
 
     @property
     def supports_accept_headers(self) -> bool:
+        """``True`` if the ASGI server hosting the app supports sending headers when
+        accepting the WebSocket connection, ``False`` otherwise.
+        """  # noqa: D205
         return self._supports_accept_headers
 
     async def accept(
         self,
         subprotocol: Optional[str] = None,
-        headers: Optional[Union[Iterable[Iterable[str]], Mapping[str, str]]] = None,
-    ):
+        headers: Optional[HeaderList] = None,
+    ) -> None:
         """Accept the incoming WebSocket connection.
 
         If, after examining the connection's attributes (headers, advertised
@@ -144,7 +155,7 @@ class WebSocket:
                 client may choose to abandon the connection in this case,
                 if it does not receive an explicit protocol selection.
 
-            headers (Iterable[[str, str]]): An iterable of ``[name: str, value: str]``
+            headers (HeaderList): An iterable of ``(name: str, value: str)``
                 two-item iterables, representing a collection of HTTP headers to
                 include in the handshake response. Both *name* and *value* must
                 be of type ``str`` and contain only US-ASCII characters.
@@ -189,13 +200,14 @@ class WebSocket:
                 )
 
             header_items = getattr(headers, 'items', None)
-
             if callable(header_items):
-                headers = header_items()
+                headers_iterable: Iterable[tuple[str, str]] = header_items()
+            else:
+                headers_iterable = headers  # type: ignore[assignment]
 
             event['headers'] = parsed_headers = [
                 (name.lower().encode('ascii'), value.encode('ascii'))
-                for name, value in headers  # type: ignore
+                for name, value in headers_iterable
             ]
 
             for name, __ in parsed_headers:
@@ -222,21 +234,38 @@ class WebSocket:
         #   ASGI spec committee and see if they can't come up with a better
         #   way to deal with this.
 
-    async def close(self, code: Optional[int] = None) -> None:
+    async def close(
+        self, code: Optional[int] = None, reason: Optional[str] = None
+    ) -> None:
         """Close the WebSocket connection.
 
-        This coroutine method sends a WebSocket ``CloseEvent`` to the client and
-        then proceeds to actually close the connection.
+        This coroutine method sends a WebSocket ``CloseEvent`` to the client
+        and then proceeds to actually close the connection.
 
         The responder can also use this method to deny a connection request
         simply by awaiting it instead of :meth:`~.accept`. In this case,
         the client will receive an HTTP 403 response to the handshake.
 
         Keyword Arguments:
-            code (int): The close code to use for the `CloseEvent` (default
-                1000). See also:
-                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+            code (int): The close code to use for the ``CloseEvent``
+                (default 1000). See also:
+                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code.
+            reason(str): The string reason indicating why the server closed the
+                connection. See also:
+                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/reason.
 
+                If there is no reason provided, Falcon will try to
+                automatically look it up from the above `code` and
+                :attr:`~WebSocketOptions.default_close_reasons`.
+
+        Note:
+            The close `reason` will only be propagated if the ASGI app server
+            supports this.
+
+            Version ``2.3``\\+ of the
+            `HTTP & WebSocket
+            <https://asgi.readthedocs.io/en/latest/specs/www.html>`__ ASGI
+            protocol is required for `reason`.
         """
 
         # NOTE(kgriffs): Do this first to be sure we clean things up
@@ -257,12 +286,16 @@ class WebSocket:
         if self.closed:
             return
 
-        await self._asgi_send(
-            {
-                'type': EventType.WS_CLOSE,
-                'code': code,
-            }
-        )
+        response = {'type': EventType.WS_CLOSE, 'code': code}
+
+        reason = reason or self._close_reasons.get(code)
+        if reason and self._supports_reason:  # pragma: no py311 cover
+            # NOTE(vytas): I have verified that the below line is covered both
+            #   by multiple unit tests and E2E tests.
+            #   However, it is erroneously reported as missing on CPython 3.11.
+            response['reason'] = reason
+
+        await self._asgi_send(response)
 
         self._state = _WebSocketState.CLOSED
         self._close_code = code
@@ -317,7 +350,6 @@ class WebSocket:
         """
 
         self._require_accepted()
-
         # NOTE(kgriffs): We have to check ourselves because some ASGI
         #   servers are not very strict which can lead to hard-to-debug
         #   errors.
@@ -338,13 +370,12 @@ class WebSocket:
             payload (Union[bytes, bytearray, memoryview]): The binary data to send.
         """
 
+        self._require_accepted()
         # NOTE(kgriffs): We have to check ourselves because some ASGI
         #   servers are not very strict which can lead to hard-to-debug
         #   errors.
         if not isinstance(payload, (bytes, bytearray, memoryview)):
             raise TypeError('payload must be a byte string')
-
-        self._require_accepted()
 
         await self._send(
             {
@@ -433,7 +464,7 @@ class WebSocket:
 
         return self._mh_bin_deserialize(data)
 
-    async def _send(self, msg: dict):
+    async def _send(self, msg: AsgiSendMsg) -> None:
         if self._buffered_receiver.client_disconnected:
             self._state = _WebSocketState.CLOSED
             self._close_code = self._buffered_receiver.client_disconnected_code
@@ -458,7 +489,7 @@ class WebSocket:
             #   obscure the traceback.
             raise
 
-    async def _receive(self) -> dict:
+    async def _receive(self) -> AsgiEvent:
         event = await self._asgi_receive()
 
         event_type = event['type']
@@ -475,7 +506,7 @@ class WebSocket:
 
         return event
 
-    def _require_accepted(self):
+    def _require_accepted(self) -> None:
         if self._state == _WebSocketState.HANDSHAKE:
             raise errors.OperationNotAllowed(
                 'WebSocket connection has not yet been accepted'
@@ -483,7 +514,7 @@ class WebSocket:
         elif self._state == _WebSocketState.CLOSED:
             raise errors.WebSocketDisconnected(self._close_code)
 
-    def _translate_webserver_error(self, ex):
+    def _translate_webserver_error(self, ex: Exception) -> Optional[Exception]:
         s = str(ex)
 
         # NOTE(kgriffs): uvicorn or any other server using the "websockets"
@@ -505,30 +536,64 @@ class WebSocketOptions:
     """Defines a set of configurable WebSocket options.
 
     An instance of this class is exposed via :attr:`falcon.asgi.App.ws_options`
-    for configuring certain :py:class:`~.WebSocket` behaviors.
-
-    Attributes:
-        error_close_code (int): The WebSocket close code to use when an
-            unhandled error is raised while handling a WebSocket connection
-            (default ``1011``). For a list of valid close codes and ranges,
-            see also: https://tools.ietf.org/html/rfc6455#section-7.4
-        media_handlers (dict): A dict-like object for configuring media handlers
-            according to the WebSocket payload type (TEXT vs. BINARY) of a
-            given message. See also: :ref:`ws_media_handlers`.
-        max_receive_queue (int): The maximum number of incoming messages to
-            enqueue if the reception rate exceeds the consumption rate of the
-            application (default ``4``). When this limit is reached, the
-            framework will wait to accept new messages from the ASGI server
-            until the application is able to catch up.
-
-            This limit applies to Falcon's incoming message queue, and should
-            generally be kept small since the ASGI server maintains its
-            own receive queue. Falcon's queue can be disabled altogether by
-            setting `max_receive_queue` to ``0`` (see also: :ref:`ws_lost_connection`).
-
+    for configuring certain :class:`~.WebSocket` behaviors.
     """
 
-    __slots__ = ['error_close_code', 'max_receive_queue', 'media_handlers']
+    error_close_code: int
+    """The WebSocket close code to use when an unhandled error is raised while
+    handling a WebSocket connection (default ``1011``).
+
+    For a list of valid close codes and ranges, see also:
+    https://tools.ietf.org/html/rfc6455#section-7.4.
+    """
+    default_close_reasons: Dict[int, str]
+    """A default mapping between the Websocket close code, and the reason why
+    the connection is closed.
+    Close codes corresponding to HTTP errors are also included in this mapping.
+    """
+    media_handlers: Dict[
+        WebSocketPayloadType, Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS]
+    ]
+    """A dict-like object for configuring media handlers according to the WebSocket
+    payload type (TEXT vs. BINARY) of a given message.
+
+    See also: :ref:`ws_media_handlers`.
+    """
+    max_receive_queue: int
+    """The maximum number of incoming messages to enqueue if the reception rate
+    exceeds the consumption rate of the application (default ``4``).
+
+    When this limit is reached, the framework will wait to accept new messages
+    from the ASGI server until the application is able to catch up.
+
+    This limit applies to Falcon's incoming message queue, and should
+    generally be kept small since the ASGI server maintains its
+    own receive queue. Falcon's queue can be disabled altogether by
+    setting `max_receive_queue` to ``0`` (see also: :ref:`ws_lost_connection`).
+    """
+
+    __slots__ = [
+        'error_close_code',
+        'default_close_reasons',
+        'max_receive_queue',
+        'media_handlers',
+    ]
+
+    _STANDARD_CLOSE_REASONS = (
+        (1000, 'Normal Closure'),
+        (1011, 'Internal Server Error'),
+        (3011, 'Internal Server Error'),
+    )
+
+    @classmethod
+    def _init_default_close_reasons(cls) -> Dict[int, str]:
+        reasons = dict(cls._STANDARD_CLOSE_REASONS)
+        for status_constant in dir(status_codes):
+            if 'HTTP_100' <= status_constant < 'HTTP_599':
+                status_line = getattr(status_codes, status_constant)
+                status_code, _, phrase = status_line.partition(' ')
+                reasons[http_status_to_ws_code(int(status_code))] = phrase
+        return reasons
 
     def __init__(self) -> None:
         try:
@@ -545,10 +610,7 @@ class WebSocketOptions:
                 'default WebSocket media handler for BINARY payloads', 'msgpack'
             )
 
-        self.media_handlers: Dict[
-            WebSocketPayloadType,
-            Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS],
-        ] = {
+        self.media_handlers = {
             WebSocketPayloadType.TEXT: media.JSONHandlerWS(),
             WebSocketPayloadType.BINARY: bin_handler,
         }
@@ -557,7 +619,8 @@ class WebSocketOptions:
         #
         #   See also: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
         #
-        self.error_close_code: int = WSCloseCode.SERVER_ERROR
+        self.error_close_code = WSCloseCode.SERVER_ERROR
+        self.default_close_reasons = self._init_default_close_reasons()
 
         # NOTE(kgriffs): The websockets library itself will buffer, so we keep
         #   this value fairly small by default to mitigate buffer bloat. But in
@@ -571,7 +634,7 @@ class WebSocketOptions:
         #       * https://websockets.readthedocs.io/en/stable/design.html#buffers
         #       * https://websockets.readthedocs.io/en/stable/deployment.html#buffers
         #
-        self.max_receive_queue: int = 4
+        self.max_receive_queue = 4
 
 
 class _BufferedReceiver:
@@ -593,13 +656,20 @@ class _BufferedReceiver:
         'client_disconnected_code',
     ]
 
-    def __init__(self, asgi_receive: Callable[[], Awaitable[dict]], max_queue: int):
+    _pop_message_waiter: Optional[asyncio.Future[None]]
+    _put_message_waiter: Optional[asyncio.Future[None]]
+    _pump_task: Optional[asyncio.Task[None]]
+    _messages: Deque[AsgiEvent]
+    client_disconnected: bool
+    client_disconnected_code: Optional[int]
+
+    def __init__(self, asgi_receive: AsgiReceive, max_queue: int) -> None:
         self._asgi_receive = asgi_receive
         self._max_queue = max_queue
 
         self._loop = asyncio.get_running_loop()
 
-        self._messages: Deque[dict] = collections.deque()
+        self._messages = collections.deque()
         self._pop_message_waiter = None
         self._put_message_waiter = None
 
@@ -608,12 +678,12 @@ class _BufferedReceiver:
         self.client_disconnected = False
         self.client_disconnected_code = None
 
-    def start(self):
-        if not self._pump_task:
+    def start(self) -> None:
+        if self._pump_task is None:
             self._pump_task = asyncio.create_task(self._pump())
 
-    async def stop(self):
-        if not self._pump_task:
+    async def stop(self) -> None:
+        if self._pump_task is None:
             return
 
         self._pump_task.cancel()
@@ -624,13 +694,14 @@ class _BufferedReceiver:
 
         self._pump_task = None
 
-    async def receive(self):
+    async def receive(self) -> AsgiEvent:
         # NOTE(kgriffs): Since this class is only used internally, we
         #   use an assertion to mitigate against framework bugs.
         #
         #   receive() may not be called again while another coroutine
         #   is already waiting for the next message.
-        assert not self._pop_message_waiter
+        assert self._pop_message_waiter is None
+        assert self._pump_task is not None
 
         # NOTE(kgriffs): Wait for a message if none are available. This pattern
         #   was borrowed from the websockets.protocol module.
@@ -674,7 +745,7 @@ class _BufferedReceiver:
 
         return message
 
-    async def _pump(self):
+    async def _pump(self) -> None:
         while not self.client_disconnected:
             received_event = await self._asgi_receive()
             if received_event['type'] == EventType.WS_DISCONNECT:
@@ -703,6 +774,14 @@ class _BufferedReceiver:
             if self._pop_message_waiter is not None:
                 self._pop_message_waiter.set_result(None)
                 self._pop_message_waiter = None
+
+
+@misc._lru_cache_for_simple_logic(maxsize=16)
+def _supports_reason(asgi_ver: str) -> bool:
+    """Check if the websocket version support a close reason."""
+    target_ver = (2, 3)
+    current_ver = tuple(map(int, asgi_ver.split('.')))
+    return current_ver >= target_ver
 
 
 def http_status_to_ws_code(http_status: int) -> int:

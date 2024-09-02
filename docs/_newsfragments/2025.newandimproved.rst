@@ -1,0 +1,3 @@
+:class:`~falcon.asgi.WebSocket` now supports providing a reason for closing the
+socket, either directly via :meth:`~falcon.asgi.WebSocket.close` or by
+configuring :attr:`~falcon.asgi.WebSocketOptions.default_close_reasons`.

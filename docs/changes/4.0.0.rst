@@ -24,6 +24,20 @@ Changes to Supported Platforms
   later 4.x release, especially if we are faced with incompatible ecosystem
   changes in typing, Cython, etc.
 
+Typing support
+--------------
+
+Type checking support was introduced in version 4.0. While most of the library is
+now typed, further type annotations may be added throughout the 4.x release cycle.
+To improve them, we may introduce changes to the typing that do not affect
+runtime behavior, but may surface new or different errors with type checkers.
+
+.. note::
+
+  All type aliases in falcon are considered private, and if used should be
+  imported inside ``if TYPE_CHECKING:`` blocks to avoid possible import errors
+  after an update.
+
 .. towncrier release notes start
 
 Contributors to this Release
@@ -31,11 +45,14 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `aarcex3 <https://github.com/aarcex3>`__
 - `aryaniyaps <https://github.com/aryaniyaps>`__
 - `bssyousefi <https://github.com/bssyousefi>`__
 - `CaselIT <https://github.com/CaselIT>`__
 - `cclauss <https://github.com/cclauss>`__
+- `chgad <https://github.com/chgad>`__
 - `copalco <https://github.com/copalco>`__
+- `davetapley <https://github.com/davetapley>`__
 - `derkweijers <https://github.com/derkweijers>`__
 - `e-io <https://github.com/e-io>`__
 - `euj1n0ng <https://github.com/euj1n0ng>`__
@@ -55,3 +72,4 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `TigreModerata <https://github.com/TigreModerata>`__
 - `vgerak <https://github.com/vgerak>`__
 - `vytas7 <https://github.com/vytas7>`__
+- `wendy5667 <https://github.com/wendy5667>`__

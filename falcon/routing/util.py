@@ -41,7 +41,7 @@ def compile_uri_template(template):
 
     Each field is converted to a named group, so that when a match
     is found, the fields can be easily extracted using
-    :py:meth:`re.MatchObject.groupdict`.
+    :meth:`re.MatchObject.groupdict`.
 
     This function does not support the more flexible templating
     syntax used in the default router. Only simple paths with bracketed

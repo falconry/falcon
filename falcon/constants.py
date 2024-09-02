@@ -1,3 +1,4 @@
+from enum import auto
 from enum import Enum
 import os
 import sys
@@ -184,7 +185,11 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using
 #   None would be ambiguous.
-_UNSET = object()
+_UNSET = object()  # TODO: remove once replaced with missing
 
-WebSocketPayloadType = Enum('WebSocketPayloadType', 'TEXT BINARY')
-"""Enum representing the two possible WebSocket payload types."""
+
+class WebSocketPayloadType(Enum):
+    """Enum representing the two possible WebSocket payload types."""
+
+    TEXT = auto()
+    BINARY = auto()

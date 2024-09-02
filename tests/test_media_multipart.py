@@ -3,7 +3,6 @@ import itertools
 import os
 import random
 
-from _util import create_app  # NOQA: I100
 import pytest
 
 import falcon
@@ -12,7 +11,7 @@ from falcon import testing
 from falcon.util import BufferedReader
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
     msgpack = None
 
@@ -290,8 +289,12 @@ def test_body_part_properties():
 
     for part in form:
         if part.content_type == 'application/json':
+            # NOTE(vytas): This is not a typo, but a test that the name
+            #   property can be safely referenced multiple times.
             assert part.name == part.name == 'document'
         elif part.name == 'file1':
+            # NOTE(vytas): This is not a typo, but a test that the filename
+            #   property can be safely referenced multiple times.
             assert part.filename == part.filename == 'test.txt'
             assert part.secure_filename == part.filename
 
@@ -401,7 +404,7 @@ class AsyncMultipartAnalyzer:
 
 
 @pytest.fixture
-def custom_client(asgi):
+def custom_client(asgi, util):
     def _factory(options):
         multipart_handler = media.MultipartFormHandler()
         for key, value in options.items():
@@ -416,7 +419,7 @@ def custom_client(asgi):
         if msgpack:
             resp_handlers[falcon.MEDIA_MSGPACK] = media.MessagePackHandler()
 
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.req_options.media_handlers = media.Handlers(req_handlers)
         app.resp_options.media_handlers = media.Handlers(resp_handlers)
 

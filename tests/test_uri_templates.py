@@ -9,8 +9,6 @@ from datetime import datetime
 import math
 import uuid
 
-from _util import as_params  # NOQA
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -22,6 +20,15 @@ _TEST_UUID_2 = uuid.uuid4()
 _TEST_UUID_STR = str(_TEST_UUID)
 _TEST_UUID_STR_2 = str(_TEST_UUID_2)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
+
+
+def _as_params(*values, prefix=''):
+    # NOTE(caselit): each value must be a tuple/list even when using one
+    #   single argument
+    return [
+        pytest.param(*value, id=f'{prefix}_{i}' if prefix else f'{i}')
+        for i, value in enumerate(values, 1)
+    ]
 
 
 class IDResource:
@@ -134,8 +141,8 @@ def resource():
 
 
 @pytest.fixture
-def client(asgi):
-    return testing.TestClient(create_app(asgi))
+def client(asgi, util):
+    return testing.TestClient(util.create_app(asgi))
 
 
 def test_root_path(client, resource):
@@ -313,7 +320,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
 
 @pytest.mark.parametrize(
     'uri_template, path, expected',
-    as_params(
+    _as_params(
         (
             '/widgets/{widget_id:uuid}',
             '/widgets/' + _TEST_UUID_STR,

@@ -2,7 +2,6 @@ import io
 import os
 import tempfile
 
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
@@ -10,9 +9,9 @@ from falcon import testing
 import falcon.asgi
 
 try:
-    import aiofiles  # type: ignore
+    import aiofiles
 except ImportError:
-    aiofiles = None  # type: ignore
+    aiofiles = None  # type: ignore[assignment]
 
 SIZE_1_KB = 1024
 
@@ -376,8 +375,8 @@ class TestHelloWorld:
         assert not result.content
         assert result.status_code == 200
 
-    def test_coroutine_required(self, client):
-        with disable_asgi_non_coroutine_wrapping():
+    def test_coroutine_required(self, client, util):
+        with util.disable_asgi_non_coroutine_wrapping():
             with pytest.raises(TypeError) as exinfo:
                 client.app.add_route('/', PartialCoroutineResource())
 

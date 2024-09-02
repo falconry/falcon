@@ -4,7 +4,6 @@ import json
 import wsgiref.validate
 import xml.etree.ElementTree as et  # noqa: I202
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -12,14 +11,14 @@ import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
 
 try:
-    import yaml  # type: ignore
+    import yaml
 except ImportError:
-    yaml = None  # type: ignore
+    yaml = None  # type: ignore[assignment]
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     resource = FaultyResource()
     app.add_route('/fail', resource)
@@ -734,8 +733,8 @@ class TestHTTPError:
         parsed_body = json.loads(response.content.decode())
         assert parsed_body['code'] == code
 
-    def test_416(self, client, asgi):
-        client.app = create_app(asgi)
+    def test_416(self, client, asgi, util):
+        client.app = util.create_app(asgi)
         client.app.add_route('/416', RangeNotSatisfiableResource())
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 

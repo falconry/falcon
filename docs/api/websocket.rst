@@ -35,8 +35,12 @@ middleware objects configured for the app:
 
 .. code:: python
 
+    from typing import Any
+    from falcon.asgi import Request, WebSocket
+
+
     class SomeMiddleware:
-        async def process_request_ws(self, req, ws):
+        async def process_request_ws(self, req: Request, ws: WebSocket) -> None:
             """Process a WebSocket handshake request before routing it.
 
             Note:
@@ -51,7 +55,13 @@ middleware objects configured for the app:
                     on_websocket() after routing.
             """
 
-        async def process_resource_ws(self, req, ws, resource, params):
+        async def process_resource_ws(
+            self,
+            req: Request,
+            ws: WebSocket,
+            resource: object,
+            params: dict[str, Any],
+        ) -> None:
             """Process a WebSocket handshake request after routing.
 
             Note:
@@ -226,7 +236,7 @@ one or both payload types, as in the following example.
     cbor_handler = ProtocolBuffersHandler()
     app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = cbor_handler
 
-The ``falcon`` module defines the following :py:class:`~enum.Enum` values for
+The ``falcon`` module defines the following :class:`~enum.Enum` values for
 specifying the WebSocket payload type:
 
 .. code:: python

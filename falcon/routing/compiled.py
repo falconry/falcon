@@ -38,6 +38,7 @@ from typing import (
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods
 from falcon.routing.util import set_default_responders
+from falcon.typing import MethodDict
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
@@ -46,7 +47,6 @@ if TYPE_CHECKING:
     from falcon import Request
 
     _CxElement = Union['_CxParent', '_CxChild']
-    _MethodDict = Dict[str, Callable]
 
 _TAB_STR = ' ' * 4
 _FIELD_PATTERN = re.compile(
@@ -135,7 +135,7 @@ class CompiledRouter:
         self.find('/')
         return self._finder_src
 
-    def map_http_methods(self, resource: object, **kwargs: Any) -> _MethodDict:
+    def map_http_methods(self, resource: object, **kwargs: Any) -> MethodDict:
         """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
         This method is called from :meth:`~.add_route` and may be overridden to
@@ -309,7 +309,7 @@ class CompiledRouter:
     # to multiple classes, since the symbol is imported only for type check.
     def find(
         self, uri: str, req: Optional['Request'] = None
-    ) -> Optional[Tuple[object, Optional[_MethodDict], Dict[str, Any], Optional[str]]]:
+    ) -> Optional[Tuple[object, MethodDict, Dict[str, Any], Optional[str]]]:
         """Search for a route that matches the given partial URI.
 
         Args:
@@ -334,7 +334,7 @@ class CompiledRouter:
         )
 
         if node is not None:
-            return node.resource, node.method_map, params, node.uri_template
+            return node.resource, node.method_map or {}, params, node.uri_template
         else:
             return None
 
@@ -342,7 +342,7 @@ class CompiledRouter:
     # Private
     # -----------------------------------------------------------------
 
-    def _require_coroutine_responders(self, method_map: _MethodDict) -> None:
+    def _require_coroutine_responders(self, method_map: MethodDict) -> None:
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely perform relatively long blocking
@@ -366,7 +366,7 @@ class CompiledRouter:
                     msg = msg.format(responder)
                     raise TypeError(msg)
 
-    def _require_non_coroutine_responders(self, method_map: _MethodDict) -> None:
+    def _require_non_coroutine_responders(self, method_map: MethodDict) -> None:
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely perform relatively long blocking
@@ -682,7 +682,7 @@ class CompiledRouter:
 
         self._finder_src = '\n'.join(src_lines)
 
-        scope: _MethodDict = {}
+        scope: MethodDict = {}
         exec(compile(self._finder_src, '<string>', 'exec'), scope)
 
         return scope['find']
@@ -742,7 +742,7 @@ class CompiledRouterNode:
     def __init__(
         self,
         raw_segment: str,
-        method_map: Optional[_MethodDict] = None,
+        method_map: Optional[MethodDict] = None,
         resource: Optional[object] = None,
         uri_template: Optional[str] = None,
     ):
@@ -916,40 +916,37 @@ class ConverterDict(UserDict):
 class CompiledRouterOptions:
     """Defines a set of configurable router options.
 
-    An instance of this class is exposed via :py:attr:`falcon.App.router_options`
-    and :py:attr:`falcon.asgi.App.router_options` for configuring certain
-    :py:class:`~.CompiledRouter` behaviors.
+    An instance of this class is exposed via :attr:`falcon.App.router_options`
+    and :attr:`falcon.asgi.App.router_options` for configuring certain
+    :class:`~.CompiledRouter` behaviors.
+    """
 
-    Attributes:
-        converters: Represents the collection of named
-            converters that may be referenced in URI template field
-            expressions. Adding additional converters is simply a
-            matter of mapping an identifier to a converter class::
+    converters: ConverterDict
+    """Represents the collection of named converters that may
+    be referenced in URI template field expressions.
 
-                app.router_options.converters['mc'] = MyConverter
+    Adding additional converters is simply a matter of mapping an identifier to
+    a converter class::
 
-            The identifier can then be used to employ the converter
-            within a URI template::
+        app.router_options.converters['mc'] = MyConverter
 
-                app.add_route('/{some_field:mc}', some_resource)
+    The identifier can then be used to employ the converter within a URI template::
 
-            Converter names may only contain ASCII letters, digits,
-            and underscores, and must start with either a letter or
-            an underscore.
+        app.add_route('/{some_field:mc}', some_resource)
 
-            Warning:
+    Converter names may only contain ASCII letters, digits, and underscores, and
+    must start with either a letter or an underscore.
 
-                Converter instances are shared between requests.
-                Therefore, in threaded deployments, care must be taken
-                to implement custom converters in a thread-safe
-                manner.
+    Warning:
 
-            (See also: :ref:`Field Converters <routing_field_converters>`)
+        Converter instances are shared between requests.
+        Therefore, in threaded deployments, care must be taken to implement custom
+        converters in a thread-safe manner.
+
+    (See also: :ref:`Field Converters <routing_field_converters>`)
     """
 
     __slots__ = ('converters',)
-
-    converters: ConverterDict
 
     def __init__(self):
         object.__setattr__(
