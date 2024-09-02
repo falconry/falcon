@@ -1,4 +1,4 @@
-## Contributor's Guide
+# Contribute to Falcon
 
 Thanks for your interest in the project! We welcome pull requests from
 developers of all skill levels. To get started, simply fork the master branch
@@ -24,7 +24,7 @@ little help getting started. You can find us in
 
 Please note that all contributors and maintainers of this project are subject to our [Code of Conduct][coc].
 
-### Pull Requests
+## Pull Requests
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate,
 and that all existing tests still pass with your changes.
@@ -47,7 +47,7 @@ $ tox --recreate
 
 You may also use a CPython 3.9 environment, although in that case ``coverage`` will likely report a false positive on missing branches, and the total coverage might fall short of 100%. These issues are caused by bugs in the interpreter itself, and are unlikely to ever get fixed.
 
-#### Reviews
+### Reviews
 
 Falcon is used in a number of mission-critical applications and is known for its stability and reliability. Therefore, we invest a lot of time in carefully reviewing PRs and working with contributors to ensure that every patch merged into the master branch is correct, complete, performant, well-documented, and appropriate.
 
@@ -65,7 +65,7 @@ Project maintainers review each PR for the following:
 - [ ] **Changelog.** Does the PR have a changelog entry in newsfragments? Is the
 type correct? Try running `towncrier --draft` to ensure it renders correctly.
 
-### Test coverage
+## Test coverage
 
 Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
 
@@ -77,7 +77,7 @@ It is necessary to combine test coverage from multiple environments in order to 
 
 Running the default sequence of ``tox`` environments generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
 
-### Debugging
+## Debugging
 
 We use pytest to run all of our tests. Pytest supports pdb and will break as expected on any
 `pdb.set_trace()` calls. If you would like to use pdb++ instead of the standard Python
@@ -90,7 +90,7 @@ $ tox -e py3_debug
 
 If you wish, you can customize Falcon's `tox.ini` to install alternative debuggers, such as ipdb or pudb.
 
-### Benchmarking
+## Benchmarking
 
 A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.ini`` file). For example:
 
@@ -117,7 +117,7 @@ $ falcon-bench
 
 Note that benchmark results for the same code will vary between runs based on a number of factors, including overall system load and CPU scheduling. These factors may be somewhat mitigated by running the benchmarks on a Linux server dedicated to this purpose, and pinning the benchmark process to a specific CPU core.
 
-### Documentation
+## Documentation
 
 To check documentation changes (including docstrings), before submitting a PR, ensure the tox job builds the documentation correctly:
 
@@ -134,7 +134,7 @@ $ gnome-open docs/_build/html/index.html
 $ xdg-open docs/_build/html/index.html
 ```
 
-### Recipes and code snippets
+## Recipes and code snippets
 
 If you are adding new recipes (in `docs/user/recipes`), try to break out code
 snippets into separate files inside `examples/recipes`.
@@ -145,11 +145,11 @@ Then simply use `literalinclude` to embed these snippets into your `.rst` recipe
 If possible, try to implement tests for your recipe in `tests/test_recipes.py`.
 This helps to ensure that our recipes stay up-to-date as the framework's development progresses!
 
-### VS Code Dev Container development environment
+## VS Code Dev Container development environment
 
-When opening the project using the [VS Code](https://code.visualstudio.com/) IDE, if you have [Docker](https://www.docker.com/) (or some drop-in replacement such as [Podman](https://podman.io/) or [Colima](https://github.com/abiosoft/colima) or [Rancher Desktop](https://rancherdesktop.io/)) installed, you can leverage the [Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers) feature to start a container in the background with all the dependencies required to test and debug the Falcon code. VS Code integrates with the Dev Container seamlessly, which can be configured via [devcontainer.json](.devcontainer/devcontainer.json). Once you open the project in VS Code, you can execute the "Reopen in Container" command to start the Dev Container which will run the headless VS Code Server process that the local VS Code app will connect to via a [published port](https://docs.docker.com/config/containers/container-networking/#published-ports).
+When opening the project using the [VS Code](https://code.visualstudio.com/) IDE, if you have [Docker](https://www.docker.com/) (or some drop-in replacement such as [Podman](https://podman.io/) or [Colima](https://github.com/abiosoft/colima) or [Rancher Desktop](https://rancherdesktop.io/)) installed, you can leverage the [Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers) feature to start a container in the background with all the dependencies required to test and debug the Falcon code. VS Code integrates with the Dev Container seamlessly, which can be configured via [devcontainer.json][devcontainer]. Once you open the project in VS Code, you can execute the "Reopen in Container" command to start the Dev Container which will run the headless VS Code Server process that the local VS Code app will connect to via a [published port](https://docs.docker.com/config/containers/container-networking/#published-ports).
 
-### Code style rules
+## Code style rules
 
 * Docstrings are required for classes, attributes, methods, and functions. Follow the
  following guidelines for docstrings:
@@ -183,13 +183,13 @@ or in mathematical expressions implementing well-known formulas.
 * Heavily document code that is especially complex and/or clever.
 * When in doubt, optimize for readability.
 
-### Changelog
+## Changelog
 
 We use [towncrier](https://towncrier.readthedocs.io/) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
 
 The newsfragment file name should have the format `{issue_number}.{fragment_type}.rst`, where the fragment type is one of `breakingchange`, `newandimproved`, `bugfix`, or `misc`. If your PR closes another issue, then the original issue number should be used for the newsfragment; otherwise, use the PR number itself.
 
-### Commit Message Format
+## Commit Message Format
 
 Falcon's commit message format uses [AngularJS's style guide][ajs], reproduced here for convenience, with some minor edits for clarity.
 
@@ -205,7 +205,7 @@ Each commit message consists of a **header**, a **body** and a **footer**. The h
 
 No line may exceed 100 characters. This makes it easier to read the message on GitHub as well as in various git tools.
 
-#####  Type
+###  Type
 Must be one of the following:
 
 * **feat**: A new feature
@@ -217,23 +217,24 @@ Must be one of the following:
 * **test**: Adding missing tests
 * **chore**: Changes to the build process or auxiliary tools and libraries such as documentation generation
 
-##### Scope
+### Scope
 The scope could be anything specifying place of the commit change. For example: `$location`, `$browser`, `$compile`, `$rootScope`, `ngHref`, `ngClick`, `ngView`, etc...
 
-##### Subject
+### Subject
 The subject contains succinct description of the change:
 
 * use the imperative, present tense: "change" not "changed" nor "changes"
 * don't capitalize first letter
 * no dot (.) at the end
 
-##### Body
+### Body
 Just as in the **subject**, use the imperative, present tense: "change" not "changed" nor "changes". The body should include the motivation for the change and contrast this with previous behavior.
 
-##### Footer
+### Footer
 The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
 
 [ajs]: https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines
+[devcontainer]: https://github.com/falconry/falcon/blob/master/.devcontainer/devcontainer.json
 [docstrings]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google-style-python-docstrings
 [goog-style]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
 [rtd]: https://falcon.readthedocs.io
