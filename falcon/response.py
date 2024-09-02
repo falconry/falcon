@@ -41,7 +41,6 @@ from falcon.util.deprecation import deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
-
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
