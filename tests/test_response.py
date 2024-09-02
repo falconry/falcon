@@ -76,23 +76,12 @@ def test_response_option_mimetype_init(monkeypatch):
     assert ro.static_media_types['.mjs'] == 'text/javascript'
 
 
-def test_response_set_stream(resp):
-    stream = BytesIO(b'dummy content')
-    content_length = 12
+@pytest.mark.parametrize('content', [b'', b'dummy content'])
+def test_response_set_stream(resp, content):
+    stream = BytesIO(content)
+    content_length = len(content)
 
     resp.set_stream(stream, content_length)
 
     assert resp.stream == stream
-
-    assert resp._headers['content-length'] == str(content_length)
-
-
-def test_response_set_stream_with_zero_content_length(resp):
-    stream = BytesIO(b'')
-    content_length = 0
-
-    resp.set_stream(stream, content_length)
-
-    assert resp.stream == stream
-
     assert resp._headers['content-length'] == str(content_length)
