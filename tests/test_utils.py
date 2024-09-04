@@ -26,7 +26,7 @@ from falcon.util import uri
 from falcon.util.time import TimezoneGMT
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
     msgpack = None
 

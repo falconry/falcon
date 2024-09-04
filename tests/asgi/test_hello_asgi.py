@@ -9,9 +9,9 @@ from falcon import testing
 import falcon.asgi
 
 try:
-    import aiofiles  # type: ignore
+    import aiofiles
 except ImportError:
-    aiofiles = None  # type: ignore
+    aiofiles = None  # type: ignore[assignment]
 
 SIZE_1_KB = 1024
 

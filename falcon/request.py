@@ -312,7 +312,7 @@ class Request:
         self._cached_uri: Optional[str] = None
 
         try:
-            self.content_type: Union[str, None] = self.env['CONTENT_TYPE']
+            self.content_type = self.env['CONTENT_TYPE']
         except KeyError:
             self.content_type = None
 

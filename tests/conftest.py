@@ -1,14 +1,19 @@
 import contextlib
+import functools
+import http.client
 import importlib.util
 import inspect
+import json
 import os
 import pathlib
+import urllib.parse
 
 import pytest
 
 import falcon
 import falcon.asgi
 import falcon.testing
+import falcon.util
 
 try:
     import cython  # noqa
@@ -109,10 +114,56 @@ class _SuiteUtils:
         return module
 
 
-# TODO(vytas): Migrate all cases to use this fixture instead of _util.
 @pytest.fixture(scope='session')
 def util():
     return _SuiteUtils()
+
+
+class _RequestsLite:
+    """Poor man's requests using nothing but the stdlib+Falcon."""
+
+    DEFAULT_TIMEOUT = 15.0
+
+    class Response:
+        def __init__(self, resp):
+            self.content = resp.read()
+            self.headers = falcon.util.CaseInsensitiveDict(resp.getheaders())
+            self.status_code = resp.status
+
+        @property
+        def text(self):
+            return self.content.decode()
+
+        def json(self):
+            content_type, _ = falcon.parse_header(
+                self.headers.get('Content-Type') or ''
+            )
+            if content_type != falcon.MEDIA_JSON:
+                raise ValueError(f'Content-Type is not {falcon.MEDIA_JSON}')
+            return json.loads(self.content)
+
+    def __init__(self):
+        self.delete = functools.partial(self.request, 'DELETE')
+        self.get = functools.partial(self.request, 'GET')
+        self.head = functools.partial(self.request, 'HEAD')
+        self.patch = functools.partial(self.request, 'PATCH')
+        self.post = functools.partial(self.request, 'POST')
+        self.put = functools.partial(self.request, 'PUT')
+
+    def request(self, method, url, data=None, headers=None, timeout=None):
+        parsed = urllib.parse.urlparse(url)
+        uri = urllib.parse.urlunparse(('', '', parsed.path, '', parsed.query, ''))
+        headers = headers or {}
+        timeout = timeout or self.DEFAULT_TIMEOUT
+
+        conn = http.client.HTTPConnection(parsed.netloc)
+        conn.request(method, uri, body=data, headers=headers)
+        return self.Response(conn.getresponse())
+
+
+@pytest.fixture(scope='session')
+def requests_lite():
+    return _RequestsLite()
 
 
 def pytest_configure(config):

@@ -3,7 +3,9 @@ doc2dash
 jinja2
 markupsafe
 pygments
+myst-parser
 pygments-style-github
+PyYAML
 sphinx
 sphinx_rtd_theme
 sphinx-tabs

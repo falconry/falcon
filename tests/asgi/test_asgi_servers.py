@@ -10,13 +10,17 @@ import sys
 import time
 
 import pytest
-import requests
-import requests.exceptions
 
 try:
     import httpx
 except ImportError:
     httpx = None  # type: ignore
+
+try:
+    import requests
+    import requests.exceptions
+except ImportError:
+    requests = None  # type: ignore
 
 try:
     import websockets
@@ -44,6 +48,9 @@ _STATUS_CONTROL_C_EXIT = 0xC000013A
 _REQUEST_TIMEOUT = 10
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
 class TestASGIServer:
     def test_get(self, server_base_url):
         resp = requests.get(server_base_url, timeout=_REQUEST_TIMEOUT)
@@ -192,6 +199,9 @@ class TestASGIServer:
             assert resp.json().get('drops') >= 1
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
 @pytest.mark.skipif(
     websockets is None, reason='websockets is required for this test class'
 )

@@ -11,7 +11,7 @@ from falcon import testing
 from falcon.util import BufferedReader
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
     msgpack = None
 
@@ -289,8 +289,12 @@ def test_body_part_properties():
 
     for part in form:
         if part.content_type == 'application/json':
+            # NOTE(vytas): This is not a typo, but a test that the name
+            #   property can be safely referenced multiple times.
             assert part.name == part.name == 'document'
         elif part.name == 'file1':
+            # NOTE(vytas): This is not a typo, but a test that the filename
+            #   property can be safely referenced multiple times.
             assert part.filename == part.filename == 'test.txt'
             assert part.secure_filename == part.filename
 

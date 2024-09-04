@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import timezone
 import functools
 import mimetypes
-from typing import Dict, Optional
+from typing import Dict
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
@@ -40,11 +40,6 @@ from falcon.util.deprecation import AttributeRemovedError
 from falcon.util.deprecation import deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
-
-_STREAM_LEN_REMOVED_MSG = (
-    'The deprecated stream_len property was removed in Falcon 3.0. '
-    'Please use Response.set_stream() or Response.content_length instead.'
-)
 
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 
@@ -208,14 +203,14 @@ class Response:
     def status_code(self, value):
         self.status = value
 
-    @property  # type: ignore
+    @property
     def body(self):
         raise AttributeRemovedError(
             'The body attribute is no longer supported. '
             'Please use the text attribute instead.'
         )
 
-    @body.setter  # type: ignore
+    @body.setter
     def body(self, value):
         raise AttributeRemovedError(
             'The body attribute is no longer supported. '
@@ -242,18 +237,6 @@ class Response:
     def media(self, value):
         self._media = value
         self._media_rendered = _UNSET
-
-    @property
-    def stream_len(self):
-        # NOTE(kgriffs): Provide some additional information by raising the
-        #   error explicitly.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
-
-    @stream_len.setter
-    def stream_len(self, value):
-        # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
-        #   so that apps relying on it do not fail silently.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
 
     def render_body(self):
         """Get the raw bytestring content for the response body.
@@ -1233,7 +1216,7 @@ class ResponseOptions:
     This can make testing easier by not requiring HTTPS. Note, however, that this
     setting can be overridden via :meth:`~.Response.set_cookie()`'s ``secure`` kwarg.
     """
-    default_media_type: Optional[str]
+    default_media_type: str
     """The default Internet media type (RFC 2046) to use when rendering a response,
     when the Content-Type header is not set explicitly.
 

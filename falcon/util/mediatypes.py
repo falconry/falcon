@@ -15,12 +15,16 @@
 """Media (aka MIME) type parsing and matching utilities."""
 
 import functools
-import typing
+
+
+from __future__ import annotations
+
+from typing import Dict, Iterator, Tuple
 
 __all__ = ('best_match', 'parse_header', 'quality')
 
 
-def _parse_param_old_stdlib(s):  # type: ignore
+def _parse_param_old_stdlib(s: str) -> Iterator[str]:
     while s[:1] == ';':
         s = s[1:]
         end = s.find(';')
@@ -33,7 +37,7 @@ def _parse_param_old_stdlib(s):  # type: ignore
         s = s[end:]
 
 
-def _parse_header_old_stdlib(line):  # type: ignore
+def _parse_header_old_stdlib(line: str) -> Tuple[str, Dict[str, str]]:
     """Parse a Content-type like header.
 
     Return the main content-type and a dictionary of options.
@@ -44,7 +48,7 @@ def _parse_header_old_stdlib(line):  # type: ignore
     """
     parts = _parse_param_old_stdlib(';' + line)
     key = parts.__next__()
-    pdict = {}
+    pdict: Dict[str, str] = {}
     for p in parts:
         i = p.find('=')
         if i >= 0:
@@ -57,7 +61,7 @@ def _parse_header_old_stdlib(line):  # type: ignore
     return key, pdict
 
 
-def parse_header(line: str) -> typing.Tuple[str, dict]:
+def parse_header(line: str) -> Tuple[str, Dict[str, str]]:
     """Parse a Content-type like header.
 
     Return the main content-type and a dictionary of options.

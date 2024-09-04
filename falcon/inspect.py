@@ -189,7 +189,7 @@ def inspect_middleware(app: App) -> 'MiddlewareInfo':
         current = []
         for method in stack:
             _, name = _get_source_info_and_name(method)
-            cls = type(method.__self__)
+            cls = type(method.__self__)  # type: ignore[union-attr]
             _, cls_name = _get_source_info_and_name(cls)
             current.append(MiddlewareTreeItemInfo(name, cls_name))
         type_infos.append(current)
@@ -201,12 +201,12 @@ def inspect_middleware(app: App) -> 'MiddlewareInfo':
         fns = app_helpers.prepare_middleware([m], True, app._ASGI)
         class_source_info, cls_name = _get_source_info_and_name(type(m))
         methods = []
-        for method, name in zip(fns, names):
+        for method, name in zip(fns, names):  # type: ignore[assignment]
             if method:
-                real_func = method[0]
+                real_func = method[0]  # type: ignore[index]
                 source_info = _get_source_info(real_func)
                 assert source_info
-                methods.append(MiddlewareMethodInfo(real_func.__name__, source_info))
+                methods.append(MiddlewareMethodInfo(real_func.__name__, source_info))  # type: ignore[union-attr]
         assert class_source_info
         m_info = MiddlewareClassInfo(cls_name, class_source_info, methods)
         middlewareClasses.append(m_info)

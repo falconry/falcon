@@ -83,7 +83,7 @@ class ClosingBytesIO(io.BytesIO):
 #   sometimes bubbles up a warning about exception when trying to call it.
 class NonClosingBytesIO:
     # Not callable; test that CloseableStreamIterator ignores it
-    close = False  # type: ignore
+    close = False
 
     def __init__(self, data=b''):
         self._stream = io.BytesIO(data)
