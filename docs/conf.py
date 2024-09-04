@@ -88,7 +88,9 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', '_newsfragments']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'github'
+# NOTE(vytas): The PyData theme uses separate Pygments style settings for HTML,
+#   so we specify a print-friendly theme here for the likes of latexpdf.
+pygments_style = 'bw'
 
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
