@@ -49,10 +49,9 @@ We'll create a *virtualenv* using the ``venv`` module from the standard library
    `pipenv <https://pipenv.pypa.io/>`_,
    particularly when it comes to hopping between several environments.
 
-Next, install Falcon into your *virtualenv*. ASGI support requires version
-3.0 or higher::
+Next, :ref:`install Falcon <install>` into your *virtualenv*::
 
-  $ pip install "falcon>=3.*"
+  $ pip install falcon
 
 You can then create a basic :class:`Falcon ASGI application <falcon.asgi.App>`
 by adding an ``asgilook/app.py`` module with the following contents:

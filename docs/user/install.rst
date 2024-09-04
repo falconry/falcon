@@ -39,11 +39,12 @@ Or, to install the latest beta or release candidate, if any:
 
 In order to provide an extra speed boost, Falcon automatically compiles itself
 with `Cython <https://cython.org/>`__. Wheels containing pre-compiled binaries
-are available from PyPI for several common platforms (see :ref:`binary_wheels`
-below for the complete list of the platforms that we target, or simply check
+are available from PyPI for the majority of common platforms (see
+:ref:`binary_wheels` below for the complete list of the platforms that we
+target, or simply check
 `Falcon files on PyPI <https://pypi.org/project/falcon/#files>`__).
 
-However, even if a wheel for your platform of choice is not available,
+However, even if a binary build for your platform of choice is not available,
 you can choose to stick with the generic pure-Python wheel (that ``pip`` should
 pick automatically), or cythonize Falcon for your environment (see
 :ref:`instructions below <cythonize>`).
