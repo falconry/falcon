@@ -98,6 +98,8 @@ Therefore, as long as you implement these classes and callables in a
 thread-safe manner, and ensure that any third-party libraries used by your
 app are also thread-safe, your WSGI app as a whole will be thread-safe.
 
+.. _faq_free_threading:
+
 Can I run Falcon on free-threaded CPython?
 ------------------------------------------
 

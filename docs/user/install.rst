@@ -37,39 +37,55 @@ Or, to install the latest beta or release candidate, if any:
 
     $ pip install --pre falcon
 
-In order to provide an extra speed boost, Falcon can compile itself with
-Cython. Wheels containing pre-compiled binaries are available from PyPI for
-several common platforms (see :ref:`binary_wheels` below for the complete list
-of the platforms that we target, or simply check
+In order to provide an extra speed boost, Falcon automatically compiles itself
+with `Cython <https://cython.org/>`__. Wheels containing pre-compiled binaries
+are available from PyPI for several common platforms (see :ref:`binary_wheels`
+below for the complete list of the platforms that we target, or simply check
 `Falcon files on PyPI <https://pypi.org/project/falcon/#files>`__).
 
-However, even if a wheel for your platform of choice is not available, you can
-choose to stick with the source distribution, or use the instructions below to
-cythonize Falcon for your environment.
+However, even if a wheel for your platform of choice is not available,
+you can choose to stick with the generic pure-Python wheel (that ``pip`` should
+pick automatically), or cythonize Falcon for your environment (see
+:ref:`instructions below <cythonize>`).
+The pure-Python version is functionally identical to binary wheels;
+it is just slower on CPython.
 
-The following commands tell pip to install Cython, and then to invoke
-Falcon's ``setup.py``, which will in turn detect the presence of Cython
-and then compile (AKA cythonize) the Falcon framework with the system's
-default C compiler.
+.. _cythonize:
 
-.. code:: bash
-
-    $ pip install cython
-    $ pip install --no-build-isolation --no-binary :all: falcon
-
-Note that ``--no-build-isolation`` is necessary to override pip's default
-PEP 517 behavior that can cause Cython not to be found in the build
-environment.
-
-If you want to verify that Cython is being invoked, simply
-pass `-v` to pip in order to echo the compilation commands:
-
-.. code:: bash
-
-    $ pip install -v --no-build-isolation --no-binary :all: falcon
-
-Installing on OS X
+Cythonizing Falcon
 ^^^^^^^^^^^^^^^^^^
+
+Falcon leverages `PEP 517 <https://peps.python.org/pep-0517/>`__ to
+automatically compile (AKA *cythonize*) itself with Cython whenever it is
+installed from the source distribution. So if a suitable
+:ref:`binary wheel <binary_wheels>` is unavailable for your platform, or if you
+want to recompile locally, you simply need to instruct ``pip`` not to use
+prebuilt wheels:
+
+.. code:: bash
+
+    $ pip install --no-binary :all: falcon
+
+If you want to verify that Cython is being invoked,
+pass ``-v`` to ``pip`` in order to echo the compilation commands:
+
+.. code:: bash
+
+    $ pip install -v --no-binary :all: falcon
+
+Apart from the obvious requirement to have a functional compiler toolchain set
+up with CPython development headers, the only inconvenience of running
+cythonization on your side is the extra couple of minutes it takes (depending
+on your hardware; it can take much more on an underpower CI runner, or if you
+are using emulation to prepare your software for another architecture).
+
+Compiling on Mac OS
+^^^^^^^^^^^^^^^^^^^
+
+.. tip::
+    Pre-compiled Falcon wheels are available for macOS on both Intel and Apple
+    Silicon chips, so normally you should be fine with just
+    ``pip install falcon``.
 
 Xcode Command Line Tools are required to compile Cython. Install them
 with this command:
@@ -97,7 +113,7 @@ these issues by setting additional Clang C compiler flags as follows:
 Binary Wheels
 ^^^^^^^^^^^^^
 
-Binary Falcon wheels for are automatically built for many CPython platforms,
+Binary Falcon wheels are automatically built for many CPython platforms,
 courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/en/stable/>`__.
 
 .. wheels:: .github/workflows/cibuildwheel.yaml
@@ -105,10 +121,18 @@ courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/en/stable/>`__.
    The following table summarizes the wheel availability on different
    combinations of CPython versions vs CPython platforms:
 
-.. note::
+.. warning::
     The `free-threaded build
     <https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
-    mode is not enabled for our wheels at this time.
+    flag is not yet enabled for our wheels at this time.
+
+    If you wish to experiment with
+    :ref:`running Falcon in the free-threaded mode <faq_free_threading>`, you
+    will need to explicitly tell the interpreter to disable GIL (via the
+    ``PYTHON_GIL`` environment variable, or the ``-X gil=0`` option).
+    It is also advisable to :ref:`recompile Falcon from source <cythonize>` on
+    a free-threaded CPython 3.13+ build before proceeding.
+    :ref:`Let us know how it went <chat>`!
 
 While we believe that our build configuration covers the most common
 development and deployment scenarios, :ref:`let us known <chat>` if you are
