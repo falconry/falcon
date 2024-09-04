@@ -14,12 +14,10 @@
 
 """Media (aka MIME) type parsing and matching utilities."""
 
-import functools
-
-
 from __future__ import annotations
 
-from typing import Dict, Iterator, Tuple
+import functools
+from typing import Dict, Iterable, Iterator, Optional, Tuple
 
 __all__ = ('best_match', 'parse_header', 'quality')
 
@@ -127,7 +125,7 @@ def quality(media_type: str, header: str) -> float:
     return 0.0
 
 
-def best_match(media_types: typing.Iterable[str], header: str) -> typing.Optional[str]:
+def best_match(media_types: Iterable[str], header: str) -> Optional[str]:
     """Choose media type with the highest quality from a list of candidates.
 
     Args:
