@@ -77,7 +77,7 @@ pass ``-v`` to ``pip`` in order to echo the compilation commands:
 Apart from the obvious requirement to have a functional compiler toolchain set
 up with CPython development headers, the only inconvenience of running
 cythonization on your side is the extra couple of minutes it takes (depending
-on your hardware; it can take much more on an underpower CI runner, or if you
+on your hardware; it can take much more on an underpowered CI runner, or if you
 are using emulation to prepare your software for another architecture).
 
 Furthermore, you can also cythonize the latest developmental snapshot Falcon
