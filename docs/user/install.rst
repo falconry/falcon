@@ -80,6 +80,18 @@ cythonization on your side is the extra couple of minutes it takes (depending
 on your hardware; it can take much more on an underpower CI runner, or if you
 are using emulation to prepare your software for another architecture).
 
+Furthermore, you can also cythonize the latest developmental snapshot Falcon
+directly from the :ref:`source code <source_code>` on GitHub:
+
+.. code:: bash
+
+    $ pip install git+https://github.com/falconry/falcon/
+
+.. danger::
+    Although we try to keep the main development branch in a good shape at all
+    times, we strongly recommend to use only stable versions of Falcon in
+    production.
+
 Compiling on Mac OS
 ^^^^^^^^^^^^^^^^^^^
 
@@ -142,9 +154,7 @@ interested in any builds that are currently missing from our selection!
 Dependencies
 ------------
 
-Falcon does not require the installation of any other packages, although if
-Cython has been installed into the environment, it will be used to optimize
-the framework as explained above.
+Falcon does not require the installation of any other packages.
 
 WSGI Server
 -----------
@@ -198,30 +208,49 @@ For a more in-depth overview of available servers, see also:
     See also a longer explanation on Uvicorn's website:
     `Quickstart <https://www.uvicorn.org/#quickstart>`_.
 
+.. _source_code:
+
 Source Code
 -----------
 
 Falcon `lives on GitHub <https://github.com/falconry/falcon>`_, making the
-code easy to browse, download, fork, etc. Pull requests are always welcome! Also,
-please remember to star the project if it makes you happy. :)
+code easy to browse, download, fork, etc. :ref:`Pull requests <contribute>`
+are always welcome!
+Also, please remember to star the project if it makes you happy. :)
 
 Once you have cloned the repo or downloaded a tarball from GitHub, you
 can install Falcon like this:
 
 .. code:: bash
 
+    $ # Clone over SSH:
+    $ #   git clone git@github.com:falconry/falcon.git
+    $ # Or, if you prefer, over HTTPS:
+    $ #   git clone https://github.com/falconry/falcon
     $ cd falcon
     $ pip install .
 
+.. tip::
+    The above command will automatically install the
+    :ref:`cythonized <cythonize>` version of Falcon. If you just want to
+    experiment with the latest snapshot, you can skip the cythonization step by
+    setting the ``FALCON_DISABLE_CYTHON`` environment variable to a non-empty
+    value:
+
+    .. code:: bash
+
+        $ cd falcon
+        $ FALCON_DISABLE_CYTHON=Y pip install .
+
 Or, if you want to edit the code, first fork the main repo, clone the fork
-to your desktop, and then run the following to install it using symbolic
-linking, so that when you change your code, the changes will be automagically
-available to your app without having to reinstall the package:
+to your desktop, and then run the following command to install it using
+symbolic linking, so that when you change your code, the changes will be
+automagically available to your app without having to reinstall the package:
 
 .. code:: bash
 
     $ cd falcon
-    $ pip install -e .
+    $ FALCON_DISABLE_CYTHON=Y pip install -e .
 
 You can manually test changes to the Falcon framework by switching to the
 directory of the cloned repo and then running pytest:
@@ -229,6 +258,7 @@ directory of the cloned repo and then running pytest:
 .. code:: bash
 
     $ cd falcon
+    $ FALCON_DISABLE_CYTHON=Y pip install -e .
     $ pip install -r requirements/tests
     $ pytest tests
 

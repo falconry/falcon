@@ -219,11 +219,11 @@ Or, to install the latest beta or release candidate, if any:
 
 In order to provide an extra speed boost, Falcon automatically compiles itself
 with `Cython <https://cython.org/>`__ under any
-`PEP 517 <https://peps.python.org/pep-0517/>`\-compatible installer.
+`PEP 517 <https://peps.python.org/pep-0517/>`__\-compliant installer.
 
-Wheels containing pre-compiled binaries are available from PyPI for the
-majority of common platforms. Even if a binary build for your platform of
-choice is not available, ``pip`` will pick a pure-Python wheel.
+For your convenience, wheels containing pre-compiled binaries are available
+from PyPI for the majority of common platforms. Even if a binary build for your
+platform of choice is not available, ``pip`` will pick a pure-Python wheel.
 You can also cythonize Falcon for your environment; see our
 `Installation docs <https://falcon.readthedocs.io/en/stable/user/install.html>`__.
 for more information on this and other advanced options.
