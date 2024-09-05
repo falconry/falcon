@@ -610,4 +610,4 @@ class MultipartParseOptions:
         self.max_body_part_buffer_size = 1024 * 1024
         self.max_body_part_count = 64
         self.max_body_part_headers_size = 8192
-        self.media_handlers = self._DEFAULT_HANDLERS
+        self.media_handlers = self._DEFAULT_HANDLERS.copy()

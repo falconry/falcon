@@ -9,6 +9,7 @@ import falcon
 from falcon import media
 from falcon import testing
 from falcon.util import BufferedReader
+from falcon.media.multipart import MultipartParseOptions
 
 try:
     import msgpack
@@ -849,3 +850,14 @@ def test_deserialize_custom_media(custom_client):
 
     assert resp.status_code == 200
     assert resp.json == ['', '0x48']
+
+
+def test_multipart_parse_options_default_handlers_unique():
+    parse_options_one = MultipartParseOptions()
+    parse_options_two = MultipartParseOptions()
+
+    parse_options_one.media_handlers.pop(falcon.MEDIA_JSON)
+
+    assert id(parse_options_one.media_handlers) != id(parse_options_two.media_handlers)
+    assert len(parse_options_one.media_handlers) == 1
+    assert len(parse_options_two.media_handlers) >= 2
