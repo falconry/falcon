@@ -483,7 +483,9 @@ class WebSocket:
 
             translated_ex = self._translate_webserver_error(ex)
             if translated_ex:
-                raise translated_ex
+                # NOTE(vytas): Use the raise from form so that we preserve
+                #   the traceback.
+                raise translated_ex from ex
 
             # NOTE(kgriffs): Re-raise other errors directly so that we don't
             #   obscure the traceback.
@@ -528,6 +530,15 @@ class WebSocket:
             return ValueError(
                 'WebSocket subprotocol must be from the list sent by the client'
             )
+
+        # NOTE(vytas): Per ASGI HTTP & WebSocket spec:
+        #   If send() is called on a closed connection the server should raise
+        #   a server-specific subclass of IOError.
+        # NOTE(vytas): Uvicorn 0.30.6 seems to conform to the spec only when
+        #   using the wsproto stack, it then raises an instance of
+        #   uvicorn.protocols.utils.ClientDisconnected.
+        if isinstance(ex, OSError):
+            return errors.WebSocketDisconnected()
 
         return None
 

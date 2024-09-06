@@ -951,6 +951,12 @@ async def test_translate_webserver_error(conductor):
             async def raise_disconnect(self):
                 raise Exception('Disconnected with code = 1000 (OK)')
 
+            async def raise_io_error(self):
+                class ClientDisconnected(OSError):
+                    pass
+
+                raise ClientDisconnected()
+
             async def raise_protocol_mismatch(self):
                 raise Exception('protocol accepted must be from the list')
 
@@ -977,6 +983,12 @@ async def test_translate_webserver_error(conductor):
             except falcon.WebSocketDisconnected:
                 self.error_count += 1
 
+            ws._asgi_send = raise_io_error
+            try:
+                await ws.send_data(b'123')
+            except falcon.WebSocketDisconnected:
+                self.error_count += 1
+
             ws._asgi_send = _asgi_send
 
             self.test_complete.set()
@@ -987,6 +999,8 @@ async def test_translate_webserver_error(conductor):
     async with conductor as c:
         async with c.simulate_ws():
             await resource.test_complete.wait()
+
+    assert resource.error_count == 4
 
 
 def test_ws_base_not_implemented():
