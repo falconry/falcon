@@ -172,6 +172,8 @@ class Handlers(UserDict):
 
         Returns:
             A shallow copy of handlers.
+
+        .. versionadded:: 4.0
         """
         # NOTE(vytas): In the unlikely case we are dealing with a subclass,
         #   return the matching type.
