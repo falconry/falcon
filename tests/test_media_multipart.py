@@ -8,8 +8,8 @@ import pytest
 import falcon
 from falcon import media
 from falcon import testing
-from falcon.util import BufferedReader
 from falcon.media.multipart import MultipartParseOptions
+from falcon.util import BufferedReader
 
 try:
     import msgpack

@@ -164,6 +164,20 @@ class Handlers(UserDict):
 
         return cast(ResolverMethod, resolve)
 
+    def copy(self) -> Handlers:
+        """Create a shallow copy of this instance of handlers.
+
+        The resulting copy contains the same keys and values, but it can be
+        customized separately without affecting the original object.
+
+        Returns:
+            A shallow copy of handlers.
+        """
+        # NOTE(vytas): In the unlikely case we are dealing with a subclass,
+        #   return the matching type.
+        handlers_cls = type(self)
+        return handlers_cls(self.data)
+
     @deprecation.deprecated(
         'This undocumented method is no longer supported as part of the public '
         'interface and will be removed in a future release.'
