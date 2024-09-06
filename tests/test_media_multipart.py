@@ -858,6 +858,6 @@ def test_multipart_parse_options_default_handlers_unique():
 
     parse_options_one.media_handlers.pop(falcon.MEDIA_JSON)
 
-    assert id(parse_options_one.media_handlers) != id(parse_options_two.media_handlers)
+    assert parse_options_one.media_handlers is not parse_options_two.media_handlers
     assert len(parse_options_one.media_handlers) == 1
     assert len(parse_options_two.media_handlers) >= 2
