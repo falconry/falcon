@@ -112,9 +112,9 @@ Lost Connections
 ----------------
 
 When the app attempts to receive a message from the client, the ASGI server
-emits a `disconnect` event if the connection has been lost for any reason. Falcon
-surfaces this event by raising an instance of :class:`~.WebSocketDisconnected`
-to the caller.
+emits a ``disconnect`` event if the connection has been lost for any
+reason. Falcon surfaces this event by raising an instance of
+:class:`~.WebSocketDisconnected` to the caller.
 
 On the other hand, the ASGI spec requires the ASGI server to silently consume
 messages sent by the app after the connection has been lost (i.e.,  it should
