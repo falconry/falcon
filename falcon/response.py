@@ -64,13 +64,7 @@ if TYPE_CHECKING:
     import http
 
 
-_STREAM_LEN_REMOVED_MSG = (
-    'The deprecated stream_len property was removed in Falcon 3.0. '
-    'Please use Response.set_stream() or Response.content_length instead.'
-)
-
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
-
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
 
 
@@ -273,18 +267,6 @@ class Response:
     def media(self, value: Any) -> None:
         self._media = value
         self._media_rendered = MISSING
-
-    @property
-    def stream_len(self) -> NoReturn:
-        # NOTE(kgriffs): Provide some additional information by raising the
-        #   error explicitly.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
-
-    @stream_len.setter
-    def stream_len(self, value: Any) -> NoReturn:
-        # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
-        #   so that apps relying on it do not fail silently.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
 
     def render_body(self) -> Optional[bytes]:
         """Get the raw bytestring content for the response body.

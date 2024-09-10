@@ -5,6 +5,11 @@ try:
 except ImportError:
     httpx = None  # type: ignore
 
+try:
+    import requests
+except ImportError:
+    requests = None  # type: ignore
+
 import falcon.testing as testing
 
 
@@ -23,6 +28,9 @@ def test_things(asgi, util):
 
 @pytest.mark.skipif(
     httpx is None, reason='things_advanced_asgi.py requires httpx [not found]'
+)
+@pytest.mark.skipif(
+    requests is None, reason='things_advanced.py requires requests [not found]'
 )
 def test_things_advanced(asgi, util):
     suffix = '_asgi' if asgi else ''
