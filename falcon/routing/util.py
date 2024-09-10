@@ -17,22 +17,25 @@
 from __future__ import annotations
 
 import re
-from typing import Callable, Dict, Optional
+from typing import Optional, Set, Tuple, TYPE_CHECKING
 
 from falcon import constants
 from falcon import responders
 from falcon.util.deprecation import deprecated
 
+if TYPE_CHECKING:
+    from falcon.typing import MethodDict
+
 
 class SuffixedMethodNotFoundError(Exception):
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         super(SuffixedMethodNotFoundError, self).__init__(message)
         self.message = message
 
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
 @deprecated('This method will be removed in Falcon 4.0.')
-def compile_uri_template(template):
+def compile_uri_template(template: str) -> Tuple[Set[str], re.Pattern[str]]:
     """Compile the given URI template string into a pattern matcher.
 
     This function can be used to construct custom routing engines that
@@ -102,9 +105,7 @@ def compile_uri_template(template):
     return fields, re.compile(pattern, re.IGNORECASE)
 
 
-def map_http_methods(
-    resource: object, suffix: Optional[str] = None
-) -> Dict[str, Callable]:
+def map_http_methods(resource: object, suffix: Optional[str] = None) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
@@ -151,7 +152,7 @@ def map_http_methods(
     return method_map
 
 
-def set_default_responders(method_map, asgi=False):
+def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
     """Map HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
@@ -169,11 +170,11 @@ def set_default_responders(method_map, asgi=False):
     if 'OPTIONS' not in method_map:
         # OPTIONS itself is intentionally excluded from the Allow header
         opt_responder = responders.create_default_options(allowed_methods, asgi=asgi)
-        method_map['OPTIONS'] = opt_responder
+        method_map['OPTIONS'] = opt_responder  # type: ignore[assignment]
         allowed_methods.append('OPTIONS')
 
     na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
 
     for method in constants.COMBINED_METHODS:
         if method not in method_map:
-            method_map[method] = na_responder
+            method_map[method] = na_responder  # type: ignore[assignment]
