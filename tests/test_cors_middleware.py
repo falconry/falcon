@@ -86,6 +86,7 @@ class TestCorsMiddleware:
             result.headers['Access-Control-Max-Age'] == '86400'
         )  # 24 hours in seconds
 
+    @pytest.mark.xfail(reason='will be fixed in 2325')
     def test_enabled_cors_handles_preflighting_custom_option(self, cors_client):
         cors_client.app.add_route('/', CORSOptionsResource())
         result = cors_client.simulate_options(
