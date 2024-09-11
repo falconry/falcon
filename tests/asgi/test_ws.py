@@ -1106,10 +1106,11 @@ async def test_ws_simulator_collect_edge_cases(conductor):
 
         await ws.close()
 
-        # NOTE(kgriffs): The collector should just eat all subsequent events
-        #   returned from the ASGI app.
-        for __ in range(100):
-            await ws._collect({'type': EventType.WS_SEND})
+        # NOTE(vytas): The collector should start raising an instance of
+        #   OSError from now on per the ASGI WS spec ver 2.4+.
+        for __ in range(10):
+            with pytest.raises(OSError):
+                await ws._collect({'type': EventType.WS_SEND})
 
         assert not ws._collected_server_events
 
@@ -1416,3 +1417,43 @@ async def test_ws_http_error_or_status_error_handler(
                 async with c.simulate_ws():
                     pass
             assert err.value.code == exp_code
+
+
+@pytest.mark.parametrize('max_receive_queue', [0, 1, 4, 7, 17])
+async def test_max_receive_queue_sizes(conductor, max_receive_queue):
+    class Chat:
+        async def on_websocket(self, req, ws, user):
+            await ws.accept()
+
+            broadcast = [
+                '[Guest123] ping',
+                '[John F. Barbaz] Hi everyone.',
+                f'Hello, {user}!',
+            ]
+
+            while True:
+                await ws.send_text(broadcast.pop())
+
+                msg = await ws.receive_text()
+                if msg == '/quit':
+                    await ws.send_text('Bye!')
+                    await ws.close(reason='Received /quit')
+                    break
+                else:
+                    await ws.send_text(f'[{user}] {msg}')
+
+    conductor.app.ws_options.max_receive_queue = max_receive_queue
+    conductor.app.add_route('/chat/{user}', Chat())
+
+    received = []
+    messages = ['/quit', 'I have to leave this test soon.', 'Hello!']
+
+    async with conductor as c:
+        async with c.simulate_ws('/chat/foobarer') as ws:
+            while messages:
+                received.append(await ws.receive_text())
+
+                await ws.send_text(messages.pop())
+                received.append(await ws.receive_text())
+
+    assert len(received) == 6
