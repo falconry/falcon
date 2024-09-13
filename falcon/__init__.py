@@ -321,7 +321,7 @@ __all__ = (
     'HTTP_UNSUPPORTED_MEDIA_TYPE',
     'HTTP_UPGRADE_REQUIRED',
     'HTTP_USE_PROXY',
-    'HTTP_VARIANT_ALSO_NEGOTIATE',
+    'HTTP_VARIANT_ALSO_NEGOTIATES',
 )
 
 # NOTE(kgriffs,vytas): Hoist classes and functions into the falcon namespace.
@@ -586,7 +586,7 @@ from falcon.status_codes import HTTP_UNPROCESSABLE_ENTITY
 from falcon.status_codes import HTTP_UNSUPPORTED_MEDIA_TYPE
 from falcon.status_codes import HTTP_UPGRADE_REQUIRED
 from falcon.status_codes import HTTP_USE_PROXY
-from falcon.status_codes import HTTP_VARIANT_ALSO_NEGOTIATE
+from falcon.status_codes import HTTP_VARIANT_ALSO_NEGOTIATES
 from falcon.stream import BoundedStream
 
 # NOTE(kgriffs): Ensure that "from falcon import uri" will import

@@ -139,8 +139,8 @@ HTTP_504: Final[str] = '504 Gateway Timeout'
 HTTP_GATEWAY_TIMEOUT: Final[str] = HTTP_504
 HTTP_505: Final[str] = '505 HTTP Version Not Supported'
 HTTP_HTTP_VERSION_NOT_SUPPORTED: Final[str] = HTTP_505
-HTTP_506: Final[str] = '506 Variant Also Negotiate'
-HTTP_VARIANT_ALSO_NEGOTIATE: Final[str] = HTTP_506
+HTTP_506: Final[str] = '506 Variant Also Negotiates'
+HTTP_VARIANT_ALSO_NEGOTIATES: Final[str] = HTTP_506
 HTTP_507: Final[str] = '507 Insufficient Storage'
 HTTP_INSUFFICIENT_STORAGE: Final[str] = HTTP_507
 HTTP_508: Final[str] = '508 Loop Detected'
@@ -386,5 +386,5 @@ __all__ = (
     'HTTP_UNSUPPORTED_MEDIA_TYPE',
     'HTTP_UPGRADE_REQUIRED',
     'HTTP_USE_PROXY',
-    'HTTP_VARIANT_ALSO_NEGOTIATE',
+    'HTTP_VARIANT_ALSO_NEGOTIATES',
 )
