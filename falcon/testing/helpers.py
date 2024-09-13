@@ -785,7 +785,7 @@ class ASGIWebSocketSimulator:
         else:
             assert self.closed
 
-            # NOTE(vytas): Breaking change in Falcon 4.0: we now simulate ASGI
+            # NOTE(vytas): Tweaked in Falcon 4.0: we now simulate ASGI
             #   WebSocket protocol 2.4+, raising an instance of OSError upon
             #   send if the client has already disconnected.
             raise falcon_errors.WebSocketDisconnected(self._close_code)
