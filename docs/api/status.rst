@@ -197,7 +197,7 @@ HTTPStatus
     HTTP_SERVICE_UNAVAILABLE = HTTP_503
     HTTP_GATEWAY_TIMEOUT = HTTP_504
     HTTP_HTTP_VERSION_NOT_SUPPORTED = HTTP_505
-    HTTP_VARIANT_ALSO_NEGOTIATE = HTTP_506
+    HTTP_VARIANT_ALSO_NEGOTIATES = HTTP_506
     HTTP_INSUFFICIENT_STORAGE = HTTP_507
     HTTP_LOOP_DETECTED = HTTP_508
     HTTP_NOT_EXTENDED = HTTP_510
@@ -209,7 +209,7 @@ HTTPStatus
     HTTP_503 = '503 Service Unavailable'
     HTTP_504 = '504 Gateway Timeout'
     HTTP_505 = '505 HTTP Version Not Supported'
-    HTTP_506 = '506 Variant Also Negotiate'
+    HTTP_506 = '506 Variant Also Negotiates'
     HTTP_507 = '507 Insufficient Storage'
     HTTP_508 = '508 Loop Detected'
     HTTP_510 = '510 Not Extended'
