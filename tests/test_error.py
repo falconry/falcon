@@ -19,7 +19,7 @@ from falcon.util.deprecation import DeprecatedWarning
         (falcon.HTTPGone, status.HTTP_410),
         (falcon.HTTPLengthRequired, status.HTTP_411),
         (falcon.HTTPPreconditionFailed, status.HTTP_412),
-        (falcon.HTTPPayloadTooLarge, status.HTTP_413),
+        (falcon.HTTPContentTooLarge, status.HTTP_413),
         (falcon.HTTPUriTooLong, status.HTTP_414),
         (falcon.HTTPUnsupportedMediaType, status.HTTP_415),
         (falcon.HTTPUnprocessableEntity, status.HTTP_422),
@@ -82,7 +82,7 @@ def test_with_default_title_and_desc_args(err, title, args):
         falcon.HTTPGone,
         falcon.HTTPLengthRequired,
         falcon.HTTPPreconditionFailed,
-        falcon.HTTPPayloadTooLarge,
+        falcon.HTTPContentTooLarge,
         falcon.HTTPUriTooLong,
         falcon.HTTPUnsupportedMediaType,
         falcon.HTTPUnprocessableEntity,
@@ -129,7 +129,7 @@ def test_with_title_desc_and_headers(err):
         falcon.HTTPGone,
         falcon.HTTPLengthRequired,
         falcon.HTTPPreconditionFailed,
-        falcon.HTTPPayloadTooLarge,
+        falcon.HTTPContentTooLarge,
         falcon.HTTPUriTooLong,
         falcon.HTTPUnsupportedMediaType,
         falcon.HTTPUnprocessableEntity,
@@ -202,7 +202,7 @@ def test_args_kw_only(err, args):
     [
         falcon.HTTPServiceUnavailable,
         falcon.HTTPTooManyRequests,
-        falcon.HTTPPayloadTooLarge,
+        falcon.HTTPContentTooLarge,
     ],
 )
 def test_with_retry_after(err):
@@ -217,7 +217,7 @@ def test_with_retry_after(err):
     [
         falcon.HTTPServiceUnavailable,
         falcon.HTTPTooManyRequests,
-        falcon.HTTPPayloadTooLarge,
+        falcon.HTTPContentTooLarge,
     ],
 )
 def test_with_retry_after_and_headers(err):
@@ -290,7 +290,7 @@ def test_custom_400(err, args, title, desc):
             'a, b',
             True,
         ),
-        (falcon.HTTPPayloadTooLarge, 'Retry-After', 'retry_after', 123, '123', False),
+        (falcon.HTTPContentTooLarge, 'Retry-After', 'retry_after', 123, '123', False),
         (
             falcon.HTTPRangeNotSatisfiable,
             'Content-Range',

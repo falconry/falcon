@@ -74,7 +74,7 @@ __all__ = (
     'HTTPNotAcceptable',
     'HTTPNotFound',
     'HTTPNotImplemented',
-    'HTTPPayloadTooLarge',
+    'HTTPContentTooLarge',
     'HTTPPreconditionFailed',
     'HTTPPreconditionRequired',
     'HTTPRangeNotSatisfiable',
@@ -952,8 +952,8 @@ class HTTPPreconditionFailed(HTTPError):
         )
 
 
-class HTTPPayloadTooLarge(HTTPError):
-    """413 Payload Too Large.
+class HTTPContentTooLarge(HTTPError):
+    """413 Content Too Large.
 
     The server is refusing to process a request because the request
     payload is larger than the server is willing or able to process.

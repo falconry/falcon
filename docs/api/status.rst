@@ -167,7 +167,7 @@ HTTPStatus
     HTTP_410 = '410 Gone'
     HTTP_411 = '411 Length Required'
     HTTP_412 = '412 Precondition Failed'
-    HTTP_413 = '413 Payload Too Large'
+    HTTP_413 = '413 Content Too Large'
     HTTP_414 = '414 URI Too Long'
     HTTP_415 = '415 Unsupported Media Type'
     HTTP_416 = '416 Range Not Satisfiable'

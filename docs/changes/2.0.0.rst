@@ -168,7 +168,7 @@ Breaking Changes
 - :attr:`~.falcon.RequestOptions.auto_parse_qs_csv` now defaults
   to ``False`` instead of ``True``.
 - The ``HTTPRequestEntityTooLarge`` class was renamed to
-  :class:`~falcon.HTTPPayloadTooLarge`.
+  :class:`~falcon.HTTPContentTooLarge`.
 - Two of the keyword arguments for :meth:`~falcon.Request.get_param_as_int` were
   renamed to avoid shadowing built-in Python names::
 
@@ -364,7 +364,7 @@ Fixed
 - The :meth:`~falcon.testing.TestClient.simulate_request` method now forces
   header values to `str` on Python 2 as required by PEP-3333.
 - The ``HTTPRequestEntityTooLarge`` class was renamed to
-  :class:`~falcon.HTTPPayloadTooLarge` and the reason phrase was updated
+  :class:`~falcon.HTTPContentTooLarge` and the reason phrase was updated
   per RFC 7231.
 - The  :class:`falcon.CaseInsensitiveDict` class now inherits from
   :class:`collections.abc.MutableMapping` under Python 3, instead of
