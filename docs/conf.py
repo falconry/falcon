@@ -99,10 +99,12 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_css_files = ['custom.css']
+html_js_files = ['custom-icons.js']
 html_favicon = '_static/img/favicon.ico'
-html_logo = '_static/img/logo.png'
+html_logo = '_static/img/logo.svg'
 html_static_path = ['_static']
 html_theme = 'pydata_sphinx_theme'
+html_show_sourcelink = False
 
 html_context = {
     'default_mode': 'light',
@@ -121,16 +123,21 @@ html_theme_options = {
             'url': 'https://github.com/falconry/falcon',
             'icon': 'fa-brands fa-github',
         },
-        # TODO(vytas): Somehow fa-pypi doesn't render, but it does on PyData docs?
-        # {
-        #     'name': 'PyPI',
-        #     'url': 'https://pypi.org/project/falcon',
-        #     'icon': 'fa-custom fa-pypi',
-        # },
+        {
+            'name': 'PyPI',
+            'url': 'https://pypi.org/project/falcon',
+            'icon': 'fa-custom fa-pypi',
+        },
     ],
     # NOTE(vytas): Use only light theme for now.
     #   Add `theme-switcher` below to resurrect the dark option.
+    'logo': {
+        'text': 'Falcon',
+        # "image_dark": "_static/img/logo.svg",
+    },
     'navbar_end': ['navbar-icon-links'],
+    'footer_start': ['copyright'],
+    'footer_end': ['theme-version'],
 }
 
 if _dash_build:

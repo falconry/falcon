@@ -1,14 +1,14 @@
 /* Customize the PyData theme's font colors. */
 
-/* Just a minimal prototype mostly ripped off from Bokeh for now. */
+/* Just a minimal prototype partially inspired by Bokeh. */
 html[data-theme=light] {
   --pst-color-borders: rgb(206, 212, 218);
   --pst-color-primary: var(--pst-color-text-base);
   /* Darken Falconry orange to meet WCAG 2.1 AA contrast */
   --pst-color-secondary: rgb(169, 103, 9);
   --pst-color-link: var(--pst-color-secondary);
-  /* match color of "Tip" admonition to Bokeh color scheme */
   --pst-color-success: rgb(165, 205, 57);
   --pst-color-admonition-tip: var(--pst-color-success);
   --pst-color-inline-code: var(--pst-color-text-base);
+  --pst-color-inline-code-links: var(--pst-color-secondary);
 }
