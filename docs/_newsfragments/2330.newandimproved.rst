@@ -1,0 +1,1 @@
+refactor: Replaced :class:`~falcon.HTTPPayloadTooLarge` with :class:`~falcon.HTTPContentTooLarge` to align with the updated class name.

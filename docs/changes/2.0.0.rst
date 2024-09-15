@@ -168,7 +168,7 @@ Breaking Changes
 - :attr:`~.falcon.RequestOptions.auto_parse_qs_csv` now defaults
   to ``False`` instead of ``True``.
 - The ``HTTPRequestEntityTooLarge`` class was renamed to
-  :class:`~falcon.HTTPContentTooLarge`.
+  :class:`~falcon.HTTPPayloadTooLarge`.
 - Two of the keyword arguments for :meth:`~falcon.Request.get_param_as_int` were
   renamed to avoid shadowing built-in Python names::
 
