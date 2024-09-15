@@ -610,4 +610,7 @@ class MultipartParseOptions:
         self.max_body_part_buffer_size = 1024 * 1024
         self.max_body_part_count = 64
         self.max_body_part_headers_size = 8192
-        self.media_handlers = self._DEFAULT_HANDLERS
+        # NOTE(myusko,vytas): Here we create a copy of _DEFAULT_HANDLERS in
+        #   order to prevent the modification of the class variable whenever
+        #   parse_options.media_handlers are customized.
+        self.media_handlers = self._DEFAULT_HANDLERS.copy()
