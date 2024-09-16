@@ -128,6 +128,11 @@ html_theme_options = {
             'url': 'https://pypi.org/project/falcon',
             'icon': 'fa-custom fa-pypi',
         },
+        {
+            'name': 'Falcon Home',
+            'url': 'https://falconframework.org',
+            'icon': 'fa-custom fa-falcon',
+        },
     ],
     # NOTE(vytas): Use only light theme for now.
     #   Add `theme-switcher` below to resurrect the dark option.
