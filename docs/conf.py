@@ -116,6 +116,18 @@ html_context = {
 html_theme_options = {
     'pygments_light_style': 'falconry-light',
     'pygments_dark_style': 'falconry-dark',
+    'header_links_before_dropdown': 4,
+    'external_links': [
+        {
+            'name': 'Get Help',
+            'url': 'https://falcon.readthedocs.io/community/help.html',
+        },
+        {'name': 'Falcon Wiki', 'url': 'https://github.com/falconry/falcon/wiki'},
+        {
+            'name': 'Support Falcon',
+            'url': 'https://falconframework.org/#sectionSupportFalconDevelopment',
+        },
+    ],
     'icon_links': [
         {
             'name': 'GitHub',

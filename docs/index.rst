@@ -127,7 +127,7 @@ Documentation
    :maxdepth: 3
 
    user/index
-   deploy/index
    community/index
    api/index
    changes/index
+   deploy/index
