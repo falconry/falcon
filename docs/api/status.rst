@@ -66,10 +66,12 @@ HTTPStatus
     HTTP_CONTINUE = HTTP_100
     HTTP_SWITCHING_PROTOCOLS = HTTP_101
     HTTP_PROCESSING = HTTP_102
+    HTTP_EARLY_HINTS = HTTP_103
 
     HTTP_100 = '100 Continue'
     HTTP_101 = '101 Switching Protocols'
     HTTP_102 = '102 Processing'
+    HTTP_103 = '103 Early Hints'
 
 2xx Success
 -----------
@@ -145,6 +147,7 @@ HTTPStatus
     HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = HTTP_416
     HTTP_EXPECTATION_FAILED = HTTP_417
     HTTP_IM_A_TEAPOT = HTTP_418
+    HTTP_MISDIRECTED_REQUEST = HTTP_421
     HTTP_UNPROCESSABLE_ENTITY = HTTP_422
     HTTP_LOCKED = HTTP_423
     HTTP_FAILED_DEPENDENCY = HTTP_424
@@ -173,6 +176,7 @@ HTTPStatus
     HTTP_416 = '416 Range Not Satisfiable'
     HTTP_417 = '417 Expectation Failed'
     HTTP_418 = "418 I'm a teapot"
+    HTTP_421 = '421 Misdirected Request'
     HTTP_422 = "422 Unprocessable Entity"
     HTTP_423 = '423 Locked'
     HTTP_424 = '424 Failed Dependency'
@@ -193,8 +197,10 @@ HTTPStatus
     HTTP_SERVICE_UNAVAILABLE = HTTP_503
     HTTP_GATEWAY_TIMEOUT = HTTP_504
     HTTP_HTTP_VERSION_NOT_SUPPORTED = HTTP_505
+    HTTP_VARIANT_ALSO_NEGOTIATES = HTTP_506
     HTTP_INSUFFICIENT_STORAGE = HTTP_507
     HTTP_LOOP_DETECTED = HTTP_508
+    HTTP_NOT_EXTENDED = HTTP_510
     HTTP_NETWORK_AUTHENTICATION_REQUIRED = HTTP_511
 
     HTTP_500 = '500 Internal Server Error'
@@ -203,6 +209,8 @@ HTTPStatus
     HTTP_503 = '503 Service Unavailable'
     HTTP_504 = '504 Gateway Timeout'
     HTTP_505 = '505 HTTP Version Not Supported'
+    HTTP_506 = '506 Variant Also Negotiates'
     HTTP_507 = '507 Insufficient Storage'
     HTTP_508 = '508 Loop Detected'
+    HTTP_510 = '510 Not Extended'
     HTTP_511 = '511 Network Authentication Required'
