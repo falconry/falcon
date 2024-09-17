@@ -1,5 +1,6 @@
 import asyncio
 from collections import deque
+import functools
 import os
 
 import pytest
@@ -948,36 +949,77 @@ async def test_translate_webserver_error(conductor):
         async def on_websocket(self, req, ws):
             await ws.accept()
 
-            async def raise_disconnect(self):
+            async def raise_disconnect(event):
                 raise Exception('Disconnected with code = 1000 (OK)')
 
-            async def raise_protocol_mismatch(self):
+            async def raise_io_error(event, cause=''):
+                class ConnectionClosed(RuntimeError):
+                    pass
+
+                class ClientDisconnected(OSError):
+                    pass
+
+                if cause:
+                    raise ClientDisconnected() from ConnectionClosed(cause)
+                raise ClientDisconnected()
+
+            async def raise_protocol_mismatch(event):
                 raise Exception('protocol accepted must be from the list')
 
-            async def raise_other(self):
+            async def raise_other(event):
                 raise RuntimeError()
 
+            # TODO(vytas): It would be nice to somehow refactor this test not
+            #   to operate on the private members of WebSocket.
+            #   But, OTOH, it is quite useful as it is.
             _asgi_send = ws._asgi_send
+            _original_state = ws._state
 
             ws._asgi_send = raise_other
+            ws._state = _original_state
             try:
                 await ws.send_data(b'123')
             except Exception:
                 self.error_count += 1
 
             ws._asgi_send = raise_protocol_mismatch
+            ws._state = _original_state
             try:
                 await ws.send_data(b'123')
             except ValueError:
                 self.error_count += 1
 
             ws._asgi_send = raise_disconnect
+            ws._state = _original_state
             try:
                 await ws.send_data(b'123')
             except falcon.WebSocketDisconnected:
                 self.error_count += 1
 
+            ws._asgi_send = raise_io_error
+            ws._state = _original_state
+            try:
+                await ws.send_data(b'123')
+            except falcon.WebSocketDisconnected:
+                self.error_count += 1
+
+            ws._asgi_send = functools.partial(raise_io_error, cause='bork3d pipe')
+            ws._state = _original_state
+            try:
+                await ws.send_data(b'123')
+            except falcon.WebSocketDisconnected:
+                self.error_count += 1
+
+            ws._asgi_send = functools.partial(raise_io_error, cause='received 1001')
+            ws._state = _original_state
+            try:
+                await ws.send_data(b'123')
+            except falcon.WebSocketDisconnected:
+                self.error_count += 1
+            assert ws._close_code == 1001
+
             ws._asgi_send = _asgi_send
+            ws._state = _original_state
 
             self.test_complete.set()
 
@@ -987,6 +1029,8 @@ async def test_translate_webserver_error(conductor):
     async with conductor as c:
         async with c.simulate_ws():
             await resource.test_complete.wait()
+
+    assert resource.error_count == 6
 
 
 def test_ws_base_not_implemented():
@@ -1062,10 +1106,11 @@ async def test_ws_simulator_collect_edge_cases(conductor):
 
         await ws.close()
 
-        # NOTE(kgriffs): The collector should just eat all subsequent events
-        #   returned from the ASGI app.
-        for __ in range(100):
-            await ws._collect({'type': EventType.WS_SEND})
+        # NOTE(vytas): The collector should start raising an instance of
+        #   OSError from now on per the ASGI WS spec ver 2.4+.
+        for __ in range(10):
+            with pytest.raises(OSError):
+                await ws._collect({'type': EventType.WS_SEND})
 
         assert not ws._collected_server_events
 
@@ -1372,3 +1417,43 @@ async def test_ws_http_error_or_status_error_handler(
                 async with c.simulate_ws():
                     pass
             assert err.value.code == exp_code
+
+
+@pytest.mark.parametrize('max_receive_queue', [0, 1, 4, 7, 17])
+async def test_max_receive_queue_sizes(conductor, max_receive_queue):
+    class Chat:
+        async def on_websocket(self, req, ws, user):
+            await ws.accept()
+
+            broadcast = [
+                '[Guest123] ping',
+                '[John F. Barbaz] Hi everyone.',
+                f'Hello, {user}!',
+            ]
+
+            while True:
+                await ws.send_text(broadcast.pop())
+
+                msg = await ws.receive_text()
+                if msg == '/quit':
+                    await ws.send_text('Bye!')
+                    await ws.close(reason='Received /quit')
+                    break
+                else:
+                    await ws.send_text(f'[{user}] {msg}')
+
+    conductor.app.ws_options.max_receive_queue = max_receive_queue
+    conductor.app.add_route('/chat/{user}', Chat())
+
+    received = []
+    messages = ['/quit', 'I have to leave this test soon.', 'Hello!']
+
+    async with conductor as c:
+        async with c.simulate_ws('/chat/foobarer') as ws:
+            while messages:
+                received.append(await ws.receive_text())
+
+                await ws.send_text(messages.pop())
+                received.append(await ws.receive_text())
+
+    assert len(received) == 6
