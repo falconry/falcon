@@ -26,9 +26,9 @@ Zero configuration is needed if you're creating a JSON API. Simply use
 :attr:`~falcon.asgi.Response.media` (ASGI) to let Falcon
 do the heavy lifting for you.
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -52,7 +52,7 @@ do the heavy lifting for you.
                     resp.media = {'message': message}
                     resp.status = falcon.HTTP_200
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -109,9 +109,9 @@ response.
 If you do need full negotiation, it is very easy to bridge the gap using
 middleware. Here is an example of how this can be done:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -121,7 +121,7 @@ middleware. Here is an example of how this can be done:
                 def process_request(self, req: Request, resp: Response) -> None:
                     resp.content_type = req.accept
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 

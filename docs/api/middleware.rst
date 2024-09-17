@@ -18,9 +18,9 @@ when instantiating Falcon's :ref:`App class <app>`. A middleware component
 is simply a class that implements one or more of the event handler methods
 defined below.
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         Falcon's middleware interface is defined as follows:
 
@@ -96,7 +96,7 @@ defined below.
 
             app = App(middleware=[ExampleMiddleware()])
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         The ASGI middleware interface is similar to WSGI, but also supports the
         standard ASGI lifespan events. However, because lifespan events are an

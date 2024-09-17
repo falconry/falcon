@@ -48,9 +48,9 @@ To customize what data is passed to the serializer, subclass
 
 All classes are available directly in the ``falcon`` package namespace:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -68,7 +68,7 @@ All classes are available directly in the ``falcon`` package namespace:
 
                     # -- snip --
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
