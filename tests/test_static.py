@@ -10,6 +10,7 @@ import falcon
 from falcon.routing import StaticRoute
 from falcon.routing import StaticRouteAsync
 from falcon.routing.static import _BoundedFile
+from falcon.routing.static import _generate_etag
 import falcon.testing as testing
 
 
@@ -57,8 +58,9 @@ def patch_open(monkeypatch):
                 pass
 
             class FakeStat:
-                def __init__(self, size):
+                def __init__(self, size, mtime):
                     self.st_size = size
+                    self.st_mtime = mtime
 
             if validate:
                 validate(path)
@@ -66,7 +68,7 @@ def patch_open(monkeypatch):
             data = path.encode() if content is None else content
             fake_file = io.BytesIO(data)
             fd = FakeFD(1337)
-            fd._stat = FakeStat(len(data))
+            fd._stat = FakeStat(len(data), 1297230027)
             fake_file.fileno = lambda: fd
 
             patch.current_file = fake_file
@@ -277,6 +279,10 @@ def test_range_requests(
     monkeypatch,
     use_fallback,
 ):
+    monkeypatch.setattr(
+        'falcon.routing.static._generate_etag', lambda path: '"fixed-etag"'
+    )
+
     def validate(path):
         if use_fallback and not path.endswith('index.html'):
             raise OSError(errno.ENOENT, 'File not found')
@@ -441,7 +447,11 @@ def test_downloadable(client, patch_open):
     assert 'Content-Disposition' not in response.headers
 
 
-def test_downloadable_not_found(client):
+def test_downloadable_not_found(client, monkeypatch):
+    monkeypatch.setattr(
+        'falcon.routing.static._generate_etag', lambda path: '"fixed-etag"'
+    )
+
     client.app.add_static_route(
         '/downloads', '/opt/somesite/downloads', downloadable=True
     )
@@ -479,6 +489,10 @@ def test_fallback_filename(
     patch_open,
     monkeypatch,
 ):
+    monkeypatch.setattr(
+        'falcon.routing.static._generate_etag', lambda path: '"fixed-etag"'
+    )
+
     def validate(path):
         if normalize_path(default) not in path:
             raise IOError()
@@ -537,6 +551,10 @@ def test_fallback_filename(
 def test_e2e_fallback_filename(
     client, patch_open, monkeypatch, strip_slash, path, fallback, static_exp, assert_axp
 ):
+    monkeypatch.setattr(
+        'falcon.routing.static._generate_etag', lambda path: '"fixed-etag"'
+    )
+
     def validate(path):
         if 'index' not in path or 'raise' in path:
             raise IOError()
@@ -617,3 +635,62 @@ def test_file_closed(client, patch_open):
 
     assert patch_open.current_file is not None
     assert patch_open.current_file.closed
+
+
+def test_render_etag_header(client, patch_open):
+    patch_open(b'0123456789abcdef')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    response = client.simulate_request(path='/downloads/thing.zip')
+
+    assert response.status == falcon.HTTP_200
+    assert response.headers.get('Etag') is not None
+
+
+def test_renders_the_same_etag_header_when_file_does_not_change(client, patch_open):
+    patch_open(b'0123456789abcdef')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    response = client.simulate_request(path='/downloads/thing.zip')
+
+    assert response.status == falcon.HTTP_200
+    assert response.headers.get('Etag') is not None
+
+    first_etag = response.headers.get('Etag')
+
+    response = client.simulate_request(path='/downloads/thing.zip')
+
+    assert response.status == falcon.HTTP_200
+    assert response.headers.get('Etag') is not None
+
+    second_etag = response.headers.get('Etag')
+
+    assert first_etag == second_etag
+
+
+def test_if_none_match_header_when_etag_has_not_changed(client, patch_open):
+    patch_open(b'0123456789abcdef')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    expected_etag = _generate_etag('/downloads/thing.zip')
+
+    response = client.simulate_request(
+        path='/downloads/thing.zip', headers={'If-None-Match': expected_etag}
+    )
+    assert response.status == falcon.HTTP_304
+    assert response.text == ''
+
+
+def test_if_none_match_header_when_etag_has_changed(client, patch_open):
+    patch_open(b'0123456789abcdef')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    response = client.simulate_request(
+        path='/downloads/thing.zip', headers={'If-None-Match': 'outdated etag'}
+    )
+    assert response.status == falcon.HTTP_200
+    assert response.headers.get('Etag') is not None

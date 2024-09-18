@@ -70,6 +70,21 @@ def _open_range(
     return _BoundedFile(fh, length), length, (start, end, size)
 
 
+def _generate_etag(file_path: str) -> falcon.ETag:
+    """Generate an Etag for a file under a given path.
+
+    Args:
+        file_path (str): Path to the file the ETag should be generated for.
+
+    Returns:
+        falcon.ETag: ETag generated for the file using its modification time and size.
+    """
+    fh = io.open(file_path, 'rb')
+    content_length = os.fstat(fh.fileno()).st_size
+    last_modified_time = os.fstat(fh.fileno()).st_mtime
+    return falcon.ETag(f'"{int(last_modified_time):X}-{content_length:X}"')
+
+
 class _BoundedFile:
     """Wrap a file to only allow part of it to be read.
 
@@ -211,35 +226,46 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
+        etag = _generate_etag(file_path)
+        if req.get_header('If-None-Match') == etag:
+            resp.status = falcon.HTTP_304
+            resp.content_type = None
+            resp.text = None
+
         req_range = req.range
         if req.range_unit != 'bytes':
             req_range = None
-        try:
-            stream, length, content_range = _open_range(file_path, req_range)
-            resp.set_stream(stream, length)
-        except IOError:
-            if self._fallback_filename is None:
-                raise falcon.HTTPNotFound()
-            try:
-                stream, length, content_range = _open_range(
-                    self._fallback_filename, req_range
-                )
-                resp.set_stream(stream, length)
-                file_path = self._fallback_filename
-            except IOError:
-                raise falcon.HTTPNotFound()
 
-        suffix = os.path.splitext(file_path)[1]
-        resp.content_type = resp.options.static_media_types.get(
-            suffix, 'application/octet-stream'
-        )
-        resp.accept_ranges = 'bytes'
+        if resp.status != falcon.HTTP_304:
+            try:
+                stream, length, content_range = _open_range(file_path, req_range)
+                resp.set_stream(stream, length)
+            except IOError:
+                if self._fallback_filename is None:
+                    raise falcon.HTTPNotFound()
+                try:
+                    stream, length, content_range = _open_range(
+                        self._fallback_filename, req_range
+                    )
+                    resp.set_stream(stream, length)
+                    file_path = self._fallback_filename
+                except IOError:
+                    raise falcon.HTTPNotFound()
+
+            suffix = os.path.splitext(file_path)[1]
+            resp.content_type = resp.options.static_media_types.get(
+                suffix, 'application/octet-stream'
+            )
+            resp.accept_ranges = 'bytes'
+
+            if content_range:
+                resp.status = falcon.HTTP_206
+                resp.content_range = content_range
+
+        resp.set_header('ETag', etag)
 
         if self._downloadable:
             resp.downloadable_as = os.path.basename(file_path)
-        if content_range:
-            resp.status = falcon.HTTP_206
-            resp.content_range = content_range
 
 
 class StaticRouteAsync(StaticRoute):
