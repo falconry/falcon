@@ -106,11 +106,13 @@ html_theme = 'pydata_sphinx_theme'
 html_show_sourcelink = False
 
 html_context = {
-    'default_mode': 'light',
+    # NOTE(vytas): We don't provide any default, the browser's preference
+    # should be used.
+    # 'default_mode': 'light',
     'prerelease': _prerelease_version,  # True if tag is not the empty string
 }
 
-# Theme options are theme-specific and customize the look and feel of a theme further.
+# Theme options are theme-specific and customize the look and feel further.
 # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/index.html
 
 html_theme_options = {
@@ -151,7 +153,7 @@ html_theme_options = {
         'text': 'Falcon',
         # "image_dark": "_static/img/logo.svg",
     },
-    'navbar_end': ['navbar-icon-links'],
+    'navbar_end': ['theme-switcher', 'navbar-icon-links'],
     'footer_start': ['copyright'],
     'footer_end': ['theme-version'],
 }

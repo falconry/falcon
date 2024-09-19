@@ -1,6 +1,6 @@
 /* Customize the PyData theme's font colors. */
 
-/* Just a minimal prototype partially inspired by Bokeh. */
+/* Some ideas partially inspired by Bokeh docs. */
 html[data-theme=light] {
   --pst-color-borders: rgb(206, 212, 218);
   --pst-color-primary: var(--pst-color-text-base);
@@ -11,4 +11,16 @@ html[data-theme=light] {
   --pst-color-admonition-tip: var(--pst-color-success);
   --pst-color-inline-code: var(--pst-color-text-base);
   --pst-color-inline-code-links: var(--pst-color-secondary);
+  --pst-color-surface: rgb(255, 250, 234);
+}
+
+html[data-theme=dark] {
+  --pst-color-primary: var(--pst-color-text-base);
+  --pst-color-secondary: rgb(240, 173, 78);
+  --pst-color-link: var(--pst-color-secondary);
+  --pst-color-inline-code: var(--pst-color-text-base);
+  --pst-color-inline-code-links: var(--pst-color-secondary);
+  --pst-color-background: rgb(8, 6, 2);
+  --pst-color-on-background: rgb(39, 37, 35);
+  --pst-color-surface: rgb(31, 31, 31);
 }
