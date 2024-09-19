@@ -3,8 +3,6 @@
 WebSocket (ASGI Only)
 =====================
 
-.. contents:: :local:
-
 Falcon builds upon the
 `ASGI WebSocket Specification <https://asgi.readthedocs.io/en/latest/specs/www.html#websocket>`_
 to provide a simple, no-nonsense WebSocket server implementation.

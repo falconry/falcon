@@ -3,8 +3,6 @@
 Testing Helpers
 ===============
 
-.. contents:: :local:
-
 .. automodule:: falcon.testing
     :noindex:
 

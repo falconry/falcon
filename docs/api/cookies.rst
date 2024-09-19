@@ -3,8 +3,6 @@
 Cookies
 -------
 
-.. contents:: :local:
-
 .. _getting-cookies:
 
 Getting Cookies

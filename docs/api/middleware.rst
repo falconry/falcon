@@ -3,8 +3,6 @@
 Middleware
 ==========
 
-.. contents:: :local:
-
 Middleware components provide a way to execute logic before the
 framework routes each request, after each request is routed but before
 the target responder is called, or just before the response is returned

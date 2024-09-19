@@ -3,8 +3,6 @@
 Routing
 =======
 
-.. contents:: :local:
-
 Falcon uses resource-based routing to encourage a RESTful architectural style.
 Each resource is represented by a class that is responsible for handling all of
 the HTTP methods that the resource supports.

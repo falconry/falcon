@@ -3,8 +3,6 @@
 FAQ
 ===
 
-.. contents:: :local:
-
 Design Philosophy
 ~~~~~~~~~~~~~~~~~
 

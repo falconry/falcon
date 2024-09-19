@@ -3,8 +3,6 @@
 Utilities
 =========
 
-.. contents:: :local:
-
 URI
 ---
 

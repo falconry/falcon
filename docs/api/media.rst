@@ -3,8 +3,6 @@
 Media
 =====
 
-.. contents:: :local:
-
 Falcon allows for easy and customizable internet media type handling. By
 default Falcon only enables handlers for JSON and HTML (URL-encoded and
 multipart) forms. However, additional handlers can be configured through the

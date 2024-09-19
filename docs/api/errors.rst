@@ -3,8 +3,6 @@
 Error Handling
 ==============
 
-.. contents:: :local:
-
 When it comes to error handling, you can always directly set the error
 status, appropriate response headers, and error body using the ``resp``
 object. However, Falcon tries to make things a little easier by
