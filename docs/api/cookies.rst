@@ -3,6 +3,8 @@
 Cookies
 -------
 
+This page describes the API provided by Falcon to manipulate cookies.
+
 .. _getting-cookies:
 
 Getting Cookies

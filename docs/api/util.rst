@@ -3,6 +3,8 @@
 Utilities
 =========
 
+This page describes miscellaneous utilities provided by Falcon.
+
 URI
 ---
 
