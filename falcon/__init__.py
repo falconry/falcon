@@ -153,6 +153,7 @@ __all__ = (
     'HTTP_100',
     'HTTP_101',
     'HTTP_102',
+    'HTTP_103',
     'HTTP_200',
     'HTTP_201',
     'HTTP_202',
@@ -190,9 +191,11 @@ __all__ = (
     'HTTP_416',
     'HTTP_417',
     'HTTP_418',
+    'HTTP_421',
     'HTTP_422',
     'HTTP_423',
     'HTTP_424',
+    'HTTP_425',
     'HTTP_426',
     'HTTP_428',
     'HTTP_429',
@@ -204,8 +207,10 @@ __all__ = (
     'HTTP_503',
     'HTTP_504',
     'HTTP_505',
+    'HTTP_506',
     'HTTP_507',
     'HTTP_508',
+    'HTTP_510',
     'HTTP_511',
     'HTTP_701',
     'HTTP_702',
@@ -261,6 +266,7 @@ __all__ = (
     'HTTP_CONFLICT',
     'HTTP_CONTINUE',
     'HTTP_CREATED',
+    'HTTP_EARLY_HINTS',
     'HTTP_EXPECTATION_FAILED',
     'HTTP_FAILED_DEPENDENCY',
     'HTTP_FORBIDDEN',
@@ -276,12 +282,14 @@ __all__ = (
     'HTTP_LOCKED',
     'HTTP_LOOP_DETECTED',
     'HTTP_METHOD_NOT_ALLOWED',
+    'HTTP_MISDIRECTED_REQUEST',
     'HTTP_MOVED_PERMANENTLY',
     'HTTP_MULTIPLE_CHOICES',
     'HTTP_MULTI_STATUS',
     'HTTP_NETWORK_AUTHENTICATION_REQUIRED',
     'HTTP_NON_AUTHORITATIVE_INFORMATION',
     'HTTP_NOT_ACCEPTABLE',
+    'HTTP_NOT_EXTENDED',
     'HTTP_NOT_FOUND',
     'HTTP_NOT_IMPLEMENTED',
     'HTTP_NOT_MODIFIED',
@@ -304,6 +312,7 @@ __all__ = (
     'HTTP_SERVICE_UNAVAILABLE',
     'HTTP_SWITCHING_PROTOCOLS',
     'HTTP_TEMPORARY_REDIRECT',
+    'HTTP_TOO_EARLY',
     'HTTP_TOO_MANY_REQUESTS',
     'HTTP_UNAUTHORIZED',
     'HTTP_UNAVAILABLE_FOR_LEGAL_REASONS',
@@ -311,6 +320,7 @@ __all__ = (
     'HTTP_UNSUPPORTED_MEDIA_TYPE',
     'HTTP_UPGRADE_REQUIRED',
     'HTTP_USE_PROXY',
+    'HTTP_VARIANT_ALSO_NEGOTIATES',
 )
 
 # NOTE(kgriffs,vytas): Hoist classes and functions into the falcon namespace.
@@ -408,6 +418,7 @@ from falcon.response import ResponseOptions
 from falcon.status_codes import HTTP_100
 from falcon.status_codes import HTTP_101
 from falcon.status_codes import HTTP_102
+from falcon.status_codes import HTTP_103
 from falcon.status_codes import HTTP_200
 from falcon.status_codes import HTTP_201
 from falcon.status_codes import HTTP_202
@@ -445,9 +456,11 @@ from falcon.status_codes import HTTP_415
 from falcon.status_codes import HTTP_416
 from falcon.status_codes import HTTP_417
 from falcon.status_codes import HTTP_418
+from falcon.status_codes import HTTP_421
 from falcon.status_codes import HTTP_422
 from falcon.status_codes import HTTP_423
 from falcon.status_codes import HTTP_424
+from falcon.status_codes import HTTP_425
 from falcon.status_codes import HTTP_426
 from falcon.status_codes import HTTP_428
 from falcon.status_codes import HTTP_429
@@ -459,8 +472,10 @@ from falcon.status_codes import HTTP_502
 from falcon.status_codes import HTTP_503
 from falcon.status_codes import HTTP_504
 from falcon.status_codes import HTTP_505
+from falcon.status_codes import HTTP_506
 from falcon.status_codes import HTTP_507
 from falcon.status_codes import HTTP_508
+from falcon.status_codes import HTTP_510
 from falcon.status_codes import HTTP_511
 from falcon.status_codes import HTTP_701
 from falcon.status_codes import HTTP_702
@@ -516,6 +531,7 @@ from falcon.status_codes import HTTP_BAD_REQUEST
 from falcon.status_codes import HTTP_CONFLICT
 from falcon.status_codes import HTTP_CONTINUE
 from falcon.status_codes import HTTP_CREATED
+from falcon.status_codes import HTTP_EARLY_HINTS
 from falcon.status_codes import HTTP_EXPECTATION_FAILED
 from falcon.status_codes import HTTP_FAILED_DEPENDENCY
 from falcon.status_codes import HTTP_FORBIDDEN
@@ -531,6 +547,7 @@ from falcon.status_codes import HTTP_LENGTH_REQUIRED
 from falcon.status_codes import HTTP_LOCKED
 from falcon.status_codes import HTTP_LOOP_DETECTED
 from falcon.status_codes import HTTP_METHOD_NOT_ALLOWED
+from falcon.status_codes import HTTP_MISDIRECTED_REQUEST
 from falcon.status_codes import HTTP_MOVED_PERMANENTLY
 from falcon.status_codes import HTTP_MULTI_STATUS
 from falcon.status_codes import HTTP_MULTIPLE_CHOICES
@@ -538,6 +555,7 @@ from falcon.status_codes import HTTP_NETWORK_AUTHENTICATION_REQUIRED
 from falcon.status_codes import HTTP_NO_CONTENT
 from falcon.status_codes import HTTP_NON_AUTHORITATIVE_INFORMATION
 from falcon.status_codes import HTTP_NOT_ACCEPTABLE
+from falcon.status_codes import HTTP_NOT_EXTENDED
 from falcon.status_codes import HTTP_NOT_FOUND
 from falcon.status_codes import HTTP_NOT_IMPLEMENTED
 from falcon.status_codes import HTTP_NOT_MODIFIED
@@ -559,6 +577,7 @@ from falcon.status_codes import HTTP_SEE_OTHER
 from falcon.status_codes import HTTP_SERVICE_UNAVAILABLE
 from falcon.status_codes import HTTP_SWITCHING_PROTOCOLS
 from falcon.status_codes import HTTP_TEMPORARY_REDIRECT
+from falcon.status_codes import HTTP_TOO_EARLY
 from falcon.status_codes import HTTP_TOO_MANY_REQUESTS
 from falcon.status_codes import HTTP_UNAUTHORIZED
 from falcon.status_codes import HTTP_UNAVAILABLE_FOR_LEGAL_REASONS
@@ -566,6 +585,7 @@ from falcon.status_codes import HTTP_UNPROCESSABLE_ENTITY
 from falcon.status_codes import HTTP_UNSUPPORTED_MEDIA_TYPE
 from falcon.status_codes import HTTP_UPGRADE_REQUIRED
 from falcon.status_codes import HTTP_USE_PROXY
+from falcon.status_codes import HTTP_VARIANT_ALSO_NEGOTIATES
 from falcon.stream import BoundedStream
 
 # NOTE(kgriffs): Ensure that "from falcon import uri" will import

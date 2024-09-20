@@ -249,7 +249,7 @@ class StaticRouteAsync(StaticRoute):
         super().__call__(req, resp, **kw)
 
         # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking
-        resp.stream = _AsyncFileReader(resp.stream)
+        resp.stream = _AsyncFileReader(resp.stream)  # type: ignore[assignment,arg-type]
 
 
 class _AsyncFileReader:
@@ -259,8 +259,8 @@ class _AsyncFileReader:
         self._file = file
         self._loop = asyncio.get_running_loop()
 
-    async def read(self, size=-1):
+    async def read(self, size: int = -1) -> bytes:
         return await self._loop.run_in_executor(None, partial(self._file.read, size))
 
-    async def close(self):
+    async def close(self) -> None:
         await self._loop.run_in_executor(None, self._file.close)

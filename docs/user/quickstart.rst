@@ -13,9 +13,10 @@ Learning by Example
 Here is a simple example from Falcon's README, showing how to get
 started writing an app.
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         .. literalinclude:: ../../examples/things.py
             :language: python
@@ -41,7 +42,8 @@ started writing an app.
             $ pip install --upgrade httpie
             $ http localhost:8000/things
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         .. literalinclude:: ../../examples/things_asgi.py
             :language: python
@@ -75,9 +77,10 @@ A More Complex Example
 Here is a more involved example that demonstrates reading headers and query
 parameters, handling errors, and working with request and response bodies.
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         Note that this example assumes that the
         `requests <https://pypi.org/project/requests/>`_ package has been installed.
@@ -135,7 +138,8 @@ parameters, handling errors, and working with request and response bodies.
             • Error handlers:
                 ⇜ StorageError handle
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         Note that this example requires the
         `httpx <https://pypi.org/project/httpx/>`_ package in lieu of
