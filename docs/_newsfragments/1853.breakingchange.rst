@@ -3,9 +3,15 @@ removed:
 
 * A deprecated utility function, ``falcon.get_http_status()``, was removed.
   Please use :meth:`falcon.code_to_http_status` instead.
+
 * The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError`
   was removed, along with the ``NoRepresentation`` and
   ``OptionalRepresentation`` classes.
+
+* Previously, the ``json`` module could be imported via ``falcon.util``.
+  This deprecated alias was removed; please import ``json`` directly from the
+  :mod:`standard library <json>`, or another third-party JSON library of
+  choice.
 
 We decided, on the other hand, to keep the deprecated :class:`falcon.API` alias
 until Falcon 5.0.

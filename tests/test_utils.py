@@ -1391,14 +1391,6 @@ class TestDeprecatedArgs:
         assert 'a_function(...)' in str(recwarn[0].message)
 
 
-def test_json_deprecation():
-    with pytest.warns(deprecation.DeprecatedWarning, match='json'):
-        falcon.util.json
-
-    with pytest.raises(AttributeError):
-        falcon.util.some_imaginary_module
-
-
 def test_TimezoneGMT():
     with pytest.warns(deprecation.DeprecatedWarning):
         tz = TimezoneGMT()

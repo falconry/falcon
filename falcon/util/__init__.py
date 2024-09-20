@@ -79,18 +79,3 @@ except ImportError:
 BufferedReader = (
     (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
 )
-
-
-def __getattr__(name: str) -> ModuleType:
-    if name == 'json':
-        import json  # NOQA
-        import warnings
-
-        warnings.warn(
-            'Importing json from "falcon.util" is deprecated.', DeprecatedWarning
-        )
-        return json
-
-    # fallback to the default implementation
-    mod = sys.modules[__name__]
-    return ModuleType.__getattr__(mod, name)
