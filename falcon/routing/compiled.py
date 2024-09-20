@@ -240,7 +240,7 @@ class CompiledRouter:
             else:
                 return None
 
-        def insert(nodes: List[CompiledRouterNode], path_index: int = 0):
+        def insert(nodes: List[CompiledRouterNode], path_index: int = 0) -> None:
             for node in nodes:
                 segment = path[path_index]
                 if node.matches(segment):
@@ -351,12 +351,7 @@ class CompiledRouter:
             #   issue.
             if not iscoroutinefunction(responder) and is_python_func(responder):
                 if _should_wrap_non_coroutines():
-
-                    def let(responder=responder):
-                        method_map[method] = wrap_sync_to_async(responder)
-
-                    let()
-
+                    method_map[method] = wrap_sync_to_async(responder)
                 else:
                     msg = (
                         'The {} responder must be a non-blocking '
@@ -515,12 +510,13 @@ class CompiledRouter:
 
                 else:
                     # NOTE(kgriffs): Simple nodes just capture the entire path
-                    # segment as the value for the param.
+                    # segment as the value for the param. They have a var_name defined
 
+                    field_name = node.var_name
+                    assert field_name is not None
                     if node.var_converter_map:
                         assert len(node.var_converter_map) == 1
 
-                        field_name = node.var_name
                         __, converter_name, converter_argstr = node.var_converter_map[0]
                         converter_class = self._converter_map[converter_name]
 
@@ -547,7 +543,7 @@ class CompiledRouter:
                         parent.append_child(cx_converter)
                         parent = cx_converter
                     else:
-                        params_stack.append(_CxSetParamFromPath(node.var_name, level))
+                        params_stack.append(_CxSetParamFromPath(field_name, level))
 
                     # NOTE(kgriffs): We don't allow multiple simple var nodes
                     # to exist at the same level, e.g.:
@@ -745,7 +741,7 @@ class CompiledRouterNode:
         method_map: Optional[MethodDict] = None,
         resource: Optional[object] = None,
         uri_template: Optional[str] = None,
-    ):
+    ) -> None:
         self.children: List[CompiledRouterNode] = []
 
         self.raw_segment = raw_segment
@@ -833,12 +829,12 @@ class CompiledRouterNode:
         if self.is_complex:
             assert self.is_var
 
-    def matches(self, segment: str):
+    def matches(self, segment: str) -> bool:
         """Return True if this node matches the supplied template segment."""
 
         return segment == self.raw_segment
 
-    def conflicts_with(self, segment: str):
+    def conflicts_with(self, segment: str) -> bool:
         """Return True if this node conflicts with a given template segment."""
 
         # NOTE(kgriffs): This method assumes that the caller has already
@@ -900,11 +896,11 @@ class ConverterDict(UserDict):
 
     data: Dict[str, Type[converters.BaseConverter]]
 
-    def __setitem__(self, name, converter):
+    def __setitem__(self, name: str, converter: Type[converters.BaseConverter]) -> None:
         self._validate(name)
         UserDict.__setitem__(self, name, converter)
 
-    def _validate(self, name):
+    def _validate(self, name: str) -> None:
         if not _IDENTIFIER_PATTERN.match(name):
             raise ValueError(
                 'Invalid converter name. Names may not be blank, and may '
@@ -948,14 +944,14 @@ class CompiledRouterOptions:
 
     __slots__ = ('converters',)
 
-    def __init__(self):
+    def __init__(self) -> None:
         object.__setattr__(
             self,
             'converters',
             ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
 
-    def __setattr__(self, name, value) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name == 'converters':
             raise AttributeError('Cannot set "converters", please update it in place.')
         super().__setattr__(name, value)
@@ -978,13 +974,13 @@ class _CxParent:
     def __init__(self) -> None:
         self._children: List[_CxElement] = []
 
-    def append_child(self, construct: _CxElement):
+    def append_child(self, construct: _CxElement) -> None:
         self._children.append(construct)
 
     def src(self, indentation: int) -> str:
         return self._children_src(indentation + 1)
 
-    def _children_src(self, indentation):
+    def _children_src(self, indentation: int) -> str:
         src_lines = [child.src(indentation) for child in self._children]
 
         return '\n'.join(src_lines)
@@ -997,12 +993,12 @@ class _CxChild:
 
 
 class _CxIfPathLength(_CxParent):
-    def __init__(self, comparison, length):
+    def __init__(self, comparison: str, length: int) -> None:
         super().__init__()
         self._comparison = comparison
         self._length = length
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         template = '{0}if path_len {1} {2}:\n{3}'
         return template.format(
             _TAB_STR * indentation,
@@ -1013,12 +1009,12 @@ class _CxIfPathLength(_CxParent):
 
 
 class _CxIfPathSegmentLiteral(_CxParent):
-    def __init__(self, segment_idx, literal):
+    def __init__(self, segment_idx: int, literal: str) -> None:
         super().__init__()
         self._segment_idx = segment_idx
         self._literal = literal
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         template = "{0}if path[{1}] == '{2}':\n{3}"
         return template.format(
             _TAB_STR * indentation,
@@ -1029,13 +1025,13 @@ class _CxIfPathSegmentLiteral(_CxParent):
 
 
 class _CxIfPathSegmentPattern(_CxParent):
-    def __init__(self, segment_idx, pattern_idx, pattern_text):
+    def __init__(self, segment_idx: int, pattern_idx: int, pattern_text: str) -> None:
         super().__init__()
         self._segment_idx = segment_idx
         self._pattern_idx = pattern_idx
         self._pattern_text = pattern_text
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         lines = [
             '{0}match = patterns[{1}].match(path[{2}])  # {3}'.format(
                 _TAB_STR * indentation,
@@ -1051,13 +1047,13 @@ class _CxIfPathSegmentPattern(_CxParent):
 
 
 class _CxIfConverterField(_CxParent):
-    def __init__(self, unique_idx, converter_idx):
+    def __init__(self, unique_idx: int, converter_idx: int) -> None:
         super().__init__()
         self._converter_idx = converter_idx
         self._unique_idx = unique_idx
         self.field_variable_name = 'field_value_{0}'.format(unique_idx)
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         lines = [
             '{0}{1} = converters[{2}].convert(fragment)'.format(
                 _TAB_STR * indentation,
@@ -1074,10 +1070,10 @@ class _CxIfConverterField(_CxParent):
 
 
 class _CxSetFragmentFromField(_CxChild):
-    def __init__(self, field_name):
+    def __init__(self, field_name: str) -> None:
         self._field_name = field_name
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return "{0}fragment = groups.pop('{1}')".format(
             _TAB_STR * indentation,
             self._field_name,
@@ -1085,10 +1081,10 @@ class _CxSetFragmentFromField(_CxChild):
 
 
 class _CxSetFragmentFromPath(_CxChild):
-    def __init__(self, segment_idx):
+    def __init__(self, segment_idx: int) -> None:
         self._segment_idx = segment_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}fragment = path[{1}]'.format(
             _TAB_STR * indentation,
             self._segment_idx,
@@ -1096,10 +1092,10 @@ class _CxSetFragmentFromPath(_CxChild):
 
 
 class _CxSetFragmentFromRemainingPaths(_CxChild):
-    def __init__(self, segment_idx):
+    def __init__(self, segment_idx: int) -> None:
         self._segment_idx = segment_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}fragment = path[{1}:]'.format(
             _TAB_STR * indentation,
             self._segment_idx,
@@ -1107,51 +1103,51 @@ class _CxSetFragmentFromRemainingPaths(_CxChild):
 
 
 class _CxVariableFromPatternMatch(_CxChild):
-    def __init__(self, unique_idx):
+    def __init__(self, unique_idx: int) -> None:
         self._unique_idx = unique_idx
         self.dict_variable_name = 'dict_match_{0}'.format(unique_idx)
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}{1} = match.groupdict()'.format(
             _TAB_STR * indentation, self.dict_variable_name
         )
 
 
 class _CxVariableFromPatternMatchPrefetched(_CxChild):
-    def __init__(self, unique_idx):
+    def __init__(self, unique_idx: int) -> None:
         self._unique_idx = unique_idx
         self.dict_variable_name = 'dict_groups_{0}'.format(unique_idx)
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}{1} = groups'.format(_TAB_STR * indentation, self.dict_variable_name)
 
 
 class _CxPrefetchGroupsFromPatternMatch(_CxChild):
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}groups = match.groupdict()'.format(_TAB_STR * indentation)
 
 
 class _CxReturnNone(_CxChild):
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}return None'.format(_TAB_STR * indentation)
 
 
 class _CxReturnValue(_CxChild):
-    def __init__(self, value_idx):
+    def __init__(self, value_idx: int) -> None:
         self._value_idx = value_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}return return_values[{1}]'.format(
             _TAB_STR * indentation, self._value_idx
         )
 
 
 class _CxSetParamFromPath(_CxChild):
-    def __init__(self, param_name, segment_idx):
+    def __init__(self, param_name: str, segment_idx: int) -> None:
         self._param_name = param_name
         self._segment_idx = segment_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return "{0}params['{1}'] = path[{2}]".format(
             _TAB_STR * indentation,
             self._param_name,
@@ -1160,11 +1156,11 @@ class _CxSetParamFromPath(_CxChild):
 
 
 class _CxSetParamFromValue(_CxChild):
-    def __init__(self, param_name, field_value_name):
+    def __init__(self, param_name: str, field_value_name: str) -> None:
         self._param_name = param_name
         self._field_value_name = field_value_name
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return "{0}params['{1}'] = {2}".format(
             _TAB_STR * indentation,
             self._param_name,
@@ -1173,10 +1169,10 @@ class _CxSetParamFromValue(_CxChild):
 
 
 class _CxSetParamsFromDict(_CxChild):
-    def __init__(self, dict_value_name):
+    def __init__(self, dict_value_name: str) -> None:
         self._dict_value_name = dict_value_name
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}params.update({1})'.format(
             _TAB_STR * indentation,
             self._dict_value_name,
