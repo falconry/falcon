@@ -1,0 +1,16 @@
+Falcon will now raise an instance of
+:class:`~falcon.errors.WebSocketDisconnected` from the :class:`OSError` that
+the ASGI server signals in the case of a disconnected client (as per
+the `ASGI HTTP & WebSocket protocol
+<https://asgi.readthedocs.io/en/latest/specs/www.html#id2>`__ version ``2.4``).
+It is worth noting though that Falcon's
+:ref:`built-in receive buffer <ws_lost_connection>` normally detects the
+``websocket.disconnect`` event itself prior the potentially failing attempt to
+``send()``.
+
+Disabling this built-in receive buffer (by setting
+:attr:`~falcon.asgi.WebSocketOptions.max_receive_queue` to ``0``) was also
+found to interfere with receiving ASGI WebSocket messages in an unexpected
+way. The issue has been fixed so that setting this option to ``0`` now properly
+bypasses the buffer altogether, and extensive test coverage has been added for
+validating this scenario.
