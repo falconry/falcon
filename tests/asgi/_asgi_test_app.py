@@ -264,6 +264,29 @@ class TestJar:
             resp.status = falcon.HTTP_403
 
 
+class WSOptions:
+    _SUPPORTED_KEYS = frozenset(
+        {'default_close_reasons', 'error_close_code', 'max_receive_queue'}
+    )
+
+    def __init__(self, ws_options):
+        self._ws_options = ws_options
+
+    async def on_get(self, req, resp):
+        resp.media = {
+            key: getattr(self._ws_options, key) for key in self._SUPPORTED_KEYS
+        }
+
+    async def on_patch(self, req, resp):
+        update = await req.get_media()
+        for key, value in update.items():
+            if key not in self._SUPPORTED_KEYS:
+                raise falcon.HTTPInvalidParam('unsupported option', key)
+            setattr(self._ws_options, key, value)
+
+        resp.status = falcon.HTTP_NO_CONTENT
+
+
 def create_app():
     app = falcon.asgi.App()
     bucket = Bucket()
@@ -276,6 +299,7 @@ def create_app():
     app.add_route('/forms', Multipart())
     app.add_route('/jars', TestJar())
     app.add_route('/feeds/{feed_id}', Feed())
+    app.add_route('/wsoptions', WSOptions(app.ws_options))
 
     app.add_middleware(lifespan_handler)
 

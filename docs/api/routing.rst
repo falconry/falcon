@@ -3,8 +3,6 @@
 Routing
 =======
 
-.. contents:: :local:
-
 Falcon uses resource-based routing to encourage a RESTful architectural style.
 Each resource is represented by a class that is responsible for handling all of
 the HTTP methods that the resource supports.
@@ -29,9 +27,9 @@ associated resource for processing.
 
 Here's a quick example to show how all the pieces fit together:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -66,7 +64,7 @@ Here's a quick example to show how all the pieces fit together:
             images = ImagesResource()
             app.add_route('/images', images)
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -205,9 +203,9 @@ A PUT request to ``'/user/kgriffs'`` would cause the framework to invoke
 the ``on_put()`` responder method on the route's resource class, passing
 ``'kgriffs'`` via an additional `name` argument defined by the responder:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -216,7 +214,7 @@ the ``on_put()`` responder method on the route's resource class, passing
             def on_put(self, req, resp, name):
                 pass
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -511,9 +509,9 @@ support custom HTTP methods, use one of the following methods:
 Once you have used the appropriate method, your custom methods should be active.
 You then can define request methods like any other HTTP method:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -521,7 +519,7 @@ You then can define request methods like any other HTTP method:
             def on_foo(self, req, resp):
                 pass
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
