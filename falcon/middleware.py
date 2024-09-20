@@ -120,7 +120,7 @@ class CORSMiddleware(object):
                 'Access-Control-Request-Headers', default='*'
             )
 
-            resp.set_header('Access-Control-Allow-Methods', allow)
+            resp.set_header('Access-Control-Allow-Methods', str(allow))
             resp.set_header('Access-Control-Allow-Headers', allow_headers)
             resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
