@@ -3,8 +3,6 @@
 Status Codes
 ============
 
-.. contents:: :local:
-
 Falcon provides a list of constants for common
 `HTTP response status codes <http://httpstatus.es>`_.
 

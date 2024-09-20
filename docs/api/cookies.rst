@@ -3,7 +3,7 @@
 Cookies
 -------
 
-.. contents:: :local:
+This page describes the API provided by Falcon to manipulate cookies.
 
 .. _getting-cookies:
 
@@ -24,9 +24,9 @@ need a collection of all the cookies in the request.
 
 Here's an example showing how to get cookies from a request:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -43,7 +43,7 @@ Here's an example showing how to get cookies from a request:
                         #   will need to choose how to handle the additional values.
                         v = my_cookie_values[0]
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 

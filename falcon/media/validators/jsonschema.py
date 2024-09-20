@@ -56,9 +56,9 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
 
     Example:
 
-        .. tabs::
+        .. tab-set::
 
-            .. tab:: WSGI
+            .. tab-item:: WSGI
 
                 .. code:: python
 
@@ -71,7 +71,7 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
 
                     # -- snip --
 
-            .. tab:: ASGI
+            .. tab-item:: ASGI
 
                 .. code:: python
 
@@ -84,7 +84,7 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
 
                     # -- snip --
 
-            .. tab:: ASGI (Cythonized App)
+            .. tab-item:: ASGI (Cythonized App)
 
                 .. code:: python
 
