@@ -208,7 +208,7 @@ class TestWSGIServer:
     def test_get_deprecated(self, server_url):
         resp = requests.get(server_url + '/deprecated', timeout=_REQUEST_TIMEOUT)
 
-        # Since it tries to set .body we expect an unhandled error
+        # Since it tries to use resp.add_link() we expect an unhandled error
         assert resp.status_code == 500
 
     def test_post_multipart_form(self, server_url):

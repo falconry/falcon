@@ -1,6 +1,9 @@
 A number of previously deprecated methods, attributes and classes have now been
 removed:
 
+* The ``falcon-print-routes`` command-line utility is no longer supported;
+  ``falcon-inspect-app`` is a direct replacement.
+
 * A deprecated utility function, ``falcon.get_http_status()``, was removed.
   Please use :meth:`falcon.code_to_http_status` instead.
 
