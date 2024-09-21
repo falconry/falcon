@@ -8,6 +8,12 @@ removed:
   was removed, along with the ``NoRepresentation`` and
   ``OptionalRepresentation`` classes.
 
+* An undocumented, deprecated public method ``find_by_media_type()`` of
+  :class:`media.Handlers <falcon.media.Handlers>` was removed.
+  Apart from configuring handlers for Internet media types, the rest of
+  :class:`~falcon.media.Handlers` is only meant to be used internally by the
+  framework (unless documented otherwise).
+
 * Previously, the ``json`` module could be imported via ``falcon.util``.
   This deprecated alias was removed; please import ``json`` directly from the
   :mod:`standard library <json>`, or another third-party JSON library of

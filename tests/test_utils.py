@@ -1186,7 +1186,7 @@ class TestNoApiClass(testing.TestCase):
 class TestSetupApi(testing.TestCase):
     def setUp(self):
         super(TestSetupApi, self).setUp()
-        with pytest.warns(UserWarning, match='API class may be removed in a future'):
+        with pytest.warns(UserWarning, match='API class will be removed in Falcon 5.0'):
             self.app = falcon.API()
         self.app.add_route('/', testing.SimpleTestResource(body='test'))
 

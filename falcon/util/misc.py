@@ -476,6 +476,6 @@ def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
 
 _encode_items_to_latin1 = _cy_encode_items_to_latin1 or _encode_items_to_latin1
 
-isascii = deprecated('This will be removed in V5. Please use `str.isascii`')(
-    str.isascii
-)
+isascii = deprecated(
+    'This method will be removed in Falcon 5.0; please use str.isascii() instead.'
+)(str.isascii)
