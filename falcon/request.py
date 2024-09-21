@@ -2453,7 +2453,7 @@ class RequestOptions:
             Falcon expects form-encoded request bodies to be
             encoded according to the standard W3C algorithm (see
             also https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm).
-        """
+        """  # noqa: D205
         return self._auto_parse_form_urlencoded
 
     @auto_parse_form_urlencoded.setter
