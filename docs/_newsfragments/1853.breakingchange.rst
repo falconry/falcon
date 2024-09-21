@@ -10,6 +10,9 @@ removed:
   :class:`~falcon.routing.CompiledRouter`. In a pinch, you can simply copy its
   implementation from the Falcon 3.x source tree into your application.
 
+* The deprecated ``Response.add_link()`` method was removed; please use
+  :meth:`Response.append_link <falcon.Response.append_link>` instead.
+
 * The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError`
   was removed, along with the ``NoRepresentation`` and
   ``OptionalRepresentation`` classes.
