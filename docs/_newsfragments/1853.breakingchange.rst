@@ -4,6 +4,12 @@ removed:
 * A deprecated utility function, ``falcon.get_http_status()``, was removed.
   Please use :meth:`falcon.code_to_http_status` instead.
 
+* A deprecated routing utility, ``compile_uri_template()``, was removed.
+  This function was only employed in the early versions of the framework, and
+  is expected to have been fully supplanted by the
+  :class:`~falcon.routing.CompiledRouter`. In a pinch, you can simply copy its
+  implementation from the Falcon 3.x source tree into your application.
+
 * The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError`
   was removed, along with the ``NoRepresentation`` and
   ``OptionalRepresentation`` classes.
