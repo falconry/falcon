@@ -23,7 +23,6 @@ from falcon.constants import MEDIA_JSON
 from falcon.util import code_to_http_status
 from falcon.util import http_status_to_code
 from falcon.util import uri
-from falcon.util.deprecation import deprecated_args
 
 if TYPE_CHECKING:
     from falcon.media import BaseHandler
@@ -117,10 +116,10 @@ class HTTPError(Exception):
         'code',
     )
 
-    @deprecated_args(allowed_positional=1)
     def __init__(
         self,
         status: ResponseStatus,
+        *,
         title: Optional[str] = None,
         description: Optional[str] = None,
         headers: Optional[HeaderList] = None,
