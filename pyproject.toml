@@ -117,8 +117,6 @@ exclude = ["examples", "tests"]
     [[tool.mypy.overrides]]
         module = [
             "falcon.media.validators.*",
-            "falcon.routing.*",
-            "falcon.routing.converters",
             "falcon.testing.*",
             "falcon.vendor.*",
         ]

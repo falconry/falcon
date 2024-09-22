@@ -34,6 +34,7 @@ pip-log.txt
 .ecosystem
 .tox
 .pytest_cache
+downloaded_files/
 geckodriver.log
 htmlcov
 nosetests.xml
