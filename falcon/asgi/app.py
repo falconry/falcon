@@ -14,6 +14,8 @@
 
 """ASGI application class."""
 
+from __future__ import annotations
+
 import asyncio
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction

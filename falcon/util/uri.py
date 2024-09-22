@@ -23,6 +23,8 @@ in the `falcon` module, and so must be explicitly imported::
     name, port = uri.parse_host('example.org:8080')
 """
 
+from __future__ import annotations
+
 from typing import Callable, Dict, List, Optional, overload, Tuple, Union
 
 from falcon.constants import PYPY

@@ -18,6 +18,8 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
+from __future__ import annotations
+
 import asyncio
 import datetime as dt
 import inspect

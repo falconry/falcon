@@ -9,6 +9,8 @@ for convenience::
     tz = falcon.TimezoneGMT()
 """
 
+from __future__ import annotations
+
 import datetime
 from typing import Optional
 

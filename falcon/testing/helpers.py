@@ -22,6 +22,8 @@ directly from the `testing` package::
     wsgi_environ = testing.create_environ()
 """
 
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from collections import deque

@@ -116,7 +116,6 @@ exclude = ["examples", "tests"]
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.testing.*",
             "falcon.vendor.*",
         ]
         disallow_untyped_defs = false
@@ -189,7 +188,6 @@ exclude = ["examples", "tests"]
         "build",
         "dist",
         "docs",
-        "examples",
         "falcon/bench/nuts",
     ]
 
@@ -199,7 +197,8 @@ exclude = ["examples", "tests"]
         "E",
         "F",
         "W",
-        "I"
+        "I",
+        "FA"
     ]
 
 [tool.ruff.lint.mccabe]
