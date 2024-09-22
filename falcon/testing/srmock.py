@@ -18,7 +18,13 @@ This module implements a callable StartResponseMock class that can be
 used, along with a mock environ dict, to simulate a WSGI request.
 """
 
+from __future__ import annotations
+
+from typing import Optional
+
 from falcon import util
+from falcon.typing import HeaderList
+from falcon.typing import ResponseStatus
 
 
 class StartResponseMock:
@@ -35,13 +41,18 @@ class StartResponseMock:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._called = 0
-        self.status = None
-        self.headers = None
-        self.exc_info = None
+        self.status: Optional[ResponseStatus] = None
+        self.headers: Optional[HeaderList] = None
+        self.exc_info: Optional[Exception] = None
 
-    def __call__(self, status, headers, exc_info=None):
+    def __call__(
+        self,
+        status: ResponseStatus,
+        headers: HeaderList,
+        exc_info: Optional[Exception] = None,
+    ) -> None:
         """Implement the PEP-3333 `start_response` protocol."""
 
         self._called += 1
@@ -56,5 +67,5 @@ class StartResponseMock:
         self.exc_info = exc_info
 
     @property
-    def call_count(self):
+    def call_count(self) -> int:
         return self._called

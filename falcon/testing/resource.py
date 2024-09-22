@@ -182,7 +182,7 @@ class SimpleTestResource:
         body: typing.Optional[str] = None,
         json: typing.Optional[dict[str, str]] = None,
         headers: typing.Optional[HeaderArg] = None,
-    ):
+    ) -> None:
         self._default_status = status
         self._default_headers = headers
 
@@ -209,7 +209,7 @@ class SimpleTestResource:
         self.captured_req_body: typing.Optional[bytes] = None
 
     @property
-    def called(self):
+    def called(self) -> bool:
         return self.captured_req is not None
 
     @falcon.before(capture_responder_args)
