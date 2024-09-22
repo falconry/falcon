@@ -17,7 +17,7 @@ class TestStatusCodes:
         if status_code >= 700:
             pytest.skip('Codes above 700 are not defined in http package')
         http_status = http.HTTPStatus(status_code)
-        if status_code in [413, 418, 422]:
+        if status_code in [418, 422]:
             assert http_status.phrase != message
         else:
             assert http_status.phrase == message

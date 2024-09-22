@@ -1,1 +1,5 @@
-refactor: Replaced :class:`~falcon.HTTPPayloadTooLarge` with :class:`~falcon.HTTPContentTooLarge` to align with the updated class name.
+The class :class:`~falcon.HTTPPayloadTooLarge` was renamed to
+:class:`~falcon.HTTPContentTooLarge`, together with the accompanying HTTP
+:ref:`status code <status>` updates, in order to reflect the newest HTTP
+semantics as per RFC 9110, Section 15.5.14.
+(The old class name remains available as a deprecated compatibility alias.)

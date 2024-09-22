@@ -95,6 +95,7 @@ HTTP_412: Final[str] = '412 Precondition Failed'
 HTTP_PRECONDITION_FAILED: Final[str] = HTTP_412
 HTTP_413: Final[str] = '413 Content Too Large'
 HTTP_CONTENT_TOO_LARGE: Final[str] = HTTP_413
+HTTP_PAYLOAD_TOO_LARGE: Final[str] = HTTP_413
 HTTP_REQUEST_ENTITY_TOO_LARGE: Final[str] = HTTP_413
 HTTP_414: Final[str] = '414 URI Too Long'
 HTTP_REQUEST_URI_TOO_LONG: Final[str] = HTTP_414
