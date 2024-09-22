@@ -250,9 +250,9 @@ class TestWebSocket:
                     message_binary = await ws.recv()
                 except websockets.exceptions.ConnectionClosed as ex:
                     if explicit_close and close_code:
-                        assert ex.code == close_code
+                        assert ex.rcvd.code == close_code
                     else:
-                        assert ex.code == 1000
+                        assert ex.rcvd.code == 1000
 
                     break
 
