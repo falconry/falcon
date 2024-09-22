@@ -117,7 +117,8 @@ class AsgiSinkCallable(Protocol):
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
 Headers = Dict[str, str]
-HeaderList = Union[Headers, List[Tuple[str, str]]]
+HeaderList = List[Tuple[str, str]]
+HeaderArg = Union[Headers, HeaderList]
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArgument = Optional[Dict[str, Any]]
 Resource = object

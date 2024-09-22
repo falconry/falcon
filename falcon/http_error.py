@@ -27,7 +27,7 @@ from falcon.util.deprecation import deprecated_args
 
 if TYPE_CHECKING:
     from falcon.media import BaseHandler
-    from falcon.typing import HeaderList
+    from falcon.typing import HeaderArg
     from falcon.typing import Link
     from falcon.typing import ResponseStatus
 
@@ -123,7 +123,7 @@ class HTTPError(Exception):
         status: ResponseStatus,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: Optional[HeaderList] = None,
+        headers: Optional[HeaderArg] = None,
         href: Optional[str] = None,
         href_text: Optional[str] = None,
         code: Optional[int] = None,
