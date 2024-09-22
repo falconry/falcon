@@ -49,10 +49,11 @@ class HTTPError(Exception):
     the ``to_xml()`` method.
 
     Note:
-        ``status`` is the only positional argument allowed, the other
-        arguments should be used as keyword only. Using them as positional
-        arguments will raise a deprecation warning and will result in an
-        error in a future version of falcon.
+        `status` is the only positional argument allowed,
+        the other arguments are defined as keyword-only.
+
+        Attempting to pass them as positional arguments will make
+        the interpreter raise an instance of :class:`TypeError`.
 
     Args:
         status (Union[str,int]): HTTP status code or line (e.g.,
