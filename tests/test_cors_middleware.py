@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 import falcon
@@ -26,6 +28,12 @@ class CORSHeaderResource:
     def on_delete(self, req, resp):
         resp.set_header('Access-Control-Allow-Origin', 'example.com')
         resp.text = "I'm a CORS test response"
+
+
+class CORSOptionsResource:
+    def on_options(self, req, resp):
+        # No allow header set
+        resp.set_header('Content-Length', '0')
 
 
 class TestCorsMiddleware:
@@ -80,6 +88,21 @@ class TestCorsMiddleware:
             result.headers['Access-Control-Max-Age'] == '86400'
         )  # 24 hours in seconds
 
+    def test_enabled_cors_handles_preflight_custom_option(self, cors_client):
+        cors_client.app.add_route('/', CORSOptionsResource())
+        result = cors_client.simulate_options(
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+                ('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type'),
+            )
+        )
+        assert 'Access-Control-Allow-Methods' not in result.headers
+        assert 'Access-Control-Allow-Headers' not in result.headers
+        assert 'Access-Control-Max-Age' not in result.headers
+        assert 'Access-Control-Expose-Headers' not in result.headers
+        assert 'Access-Control-Allow-Origin' not in result.headers
+
     def test_enabled_cors_handles_preflighting_no_headers_in_req(self, cors_client):
         cors_client.app.add_route('/', CORSHeaderResource())
         result = cors_client.simulate_options(
@@ -93,6 +116,50 @@ class TestCorsMiddleware:
         assert (
             result.headers['Access-Control-Max-Age'] == '86400'
         )  # 24 hours in seconds
+
+    def test_enabled_cors_static_route(self, cors_client):
+        cors_client.app.add_static_route('/static', Path(__file__).parent)
+        result = cors_client.simulate_options(
+            f'/static/{Path(__file__).name}',
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+            ),
+        )
+
+        assert result.headers['Access-Control-Allow-Methods'] == 'GET'
+        assert result.headers['Access-Control-Allow-Headers'] == '*'
+        assert result.headers['Access-Control-Max-Age'] == '86400'
+        assert result.headers['Access-Control-Allow-Origin'] == '*'
+
+    @pytest.mark.parametrize('support_options', [True, False])
+    def test_enabled_cors_sink_route(self, cors_client, support_options):
+        def my_sink(req, resp):
+            if req.method == 'OPTIONS' and support_options:
+                resp.set_header('ALLOW', 'GET')
+            else:
+                resp.text = 'my sink'
+
+        cors_client.app.add_sink(my_sink, '/sink')
+        result = cors_client.simulate_options(
+            '/sink/123',
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+            ),
+        )
+
+        if support_options:
+            assert result.headers['Access-Control-Allow-Methods'] == 'GET'
+            assert result.headers['Access-Control-Allow-Headers'] == '*'
+            assert result.headers['Access-Control-Max-Age'] == '86400'
+            assert result.headers['Access-Control-Allow-Origin'] == '*'
+        else:
+            assert 'Access-Control-Allow-Methods' not in result.headers
+            assert 'Access-Control-Allow-Headers' not in result.headers
+            assert 'Access-Control-Max-Age' not in result.headers
+            assert 'Access-Control-Expose-Headers' not in result.headers
+            assert 'Access-Control-Allow-Origin' not in result.headers
 
 
 @pytest.fixture(scope='function')

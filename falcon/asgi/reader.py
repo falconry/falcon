@@ -17,10 +17,11 @@
 from __future__ import annotations
 
 import io
-from typing import AsyncIterator, List, NoReturn, Optional, Protocol
+from typing import AsyncIterator, List, NoReturn, Optional, Protocol, Union
 
 from falcon.errors import DelimiterError
 from falcon.errors import OperationNotAllowed
+from falcon.typing import AsyncReadableIO
 
 DEFAULT_CHUNK_SIZE = 8192
 """Default minimum chunk size for :class:`BufferedReader` (8 KiB)."""
@@ -58,7 +59,11 @@ class BufferedReader:
     _max_join_size: int
     _source: AsyncIterator[bytes]
 
-    def __init__(self, source: AsyncIterator[bytes], chunk_size: Optional[int] = None):
+    def __init__(
+        self,
+        source: Union[AsyncReadableIO, AsyncIterator[bytes]],
+        chunk_size: Optional[int] = None,
+    ):
         self._source = self._iter_normalized(source)
         self._chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
         self._max_join_size = self._chunk_size * _MAX_JOIN_CHUNKS
@@ -71,7 +76,7 @@ class BufferedReader:
         self._iteration_started = False
 
     async def _iter_normalized(
-        self, source: AsyncIterator[bytes]
+        self, source: Union[AsyncReadableIO, AsyncIterator[bytes]]
     ) -> AsyncIterator[bytes]:
         chunk = b''
         chunk_size = self._chunk_size
@@ -190,7 +195,9 @@ class BufferedReader:
         self._buffer_len -= self._buffer_pos
         self._buffer_pos = 0
 
-    async def _read_from(self, source: AsyncIterator[bytes], size: int = -1) -> bytes:
+    async def _read_from(
+        self, source: AsyncIterator[bytes], size: Optional[int] = -1
+    ) -> bytes:
         if size == -1 or size is None:
             result_bytes = io.BytesIO()
             async for chunk in source:
@@ -290,7 +297,7 @@ class BufferedReader:
         if consume_delimiter:
             await self._consume_delimiter(delimiter)
 
-    async def read(self, size: int = -1) -> bytes:
+    async def read(self, size: Optional[int] = -1) -> bytes:
         return await self._read_from(self._iter_with_buffer(size_hint=size or 0), size)
 
     async def readall(self) -> bytes:

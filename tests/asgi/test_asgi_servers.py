@@ -10,13 +10,17 @@ import sys
 import time
 
 import pytest
-import requests
-import requests.exceptions
 
 try:
     import httpx
 except ImportError:
     httpx = None  # type: ignore
+
+try:
+    import requests
+    import requests.exceptions
+except ImportError:
+    requests = None  # type: ignore
 
 try:
     import websockets
@@ -44,6 +48,9 @@ _STATUS_CONTROL_C_EXIT = 0xC000013A
 _REQUEST_TIMEOUT = 10
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
 class TestASGIServer:
     def test_get(self, server_base_url):
         resp = requests.get(server_base_url, timeout=_REQUEST_TIMEOUT)
@@ -193,12 +200,28 @@ class TestASGIServer:
 
 
 @pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
+@pytest.mark.skipif(
     websockets is None, reason='websockets is required for this test class'
 )
 class TestWebSocket:
     @pytest.mark.parametrize('explicit_close', [True, False])
     @pytest.mark.parametrize('close_code', [None, 4321])
-    async def test_hello(self, explicit_close, close_code, server_url_events_ws):
+    @pytest.mark.parametrize('max_receive_queue', [0, 4, 17])
+    async def test_hello(
+        self,
+        explicit_close,
+        close_code,
+        max_receive_queue,
+        server_base_url,
+        server_url_events_ws,
+    ):
+        resp = requests.patch(
+            server_base_url + 'wsoptions', json={'max_receive_queue': max_receive_queue}
+        )
+        resp.raise_for_status()
+
         echo_expected = 'Check 1 - \U0001f600'
 
         extra_headers = {'X-Command': 'recv'}

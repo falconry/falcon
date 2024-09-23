@@ -81,7 +81,7 @@ class Request:
             also PEP-3333.
 
     Keyword Arguments:
-        options (dict): Set of global options passed from the App handler.
+        options (RequestOptions): Set of global options passed from the App handler.
     """
 
     __slots__ = (
@@ -312,7 +312,7 @@ class Request:
         self._cached_uri: Optional[str] = None
 
         try:
-            self.content_type: Union[str, None] = self.env['CONTENT_TYPE']
+            self.content_type = self.env['CONTENT_TYPE']
         except KeyError:
             self.content_type = None
 
@@ -2368,7 +2368,9 @@ class Request:
 
         body_bytes = self.stream.read(content_length)
 
-        # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+        # NOTE(kgriffs): According to
+        # https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm
+        # the
         # body should be US-ASCII. Enforcing this also helps
         # catch malicious input.
         try:

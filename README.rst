@@ -217,63 +217,21 @@ Or, to install the latest beta or release candidate, if any:
 
     $ pip install --pre falcon
 
-In order to provide an extra speed boost, Falcon can compile itself with
-Cython. Wheels containing pre-compiled binaries are available from PyPI for
-several common platforms. However, if a wheel for your platform of choice is not
-available, you can install the source distribution. The installation process
-will automatically try to cythonize Falcon for your environment, falling back to
-a normal pure-Python install if any issues are encountered during the
-cythonization step:
+In order to provide an extra speed boost, Falcon automatically compiles itself
+with `Cython <https://cython.org/>`__ under any
+`PEP 517 <https://peps.python.org/pep-0517/>`__\-compliant installer.
 
-.. code:: bash
-
-    $ pip install --no-binary :all: falcon
-
-If you want to verify that Cython is being invoked, simply
-pass the verbose flag `-v` to pip in order to echo the compilation commands.
-
-The cythonization step is only active when using the ``CPython`` Python
-implementation, so installing using ``PyPy`` will skip it.
-If you want to skip Cython compilation step and install
-the pure-Python version directly you can set the environment variable
-``FALCON_DISABLE_CYTHON`` to a non empty value before install:
-
-.. code:: bash
-
-    $ FALCON_DISABLE_CYTHON=Y pip install -v --no-binary :all: falcon
-
-Please note that ``pip>=10`` is required to be able to install Falcon from
-source.
-
-**Installing on OS X**
-
-Xcode Command Line Tools are required to compile Cython. Install them
-with this command:
-
-.. code:: bash
-
-    $ xcode-select --install
-
-The Clang compiler treats unrecognized command-line options as
-errors, for example:
-
-.. code:: bash
-
-    clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
-
-You might also see warnings about unused functions. You can work around
-these issues by setting additional Clang C compiler flags as follows:
-
-.. code:: bash
-
-    $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
+For your convenience, wheels containing pre-compiled binaries are available
+from PyPI for the majority of common platforms. Even if a binary build for your
+platform of choice is not available, ``pip`` will pick a pure-Python wheel.
+You can also cythonize Falcon for your environment; see our
+`Installation docs <https://falcon.readthedocs.io/en/stable/user/install.html>`__
+for more information on this and other advanced options.
 
 Dependencies
 ^^^^^^^^^^^^
 
-Falcon does not require the installation of any other packages, although if
-Cython has been installed into the environment, it will be used to optimize
-the framework as explained above.
+Falcon does not require the installation of any other packages.
 
 WSGI Server
 -----------

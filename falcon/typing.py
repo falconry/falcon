@@ -21,6 +21,7 @@ import http
 import sys
 from typing import (
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -47,6 +48,7 @@ else:
 if TYPE_CHECKING:
     from falcon.asgi import Request as AsgiRequest
     from falcon.asgi import Response as AsgiResponse
+    from falcon.asgi import SSEvent
     from falcon.asgi import WebSocket
     from falcon.asgi_spec import AsgiEvent
     from falcon.asgi_spec import AsgiSendMsg
@@ -119,6 +121,7 @@ HeaderList = Union[Headers, List[Tuple[str, str]]]
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArgument = Optional[Dict[str, Any]]
 Resource = object
+RangeSetHeader = Union[Tuple[int, int, int], Tuple[int, int, int, str]]
 
 
 class ResponderMethod(Protocol):
@@ -150,6 +153,7 @@ class ResponderCallable(Protocol):
 # ASGI
 class AsyncReadableIO(Protocol):
     async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    def __aiter__(self) -> AsyncIterator[bytes]: ...
 
 
 class AsgiResponderMethod(Protocol):
@@ -174,6 +178,11 @@ AsgiProcessResponseMethod = Callable[
 AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[None]]
 AsgiProcessResourceWsMethod = Callable[
     ['AsgiRequest', 'WebSocket', Resource, Dict[str, Any]], Awaitable[None]
+]
+SseEmitter = AsyncIterator[Optional['SSEvent']]
+ResponseCallbacks = Union[
+    Tuple[Callable[[], None], Literal[False]],
+    Tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
 
 

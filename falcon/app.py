@@ -26,7 +26,6 @@ from typing import (
     ClassVar,
     Dict,
     FrozenSet,
-    IO,
     Iterable,
     List,
     Literal,
@@ -62,6 +61,7 @@ from falcon.typing import ErrorHandler
 from falcon.typing import ErrorSerializer
 from falcon.typing import FindMethod
 from falcon.typing import ProcessResponseMethod
+from falcon.typing import ReadableIO
 from falcon.typing import ResponderCallable
 from falcon.typing import SinkCallable
 from falcon.typing import SinkPrefix
@@ -759,6 +759,15 @@ class App:
         impractical. For example, you might use a sink to create a smart
         proxy that forwards requests to one or more backend services.
 
+        Note:
+            To support CORS preflight requests when using the default CORS middleware,
+            either by setting ``App.cors_enable=True`` or by adding the
+            :class:`~.CORSMiddleware` to the ``App.middleware``, the sink should
+            set the ``Allow`` header in the request to the allowed
+            method values when serving an ``OPTIONS`` request. If the ``Allow`` header
+            is missing from the response, the default CORS middleware will deny the
+            preflight request.
+
         Args:
             sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
 
@@ -1191,7 +1200,9 @@ class App:
     def _get_body(
         self,
         resp: Response,
-        wsgi_file_wrapper: Optional[Callable[[IO[bytes], int], Iterable[bytes]]] = None,
+        wsgi_file_wrapper: Optional[
+            Callable[[ReadableIO, int], Iterable[bytes]]
+        ] = None,
     ) -> Tuple[Iterable[bytes], Optional[int]]:
         """Convert resp content into an iterable as required by PEP 333.
 
@@ -1229,11 +1240,13 @@ class App:
                     # TODO(kgriffs): Make block size configurable at the
                     # global level, pending experimentation to see how
                     # useful that would be. See also the discussion on
-                    # this GitHub PR: http://goo.gl/XGrtDz
-                    iterable = wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)
+                    # this GitHub PR:
+                    # https://github.com/falconry/falcon/pull/249#discussion_r11269730
+                    iterable = wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)  # type: ignore[arg-type]
                 else:
                     iterable = helpers.CloseableStreamIterator(
-                        stream, self._STREAM_BLOCK_SIZE
+                        stream,  # type: ignore[arg-type]
+                        self._STREAM_BLOCK_SIZE,
                     )
             else:
                 iterable = stream

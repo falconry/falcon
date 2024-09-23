@@ -785,10 +785,10 @@ class ASGIWebSocketSimulator:
         else:
             assert self.closed
 
-            # NOTE(kgriffs): According to the ASGI spec, we are
-            #   supposed to just silently eat events once the
-            #   socket is disconnected.
-            pass
+            # NOTE(vytas): Tweaked in Falcon 4.0: we now simulate ASGI
+            #   WebSocket protocol 2.4+, raising an instance of OSError upon
+            #   send if the client has already disconnected.
+            raise falcon_errors.WebSocketDisconnected(self._close_code)
 
         # NOTE(kgriffs): Give whatever is waiting on the handshake or a
         #   collected data/text event a chance to progress.

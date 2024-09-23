@@ -3,7 +3,7 @@
 Utilities
 =========
 
-.. contents:: :local:
+This page describes miscellaneous utilities provided by Falcon.
 
 URI
 ---
