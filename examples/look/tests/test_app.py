@@ -1,5 +1,4 @@
 import io
-import json
 import os
 from unittest import TestCase
 from unittest.mock import call
@@ -36,7 +35,7 @@ def test_list_images(client, mock_store):
 
     response = client.simulate_get('/images')
 
-    result = json.loads(response.content)
+    result = response.json
 
     assert result['images'] == image_docs
     assert response.status == falcon.HTTP_OK
