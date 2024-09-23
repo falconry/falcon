@@ -1058,7 +1058,7 @@ class App(falcon.app.App):
                     )
                     return
 
-                if self.req_options.auto_parse_form_urlencoded:
+                if self.req_options._auto_parse_form_urlencoded:
                     await send(
                         {
                             'type': EventType.LIFESPAN_STARTUP_FAILED,

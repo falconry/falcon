@@ -478,8 +478,6 @@ be used by custom routing engines.
 
 .. autofunction:: falcon.routing.set_default_responders
 
-.. autofunction:: falcon.routing.compile_uri_template
-
 .. autofunction:: falcon.app_helpers.prepare_middleware
 
 .. autofunction:: falcon.app_helpers.prepare_middleware_ws

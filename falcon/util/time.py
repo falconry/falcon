@@ -22,7 +22,10 @@ class TimezoneGMT(datetime.tzinfo):
 
     GMT_ZERO = datetime.timedelta(hours=0)
 
-    @deprecated('TimezoneGMT is deprecated, use datetime.timezone.utc instead')
+    @deprecated(
+        'TimezoneGMT is deprecated, use datetime.timezone.utc instead. '
+        '(TimezoneGMT will be removed in Falcon 5.0.)'
+    )
     def __init__(self) -> None:
         super().__init__()
 

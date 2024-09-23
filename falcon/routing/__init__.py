@@ -29,7 +29,6 @@ from falcon.routing.converters import PathConverter
 from falcon.routing.converters import UUIDConverter
 from falcon.routing.static import StaticRoute
 from falcon.routing.static import StaticRouteAsync
-from falcon.routing.util import compile_uri_template
 from falcon.routing.util import map_http_methods
 from falcon.routing.util import set_default_responders
 
