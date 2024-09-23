@@ -222,11 +222,7 @@ class HTTPBadRequest(HTTPError):
 
     (See also: RFC 7231, Section 6.5.1)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '400 Bad Request').
@@ -296,11 +292,7 @@ class HTTPUnauthorized(HTTPError):
 
     (See also: RFC 7235, Section 3.1)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '401 Unauthorized').
@@ -385,11 +377,7 @@ class HTTPForbidden(HTTPError):
 
     (See also: RFC 7231, Section 6.5.4)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '403 Forbidden').
@@ -455,11 +443,7 @@ class HTTPNotFound(HTTPError):
 
     (See also: RFC 7231, Section 6.5.3)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Human-friendly error title. If not provided, and
@@ -520,11 +504,7 @@ class HTTPRouteNotFound(HTTPNotFound):
     behavior can be customized by registering a custom error handler for
     :class:`~.HTTPRouteNotFound`.
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Human-friendly error title. If not provided, and
@@ -574,12 +554,8 @@ class HTTPMethodNotAllowed(HTTPError):
 
     (See also: RFC 7231, Section 6.5.5)
 
-    Note:
-        `allowed_methods` is the only positional argument allowed,
-        the other arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    `allowed_methods` is the only positional argument allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         allowed_methods (list of str): Allowed HTTP methods for this
@@ -659,11 +635,7 @@ class HTTPNotAcceptable(HTTPError):
 
     (See also: RFC 7231, Section 6.5.6)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         description (str): Human-friendly description of the error, along with
@@ -732,11 +704,7 @@ class HTTPConflict(HTTPError):
 
     (See also: RFC 7231, Section 6.5.8)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '409 Conflict').
@@ -810,11 +778,7 @@ class HTTPGone(HTTPError):
 
     (See also: RFC 7231, Section 6.5.9)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Human-friendly error title. If not provided, and
@@ -877,11 +841,7 @@ class HTTPLengthRequired(HTTPError):
 
     (See also: RFC 7231, Section 6.5.10)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '411 Length Required').
@@ -943,11 +903,7 @@ class HTTPPreconditionFailed(HTTPError):
 
     (See also: RFC 7232, Section 4.2)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '412 Precondition Failed').
@@ -1011,11 +967,7 @@ class HTTPPayloadTooLarge(HTTPError):
 
     (See also: RFC 7231, Section 6.5.11)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '413 Payload Too Large').
@@ -1091,11 +1043,7 @@ class HTTPUriTooLong(HTTPError):
 
     (See also: RFC 7231, Section 6.5.12)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '414 URI Too Long').
@@ -1157,11 +1105,7 @@ class HTTPUnsupportedMediaType(HTTPError):
 
     (See also: RFC 7231, Section 6.5.13)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '415 Unsupported Media Type').
@@ -1227,12 +1171,8 @@ class HTTPRangeNotSatisfiable(HTTPError):
 
     (See also: RFC 7233, Section 4.4)
 
-    Note:
-        `resource_length` is the only positional argument allowed,
-        the other arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    `resource_length` is the only positional argument allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         resource_length: The maximum value for the last-byte-pos of a range
@@ -1308,11 +1248,7 @@ class HTTPUnprocessableEntity(HTTPError):
 
     (See also: RFC 4918, Section 11.2)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '422 Unprocessable Entity').
@@ -1371,11 +1307,7 @@ class HTTPLocked(HTTPError):
 
     (See also: RFC 4918, Section 11.3)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '423 Locked').
@@ -1433,11 +1365,7 @@ class HTTPFailedDependency(HTTPError):
 
     (See also: RFC 4918, Section 11.4)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '424 Failed Dependency').
@@ -1503,11 +1431,7 @@ class HTTPPreconditionRequired(HTTPError):
 
     (See also: RFC 6585, Section 3)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '428 Precondition Required').
@@ -1570,11 +1494,7 @@ class HTTPTooManyRequests(HTTPError):
 
     (See also: RFC 6585, Section 4)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '429 Too Many Requests').
@@ -1648,11 +1568,7 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
 
     (See also: RFC 6585, Section 5)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '431 Request Header Fields Too Large').
@@ -1724,11 +1640,7 @@ class HTTPUnavailableForLegalReasons(HTTPError):
 
     (See also: RFC 7725, Section 3)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '451 Unavailable For Legal Reasons').
@@ -1785,11 +1697,7 @@ class HTTPInternalServerError(HTTPError):
 
     (See also: RFC 7231, Section 6.6.1)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '500 Internal Server Error').
@@ -1853,11 +1761,7 @@ class HTTPNotImplemented(HTTPError):
 
     (See also: RFC 7231, Section 6.6.2)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '500 Internal Server Error').
@@ -1917,11 +1821,7 @@ class HTTPBadGateway(HTTPError):
 
     (See also: RFC 7231, Section 6.6.3)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '502 Bad Gateway').
@@ -1987,11 +1887,7 @@ class HTTPServiceUnavailable(HTTPError):
 
     (See also: RFC 7231, Section 6.6.4)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '503 Service Unavailable').
@@ -2059,11 +1955,7 @@ class HTTPGatewayTimeout(HTTPError):
 
     (See also: RFC 7231, Section 6.6.5)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '503 Service Unavailable').
@@ -2127,11 +2019,7 @@ class HTTPVersionNotSupported(HTTPError):
 
     (See also: RFC 7231, Section 6.6.6)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '503 Service Unavailable').
@@ -2193,11 +2081,7 @@ class HTTPInsufficientStorage(HTTPError):
 
     (See also: RFC 4918, Section 11.5)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '507 Insufficient Storage').
@@ -2256,11 +2140,7 @@ class HTTPLoopDetected(HTTPError):
 
     (See also: RFC 5842, Section 7.2)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '508 Loop Detected').
@@ -2331,11 +2211,7 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
 
     (See also: RFC 6585, Section 6)
 
-    Note:
-        All the arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    All the arguments are defined as keyword-only.
 
     Keyword Args:
         title (str): Error title (default '511 Network Authentication Required').
@@ -2389,12 +2265,8 @@ class HTTPInvalidHeader(HTTPBadRequest):
 
     One of the headers in the request is invalid.
 
-    Note:
-        `msg` and `header_name` are the only positional arguments allowed,
-        the other arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    `msg` and `header_name` are the only positional arguments allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         msg (str): A description of why the value is invalid.
@@ -2451,12 +2323,8 @@ class HTTPMissingHeader(HTTPBadRequest):
 
     A header is missing from the request.
 
-    Note:
-        `header_name` is the only positional argument allowed,
-        the other arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    `header_name` is the only positional argument allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         header_name (str): The name of the missing header.
@@ -2513,12 +2381,8 @@ class HTTPInvalidParam(HTTPBadRequest):
     parameter in a query string, form, or document that was submitted
     with the request.
 
-    Note:
-        `msg` and `param_name` are the only positional arguments allowed,
-        the other arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    `msg` and `param_name` are the only positional arguments allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         msg (str): A description of the invalid parameter.
@@ -2577,12 +2441,8 @@ class HTTPMissingParam(HTTPBadRequest):
     parameter in a query string, form, or document that was submitted
     with the request.
 
-    Note:
-        `param_name` is the only positional argument allowed,
-        the other arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    `param_name` is the only positional argument allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         param_name (str): The name of the missing parameter.

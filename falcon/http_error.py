@@ -48,12 +48,8 @@ class HTTPError(Exception):
     is implemented via ``to_dict()``). To also support XML, override
     the ``to_xml()`` method.
 
-    Note:
-        `status` is the only positional argument allowed,
-        the other arguments are defined as keyword-only.
-
-        Attempting to pass them as positional arguments will make
-        the interpreter raise an instance of :class:`TypeError`.
+    `status` is the only positional argument allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         status (Union[str,int]): HTTP status code or line (e.g.,
