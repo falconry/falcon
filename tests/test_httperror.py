@@ -8,7 +8,6 @@ import pytest
 
 import falcon
 import falcon.testing as testing
-from falcon.util.deprecation import DeprecatedWarning
 
 try:
     import yaml
@@ -946,8 +945,5 @@ class TestHTTPError:
 
 
 def test_kw_only():
-    # only deprecated for now
-    # with pytest.raises(TypeError, match='positional argument'):
-    #     falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
-    with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
+    with pytest.raises(TypeError, match='positional argument'):
         falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')

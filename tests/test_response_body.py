@@ -2,7 +2,6 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util.deprecation import AttributeRemovedError
 
 
 @pytest.fixture
@@ -14,19 +13,11 @@ def test_append_body(resp):
     text = 'Hello beautiful world! '
     resp.text = ''
 
-    with pytest.raises(AttributeRemovedError):
-        resp.body = 'x'
-
     for token in text.split():
         resp.text += token
         resp.text += ' '
 
     assert resp.text == text
-
-    # NOTE(kgriffs): Ensure AttributeRemovedError inherits from AttributeError
-    for ErrorType in (AttributeError, AttributeRemovedError):
-        with pytest.raises(ErrorType):
-            resp.body
 
 
 def test_response_repr(resp):
