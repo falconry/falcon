@@ -684,8 +684,9 @@ def simulate_request(
 
     iterable = validator(env, srmock)
 
+    data = helpers.closed_wsgi_iterable(iterable)
     assert srmock.status is not None and srmock.headers is not None
-    return Result(helpers.closed_wsgi_iterable(iterable), srmock.status, srmock.headers)
+    return Result(data, srmock.status, srmock.headers)
 
 
 @overload
