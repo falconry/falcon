@@ -761,6 +761,15 @@ class App:
         impractical. For example, you might use a sink to create a smart
         proxy that forwards requests to one or more backend services.
 
+        Note:
+            To support CORS preflight requests when using the default CORS middleware,
+            either by setting ``App.cors_enable=True`` or by adding the
+            :class:`~.CORSMiddleware` to the ``App.middleware``, the sink should
+            set the ``Allow`` header in the request to the allowed
+            method values when serving an ``OPTIONS`` request. If the ``Allow`` header
+            is missing from the response, the default CORS middleware will deny the
+            preflight request.
+
         Args:
             sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
 
