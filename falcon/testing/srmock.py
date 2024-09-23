@@ -20,11 +20,10 @@ used, along with a mock environ dict, to simulate a WSGI request.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from falcon import util
 from falcon.typing import HeaderList
-from falcon.typing import ResponseStatus
 
 
 class StartResponseMock:
@@ -43,16 +42,16 @@ class StartResponseMock:
 
     def __init__(self) -> None:
         self._called = 0
-        self.status: Optional[ResponseStatus] = None
+        self.status: Optional[str] = None
         self.headers: Optional[HeaderList] = None
-        self.exc_info: Optional[Exception] = None
+        self.exc_info: Optional[Any] = None
 
     def __call__(
         self,
-        status: ResponseStatus,
+        status: str,
         headers: HeaderList,
-        exc_info: Optional[Exception] = None,
-    ) -> None:
+        exc_info: Optional[Any] = None,
+    ) -> Any:
         """Implement the PEP-3333 `start_response` protocol."""
 
         self._called += 1

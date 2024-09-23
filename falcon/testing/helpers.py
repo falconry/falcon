@@ -30,7 +30,6 @@ from collections import deque
 import contextlib
 from enum import auto
 from enum import Enum
-from http.cookiejar import Cookie
 import io
 import itertools
 import json
@@ -64,6 +63,7 @@ from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
+from falcon.typing import CookieArg
 from falcon.typing import HeaderArg
 from falcon.typing import HeaderList
 from falcon.typing import ResponseStatus
@@ -839,7 +839,7 @@ class ASGIWebSocketSimulator:
 
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
 # used here under the terms of the Apache License, Version 2.0.
-def get_encoding_from_headers(headers: Dict[str, str]) -> Optional[str]:
+def get_encoding_from_headers(headers: Mapping[str, str]) -> Optional[str]:
     """Return encoding from given HTTP Header Dict.
 
     Args:
@@ -900,9 +900,6 @@ def rand_string(min: int, max: int) -> str:
     return ''.join([chr(int_gen(ord(' '), ord('~'))) for __ in range(string_length)])
 
 
-_CookieType = Mapping[str, Union[str, Cookie]]
-
-
 def create_scope(
     path: str = '/',
     query_string: str = '',
@@ -916,7 +913,7 @@ def create_scope(
     root_path: Optional[str] = None,
     content_length: Optional[int] = None,
     include_server: bool = True,
-    cookies: Optional[_CookieType] = None,
+    cookies: Optional[CookieArg] = None,
 ) -> Dict[str, Any]:
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
@@ -1133,13 +1130,13 @@ def create_environ(
     port: Optional[int] = None,
     headers: Optional[HeaderArg] = None,
     app: Optional[str] = None,
-    body: str = '',
+    body: Union[str, bytes] = b'',
     method: str = 'GET',
-    wsgierrors: Optional[io.StringIO] = None,
+    wsgierrors: Optional[TextIO] = None,
     file_wrapper: Optional[Callable[..., Any]] = None,
     remote_addr: Optional[str] = None,
     root_path: Optional[str] = None,
-    cookies: Optional[_CookieType] = None,
+    cookies: Optional[CookieArg] = None,
 ) -> Dict[str, Any]:
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
@@ -1454,7 +1451,7 @@ def _add_headers_to_scope(
     port: int,
     scheme: Optional[str],
     http_version: str,
-    cookies: Optional[_CookieType],
+    cookies: Optional[CookieArg],
 ) -> None:
     found_ua = False
     prepared_headers: List[Iterable[bytes]] = []
@@ -1518,7 +1515,7 @@ def _fixup_http_version(http_version: str) -> str:
     return http_version
 
 
-def _make_cookie_values(cookies: _CookieType) -> str:
+def _make_cookie_values(cookies: CookieArg) -> str:
     return '; '.join(
         [
             '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)

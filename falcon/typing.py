@@ -18,6 +18,7 @@ from __future__ import annotations
 from enum import auto
 from enum import Enum
 import http
+from http.cookiejar import Cookie
 import sys
 from typing import (
     Any,
@@ -27,6 +28,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    Mapping,
     Optional,
     Pattern,
     Protocol,
@@ -66,7 +68,7 @@ MISSING = _Missing.MISSING
 MissingOr = Union[Literal[_Missing.MISSING], _T]
 
 Link = Dict[str, str]
-
+CookieArg = Mapping[str, Union[str, Cookie]]
 # Error handlers
 ErrorHandler = Callable[['Request', 'Response', BaseException, Dict[str, Any]], None]
 
