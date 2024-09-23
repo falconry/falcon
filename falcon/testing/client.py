@@ -34,8 +34,10 @@ from typing import (
     Coroutine,
     Dict,
     Iterable,
+    Literal,
     Mapping,
     Optional,
+    overload,
     Sequence,
     TextIO,
     Tuple,
@@ -499,7 +501,7 @@ def simulate_request(
     cookies: Optional[CookieArg] = None,
     asgi_chunk_size: int = 4096,
     asgi_disconnect_ttl: int = 300,
-) -> _ResultBase:
+) -> Result:
     """Simulate a request to a WSGI or ASGI application.
 
     Performs a request against a WSGI or ASGI application. In the case of
@@ -612,7 +614,7 @@ def simulate_request(
     """
 
     if _is_asgi_app(app):
-        return async_to_sync(
+        return async_to_sync(  # type: ignore[return-value]
             _simulate_request_asgi,
             app,
             method=method,
@@ -686,6 +688,60 @@ def simulate_request(
     return Result(helpers.closed_wsgi_iterable(iterable), srmock.status, srmock.headers)
 
 
+@overload
+async def _simulate_request_asgi(
+    app: Callable[..., Coroutine[Any, Any, Any]],
+    method: str = ...,
+    path: str = ...,
+    query_string: Optional[str] = ...,
+    headers: Optional[Headers] = ...,
+    content_type: Optional[str] = ...,
+    body: Optional[Union[str, bytes]] = ...,
+    json: Optional[Any] = ...,
+    params: Optional[Mapping[str, Any]] = ...,
+    params_csv: bool = ...,
+    protocol: str = ...,
+    host: str = ...,
+    remote_addr: Optional[str] = ...,
+    extras: Optional[Mapping[str, Any]] = ...,
+    http_version: str = ...,
+    port: Optional[int] = ...,
+    root_path: Optional[str] = ...,
+    asgi_chunk_size: int = ...,
+    asgi_disconnect_ttl: int = ...,
+    cookies: Optional[CookieArg] = ...,
+    _one_shot: Literal[False] = ...,
+    _stream_result: Literal[True] = ...,
+) -> StreamedResult: ...
+
+
+@overload
+async def _simulate_request_asgi(
+    app: Callable[..., Coroutine[Any, Any, Any]],
+    method: str = ...,
+    path: str = ...,
+    query_string: Optional[str] = ...,
+    headers: Optional[Headers] = ...,
+    content_type: Optional[str] = ...,
+    body: Optional[Union[str, bytes]] = ...,
+    json: Optional[Any] = ...,
+    params: Optional[Mapping[str, Any]] = ...,
+    params_csv: bool = ...,
+    protocol: str = ...,
+    host: str = ...,
+    remote_addr: Optional[str] = ...,
+    extras: Optional[Mapping[str, Any]] = ...,
+    http_version: str = ...,
+    port: Optional[int] = ...,
+    root_path: Optional[str] = ...,
+    asgi_chunk_size: int = ...,
+    asgi_disconnect_ttl: int = ...,
+    cookies: Optional[CookieArg] = ...,
+    _one_shot: Literal[True] = ...,
+    _stream_result: bool = ...,
+) -> Result: ...
+
+
 # NOTE(kgriffs): The default of asgi_disconnect_ttl was chosen to be
 #   relatively long (5 minutes) to help testers notice when something
 #   appears to be "hanging", which might indicates that the app is
@@ -718,7 +774,7 @@ async def _simulate_request_asgi(
     #   don't want these kwargs to be documented.
     _one_shot: bool = True,
     _stream_result: bool = False,
-) -> _ResultBase:
+) -> Union[Result, StreamedResult]:
     """Simulate a request to an ASGI application.
 
     Keyword Args:
@@ -1094,7 +1150,7 @@ class ASGIConductor:
 
         return True
 
-    async def simulate_get(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    async def simulate_get(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a GET request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_get`)
@@ -1165,53 +1221,63 @@ class ASGIConductor:
 
         return _WSContextManager(ws, task_req)
 
-    async def simulate_head(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    async def simulate_head(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a HEAD request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_head`)
         """
         return await self.simulate_request('HEAD', path, **kwargs)
 
-    async def simulate_post(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    async def simulate_post(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a POST request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_post`)
         """
         return await self.simulate_request('POST', path, **kwargs)
 
-    async def simulate_put(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    async def simulate_put(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PUT request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_put`)
         """
         return await self.simulate_request('PUT', path, **kwargs)
 
-    async def simulate_options(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    async def simulate_options(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate an OPTIONS request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_options`)
         """
         return await self.simulate_request('OPTIONS', path, **kwargs)
 
-    async def simulate_patch(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    async def simulate_patch(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PATCH request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_patch`)
         """
         return await self.simulate_request('PATCH', path, **kwargs)
 
-    async def simulate_delete(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    async def simulate_delete(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a DELETE request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_delete`)
         """
         return await self.simulate_request('DELETE', path, **kwargs)
 
-    async def simulate_request(self, *args: Any, **kwargs: Any) -> _ResultBase:
+    @overload
+    async def simulate_request(
+        self, *args: Any, _stream_result: Literal[True], **kwargs: Any
+    ) -> StreamedResult: ...
+
+    @overload
+    async def simulate_request(self, *args: Any, **kwargs: Any) -> Result: ...
+
+    async def simulate_request(
+        self, *args: Any, **kwargs: Any
+    ) -> Union[Result, StreamedResult]:
         """Simulate a request to an ASGI application.
 
-        Wraps :meth:`falcon.testing.simulate_request` to perform a
-        WSGI request directly against ``self.app``. Equivalent to::
+        Wraps :meth:`falcon.testing.simulate_request` to perform an
+        ASGI request directly against ``self.app``. Equivalent to::
 
             falcon.testing.simulate_request(self.app, *args, **kwargs)
         """
@@ -1243,7 +1309,7 @@ class ASGIConductor:
     websocket = _simulate_method_alias(simulate_ws, replace_name='websocket')
 
 
-def simulate_get(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBase:
+def simulate_get(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a GET request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1346,7 +1412,7 @@ def simulate_get(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBa
     return simulate_request(app, 'GET', path, **kwargs)
 
 
-def simulate_head(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBase:
+def simulate_head(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a HEAD request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1443,7 +1509,7 @@ def simulate_head(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultB
     return simulate_request(app, 'HEAD', path, **kwargs)
 
 
-def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBase:
+def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a POST request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1554,7 +1620,7 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultB
     return simulate_request(app, 'POST', path, **kwargs)
 
 
-def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBase:
+def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a PUT request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1665,7 +1731,7 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBa
     return simulate_request(app, 'PUT', path, **kwargs)
 
 
-def simulate_options(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBase:
+def simulate_options(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate an OPTIONS request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1754,7 +1820,7 @@ def simulate_options(app: Callable[..., Any], path: str, **kwargs: Any) -> _Resu
     return simulate_request(app, 'OPTIONS', path, **kwargs)
 
 
-def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBase:
+def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a PATCH request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1860,7 +1926,7 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> _Result
     return simulate_request(app, 'PATCH', path, **kwargs)
 
 
-def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> _ResultBase:
+def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a DELETE request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -2065,56 +2131,56 @@ class TestClient:
 
         return result
 
-    def simulate_get(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    def simulate_get(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a GET request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_get`)
         """
         return self.simulate_request('GET', path, **kwargs)
 
-    def simulate_head(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    def simulate_head(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a HEAD request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_head`)
         """
         return self.simulate_request('HEAD', path, **kwargs)
 
-    def simulate_post(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    def simulate_post(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a POST request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_post`)
         """
         return self.simulate_request('POST', path, **kwargs)
 
-    def simulate_put(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    def simulate_put(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PUT request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_put`)
         """
         return self.simulate_request('PUT', path, **kwargs)
 
-    def simulate_options(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    def simulate_options(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate an OPTIONS request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_options`)
         """
         return self.simulate_request('OPTIONS', path, **kwargs)
 
-    def simulate_patch(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    def simulate_patch(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PATCH request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_patch`)
         """
         return self.simulate_request('PATCH', path, **kwargs)
 
-    def simulate_delete(self, path: str = '/', **kwargs: Any) -> _ResultBase:
+    def simulate_delete(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a DELETE request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_delete`)
         """
         return self.simulate_request('DELETE', path, **kwargs)
 
-    def simulate_request(self, *args: Any, **kwargs: Any) -> _ResultBase:
+    def simulate_request(self, *args: Any, **kwargs: Any) -> Result:
         """Simulate a request to a WSGI application.
 
         Wraps :meth:`falcon.testing.simulate_request` to perform a
