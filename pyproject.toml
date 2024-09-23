@@ -211,6 +211,7 @@ exclude = ["examples", "tests"]
         "F403"
     ]
     "falcon/uri.py" = ["F401"]
+    "examples/*" = ["FA"]
 
 [tool.ruff.lint.isort]
     case-sensitive = false
