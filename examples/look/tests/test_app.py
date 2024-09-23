@@ -128,7 +128,7 @@ def test_listing_images():
     ]
     for i in range(2):
         with open(file_paths[i], 'wb') as image_file:
-            file_length = image_file.write(fake_images_bytes[i])
+            image_file.write(fake_images_bytes[i])
 
     store = look.images.ImageStore(storage_path)
     assert store.list(10) == []
