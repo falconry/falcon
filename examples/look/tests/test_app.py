@@ -1,14 +1,13 @@
 import io
 import json
 import os
-import uuid
 from unittest import TestCase
 from unittest.mock import call
 from unittest.mock import MagicMock
 from unittest.mock import mock_open
+import uuid
 from wsgiref.validate import InputWrapper
 
-import msgpack
 import pytest
 
 import falcon
@@ -123,8 +122,8 @@ def test_listing_images():
     storage_path = '.'
     file_paths = [f'{storage_path}/{name}' for name in file_names]
     fake_images_bytes = [
-        b'fake-image-bytes', # 17
-        b'fake-image-bytes-with-more-length', # 34
+        b'fake-image-bytes',  # 17
+        b'fake-image-bytes-with-more-length',  # 34
     ]
     for i in range(2):
         with open(file_paths[i], 'wb') as image_file:
@@ -138,4 +137,3 @@ def test_listing_images():
 
     for file_path in file_paths:
         os.remove(file_path)
-

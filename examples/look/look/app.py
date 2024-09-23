@@ -2,7 +2,9 @@ import os
 
 import falcon
 
-from .images import Collection, ImageStore, Item
+from .images import Collection
+from .images import ImageStore
+from .images import Item
 
 
 def create_app(image_store):
@@ -16,4 +18,3 @@ def get_app():
     storage_path = os.environ.get('LOOK_STORAGE_PATH', '.')
     image_store = ImageStore(storage_path)
     return create_app(image_store)
-

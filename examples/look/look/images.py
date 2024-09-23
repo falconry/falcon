@@ -1,10 +1,9 @@
 import io
+import json
 import mimetypes
 import os
 import re
 import uuid
-
-import json
 
 import falcon
 
@@ -14,13 +13,9 @@ class Collection:
         self._image_store = image_store
 
     def on_get(self, req, resp):
-        max_size = req.get_param_as_int("maxsize", min_value=1, default=-1)
+        max_size = req.get_param_as_int('maxsize', min_value=1, default=-1)
         images = self._image_store.list(max_size)
-        doc = {
-            'images': [
-                {'href': '/images/' + image} for image in images
-            ]
-        }
+        doc = {'images': [{'href': '/images/' + image} for image in images]}
 
         resp.text = json.dumps(doc, ensure_ascii=False)
         resp.status = falcon.HTTP_200
@@ -32,7 +27,6 @@ class Collection:
 
 
 class Item:
-
     def __init__(self, image_store):
         self._image_store = image_store
 
@@ -82,7 +76,8 @@ class ImageStore:
 
     def list(self, max_size):
         images = [
-            image for image in os.listdir(self._storage_path)
+            image
+            for image in os.listdir(self._storage_path)
             if self._IMAGE_NAME_PATTERN.match(image)
             and (
                 max_size == -1
@@ -90,4 +85,3 @@ class ImageStore:
             )
         ]
         return images
-
