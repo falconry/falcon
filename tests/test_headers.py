@@ -867,12 +867,12 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.add_link('/things/2842', 'next')
+        resource.append_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.add_link(uri, 'http://example.com/\u00e7runchy')
+        resource.append_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
+        resource.append_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 

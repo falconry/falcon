@@ -32,7 +32,6 @@ HTTP Status
 
 .. autofunction:: falcon.http_status_to_code
 .. autofunction:: falcon.code_to_http_status
-.. autofunction:: falcon.get_http_status
 
 Media types
 -----------

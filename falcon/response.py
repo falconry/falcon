@@ -56,7 +56,6 @@ from falcon.util import http_cookies
 from falcon.util import http_status_to_code
 from falcon.util import structures
 from falcon.util.deprecation import AttributeRemovedError
-from falcon.util.deprecation import deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
@@ -209,20 +208,6 @@ class Response:
     @status_code.setter
     def status_code(self, value: int) -> None:
         self.status = value
-
-    @property
-    def body(self) -> NoReturn:
-        raise AttributeRemovedError(
-            'The body attribute is no longer supported. '
-            'Please use the text attribute instead.'
-        )
-
-    @body.setter
-    def body(self, value: Any) -> NoReturn:
-        raise AttributeRemovedError(
-            'The body attribute is no longer supported. '
-            'Please use the text attribute instead.'
-        )
 
     @property
     def data(self) -> Optional[bytes]:
@@ -983,10 +968,12 @@ class Response:
         else:
             _headers['link'] = value
 
-    # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = deprecated('Please use append_link() instead.', method_name='add_link')(
-        append_link
-    )
+    @property
+    def add_link(self) -> NoReturn:
+        raise AttributeRemovedError(
+            'The add_link() method is no longer supported. '
+            'Please use append_link() instead.'
+        )
 
     cache_control: Union[str, Iterable[str], None] = header_property(
         'Cache-Control',

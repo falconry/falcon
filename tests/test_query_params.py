@@ -8,6 +8,7 @@ import pytest
 import falcon
 from falcon.errors import HTTPInvalidParam
 import falcon.testing as testing
+from falcon.util import deprecation
 
 
 class Resource(testing.SimpleTestResource):
@@ -46,7 +47,8 @@ def resource():
 def client(asgi, util):
     app = util.create_app(asgi)
     if not asgi:
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
     return testing.TestClient(app)
 
@@ -1019,7 +1021,8 @@ class TestPostQueryParams:
     def test_asgi_raises_error(self, util, resource):
         app = util.create_app(asgi=True)
         app.add_route('/', resource)
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
         with pytest.raises(RuntimeError) as exc_info:
             testing.simulate_get(app, '/')

@@ -41,7 +41,7 @@ from falcon.typing import AsgiReceive
 from falcon.typing import MISSING
 from falcon.typing import MissingOr
 from falcon.typing import StoreArgument
-from falcon.util import deprecated
+from falcon.util import deprecation
 from falcon.util import ETag
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
@@ -348,8 +348,12 @@ class Request(request.Request):
         return ''
 
     @property
-    # NOTE(caselit): Deprecated long ago. Warns since 4.0
-    @deprecated('Use `root_path` instead', is_property=True)
+    # NOTE(caselit): Deprecated long ago. Warns since 4.0.
+    @deprecation.deprecated(
+        'Use `root_path` instead. '
+        '(This compatibility alias will be removed in Falcon 5.0.)',
+        is_property=True,
+    )
     def app(self) -> str:
         """Deprecated alias for :attr:`root_path`."""
         return self.root_path

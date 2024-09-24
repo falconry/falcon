@@ -35,6 +35,7 @@ from typing import (
     Union,
 )
 from uuid import UUID
+import warnings
 
 from falcon import errors
 from falcon import request_helpers as helpers
@@ -50,7 +51,7 @@ from falcon.typing import MISSING
 from falcon.typing import MissingOr
 from falcon.typing import ReadableIO
 from falcon.typing import StoreArgument
-from falcon.util import deprecated
+from falcon.util import deprecation
 from falcon.util import ETag
 from falcon.util import structures
 from falcon.util.uri import parse_host
@@ -323,7 +324,7 @@ class Request:
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
         if (
-            self.options.auto_parse_form_urlencoded
+            self.options._auto_parse_form_urlencoded
             and self.content_type is not None
             and 'application/x-www-form-urlencoded' in self.content_type
             and
@@ -634,8 +635,12 @@ class Request:
             return ''
 
     @property
-    # NOTE(caselit): Deprecated long ago. Warns since 4.0
-    @deprecated('Use `root_path` instead', is_property=True)
+    # NOTE(caselit): Deprecated long ago. Warns since 4.0.
+    @deprecation.deprecated(
+        'Use `root_path` instead. '
+        '(This compatibility alias will be removed in Falcon 5.0.)',
+        is_property=True,
+    )
     def app(self) -> str:
         """Deprecated alias for :attr:`root_path`."""
         return self.root_path
@@ -2411,37 +2416,58 @@ class RequestOptions:
     For comma-separated values, this option also determines whether or not
     empty elements in the parsed list are retained.
     """
-    auto_parse_form_urlencoded: bool
-    """Set to ``True`` in order to automatically consume the request stream and merge
-    the results into the request's query string params when the request's content
-    type is ``application/x-www-form-urlencoded``` (default ``False``).
 
-    Enabling this option for WSGI apps makes the form parameters accessible via
-    :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`, etc.
+    @property
+    def auto_parse_form_urlencoded(self) -> bool:
+        """Set to ``True`` in order to automatically consume the request stream
+        and merge the results into the request's query string params when the
+        request's content type is ``application/x-www-form-urlencoded```
+        (default ``False``).
 
-    Warning:
-        The `auto_parse_form_urlencoded` option is not supported for
-        ASGI apps, and is considered deprecated for WSGI apps as of
-        Falcon 3.0, in favor of accessing URL-encoded forms
-        through :attr:`~Request.media`.
+        Enabling this option for WSGI apps makes the form parameters accessible
+        via :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`,
+        etc.
 
-        See also: :ref:`access_urlencoded_form`
+        Warning:
+            The `auto_parse_form_urlencoded` option is not supported for
+            ASGI apps, and is considered deprecated for WSGI apps as of
+            Falcon 3.0, in favor of accessing URL-encoded forms
+            through :attr:`~Request.media`.
 
-    Warning:
-        When this option is enabled, the request's body
-        stream will be left at EOF. The original data is
-        not retained by the framework.
+            The attribute and the auto-parsing functionality will be removed
+            entirely in Falcon 5.0.
 
-    Note:
-        The character encoding for fields, before
-        percent-encoding non-ASCII bytes, is assumed to be
-        UTF-8. The special `_charset_` field is ignored if
-        present.
+            See also: :ref:`access_urlencoded_form`.
 
-        Falcon expects form-encoded request bodies to be
-        encoded according to the standard W3C algorithm (see
-        also https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm).
-    """
+        Warning:
+            When this option is enabled, the request's body
+            stream will be left at EOF. The original data is
+            not retained by the framework.
+
+        Note:
+            The character encoding for fields, before
+            percent-encoding non-ASCII bytes, is assumed to be
+            UTF-8. The special `_charset_` field is ignored if
+            present.
+
+            Falcon expects form-encoded request bodies to be
+            encoded according to the standard W3C algorithm (see
+            also https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm).
+        """  # noqa: D205
+        return self._auto_parse_form_urlencoded
+
+    @auto_parse_form_urlencoded.setter
+    def auto_parse_form_urlencoded(self, value: bool) -> None:
+        if value:
+            warnings.warn(
+                'The RequestOptions.auto_parse_form_urlencoded option is '
+                'deprecated. Please use Request.get_media() to consume '
+                'the submitted URL-encoded form instead.',
+                category=deprecation.DeprecatedWarning,
+            )
+
+        self._auto_parse_form_urlencoded = value
+
     auto_parse_qs_csv: bool
     """Set to ``True`` to split query string values on any non-percent-encoded
     commas (default ``False``).
@@ -2487,7 +2513,7 @@ class RequestOptions:
 
     __slots__ = (
         'keep_blank_qs_values',
-        'auto_parse_form_urlencoded',
+        '_auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
         'strip_url_path_trailing_slash',
         'default_media_type',
@@ -2496,7 +2522,7 @@ class RequestOptions:
 
     def __init__(self) -> None:
         self.keep_blank_qs_values = True
-        self.auto_parse_form_urlencoded = False
+        self._auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = False
         self.strip_url_path_trailing_slash = False
         self.default_media_type = DEFAULT_MEDIA_TYPE

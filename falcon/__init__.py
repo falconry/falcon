@@ -77,7 +77,6 @@ __all__ = (
     'ETag',
     'get_argnames',
     'get_bound_method',
-    'get_http_status',
     'get_running_loop',
     'http_cookies',
     'http_date_to_dt',
@@ -609,7 +608,6 @@ from falcon.util import dt_to_http
 from falcon.util import ETag
 from falcon.util import get_argnames
 from falcon.util import get_bound_method
-from falcon.util import get_http_status
 from falcon.util import get_running_loop
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt

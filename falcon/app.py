@@ -1265,7 +1265,7 @@ class App:
 
 
 # TODO(myusko): This class is a compatibility alias, and should be removed
-# in the next major release (4.0).
+# in Falcon 5.0.
 class API(App):
     """Compatibility alias of :class:`falcon.App`.
 
@@ -1273,12 +1273,12 @@ class API(App):
     reflect the breadth of applications that :class:`App <falcon.App>`, and its
     ASGI counterpart in particular, can now be used for.
 
-    This compatibility alias should be considered deprecated; it will be
-    removed in a future release.
+    This compatibility alias is deprecated; it will be removed entirely in
+    Falcon 5.0.
     """
 
     @deprecation.deprecated(
-        'API class may be removed in a future release, use falcon.App instead.'
+        'The API class will be removed in Falcon 5.0, use falcon.App instead.'
     )
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
