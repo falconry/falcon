@@ -17,7 +17,7 @@ from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
 from falcon.typing import AsgiReceive
 from falcon.typing import AsgiSend
-from falcon.typing import HeaderList
+from falcon.typing import HeaderArg
 from falcon.util import misc
 
 __all__ = ('WebSocket',)
@@ -144,7 +144,7 @@ class WebSocket:
     async def accept(
         self,
         subprotocol: Optional[str] = None,
-        headers: Optional[HeaderList] = None,
+        headers: Optional[HeaderArg] = None,
     ) -> None:
         """Accept the incoming WebSocket connection.
 
@@ -166,7 +166,7 @@ class WebSocket:
                 client may choose to abandon the connection in this case,
                 if it does not receive an explicit protocol selection.
 
-            headers (HeaderList): An iterable of ``(name: str, value: str)``
+            headers (HeaderArg): An iterable of ``(name: str, value: str)``
                 two-item iterables, representing a collection of HTTP headers to
                 include in the handshake response. Both *name* and *value* must
                 be of type ``str`` and contain only US-ASCII characters.

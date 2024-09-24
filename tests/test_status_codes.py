@@ -1,6 +1,5 @@
 import http
 import sys
-from typing import Tuple
 
 import pytest
 
@@ -22,7 +21,7 @@ class TestStatusCodes:
         else:
             assert http_status.phrase == message
 
-    def _status_code_and_message(self, status: str) -> Tuple[int, str]:
+    def _status_code_and_message(self, status: str):
         status = getattr(status_codes, status)
         value, message = status.split(' ', 1)
         return int(value), message
