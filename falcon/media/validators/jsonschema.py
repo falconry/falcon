@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from functools import wraps
 from inspect import iscoroutinefunction
+from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
 
 import falcon
 
@@ -8,8 +11,17 @@ try:
 except ImportError:  # pragma: nocover
     pass
 
+if TYPE_CHECKING:
+    import falcon as wsgi
+    from falcon import asgi
 
-def validate(req_schema=None, resp_schema=None, is_async=False):
+Schema = Optional[Dict[str, Any]]
+ResponderMethod = Callable[..., Any]
+
+
+def validate(
+    req_schema: Schema = None, resp_schema: Schema = None, is_async: bool = False
+) -> Callable[[ResponderMethod], ResponderMethod]:
     """Validate ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
@@ -99,7 +111,7 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
 
     """
 
-    def decorator(func):
+    def decorator(func: ResponderMethod) -> ResponderMethod:
         if iscoroutinefunction(func) or is_async:
             return _validate_async(func, req_schema, resp_schema)
 
@@ -108,9 +120,13 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
     return decorator
 
 
-def _validate(func, req_schema=None, resp_schema=None):
+def _validate(
+    func: ResponderMethod, req_schema: Schema = None, resp_schema: Schema = None
+) -> ResponderMethod:
     @wraps(func)
-    def wrapper(self, req, resp, *args, **kwargs):
+    def wrapper(
+        self: Any, req: wsgi.Request, resp: wsgi.Response, *args: Any, **kwargs: Any
+    ) -> Any:
         if req_schema is not None:
             try:
                 jsonschema.validate(
@@ -141,9 +157,13 @@ def _validate(func, req_schema=None, resp_schema=None):
     return wrapper
 
 
-def _validate_async(func, req_schema=None, resp_schema=None):
+def _validate_async(
+    func: ResponderMethod, req_schema: Schema = None, resp_schema: Schema = None
+) -> ResponderMethod:
     @wraps(func)
-    async def wrapper(self, req, resp, *args, **kwargs):
+    async def wrapper(
+        self: Any, req: asgi.Request, resp: asgi.Response, *args: Any, **kwargs: Any
+    ) -> Any:
         if req_schema is not None:
             m = await req.get_media()
 

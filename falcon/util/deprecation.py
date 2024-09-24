@@ -17,6 +17,8 @@
 This module provides decorators to mark functions and classes as deprecated.
 """
 
+from __future__ import annotations
+
 import functools
 from typing import Any, Callable, Optional
 import warnings

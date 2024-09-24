@@ -14,6 +14,8 @@
 
 """Falcon App class."""
 
+from __future__ import annotations
+
 from functools import wraps
 from inspect import iscoroutinefunction
 import pathlib
