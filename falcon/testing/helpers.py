@@ -145,10 +145,6 @@ class ASGIRequestEventEmitter:
             ``0`` is treated as a special case, and will result in an
             ``'http.disconnect'`` event being immediately emitted (rather than
             first emitting an ``'http.request'`` event).
-
-    Attributes:
-        disconnected (bool): Returns ``True`` if the simulated client
-            connection is in a "disconnected" state.
     """
 
     # TODO(kgriffs): If this pattern later becomes useful elsewhere,
@@ -186,6 +182,9 @@ class ASGIRequestEventEmitter:
 
     @property
     def disconnected(self) -> bool:
+        """Returns ``True`` if the simulated client connection is in a
+        "disconnected" state.
+        """
         return self._disconnected or (self._disconnect_at <= time.time())
 
     def disconnect(self, exhaust_body: Optional[bool] = None) -> None:
@@ -408,23 +407,6 @@ class ASGIWebSocketSimulator:
         The ASGIWebSocketSimulator class is not designed to be instantiated
         directly; rather it should be obtained via
         :meth:`~falcon.testing.ASGIConductor.simulate_ws`.
-
-    Attributes:
-        ready (bool): ``True`` if the WebSocket connection has been
-            accepted and the client is still connected, ``False`` otherwise.
-        closed (bool): ``True`` if the WebSocket connection has been
-            denied or closed by the app, or the client has disconnected.
-        close_code (int): The WebSocket close code provided by the app if
-            the connection is closed, or ``None`` if the connection is open.
-        close_reason (str): The WebSocket close reason provided by the app if
-            the connection is closed, or ``None`` if the connection is open.
-        subprotocol (str): The subprotocol the app wishes to accept, or
-            ``None`` if not specified.
-        headers (Iterable[Iterable[bytes]]): An iterable of ``[name, value]``
-            two-item iterables, where *name* is the header name, and *value* is
-            the header value for each header returned by the app when
-            it accepted the WebSocket connection. This property resolves to
-            ``None`` if the connection has not been accepted.
     """
 
     _DEFAULT_WAIT_READY_TIMEOUT = 5
@@ -445,26 +427,44 @@ class ASGIWebSocketSimulator:
 
     @property
     def ready(self) -> bool:
+        """``True`` if the WebSocket connection has been accepted and the client is
+        still connected, ``False`` otherwise.
+        """
         return self._state == _WebSocketState.ACCEPTED
 
     @property
     def closed(self) -> bool:
+        """``True`` if the WebSocket connection has been denied or closed by the app,
+        or the client has disconnected.
+        """
         return self._state in {_WebSocketState.DENIED, _WebSocketState.CLOSED}
 
     @property
     def close_code(self) -> Optional[int]:
+        """The WebSocket close code provided by the app if the connection is closed,
+        or ``None`` if the connection is open.
+        """
         return self._close_code
 
     @property
     def close_reason(self) -> Optional[str]:
+        """The WebSocket close reason provided by the app if the connection is closed,
+        or ``None`` if the connection is open.
+        """
         return self._close_reason
 
     @property
     def subprotocol(self) -> Optional[str]:
+        """The subprotocol the app wishes to accept, or ``None`` if not specified."""
         return self._accepted_subprotocol
 
     @property
     def headers(self) -> Optional[List[Tuple[bytes, bytes]]]:
+        """An iterable of ``[name, value]`` two-item tuples, where *name* is the
+        header name, and *value* is the header value for each header returned by
+        the app when it accepted the WebSocket connection.
+        This property resolves to ``None`` if the connection has not been accepted.
+        """
         return self._accepted_headers
 
     async def wait_ready(self, timeout: Optional[int] = None) -> None:

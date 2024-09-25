@@ -143,10 +143,10 @@ class WebSocketDisconnected(ConnectionError):
     Keyword Args:
         code (int): The WebSocket close code, as per the WebSocket spec
             (default ``1000``).
-
-    Attributes:
-        code (int): The WebSocket close code, as per the WebSocket spec.
     """
+
+    code: int
+    """The WebSocket close code, as per the WebSocket spec."""
 
     def __init__(self, code: Optional[int] = None) -> None:
         self.code = code or 1000  # Default to "Normal Closure"

@@ -41,6 +41,7 @@ from typing import (
     Sequence,
     TextIO,
     Tuple,
+    TYPE_CHECKING,
     TypeVar,
     Union,
 )
@@ -65,6 +66,10 @@ from falcon.util import code_to_http_status
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
 from falcon.util import to_query_str
+
+if TYPE_CHECKING:
+    from falcon import App
+    from falcon.asgi import App as AsgiApp
 
 warnings.filterwarnings(
     'error',
@@ -105,29 +110,7 @@ class Cookie:
     """Represents a cookie returned by a simulated request.
 
     Args:
-        morsel: A ``Morsel`` object from which to derive the cookie
-            data.
-
-    Attributes:
-        name (str): The cookie's name.
-        value (str): The value of the cookie.
-        expires(datetime.datetime): Expiration timestamp for the cookie,
-            or ``None`` if not specified.
-        path (str): The path prefix to which this cookie is restricted,
-            or ``None`` if not specified.
-        domain (str): The domain to which this cookie is restricted,
-            or ``None`` if not specified.
-        max_age (int): The lifetime of the cookie in seconds, or
-            ``None`` if not specified.
-        secure (bool): Whether or not the cookie may only only be
-            transmitted from the client via HTTPS.
-        http_only (bool): Whether or not the cookie may only be
-            included in unscripted requests from the client.
-        same_site (str): Specifies whether cookies are send in
-            cross-site requests. Possible values are 'Lax', 'Strict'
-            and 'None'. ``None`` if not specified.
-        partitioned (bool): Indicates if the cookie has the
-            ``Partitioned`` flag set.
+        morsel: A ``Morsel`` object from which to derive the cookie data.
     """
 
     _expires: Optional[str]
@@ -158,14 +141,17 @@ class Cookie:
 
     @property
     def name(self) -> str:
+        """The cookie's name."""
         return self._name
 
     @property
     def value(self) -> str:
+        """The value of the cookie."""
         return self._value
 
     @property
     def expires(self) -> Optional[dt.datetime]:
+        """Expiration timestamp for the cookie, or ``None`` if not specified."""
         if self._expires:
             return http_date_to_dt(self._expires, obs_date=True)
 
@@ -173,30 +159,50 @@ class Cookie:
 
     @property
     def path(self) -> str:
+        """The path prefix to which this cookie is restricted.
+
+        An empty string if not specified.
+        """
         return self._path
 
     @property
     def domain(self) -> str:
+        """The domain to which this cookie is restricted.
+
+        An empty string if not specified.
+        """
         return self._domain
 
     @property
     def max_age(self) -> Optional[int]:
+        """The lifetime of the cookie in seconds, or ``None`` if not specified."""
         return int(self._max_age) if self._max_age else None
 
     @property
     def secure(self) -> bool:
+        """Whether or not the cookie may only only be transmitted
+        from the client via HTTPS.
+        """
         return bool(self._secure)
 
     @property
     def http_only(self) -> bool:
+        """Whether or not the cookie may only be included in unscripted
+        requests from the client.
+        """
         return bool(self._httponly)
 
     @property
     def same_site(self) -> Optional[str]:
+        """Specifies whether cookies are send in cross-site requests.
+
+        Possible values are 'Lax', 'Strict' and 'None'. ``None`` if not specified.
+        """
         return self._samesite if self._samesite else None
 
     @property
     def partitioned(self) -> bool:
+        """Indicates if the cookie has the ``Partitioned`` flag set."""
         return bool(self._partitioned)
 
 
@@ -208,33 +214,6 @@ class _ResultBase:
             reason string
         headers (list): A list of (header_name, header_value) tuples,
             per PEP-3333
-
-    Attributes:
-        status (str): HTTP status string given in the response
-        status_code (int): The code portion of the HTTP status string
-        headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response, except for
-            cookies, which may be accessed via the `cookies`
-            attribute.
-
-            Note:
-
-                Multiple instances of a header in the response are
-                currently not supported; it is unspecified which value
-                will "win" and be represented in `headers`.
-
-        cookies (dict): A dictionary of
-            :class:`falcon.testing.Cookie` values parsed from the
-            response, by name.
-
-            The cookies dictionary can be used directly in subsequent requests::
-
-                client = testing.TestClient(app)
-                response_one = client.simulate_get('/')
-                response_two = client.simulate_post('/', cookies=response_one.cookies)
-
-        encoding (str): Text encoding of the response body, or ``None``
-            if the encoding can not be determined.
     """
 
     def __init__(self, status: str, headers: HeaderIter) -> None:
@@ -255,22 +234,45 @@ class _ResultBase:
 
     @property
     def status(self) -> str:
+        """HTTP status string given in the response."""
         return self._status
 
     @property
     def status_code(self) -> int:
+        """The code portion of the HTTP status string"""
         return self._status_code
 
     @property
     def headers(self) -> Headers:
+        """A case-insensitive dictionary containing all the headers in the response,
+        except for cookies, which may be accessed via the `cookies` attribute.
+
+        Note:
+
+            Multiple instances of a header in the response are
+            currently not supported; it is unspecified which value
+            will "win" and be represented in `headers`.
+        """
         return self._headers  # type: ignore[return-value]
 
     @property
     def cookies(self) -> Dict[str, Cookie]:
+        """A dictionary of :class:`falcon.testing.Cookie` values parsed from
+        the response, by name.
+
+        The cookies dictionary can be used directly in subsequent requests::
+
+            client = testing.TestClient(app)
+            response_one = client.simulate_get('/')
+            response_two = client.simulate_post('/', cookies=response_one.cookies)
+        """
         return self._cookies
 
     @property
     def encoding(self) -> Optional[str]:
+        """Text encoding of the response body, or ``None`` if the encoding
+        can not be determined.
+        """
         return self._encoding
 
 
@@ -321,34 +323,6 @@ class Result(_ResultBase):
             reason string
         headers (list): A list of (header_name, header_value) tuples,
             per PEP-3333
-
-    Attributes:
-        status (str): HTTP status string given in the response
-        status_code (int): The code portion of the HTTP status string
-        headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response, except for
-            cookies, which may be accessed via the `cookies`
-            attribute.
-
-            Note:
-
-                Multiple instances of a header in the response are
-                currently not supported; it is unspecified which value
-                will "win" and be represented in `headers`.
-
-        cookies (dict): A dictionary of
-            :class:`falcon.testing.Cookie` values parsed from the
-            response, by name.
-        encoding (str): Text encoding of the response body, or ``None``
-            if the encoding can not be determined.
-        content (bytes): Raw response body, or ``bytes`` if the
-            response body was empty.
-        text (str): Decoded response body of type ``str``.
-            If the content type does not specify an encoding, UTF-8 is
-            assumed.
-        json (JSON serializable): Deserialized JSON body. Will be ``None`` if
-            the body has no content to deserialize. Otherwise, raises an error
-            if the response is not valid JSON.
     """
 
     def __init__(
@@ -361,10 +335,15 @@ class Result(_ResultBase):
 
     @property
     def content(self) -> bytes:
+        """Raw response body, or an ``b''`` if the response body was empty."""
         return self._content
 
     @property
     def text(self) -> str:
+        """Decoded response body of type ``str``.
+
+        If the content type does not specify an encoding, UTF-8 is assumed.
+        """
         if self._text is None:
             if not self.content:
                 self._text = ''
@@ -380,6 +359,11 @@ class Result(_ResultBase):
 
     @property
     def json(self) -> Any:
+        """Deserialized JSON body.
+
+        Will be ``None`` if the body has no content to deserialize.
+        Otherwise, raises an error if the response is not valid JSON.
+        """
         if not self.text:
             return None
 
@@ -417,27 +401,6 @@ class StreamedResult(_ResultBase):
             application via its receive() method.
             :meth:`~.finalize` will cause the event emitter to
             simulate an ``'http.disconnect'`` event before returning.
-
-    Attributes:
-        status (str): HTTP status string given in the response
-        status_code (int): The code portion of the HTTP status string
-        headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response, except for
-            cookies, which may be accessed via the `cookies`
-            attribute.
-
-            Note:
-
-                Multiple instances of a header in the response are
-                currently not supported; it is unspecified which value
-                will "win" and be represented in `headers`.
-
-        cookies (dict): A dictionary of
-            :class:`falcon.testing.Cookie` values parsed from the
-            response, by name.
-        encoding (str): Text encoding of the response body, or ``None``
-            if the encoding can not be determined.
-        stream (ResultStream): Raw response body, as a byte stream.
     """
 
     def __init__(
@@ -456,6 +419,7 @@ class StreamedResult(_ResultBase):
 
     @property
     def stream(self) -> ResultBodyStream:
+        """Raw response body, as a byte stream."""
         return self._stream
 
     async def finalize(self) -> None:
@@ -1086,21 +1050,22 @@ class ASGIConductor:
         headers (dict): Default headers to set on every request (default
             ``None``). These defaults may be overridden by passing values
             for the same headers to one of the ``simulate_*()`` methods.
-
-    Attributes:
-        app: The app that this client instance was configured to use.
-
     """
+
+    # NOTE(caseit): while any asgi app is accept, type this as a falcon
+    # asgi app for user convenience
+    app: AsgiApp
+    """The app that this client instance was configured to use."""
 
     def __init__(
         self,
-        app: Callable[..., Coroutine[Any, Any, Any]],
+        app: Callable[..., Any],  # accept any asgi app
         headers: Optional[HeaderMapping] = None,
     ):
         if not _is_asgi_app(app):
             raise CompatibilityError('ASGIConductor may only be used with an ASGI app')
 
-        self.app = app
+        self.app = app  # type: ignore[assignment]
         self._default_headers = headers
 
         self._shutting_down = asyncio.Condition()
@@ -2084,21 +2049,22 @@ class TestClient:
         headers (dict): Default headers to set on every request (default
             ``None``). These defaults may be overridden by passing values
             for the same headers to one of the ``simulate_*()`` methods.
-
-    Attributes:
-        app: The app that this client instance was configured to use.
-
     """
 
     # NOTE(aryaniyaps): Prevent pytest from collecting tests on the class.
     __test__ = False
+
+    # NOTE(caseit): while any asgi/wsgi app is accept, type this as a falcon
+    # app for user convenience
+    app: App
+    """The app that this client instance was configured to use."""
 
     def __init__(
         self,
         app: Callable[..., Any],  # accept any asgi/wsgi app
         headers: Optional[HeaderMapping] = None,
     ) -> None:
-        self.app = app
+        self.app = app  # type: ignore[assignment]
         self._default_headers = headers
         self._conductor: Optional[ASGIConductor] = None
 
