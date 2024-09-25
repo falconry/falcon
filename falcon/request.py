@@ -244,7 +244,7 @@ class Request:
         self.is_websocket: bool = False
 
         self.env = env
-        self.options = options if options else RequestOptions()
+        self.options = options if options is not None else RequestOptions()
 
         self._wsgierrors: TextIO = env['wsgi.errors']
         self.method = env['REQUEST_METHOD']

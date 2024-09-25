@@ -163,7 +163,7 @@ class Request(request.Request):
         self.scope = scope
         self.is_websocket = scope['type'] == 'websocket'
 
-        self.options = options if options else request.RequestOptions()
+        self.options = options if options is not None else request.RequestOptions()
 
         self.method = 'GET' if self.is_websocket else scope['method']
 

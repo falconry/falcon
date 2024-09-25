@@ -45,7 +45,7 @@ from falcon.util.misc import dt_to_http
 
 if TYPE_CHECKING:
     from falcon._typing import HeaderArg
-    from falcon._typing import Headers
+    from falcon.typing import Headers
 
 
 __all__ = (

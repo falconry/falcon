@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from falcon import util
-from falcon._typing import HeaderList
+from falcon._typing import HeaderIter
 
 
 class StartResponseMock:
@@ -43,13 +43,13 @@ class StartResponseMock:
     def __init__(self) -> None:
         self._called = 0
         self.status: Optional[str] = None
-        self.headers: Optional[HeaderList] = None
+        self.headers: Optional[HeaderIter] = None
         self.exc_info: Optional[Any] = None
 
     def __call__(
         self,
         status: str,
-        headers: HeaderList,
+        headers: HeaderIter,
         exc_info: Optional[Any] = None,
     ) -> Any:
         """Implement the PEP-3333 `start_response` protocol."""

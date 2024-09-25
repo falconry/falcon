@@ -36,7 +36,6 @@ from typing import (
     Union,
 )
 
-from falcon._typing import Headers
 from falcon._typing import RangeSetHeader
 from falcon._typing import ReadableIO
 from falcon._typing import UNSET
@@ -51,6 +50,7 @@ from falcon.response_helpers import format_header_value_list
 from falcon.response_helpers import format_range
 from falcon.response_helpers import header_property
 from falcon.response_helpers import is_ascii_encodable
+from falcon.typing import Headers
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import http_status_to_code
@@ -178,7 +178,7 @@ class Response:
         #   only instantiating the list object later on IFF it is needed.
         self._extra_headers = None
 
-        self.options = options if options else ResponseOptions()
+        self.options = options if options is not None else ResponseOptions()
 
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Shorthand definitions for more complex types."""
+"""Private type aliases used internally by Falcon.."""
 
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Mapping,
@@ -88,17 +89,6 @@ class AsgiErrorHandler(Protocol):
 # Error serializers
 ErrorSerializer = Callable[['Request', 'Response', 'HTTPError'], None]
 
-JSONSerializable = Union[
-    Dict[str, 'JSONSerializable'],
-    List['JSONSerializable'],
-    Tuple['JSONSerializable', ...],
-    bool,
-    float,
-    int,
-    str,
-    None,
-]
-
 # Sinks
 SinkPrefix = Union[str, Pattern[str]]
 
@@ -113,20 +103,18 @@ class AsgiSinkCallable(Protocol):
     ) -> None: ...
 
 
-# TODO(vytas): Is it possible to specify a Callable or a Protocol that defines
-#   type hints for the two first parameters, but accepts any number of keyword
-#   arguments afterwords?
-# class SinkCallable(Protocol):
-#     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
 Headers = Dict[str, str]
-HeaderList = List[Tuple[str, str]]
-HeaderArg = Union[Headers, HeaderList]
+"""Headers dictionary returned by the framework."""
+HeaderMapping = Mapping[str, str]
+HeaderIter = Iterable[Tuple[str, str]]
+HeaderArg = Union[HeaderMapping, HeaderIter]
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArgument = Optional[Dict[str, Any]]
 Resource = object
 RangeSetHeader = Union[Tuple[int, int, int], Tuple[int, int, int, str]]
 
 
+# WSGI
 class ResponderMethod(Protocol):
     def __call__(
         self,
@@ -137,9 +125,14 @@ class ResponderMethod(Protocol):
     ) -> None: ...
 
 
-# WSGI
 class ReadableIO(Protocol):
+    """File like protocol that defines only a read method."""
+
     def read(self, n: Optional[int] = ..., /) -> bytes: ...
+
+
+class ResponderCallable(Protocol):
+    def __call__(self, req: Request, resp: Response, **kwargs: Any) -> None: ...
 
 
 ProcessRequestMethod = Callable[['Request', 'Response'], None]
@@ -149,12 +142,10 @@ ProcessResourceMethod = Callable[
 ProcessResponseMethod = Callable[['Request', 'Response', Resource, bool], None]
 
 
-class ResponderCallable(Protocol):
-    def __call__(self, req: Request, resp: Response, **kwargs: Any) -> None: ...
-
-
 # ASGI
 class AsyncReadableIO(Protocol):
+    """Async file like protocol that defines only a read method and is iterable."""
+
     async def read(self, n: Optional[int] = ..., /) -> bytes: ...
     def __aiter__(self) -> AsyncIterator[bytes]: ...
 
@@ -166,6 +157,18 @@ class AsgiResponderMethod(Protocol):
         req: AsgiRequest,
         resp: AsgiResponse,
         **kwargs: Any,
+    ) -> None: ...
+
+
+class AsgiResponderCallable(Protocol):
+    async def __call__(
+        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: Any
+    ) -> None: ...
+
+
+class AsgiResponderWsCallable(Protocol):
+    async def __call__(
+        self, req: AsgiRequest, ws: WebSocket, **kwargs: Any
     ) -> None: ...
 
 
@@ -187,18 +190,6 @@ ResponseCallbacks = Union[
     Tuple[Callable[[], None], Literal[False]],
     Tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
-
-
-class AsgiResponderCallable(Protocol):
-    async def __call__(
-        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: Any
-    ) -> None: ...
-
-
-class AsgiResponderWsCallable(Protocol):
-    async def __call__(
-        self, req: AsgiRequest, ws: WebSocket, **kwargs: Any
-    ) -> None: ...
 
 
 # Routing

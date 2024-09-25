@@ -48,8 +48,9 @@ import warnings
 import wsgiref.validate
 
 from falcon._typing import CookieArg
-from falcon._typing import HeaderList
-from falcon._typing import Headers
+from falcon._typing import HeaderArg
+from falcon._typing import HeaderIter
+from falcon._typing import HeaderMapping
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
@@ -57,6 +58,7 @@ from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
+from falcon.typing import Headers
 from falcon.util import async_to_sync
 from falcon.util import CaseInsensitiveDict
 from falcon.util import code_to_http_status
@@ -235,7 +237,7 @@ class _ResultBase:
             if the encoding can not be determined.
     """
 
-    def __init__(self, status: str, headers: HeaderList) -> None:
+    def __init__(self, status: str, headers: HeaderIter) -> None:
         self._status = status
         self._status_code = int(status[:3])
         self._headers = CaseInsensitiveDict(headers)
@@ -260,15 +262,8 @@ class _ResultBase:
         return self._status_code
 
     @property
-    def headers(self) -> CaseInsensitiveDict:
-        # NOTE(kgriffs): It would probably be better to annotate this with
-        #   a generic Mapping[str, str] type, but currently there is an
-        #   incompatibility with Cython that prevents us from modifying
-        #   CaseInsensitiveDict to inherit from a generic MutableMapping
-        #   type. This might be resolved in the future by moving
-        #   the CaseInsensitiveDict implementation to the falcon.testing
-        #   module so that it is no longer cythonized.
-        return self._headers
+    def headers(self) -> Headers:
+        return self._headers  # type: ignore[return-value]
 
     @property
     def cookies(self) -> Dict[str, Cookie]:
@@ -357,7 +352,7 @@ class Result(_ResultBase):
     """
 
     def __init__(
-        self, iterable: Iterable[bytes], status: str, headers: HeaderList
+        self, iterable: Iterable[bytes], status: str, headers: HeaderIter
     ) -> None:
         super().__init__(status, headers)
 
@@ -449,7 +444,7 @@ class StreamedResult(_ResultBase):
         self,
         body_chunks: Sequence[bytes],
         status: str,
-        headers: HeaderList,
+        headers: HeaderIter,
         task: asyncio.Task,
         req_event_emitter: helpers.ASGIRequestEventEmitter,
     ):
@@ -483,7 +478,7 @@ def simulate_request(
     method: str = 'GET',
     path: str = '/',
     query_string: Optional[str] = None,
-    headers: Optional[Headers] = None,
+    headers: Optional[HeaderArg] = None,
     content_type: Optional[str] = None,
     body: Optional[Union[str, bytes]] = None,
     json: Optional[Any] = None,
@@ -695,7 +690,7 @@ async def _simulate_request_asgi(
     method: str = ...,
     path: str = ...,
     query_string: Optional[str] = ...,
-    headers: Optional[Headers] = ...,
+    headers: Optional[HeaderArg] = ...,
     content_type: Optional[str] = ...,
     body: Optional[Union[str, bytes]] = ...,
     json: Optional[Any] = ...,
@@ -722,7 +717,7 @@ async def _simulate_request_asgi(
     method: str = ...,
     path: str = ...,
     query_string: Optional[str] = ...,
-    headers: Optional[Headers] = ...,
+    headers: Optional[HeaderArg] = ...,
     content_type: Optional[str] = ...,
     body: Optional[Union[str, bytes]] = ...,
     json: Optional[Any] = ...,
@@ -752,7 +747,7 @@ async def _simulate_request_asgi(
     method: str = 'GET',
     path: str = '/',
     query_string: Optional[str] = None,
-    headers: Optional[Headers] = None,
+    headers: Optional[HeaderArg] = None,
     content_type: Optional[str] = None,
     body: Optional[Union[str, bytes]] = None,
     json: Optional[Any] = None,
@@ -1100,7 +1095,7 @@ class ASGIConductor:
     def __init__(
         self,
         app: Callable[..., Coroutine[Any, Any, Any]],
-        headers: Optional[Headers] = None,
+        headers: Optional[HeaderMapping] = None,
     ):
         if not _is_asgi_app(app):
             raise CompatibilityError('ASGIConductor may only be used with an ASGI app')
@@ -1286,9 +1281,9 @@ class ASGIConductor:
         if self._default_headers:
             # NOTE(kgriffs): Handle the case in which headers is explicitly
             # set to None.
-            additional_headers = kwargs.get('headers', {}) or {}
+            additional_headers = kwargs.get('headers') or {}
 
-            merged_headers = self._default_headers.copy()
+            merged_headers = dict(self._default_headers)
             merged_headers.update(additional_headers)
 
             kwargs['headers'] = merged_headers
@@ -2101,7 +2096,7 @@ class TestClient:
     def __init__(
         self,
         app: Callable[..., Any],  # accept any asgi/wsgi app
-        headers: Optional[Headers] = None,
+        headers: Optional[HeaderMapping] = None,
     ) -> None:
         self.app = app
         self._default_headers = headers
@@ -2193,9 +2188,9 @@ class TestClient:
         if self._default_headers:
             # NOTE(kgriffs): Handle the case in which headers is explicitly
             # set to None.
-            additional_headers = kwargs.get('headers', {}) or {}
+            additional_headers = kwargs.get('headers') or {}
 
-            merged_headers = self._default_headers.copy()
+            merged_headers = dict(self._default_headers)
             merged_headers.update(additional_headers)
 
             kwargs['headers'] = merged_headers
@@ -2275,11 +2270,13 @@ def _prepare_sim_args(
     params: Optional[Mapping[str, Any]],
     params_csv: bool,
     content_type: Optional[str],
-    headers: Optional[Headers],
+    headers: Optional[HeaderArg],
     body: Optional[Union[str, bytes]],
     json: Optional[Any],
     extras: Optional[Mapping[str, Any]],
-) -> Tuple[str, str, Optional[Headers], Optional[Union[str, bytes]], Mapping[str, Any]]:
+) -> Tuple[
+    str, str, Optional[HeaderArg], Optional[Union[str, bytes]], Mapping[str, Any]
+]:
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
 
@@ -2304,12 +2301,12 @@ def _prepare_sim_args(
         )
 
     if content_type is not None:
-        headers = headers or {}
+        headers = dict(headers or {})
         headers['Content-Type'] = content_type
 
     if json is not None:
         body = json_module.dumps(json, ensure_ascii=False)
-        headers = headers or {}
+        headers = dict(headers or {})
         headers['Content-Type'] = MEDIA_JSON
 
     return path, query_string, headers, body, extras

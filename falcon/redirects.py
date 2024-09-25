@@ -21,7 +21,7 @@ import falcon
 from falcon.http_status import HTTPStatus
 
 if TYPE_CHECKING:
-    from falcon._typing import Headers
+    from falcon.typing import Headers
 
 
 class HTTPMovedPermanently(HTTPStatus):

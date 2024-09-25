@@ -58,7 +58,6 @@ import falcon
 from falcon import errors as falcon_errors
 from falcon._typing import CookieArg
 from falcon._typing import HeaderArg
-from falcon._typing import HeaderList
 from falcon._typing import ResponseStatus
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
@@ -327,7 +326,7 @@ class ASGIResponseEventCollector:
 
     def __init__(self) -> None:
         self.events: List[AsgiEvent] = []
-        self.headers: HeaderList = []
+        self.headers: List[Tuple[str, str]] = []
         self.status: Optional[ResponseStatus] = None
         self.body_chunks: list[bytes] = []
         self.more_body: Optional[bool] = None
