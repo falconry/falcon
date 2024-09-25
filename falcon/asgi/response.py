@@ -23,9 +23,9 @@ from typing import Awaitable, Callable, List, Literal, Optional, Tuple, Union
 from falcon import response
 from falcon._typing import AsyncIterator
 from falcon._typing import AsyncReadableIO
-from falcon._typing import MISSING
 from falcon._typing import ResponseCallbacks
 from falcon._typing import SseEmitter
+from falcon._typing import UNSET
 from falcon.util.misc import _encode_items_to_latin1
 from falcon.util.misc import is_python_func
 
@@ -201,7 +201,7 @@ class Response(response.Response):
             if data is None and self._media is not None:
                 # NOTE(kgriffs): We use a special MISSING singleton since
                 #   None is ambiguous (the media handler might return None).
-                if self._media_rendered is MISSING:
+                if self._media_rendered is UNSET:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 

@@ -59,13 +59,13 @@ if TYPE_CHECKING:
     from falcon.response import Response
 
 
-class _Missing(Enum):
-    MISSING = auto()
+class _Unset(Enum):
+    UNSET = auto()
 
 
 _T = TypeVar('_T')
-MISSING = _Missing.MISSING
-MissingOr = Union[Literal[_Missing.MISSING], _T]
+UNSET = _Unset.UNSET
+UnsetOr = Union[Literal[_Unset.UNSET], _T]
 
 Link = Dict[str, str]
 CookieArg = Mapping[str, Union[str, Cookie]]

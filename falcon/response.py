@@ -37,10 +37,10 @@ from typing import (
 )
 
 from falcon._typing import Headers
-from falcon._typing import MISSING
-from falcon._typing import MissingOr
 from falcon._typing import RangeSetHeader
 from falcon._typing import ReadableIO
+from falcon._typing import UNSET
+from falcon._typing import UnsetOr
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
@@ -97,7 +97,7 @@ class Response:
     _extra_headers: Optional[List[Tuple[str, str]]]
     _headers: Headers
     _media: Optional[Any]
-    _media_rendered: MissingOr[bytes]
+    _media_rendered: UnsetOr[bytes]
 
     # Child classes may override this
     context_type: ClassVar[Type[structures.Context]] = structures.Context
@@ -188,7 +188,7 @@ class Response:
         self.stream = None
         self._data = None
         self._media = None
-        self._media_rendered = MISSING
+        self._media_rendered = UNSET
 
         self.context = self.context_type()
 
@@ -251,7 +251,7 @@ class Response:
     @media.setter
     def media(self, value: Any) -> None:
         self._media = value
-        self._media_rendered = MISSING
+        self._media_rendered = UNSET
 
     def render_body(self) -> Optional[bytes]:
         """Get the raw bytestring content for the response body.
@@ -278,7 +278,7 @@ class Response:
             if data is None and self._media is not None:
                 # NOTE(kgriffs): We use a special MISSING singleton since
                 #   None is ambiguous (the media handler might return None).
-                if self._media_rendered is MISSING:
+                if self._media_rendered is UNSET:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 

@@ -34,9 +34,9 @@ from urllib.parse import unquote_to_bytes
 
 from falcon import errors
 from falcon._typing import AsyncReadableIO
-from falcon._typing import MISSING
-from falcon._typing import MissingOr
 from falcon._typing import ReadableIO
+from falcon._typing import UNSET
+from falcon._typing import UnsetOr
 from falcon.errors import MultipartParseError
 from falcon.media.base import BaseHandler
 from falcon.stream import BoundedStream
@@ -80,9 +80,9 @@ class BodyPart:
 
     _content_disposition: Optional[Tuple[str, Dict[str, str]]] = None
     _data: Optional[bytes] = None
-    _filename: MissingOr[Optional[str]] = MISSING
-    _media: MissingOr[Any] = MISSING
-    _name: MissingOr[Optional[str]] = MISSING
+    _filename: UnsetOr[Optional[str]] = UNSET
+    _media: UnsetOr[Any] = UNSET
+    _name: UnsetOr[Optional[str]] = UNSET
 
     stream: PyBufferedReader
     """File-like input object for reading the body part of the
@@ -198,7 +198,7 @@ class BodyPart:
     @property
     def filename(self) -> Optional[str]:
         """File name if the body part is an attached file, and ``None`` otherwise."""
-        if self._filename is MISSING:
+        if self._filename is UNSET:
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -253,7 +253,7 @@ class BodyPart:
             However, Falcon will not raise any error if this parameter is
             missing; the property value will be ``None`` in that case.
         """
-        if self._name is MISSING:
+        if self._name is UNSET:
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -277,7 +277,7 @@ class BodyPart:
         Returns:
             object: The deserialized media representation.
         """
-        if self._media is MISSING:
+        if self._media is UNSET:
             handler, _, _ = self._parse_options.media_handlers._resolve(
                 self.content_type, 'text/plain'
             )

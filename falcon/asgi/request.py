@@ -35,9 +35,9 @@ from falcon import errors
 from falcon import request
 from falcon import request_helpers as helpers
 from falcon._typing import AsgiReceive
-from falcon._typing import MISSING
-from falcon._typing import MissingOr
 from falcon._typing import StoreArgument
+from falcon._typing import UNSET
+from falcon._typing import UnsetOr
 from falcon.asgi_spec import AsgiEvent
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import Forwarded
@@ -100,7 +100,7 @@ class Request(request.Request):
     _cached_prefix: Optional[str] = None
     _cached_relative_uri: Optional[str] = None
     _cached_uri: Optional[str] = None
-    _media: MissingOr[Any] = MISSING
+    _media: UnsetOr[Any] = UNSET
     _media_error: Optional[Exception] = None
     _stream: Optional[BoundedStream] = None
 
@@ -564,7 +564,7 @@ class Request(request.Request):
 
         return netloc_value
 
-    async def get_media(self, default_when_empty: MissingOr[Any] = MISSING) -> Any:
+    async def get_media(self, default_when_empty: UnsetOr[Any] = UNSET) -> Any:
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -606,10 +606,10 @@ class Request(request.Request):
             media (object): The deserialized media representation.
         """
 
-        if self._media is not MISSING:
+        if self._media is not UNSET:
             return self._media
         if self._media_error is not None:
-            if default_when_empty is not MISSING and isinstance(
+            if default_when_empty is not UNSET and isinstance(
                 self._media_error, errors.MediaNotFoundError
             ):
                 return default_when_empty
@@ -629,7 +629,7 @@ class Request(request.Request):
 
         except errors.MediaNotFoundError as err:
             self._media_error = err
-            if default_when_empty is not MISSING:
+            if default_when_empty is not UNSET:
                 return default_when_empty
             raise
         except Exception as err:
@@ -655,7 +655,7 @@ class Request(request.Request):
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
-        if self._cached_if_match is MISSING:
+        if self._cached_if_match is UNSET:
             header_value = self._asgi_headers.get(b'if-match')
             if header_value:
                 self._cached_if_match = helpers._parse_etags(
@@ -668,7 +668,7 @@ class Request(request.Request):
 
     @property
     def if_none_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
-        if self._cached_if_none_match is MISSING:
+        if self._cached_if_none_match is UNSET:
             header_value = self._asgi_headers.get(b'if-none-match')
             if header_value:
                 self._cached_if_none_match = helpers._parse_etags(
