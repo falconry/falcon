@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, Protocol
 
 from falcon import errors
+from falcon._typing import AsyncReadableIO
+from falcon._typing import ReadableIO
 from falcon.media.base import BaseHandler
 from falcon.media.base import BinaryBaseHandlerWS
-from falcon.typing import AsyncReadableIO
-from falcon.typing import ReadableIO
 
 
 class MessagePackHandler(BaseHandler):

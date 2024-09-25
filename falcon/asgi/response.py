@@ -21,11 +21,11 @@ from inspect import iscoroutinefunction
 from typing import Awaitable, Callable, List, Literal, Optional, Tuple, Union
 
 from falcon import response
-from falcon.typing import AsyncIterator
-from falcon.typing import AsyncReadableIO
-from falcon.typing import MISSING
-from falcon.typing import ResponseCallbacks
-from falcon.typing import SseEmitter
+from falcon._typing import AsyncIterator
+from falcon._typing import AsyncReadableIO
+from falcon._typing import MISSING
+from falcon._typing import ResponseCallbacks
+from falcon._typing import SseEmitter
 from falcon.util.misc import _encode_items_to_latin1
 from falcon.util.misc import is_python_func
 

@@ -19,9 +19,9 @@ from __future__ import annotations
 import io
 from typing import AsyncIterator, List, NoReturn, Optional, Protocol, Union
 
+from falcon._typing import AsyncReadableIO
 from falcon.errors import DelimiterError
 from falcon.errors import OperationNotAllowed
-from falcon.typing import AsyncReadableIO
 
 DEFAULT_CHUNK_SIZE = 8192
 """Default minimum chunk size for :class:`BufferedReader` (8 KiB)."""

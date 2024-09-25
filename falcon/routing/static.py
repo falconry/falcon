@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from falcon import asgi
     from falcon import Request
     from falcon import Response
-from falcon.typing import ReadableIO
+from falcon._typing import ReadableIO
 
 
 def _open_range(

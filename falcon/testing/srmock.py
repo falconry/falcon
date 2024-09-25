@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from falcon import util
-from falcon.typing import HeaderList
+from falcon._typing import HeaderList
 
 
 class StartResponseMock:

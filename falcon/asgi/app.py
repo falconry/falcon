@@ -40,6 +40,14 @@ from typing import (
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import AsgiErrorHandler
+from falcon._typing import AsgiReceive
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import AsgiResponderWsCallable
+from falcon._typing import AsgiSend
+from falcon._typing import AsgiSinkCallable
+from falcon._typing import MISSING
+from falcon._typing import SinkPrefix
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
@@ -55,14 +63,6 @@ from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
-from falcon.typing import AsgiErrorHandler
-from falcon.typing import AsgiReceive
-from falcon.typing import AsgiResponderCallable
-from falcon.typing import AsgiResponderWsCallable
-from falcon.typing import AsgiSend
-from falcon.typing import AsgiSinkCallable
-from falcon.typing import MISSING
-from falcon.typing import SinkPrefix
 from falcon.util import get_argnames
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines

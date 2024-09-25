@@ -20,8 +20,8 @@ from typing import Optional, TYPE_CHECKING
 from falcon.util import http_status_to_code
 
 if TYPE_CHECKING:
-    from falcon.typing import HeaderArg
-    from falcon.typing import ResponseStatus
+    from falcon._typing import HeaderArg
+    from falcon._typing import ResponseStatus
 
 
 class HTTPStatus(Exception):

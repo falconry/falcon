@@ -36,6 +36,11 @@ from typing import (
     Union,
 )
 
+from falcon._typing import Headers
+from falcon._typing import MISSING
+from falcon._typing import MissingOr
+from falcon._typing import RangeSetHeader
+from falcon._typing import ReadableIO
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
@@ -46,11 +51,6 @@ from falcon.response_helpers import format_header_value_list
 from falcon.response_helpers import format_range
 from falcon.response_helpers import header_property
 from falcon.response_helpers import is_ascii_encodable
-from falcon.typing import Headers
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
-from falcon.typing import RangeSetHeader
-from falcon.typing import ReadableIO
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import http_status_to_code

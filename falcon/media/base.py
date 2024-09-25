@@ -4,11 +4,11 @@ import abc
 import io
 from typing import Optional, Union
 
+from falcon._typing import AsyncReadableIO
+from falcon._typing import DeserializeSync
+from falcon._typing import ReadableIO
+from falcon._typing import SerializeSync
 from falcon.constants import MEDIA_JSON
-from falcon.typing import AsyncReadableIO
-from falcon.typing import DeserializeSync
-from falcon.typing import ReadableIO
-from falcon.typing import SerializeSync
 
 
 class BaseHandler(metaclass=abc.ABCMeta):

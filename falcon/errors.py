@@ -44,8 +44,8 @@ import falcon.status_codes as status
 from falcon.util.misc import dt_to_http
 
 if TYPE_CHECKING:
-    from falcon.typing import HeaderArg
-    from falcon.typing import Headers
+    from falcon._typing import HeaderArg
+    from falcon._typing import Headers
 
 
 __all__ = (

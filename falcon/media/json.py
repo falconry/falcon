@@ -6,10 +6,10 @@ from typing import Any, Callable, Optional, Union
 
 from falcon import errors
 from falcon import http_error
+from falcon._typing import AsyncReadableIO
+from falcon._typing import ReadableIO
 from falcon.media.base import BaseHandler
 from falcon.media.base import TextBaseHandlerWS
-from falcon.typing import AsyncReadableIO
-from falcon.typing import ReadableIO
 
 
 class JSONHandler(BaseHandler):

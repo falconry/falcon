@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Optional
 
+from falcon._typing import JSONSerializable
 from falcon.constants import MEDIA_JSON
 from falcon.media import BaseHandler
 from falcon.media.json import _DEFAULT_JSON_HANDLER
-from falcon.typing import JSONSerializable
 
 __all__ = ('SSEvent',)
 

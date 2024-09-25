@@ -40,6 +40,10 @@ import warnings
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon._typing import MISSING
+from falcon._typing import MissingOr
+from falcon._typing import ReadableIO
+from falcon._typing import StoreArgument
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
 from falcon.forwarded import _parse_forwarded_header
@@ -47,10 +51,6 @@ from falcon.forwarded import Forwarded
 from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
-from falcon.typing import ReadableIO
-from falcon.typing import StoreArgument
 from falcon.util import deprecation
 from falcon.util import ETag
 from falcon.util import structures

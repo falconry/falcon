@@ -47,6 +47,9 @@ from typing import (
 import warnings
 import wsgiref.validate
 
+from falcon._typing import CookieArg
+from falcon._typing import HeaderList
+from falcon._typing import Headers
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
@@ -54,9 +57,6 @@ from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.typing import CookieArg
-from falcon.typing import HeaderList
-from falcon.typing import Headers
 from falcon.util import async_to_sync
 from falcon.util import CaseInsensitiveDict
 from falcon.util import code_to_http_status

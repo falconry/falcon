@@ -32,9 +32,9 @@ import falcon
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from falcon import app as wsgi
+    from falcon._typing import HeaderArg
+    from falcon._typing import Resource
     from falcon.asgi import app as asgi
-    from falcon.typing import HeaderArg
-    from falcon.typing import Resource
 
 
 def capture_responder_args(

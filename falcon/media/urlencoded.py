@@ -4,9 +4,9 @@ from typing import Any, Optional
 from urllib.parse import urlencode
 
 from falcon import errors
+from falcon._typing import AsyncReadableIO
+from falcon._typing import ReadableIO
 from falcon.media.base import BaseHandler
-from falcon.typing import AsyncReadableIO
-from falcon.typing import ReadableIO
 from falcon.util.uri import parse_query_string
 
 

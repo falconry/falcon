@@ -25,10 +25,10 @@ from falcon.util import http_status_to_code
 from falcon.util import uri
 
 if TYPE_CHECKING:
+    from falcon._typing import HeaderArg
+    from falcon._typing import Link
+    from falcon._typing import ResponseStatus
     from falcon.media import BaseHandler
-    from falcon.typing import HeaderArg
-    from falcon.typing import Link
-    from falcon.typing import ResponseStatus
 
 
 class HTTPError(Exception):

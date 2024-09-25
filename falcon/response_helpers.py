@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
 
-from falcon.typing import RangeSetHeader
+from falcon._typing import RangeSetHeader
 from falcon.util import uri
 from falcon.util.misc import secure_filename
 

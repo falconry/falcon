@@ -56,6 +56,10 @@ from typing import (
 
 import falcon
 from falcon import errors as falcon_errors
+from falcon._typing import CookieArg
+from falcon._typing import HeaderArg
+from falcon._typing import HeaderList
+from falcon._typing import ResponseStatus
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import EventType
@@ -63,10 +67,6 @@ from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
-from falcon.typing import CookieArg
-from falcon.typing import HeaderArg
-from falcon.typing import HeaderList
-from falcon.typing import ResponseStatus
 from falcon.util import code_to_http_status
 from falcon.util import uri
 from falcon.util.mediatypes import parse_header
