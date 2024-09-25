@@ -232,6 +232,8 @@ class BodyPart:
 
         See also: :func:`~.secure_filename`
         """  # noqa: D205
+        if self.filename is None:
+            raise MultipartParseError(description='No filename available.')
         try:
             return misc.secure_filename(self.filename)
         except ValueError as ex:
