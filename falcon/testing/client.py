@@ -182,14 +182,12 @@ class Cookie:
     def secure(self) -> bool:
         """Whether or not the cookie may only only be transmitted
         from the client via HTTPS.
-        """
+        """  # noqa: D205
         return bool(self._secure)
 
     @property
     def http_only(self) -> bool:
-        """Whether or not the cookie may only be included in unscripted
-        requests from the client.
-        """
+        """Whether or not the cookie will be visible from JavaScript in the client."""
         return bool(self._httponly)
 
     @property
@@ -239,7 +237,7 @@ class _ResultBase:
 
     @property
     def status_code(self) -> int:
-        """The code portion of the HTTP status string"""
+        """The code portion of the HTTP status string."""
         return self._status_code
 
     @property
@@ -252,7 +250,7 @@ class _ResultBase:
             Multiple instances of a header in the response are
             currently not supported; it is unspecified which value
             will "win" and be represented in `headers`.
-        """
+        """  # noqa: D205
         return self._headers  # type: ignore[return-value]
 
     @property
@@ -265,13 +263,14 @@ class _ResultBase:
             client = testing.TestClient(app)
             response_one = client.simulate_get('/')
             response_two = client.simulate_post('/', cookies=response_one.cookies)
-        """
+        """  # noqa: D205
         return self._cookies
 
     @property
     def encoding(self) -> Optional[str]:
-        """Text encoding of the response body, or ``None`` if the encoding
-        can not be determined.
+        """Text encoding of the response body.
+
+        Returns ``None`` if the encoding can not be determined.
         """
         return self._encoding
 

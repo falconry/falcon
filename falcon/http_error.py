@@ -160,7 +160,7 @@ class HTTPError(Exception):
     def status_code(self) -> int:
         """HTTP status code normalized from the ``status`` argument passed
         to the initializer.
-        """
+        """  # noqa: D205
         return http_status_to_code(self.status)
 
     def to_dict(

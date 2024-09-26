@@ -184,7 +184,7 @@ class ASGIRequestEventEmitter:
     def disconnected(self) -> bool:
         """Returns ``True`` if the simulated client connection is in a
         "disconnected" state.
-        """
+        """  # noqa: D205
         return self._disconnected or (self._disconnect_at <= time.time())
 
     def disconnect(self, exhaust_body: Optional[bool] = None) -> None:
@@ -429,27 +429,29 @@ class ASGIWebSocketSimulator:
     def ready(self) -> bool:
         """``True`` if the WebSocket connection has been accepted and the client is
         still connected, ``False`` otherwise.
-        """
+        """  # noqa: D205
         return self._state == _WebSocketState.ACCEPTED
 
     @property
     def closed(self) -> bool:
         """``True`` if the WebSocket connection has been denied or closed by the app,
         or the client has disconnected.
-        """
+        """  # noqa: D205
         return self._state in {_WebSocketState.DENIED, _WebSocketState.CLOSED}
 
     @property
     def close_code(self) -> Optional[int]:
-        """The WebSocket close code provided by the app if the connection is closed,
-        or ``None`` if the connection is open.
+        """The WebSocket close code provided by the app if the connection is closed.
+
+        Returns ``None`` if the connection is still open.
         """
         return self._close_code
 
     @property
     def close_reason(self) -> Optional[str]:
-        """The WebSocket close reason provided by the app if the connection is closed,
-        or ``None`` if the connection is open.
+        """The WebSocket close reason provided by the app if the connection is closed.
+
+        Returns ``None`` if the connection is still open.
         """
         return self._close_reason
 
@@ -464,7 +466,7 @@ class ASGIWebSocketSimulator:
         header name, and *value* is the header value for each header returned by
         the app when it accepted the WebSocket connection.
         This property resolves to ``None`` if the connection has not been accepted.
-        """
+        """  # noqa: D205
         return self._accepted_headers
 
     async def wait_ready(self, timeout: Optional[int] = None) -> None:

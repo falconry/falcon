@@ -164,7 +164,7 @@ class BoundedStream(io.IOBase):
     def eof(self) -> bool:
         """``True`` if there is no more data to read from the stream,
         otherwise ``False``.
-        """
+        """  # noqa: D205
         return self._bytes_remaining <= 0
 
     @property
