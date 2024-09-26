@@ -37,7 +37,6 @@ from typing import (
 )
 
 from falcon._typing import RangeSetHeader
-from falcon._typing import ReadableIO
 from falcon._typing import UNSET
 from falcon._typing import UnsetOr
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
@@ -51,6 +50,7 @@ from falcon.response_helpers import format_range
 from falcon.response_helpers import header_property
 from falcon.response_helpers import is_ascii_encodable
 from falcon.typing import Headers
+from falcon.typing import ReadableIO
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import http_status_to_code

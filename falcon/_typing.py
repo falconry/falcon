@@ -22,7 +22,6 @@ from http.cookiejar import Cookie
 import sys
 from typing import (
     Any,
-    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -51,7 +50,6 @@ else:
 if TYPE_CHECKING:
     from falcon.asgi import Request as AsgiRequest
     from falcon.asgi import Response as AsgiResponse
-    from falcon.asgi import SSEvent
     from falcon.asgi import WebSocket
     from falcon.asgi_spec import AsgiEvent
     from falcon.asgi_spec import AsgiSendMsg
@@ -103,13 +101,11 @@ class AsgiSinkCallable(Protocol):
     ) -> None: ...
 
 
-Headers = Dict[str, str]
-"""Headers dictionary returned by the framework."""
 HeaderMapping = Mapping[str, str]
 HeaderIter = Iterable[Tuple[str, str]]
 HeaderArg = Union[HeaderMapping, HeaderIter]
 ResponseStatus = Union[http.HTTPStatus, str, int]
-StoreArgument = Optional[Dict[str, Any]]
+StoreArg = Optional[Dict[str, Any]]
 Resource = object
 RangeSetHeader = Union[Tuple[int, int, int], Tuple[int, int, int, str]]
 
@@ -125,12 +121,6 @@ class ResponderMethod(Protocol):
     ) -> None: ...
 
 
-class ReadableIO(Protocol):
-    """File like protocol that defines only a read method."""
-
-    def read(self, n: Optional[int] = ..., /) -> bytes: ...
-
-
 class ResponderCallable(Protocol):
     def __call__(self, req: Request, resp: Response, **kwargs: Any) -> None: ...
 
@@ -143,13 +133,6 @@ ProcessResponseMethod = Callable[['Request', 'Response', Resource, bool], None]
 
 
 # ASGI
-class AsyncReadableIO(Protocol):
-    """Async file like protocol that defines only a read method and is iterable."""
-
-    async def read(self, n: Optional[int] = ..., /) -> bytes: ...
-    def __aiter__(self) -> AsyncIterator[bytes]: ...
-
-
 class AsgiResponderMethod(Protocol):
     async def __call__(
         self,
@@ -185,7 +168,6 @@ AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[No
 AsgiProcessResourceWsMethod = Callable[
     ['AsgiRequest', 'WebSocket', Resource, Dict[str, Any]], Awaitable[None]
 ]
-SseEmitter = AsyncIterator[Optional['SSEvent']]
 ResponseCallbacks = Union[
     Tuple[Callable[[], None], Literal[False]],
     Tuple[Callable[[], Awaitable[None]], Literal[True]],

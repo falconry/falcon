@@ -11,8 +11,35 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Public module that export Falcon type definitions."""
+"""Module that defines public Falcon type definitions."""
 
-from ._typing import AsyncReadableIO as AsyncReadableIO
-from ._typing import Headers as Headers
-from ._typing import ReadableIO as ReadableIO
+from __future__ import annotations
+
+from typing import AsyncIterator, Dict, Optional, Protocol, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from falcon.asgi import SSEvent
+
+Headers = Dict[str, str]
+"""Headers dictionary returned by the framework."""
+
+
+# WSGI
+class ReadableIO(Protocol):
+    """File like protocol that defines only a read method."""
+
+    def read(self, n: Optional[int] = ..., /) -> bytes: ...
+
+
+# ASGI
+class AsyncReadableIO(Protocol):
+    """Async file like protocol that defines only a read method and is iterable."""
+
+    async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    def __aiter__(self) -> AsyncIterator[bytes]: ...
+
+
+SseEmitter = AsyncIterator[Optional['SSEvent']]
+"""Async iterator or generator that generates Server-Sent Events
+returning :class:`falcon.asgi.SSEvent` insatnces.
+"""

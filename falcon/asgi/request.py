@@ -35,7 +35,7 @@ from falcon import errors
 from falcon import request
 from falcon import request_helpers as helpers
 from falcon._typing import AsgiReceive
-from falcon._typing import StoreArgument
+from falcon._typing import StoreArg
 from falcon._typing import UNSET
 from falcon._typing import UnsetOr
 from falcon.asgi_spec import AsgiEvent
@@ -792,7 +792,7 @@ class Request(request.Request):
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[str] = ...,
     ) -> str: ...
 
@@ -801,7 +801,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: str,
     ) -> str: ...
@@ -811,7 +811,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]: ...
 
@@ -819,7 +819,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]:
         """Return the raw value of a query string parameter as a string.

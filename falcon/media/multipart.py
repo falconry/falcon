@@ -33,13 +33,13 @@ from typing import (
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
-from falcon._typing import AsyncReadableIO
-from falcon._typing import ReadableIO
 from falcon._typing import UNSET
 from falcon._typing import UnsetOr
 from falcon.errors import MultipartParseError
 from falcon.media.base import BaseHandler
 from falcon.stream import BoundedStream
+from falcon.typing import AsyncReadableIO
+from falcon.typing import ReadableIO
 from falcon.util import BufferedReader
 from falcon.util import misc
 from falcon.util.mediatypes import parse_header

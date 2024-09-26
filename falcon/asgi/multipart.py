@@ -25,11 +25,11 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from falcon._typing import AsyncReadableIO
 from falcon._typing import UNSET
 from falcon.asgi.reader import BufferedReader
 from falcon.errors import DelimiterError
 from falcon.media import multipart
+from falcon.typing import AsyncReadableIO
 from falcon.util.mediatypes import parse_header
 
 if TYPE_CHECKING:
