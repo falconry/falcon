@@ -14,6 +14,8 @@
 
 """ASGI application class."""
 
+from __future__ import annotations
+
 import asyncio
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
@@ -46,7 +48,6 @@ from falcon.app_helpers import prepare_middleware_ws
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
-from falcon.constants import _UNSET
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
@@ -60,6 +61,7 @@ from falcon.typing import AsgiResponderCallable
 from falcon.typing import AsgiResponderWsCallable
 from falcon.typing import AsgiSend
 from falcon.typing import AsgiSinkCallable
+from falcon.typing import MISSING
 from falcon.typing import SinkPrefix
 from falcon.util import get_argnames
 from falcon.util.misc import is_python_func
@@ -552,9 +554,9 @@ class App(falcon.app.App):
                     data = resp._data
 
                     if data is None and resp._media is not None:
-                        # NOTE(kgriffs): We use a special _UNSET singleton since
+                        # NOTE(kgriffs): We use a special MISSING singleton since
                         #   None is ambiguous (the media handler might return None).
-                        if resp._media_rendered is _UNSET:
+                        if resp._media_rendered is MISSING:
                             opt = resp.options
                             if not resp.content_type:
                                 resp.content_type = opt.default_media_type
@@ -577,7 +579,7 @@ class App(falcon.app.App):
                         data = text.encode()
                     except AttributeError:
                         # NOTE(kgriffs): Assume it was a bytes object already
-                        data = text
+                        data = text  # type: ignore[assignment]
 
             else:
                 # NOTE(vytas): Custom response type.
@@ -1028,9 +1030,9 @@ class App(falcon.app.App):
 
         loop = asyncio.get_running_loop()
 
-        for cb, is_async in callbacks:  # type: ignore[attr-defined]
+        for cb, is_async in callbacks or ():
             if is_async:
-                loop.create_task(cb())
+                loop.create_task(cb())  # type: ignore[arg-type]
             else:
                 loop.run_in_executor(None, cb)
 
@@ -1058,7 +1060,7 @@ class App(falcon.app.App):
                     )
                     return
 
-                if self.req_options.auto_parse_form_urlencoded:
+                if self.req_options._auto_parse_form_urlencoded:
                     await send(
                         {
                             'type': EventType.LIFESPAN_STARTUP_FAILED,

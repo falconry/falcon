@@ -3,7 +3,6 @@ import pytest
 import falcon
 import falcon.errors as errors
 import falcon.status_codes as status
-from falcon.util.deprecation import DeprecatedWarning
 
 
 @pytest.mark.parametrize(
@@ -151,10 +150,7 @@ def test_with_title_desc_and_headers(err):
     ],
 )
 def test_kw_only(err):
-    # only deprecated for now
-    # with pytest.raises(TypeError, match='positional argument'):
-    #     err('foo', 'bar')
-    with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
+    with pytest.raises(TypeError, match='positional argument'):
         err('foo', 'bar')
 
 
@@ -190,10 +186,7 @@ def test_with_title_desc_and_headers_args(err, args):
     ),
 )
 def test_args_kw_only(err, args):
-    # only deprecated for now
-    # with pytest.raises(TypeError, match='positional argument'):
-    #     err(*args, 'bar')
-    with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
+    with pytest.raises(TypeError, match='positional argument'):
         err(*args, 'bar')
 
 

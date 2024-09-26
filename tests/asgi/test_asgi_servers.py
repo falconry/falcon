@@ -208,7 +208,20 @@ class TestASGIServer:
 class TestWebSocket:
     @pytest.mark.parametrize('explicit_close', [True, False])
     @pytest.mark.parametrize('close_code', [None, 4321])
-    async def test_hello(self, explicit_close, close_code, server_url_events_ws):
+    @pytest.mark.parametrize('max_receive_queue', [0, 4, 17])
+    async def test_hello(
+        self,
+        explicit_close,
+        close_code,
+        max_receive_queue,
+        server_base_url,
+        server_url_events_ws,
+    ):
+        resp = requests.patch(
+            server_base_url + 'wsoptions', json={'max_receive_queue': max_receive_queue}
+        )
+        resp.raise_for_status()
+
         echo_expected = 'Check 1 - \U0001f600'
 
         extra_headers = {'X-Command': 'recv'}
@@ -237,9 +250,9 @@ class TestWebSocket:
                     message_binary = await ws.recv()
                 except websockets.exceptions.ConnectionClosed as ex:
                     if explicit_close and close_code:
-                        assert ex.code == close_code
+                        assert ex.rcvd.code == close_code
                     else:
-                        assert ex.code == 1000
+                        assert ex.rcvd.code == 1000
 
                     break
 

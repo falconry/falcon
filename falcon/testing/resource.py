@@ -33,7 +33,7 @@ import falcon
 if typing.TYPE_CHECKING:  # pragma: no cover
     from falcon import app as wsgi
     from falcon.asgi import app as asgi
-    from falcon.typing import HeaderList
+    from falcon.typing import HeaderArg
     from falcon.typing import Resource
 
 
@@ -181,8 +181,8 @@ class SimpleTestResource:
         status: typing.Optional[str] = None,
         body: typing.Optional[str] = None,
         json: typing.Optional[dict[str, str]] = None,
-        headers: typing.Optional[HeaderList] = None,
-    ):
+        headers: typing.Optional[HeaderArg] = None,
+    ) -> None:
         self._default_status = status
         self._default_headers = headers
 
@@ -209,7 +209,7 @@ class SimpleTestResource:
         self.captured_req_body: typing.Optional[bytes] = None
 
     @property
-    def called(self):
+    def called(self) -> bool:
         return self.captured_req is not None
 
     @falcon.before(capture_responder_args)

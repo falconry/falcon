@@ -4,6 +4,7 @@ import asyncio
 import collections
 from enum import auto
 from enum import Enum
+import re
 from typing import Any, Deque, Dict, Iterable, Mapping, Optional, Tuple, Union
 
 from falcon import errors
@@ -16,7 +17,7 @@ from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
 from falcon.typing import AsgiReceive
 from falcon.typing import AsgiSend
-from falcon.typing import HeaderList
+from falcon.typing import HeaderArg
 from falcon.util import misc
 
 __all__ = ('WebSocket',)
@@ -26,6 +27,9 @@ class _WebSocketState(Enum):
     HANDSHAKE = auto()
     ACCEPTED = auto()
     CLOSED = auto()
+
+
+_CLIENT_DISCONNECTED_CAUSE = re.compile(r'received (\d\d\d\d)')
 
 
 class WebSocket:
@@ -47,6 +51,8 @@ class WebSocket:
         'subprotocols',
     )
 
+    _asgi_receive: AsgiReceive
+    _asgi_send: AsgiSend
     _state: _WebSocketState
     _close_code: Optional[int]
     subprotocols: Tuple[str, ...]
@@ -81,7 +87,12 @@ class WebSocket:
         #   event via one of their receive() calls, and there is no
         #   need for the added overhead.
         self._buffered_receiver = _BufferedReceiver(receive, max_receive_queue)
-        self._asgi_receive = self._buffered_receiver.receive
+        if max_receive_queue > 0:
+            self._asgi_receive = self._buffered_receiver.receive
+        else:
+            # NOTE(vytas): Pass through the receive callable bypassing the
+            #   buffered receiver in the case max_receive_queue is set to 0.
+            self._asgi_receive = receive
         self._asgi_send = send
 
         mh_text = media_handlers[WebSocketPayloadType.TEXT]
@@ -133,7 +144,7 @@ class WebSocket:
     async def accept(
         self,
         subprotocol: Optional[str] = None,
-        headers: Optional[HeaderList] = None,
+        headers: Optional[HeaderArg] = None,
     ) -> None:
         """Accept the incoming WebSocket connection.
 
@@ -155,7 +166,7 @@ class WebSocket:
                 client may choose to abandon the connection in this case,
                 if it does not receive an explicit protocol selection.
 
-            headers (HeaderList): An iterable of ``(name: str, value: str)``
+            headers (HeaderArg): An iterable of ``(name: str, value: str)``
                 two-item iterables, representing a collection of HTTP headers to
                 include in the handshake response. Both *name* and *value* must
                 be of type ``str`` and contain only US-ASCII characters.
@@ -468,6 +479,8 @@ class WebSocket:
         if self._buffered_receiver.client_disconnected:
             self._state = _WebSocketState.CLOSED
             self._close_code = self._buffered_receiver.client_disconnected_code
+
+        if self._state == _WebSocketState.CLOSED:
             raise errors.WebSocketDisconnected(self._close_code)
 
         try:
@@ -483,7 +496,16 @@ class WebSocket:
 
             translated_ex = self._translate_webserver_error(ex)
             if translated_ex:
-                raise translated_ex
+                # NOTE(vytas): Mark WebSocket as closed if we catch an error
+                #   upon sending. This is useful when not using the buffered
+                #   receiver, and not receiving anything at the given moment.
+                self._state = _WebSocketState.CLOSED
+                if isinstance(translated_ex, errors.WebSocketDisconnected):
+                    self._close_code = translated_ex.code
+
+                # NOTE(vytas): Use the raise from form in order to preserve
+                #   the traceback.
+                raise translated_ex from ex
 
             # NOTE(kgriffs): Re-raise other errors directly so that we don't
             #   obscure the traceback.
@@ -528,6 +550,25 @@ class WebSocket:
             return ValueError(
                 'WebSocket subprotocol must be from the list sent by the client'
             )
+
+        # NOTE(vytas): Per ASGI HTTP & WebSocket spec v2.4:
+        #   If send() is called on a closed connection the server should raise
+        #   a server-specific subclass of IOError.
+        # NOTE(vytas): Uvicorn 0.30.6 seems to conform to the spec only when
+        #   using the wsproto stack, it then raises an instance of
+        #   uvicorn.protocols.utils.ClientDisconnected.
+        if isinstance(ex, OSError):
+            close_code = None
+
+            # NOTE(vytas): If using the "websockets" backend, Uvicorn raises
+            #   and instance of OSError from a websockets exception like this:
+            #   "received 1001 (going away); then sent 1001 (going away)"
+            if ex.__cause__:
+                match = _CLIENT_DISCONNECTED_CAUSE.match(str(ex.__cause__))
+                if match:
+                    close_code = int(match.group(1))
+
+            return errors.WebSocketDisconnected(close_code)
 
         return None
 
@@ -679,7 +720,8 @@ class _BufferedReceiver:
         self.client_disconnected_code = None
 
     def start(self) -> None:
-        if self._pump_task is None:
+        # NOTE(vytas): Do not start anything if buffering is disabled.
+        if self._pump_task is None and self._max_queue > 0:
             self._pump_task = asyncio.create_task(self._pump())
 
     async def stop(self) -> None:

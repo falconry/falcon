@@ -30,7 +30,7 @@ import functools
 import http
 import inspect
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 import unicodedata
 
 from falcon import status_codes
@@ -55,7 +55,6 @@ __all__ = (
     'to_query_str',
     'get_bound_method',
     'get_argnames',
-    'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
     'secure_filename',
@@ -216,7 +215,9 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
 
 def to_query_str(
-    params: Dict[str, Any], comma_delimited_lists: bool = True, prefix: bool = True
+    params: Optional[Mapping[str, Any]],
+    comma_delimited_lists: bool = True,
+    prefix: bool = True,
 ) -> str:
     """Convert a dictionary of parameters to a query string.
 
@@ -331,47 +332,6 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-@deprecated('Please use falcon.code_to_http_status() instead.')
-def get_http_status(
-    status_code: Union[str, int], default_reason: str = _DEFAULT_HTTP_REASON
-) -> str:
-    """Get both the http status code and description from just a code.
-
-    Warning:
-        As of Falcon 3.0, this method has been deprecated in favor of
-        :meth:`~falcon.code_to_http_status`.
-
-    Args:
-        status_code: integer or string that can be converted to an integer
-        default_reason: default text to be appended to the status_code
-            if the lookup does not find a result
-
-    Returns:
-        str: status code e.g. "404 Not Found"
-
-    Raises:
-        ValueError: the value entered could not be converted to an integer
-
-    """
-    # sanitize inputs
-    try:
-        code = float(status_code)  # float can validate values like "401.1"
-        code = int(code)  # converting to int removes the decimal places
-        if code < 100:
-            raise ValueError
-    except ValueError:
-        raise ValueError(
-            'get_http_status failed: "%s" is not a valid status code', status_code
-        )
-
-    # lookup the status code
-    try:
-        return getattr(status_codes, 'HTTP_' + str(code))
-    except AttributeError:
-        # not found
-        return str(code) + ' ' + default_reason
-
-
 def secure_filename(filename: Optional[str]) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
@@ -461,9 +421,8 @@ def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
     An LRU is used to minimize lookup time.
 
     Note:
-        Unlike the deprecated :func:`get_http_status`, this function will not
-        attempt to coerce a string status to an integer code, assuming the
-        string already denotes an HTTP status line.
+        This function will not attempt to coerce a string status to an
+        integer code, assuming the string already denotes an HTTP status line.
 
     Args:
         status: The status code or enum to normalize.
@@ -519,6 +478,6 @@ def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
 
 _encode_items_to_latin1 = _cy_encode_items_to_latin1 or _encode_items_to_latin1
 
-isascii = deprecated('This will be removed in V5. Please use `str.isascii`')(
-    str.isascii
-)
+isascii = deprecated(
+    'This method will be removed in Falcon 5.0; please use str.isascii() instead.'
+)(str.isascii)

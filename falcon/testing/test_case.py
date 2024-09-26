@@ -78,7 +78,7 @@ class TestCase(unittest.TestCase, TestClient):
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
-    def setUp(self):
+    def setUp(self) -> None:
         super(TestCase, self).setUp()
 
         app = falcon.App()

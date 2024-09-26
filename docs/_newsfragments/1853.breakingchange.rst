@@ -1,3 +1,60 @@
-The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError` was
-removed, along with the ``NoRepresentation`` and ``OptionalRepresentation``
-classes.
+A number of previously deprecated methods, attributes and classes have now been
+removed:
+
+* In Falcon 3.0, the use of positional arguments was deprecated for the
+  optional initializer parameters of :class:`falcon.HTTPError` and its
+  subclasses.
+
+  We have now redefined these optional arguments as keyword-only, so passing
+  them as positional arguments will result in a :class:`TypeError`:
+
+  >>> import falcon
+  >>> falcon.HTTPForbidden('AccessDenied')
+  Traceback (most recent call last):
+    <...>
+  TypeError: HTTPForbidden.__init__() takes 1 positional argument but 2 were given
+  >>> falcon.HTTPForbidden('AccessDenied', 'No write access')
+  Traceback (most recent call last):
+    <...>
+  TypeError: HTTPForbidden.__init__() takes 1 positional argument but 3 were given
+
+  Instead, simply pass these parameters as keyword arguments:
+
+  >>> import falcon
+  >>> falcon.HTTPForbidden(title='AccessDenied')
+  <HTTPForbidden: 403 Forbidden>
+  >>> falcon.HTTPForbidden(title='AccessDenied', description='No write access')
+  <HTTPForbidden: 403 Forbidden>
+
+* The ``falcon-print-routes`` command-line utility is no longer supported;
+  ``falcon-inspect-app`` is a direct replacement.
+
+* A deprecated utility function, ``falcon.get_http_status()``, was removed.
+  Please use :meth:`falcon.code_to_http_status` instead.
+
+* A deprecated routing utility, ``compile_uri_template()``, was removed.
+  This function was only employed in the early versions of the framework, and
+  is expected to have been fully supplanted by the
+  :class:`~falcon.routing.CompiledRouter`. In a pinch, you can simply copy its
+  implementation from the Falcon 3.x source tree into your application.
+
+* The deprecated ``Response.add_link()`` method was removed; please use
+  :meth:`Response.append_link <falcon.Response.append_link>` instead.
+
+* The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError`
+  was removed, along with the ``NoRepresentation`` and
+  ``OptionalRepresentation`` classes.
+
+* An undocumented, deprecated public method ``find_by_media_type()`` of
+  :class:`media.Handlers <falcon.media.Handlers>` was removed.
+  Apart from configuring handlers for Internet media types, the rest of
+  :class:`~falcon.media.Handlers` is only meant to be used internally by the
+  framework (unless documented otherwise).
+
+* Previously, the ``json`` module could be imported via ``falcon.util``.
+  This deprecated alias was removed; please import ``json`` directly from the
+  :mod:`standard library <json>`, or another third-party JSON library of
+  choice.
+
+We decided, on the other hand, to keep the deprecated :class:`falcon.API` alias
+until Falcon 5.0.

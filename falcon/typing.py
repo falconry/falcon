@@ -18,6 +18,7 @@ from __future__ import annotations
 from enum import auto
 from enum import Enum
 import http
+from http.cookiejar import Cookie
 import sys
 from typing import (
     Any,
@@ -27,6 +28,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    Mapping,
     Optional,
     Pattern,
     Protocol,
@@ -48,6 +50,7 @@ else:
 if TYPE_CHECKING:
     from falcon.asgi import Request as AsgiRequest
     from falcon.asgi import Response as AsgiResponse
+    from falcon.asgi import SSEvent
     from falcon.asgi import WebSocket
     from falcon.asgi_spec import AsgiEvent
     from falcon.asgi_spec import AsgiSendMsg
@@ -65,7 +68,7 @@ MISSING = _Missing.MISSING
 MissingOr = Union[Literal[_Missing.MISSING], _T]
 
 Link = Dict[str, str]
-
+CookieArg = Mapping[str, Union[str, Cookie]]
 # Error handlers
 ErrorHandler = Callable[['Request', 'Response', BaseException, Dict[str, Any]], None]
 
@@ -116,10 +119,12 @@ class AsgiSinkCallable(Protocol):
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
 Headers = Dict[str, str]
-HeaderList = Union[Headers, List[Tuple[str, str]]]
+HeaderList = List[Tuple[str, str]]
+HeaderArg = Union[Headers, HeaderList]
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArgument = Optional[Dict[str, Any]]
 Resource = object
+RangeSetHeader = Union[Tuple[int, int, int], Tuple[int, int, int, str]]
 
 
 class ResponderMethod(Protocol):
@@ -176,6 +181,11 @@ AsgiProcessResponseMethod = Callable[
 AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[None]]
 AsgiProcessResourceWsMethod = Callable[
     ['AsgiRequest', 'WebSocket', Resource, Dict[str, Any]], Awaitable[None]
+]
+SseEmitter = AsyncIterator[Optional['SSEvent']]
+ResponseCallbacks = Union[
+    Tuple[Callable[[], None], Literal[False]],
+    Tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
 
 

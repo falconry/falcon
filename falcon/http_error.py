@@ -23,11 +23,10 @@ from falcon.constants import MEDIA_JSON
 from falcon.util import code_to_http_status
 from falcon.util import http_status_to_code
 from falcon.util import uri
-from falcon.util.deprecation import deprecated_args
 
 if TYPE_CHECKING:
     from falcon.media import BaseHandler
-    from falcon.typing import HeaderList
+    from falcon.typing import HeaderArg
     from falcon.typing import Link
     from falcon.typing import ResponseStatus
 
@@ -49,11 +48,8 @@ class HTTPError(Exception):
     is implemented via ``to_dict()``). To also support XML, override
     the ``to_xml()`` method.
 
-    Note:
-        ``status`` is the only positional argument allowed, the other
-        arguments should be used as keyword only. Using them as positional
-        arguments will raise a deprecation warning and will result in an
-        error in a future version of falcon.
+    `status` is the only positional argument allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         status (Union[str,int]): HTTP status code or line (e.g.,
@@ -117,13 +113,13 @@ class HTTPError(Exception):
         'code',
     )
 
-    @deprecated_args(allowed_positional=1)
     def __init__(
         self,
         status: ResponseStatus,
+        *,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: Optional[HeaderList] = None,
+        headers: Optional[HeaderArg] = None,
         href: Optional[str] = None,
         href_text: Optional[str] = None,
         code: Optional[int] = None,
