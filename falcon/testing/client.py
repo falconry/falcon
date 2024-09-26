@@ -68,8 +68,8 @@ from falcon.util import http_date_to_dt
 from falcon.util import to_query_str
 
 if TYPE_CHECKING:
-    from falcon import App
-    from falcon.asgi import App as AsgiApp
+    import falcon
+    from falcon import asgi
 
 warnings.filterwarnings(
     'error',
@@ -1053,7 +1053,7 @@ class ASGIConductor:
 
     # NOTE(caseit): while any asgi app is accept, type this as a falcon
     # asgi app for user convenience
-    app: AsgiApp
+    app: asgi.App
     """The app that this client instance was configured to use."""
 
     def __init__(
@@ -2055,7 +2055,7 @@ class TestClient:
 
     # NOTE(caseit): while any asgi/wsgi app is accept, type this as a falcon
     # app for user convenience
-    app: App
+    app: falcon.App
     """The app that this client instance was configured to use."""
 
     def __init__(
