@@ -124,6 +124,7 @@ __all__ = (
     'HTTPNotFound',
     'HTTPNotImplemented',
     'HTTPContentTooLarge',
+    'HTTPPayloadTooLarge',
     'HTTPPreconditionFailed',
     'HTTPPreconditionRequired',
     'HTTPRangeNotSatisfiable',
@@ -372,6 +373,7 @@ from falcon.errors import HTTPNetworkAuthenticationRequired
 from falcon.errors import HTTPNotAcceptable
 from falcon.errors import HTTPNotFound
 from falcon.errors import HTTPNotImplemented
+from falcon.errors import HTTPPayloadTooLarge
 from falcon.errors import HTTPPreconditionFailed
 from falcon.errors import HTTPPreconditionRequired
 from falcon.errors import HTTPRangeNotSatisfiable

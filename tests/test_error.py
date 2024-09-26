@@ -350,3 +350,9 @@ class TestErrorsWithHeadersKW:
         assert header_name in value.headers
         assert isinstance(value.headers, dict)
         assert value.headers[header_name] == res
+
+
+def test_http_payload_too_large_deprecation():
+    with pytest.warns(match='HTTPContentTooLarge'):
+        err = errors.HTTPPayloadTooLarge()
+        assert err.title == '413 Content Too Large'
