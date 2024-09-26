@@ -260,11 +260,11 @@ class Request(request.Request):
     # trouble.
     # ------------------------------------------------------------------------
 
-    auth: Optional[str] = asgi_helpers.header_property('Authorization')
-    expect: Optional[str] = asgi_helpers.header_property('Expect')
-    if_range: Optional[str] = asgi_helpers.header_property('If-Range')
-    referer: Optional[str] = asgi_helpers.header_property('Referer')
-    user_agent: Optional[str] = asgi_helpers.header_property('User-Agent')
+    auth: Optional[str] = asgi_helpers._header_property('Authorization')
+    expect: Optional[str] = asgi_helpers._header_property('Expect')
+    if_range: Optional[str] = asgi_helpers._header_property('If-Range')
+    referer: Optional[str] = asgi_helpers._header_property('Referer')
+    user_agent: Optional[str] = asgi_helpers._header_property('User-Agent')
 
     @property
     def accept(self) -> str:
