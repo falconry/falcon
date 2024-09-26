@@ -292,20 +292,6 @@ class ASGIRequestEventEmitter:
 class ASGIResponseEventCollector:
     """Collects and validates ASGI events returned by an app.
 
-    Attributes:
-        events (iterable): An iterable of events that were emitted by
-            the app, collected as-is from the app.
-        headers (iterable): An iterable of (str, str) tuples representing
-            the ISO-8859-1 decoded headers emitted by the app in the body of
-            the ``'http.response.start'`` event.
-        status (int): HTTP status code emitted by the app in the body of
-            the ``'http.response.start'`` event.
-        body_chunks (iterable): An iterable of ``bytes`` objects emitted
-            by the app via ``'http.response.body'`` events.
-        more_body (bool): Whether or not the app expects to emit more
-            body chunks. Will be ``None`` if unknown (i.e., the app has
-            not yet emitted any ``'http.response.body'`` events.)
-
     Raises:
         TypeError: An event field emitted by the app was of an unexpected type.
         ValueError: Invalid event name or field value.
@@ -323,12 +309,35 @@ class ASGIResponseEventCollector:
     _HEADER_NAME_RE = re.compile(rb'^[a-zA-Z][a-zA-Z0-9\-_]*$')
     _BAD_HEADER_VALUE_RE = re.compile(rb'[\000-\037]')
 
+    events: List[AsgiEvent]
+    """An iterable of events that were emitted by the app,
+    collected as-is from the app.
+    """
+    headers: List[Tuple[str, str]]
+    """An iterable of (str, str) tuples representing the ISO-8859-1 decoded
+    headers emitted by the app in the body of the ``'http.response.start'`` event.
+    """
+    status: Optional[ResponseStatus]
+    """HTTP status code emitted by the app in the body of the
+    ``'http.response.start'`` event.
+    """
+    body_chunks: List[bytes]
+    """An iterable of ``bytes`` objects emitted by the app via
+    ``'http.response.body'`` events.
+    """
+    more_body: Optional[bool]
+    """Whether or not the app expects to emit more body chunks.
+
+    Will be ``None`` if unknown (i.e., the app has not yet emitted
+    any ``'http.response.body'`` events.)
+    """
+
     def __init__(self) -> None:
-        self.events: List[AsgiEvent] = []
-        self.headers: List[Tuple[str, str]] = []
-        self.status: Optional[ResponseStatus] = None
-        self.body_chunks: list[bytes] = []
-        self.more_body: Optional[bool] = None
+        self.events = []
+        self.headers = []
+        self.status = None
+        self.body_chunks = []
+        self.more_body = None
 
     async def collect(self, event: AsgiEvent) -> None:
         if self.more_body is False:

@@ -164,16 +164,28 @@ class SimpleTestResource:
             *json* or *body* may be specified, but not both.
         headers (dict): Default set of additional headers to include in
             responses
+    """
 
-    Attributes:
-        called (bool): Whether or not a req/resp was captured.
-        captured_req (falcon.Request): The last Request object passed
-            into any one of the responder methods.
-        captured_resp (falcon.Response): The last Response object passed
-            into any one of the responder methods.
-        captured_kwargs (dict): The last dictionary of kwargs, beyond
-            ``req`` and ``resp``, that were passed into any one of the
-            responder methods.
+    captured_req: typing.Optional[typing.Union[wsgi.Request, asgi.Request]]
+    """The last Request object passed into any one of the responder methods."""
+    captured_resp: typing.Optional[typing.Union[wsgi.Response, asgi.Response]]
+    """The last Response object passed into any one of the responder methods."""
+
+    captured_kwargs: typing.Optional[typing.Any]
+    """The last dictionary of kwargs, beyond ``req`` and ``resp``, that were
+    passed into any one of the responder methods."""
+
+    captured_req_media: typing.Optional[typing.Any]
+    """The last Request media provided to any one of the responder methods.
+
+    This value is only captured when the ``'capture-req-media'`` header is
+    set on the request.
+    """
+    captured_req_body: typing.Optional[bytes]
+    """The last Request body provided to any one of the responder methods.
+
+    This value is only captured when the ``'capture-req-body-bytes'`` header is
+    set on the request. The value of the header is the number of bytes to read.
     """
 
     def __init__(
@@ -198,18 +210,15 @@ class SimpleTestResource:
         else:
             self._default_body = body
 
-        self.captured_req: typing.Optional[typing.Union[wsgi.Request, asgi.Request]] = (
-            None
-        )
-        self.captured_resp: typing.Optional[
-            typing.Union[wsgi.Response, asgi.Response]
-        ] = None
-        self.captured_kwargs: typing.Optional[typing.Any] = None
-        self.captured_req_media: typing.Optional[typing.Any] = None
-        self.captured_req_body: typing.Optional[bytes] = None
+        self.captured_req = None
+        self.captured_resp = None
+        self.captured_kwargs = None
+        self.captured_req_media = None
+        self.captured_req_body = None
 
     @property
     def called(self) -> bool:
+        """Whether or not a req/resp was captured."""
         return self.captured_req is not None
 
     @falcon.before(capture_responder_args)
@@ -253,16 +262,6 @@ class SimpleTestResourceAsync(SimpleTestResource):
             *json* or *body* may be specified, but not both.
         headers (dict): Default set of additional headers to include in
             responses
-
-    Attributes:
-        called (bool): Whether or not a req/resp was captured.
-        captured_req (falcon.Request): The last Request object passed
-            into any one of the responder methods.
-        captured_resp (falcon.Response): The last Response object passed
-            into any one of the responder methods.
-        captured_kwargs (dict): The last dictionary of kwargs, beyond
-            ``req`` and ``resp``, that were passed into any one of the
-            responder methods.
     """
 
     @falcon.before(capture_responder_args_async)
