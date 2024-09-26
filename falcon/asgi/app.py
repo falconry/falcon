@@ -366,8 +366,8 @@ class App(falcon.app.App):
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Type[Request] = Request,
-        response_type: Type[Response] = Response,
+        request_type: Optional[Type[Request]] = None,
+        response_type: Optional[Type[Response]] = None,
         middleware: Union[object, Iterable[object]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
@@ -376,8 +376,8 @@ class App(falcon.app.App):
     ) -> None:
         super().__init__(
             media_type,
-            request_type,
-            response_type,
+            request_type or Request,
+            response_type or Response,
             middleware,
             router,
             independent_middleware,
