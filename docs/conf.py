@@ -77,6 +77,7 @@ extensions = [
     'sphinx_design',
     'myst_parser',
     # Falcon-specific extensions
+    'ext.autodoc_customizations',
     'ext.cibuildwheel',
     'ext.doorway',
     'ext.private_args',
