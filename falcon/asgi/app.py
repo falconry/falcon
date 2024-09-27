@@ -386,7 +386,7 @@ class App(falcon.app.App):
         )
 
         self.ws_options = WebSocketOptions()
-        self._standard_response_type = response_type is Response
+        self._standard_response_type = response_type in (None, Response)
 
         self.add_error_handler(
             WebSocketDisconnected, self._ws_disconnected_error_handler
