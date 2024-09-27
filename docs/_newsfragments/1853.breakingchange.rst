@@ -29,6 +29,14 @@ removed:
 * The ``falcon-print-routes`` command-line utility is no longer supported;
   ``falcon-inspect-app`` is a direct replacement.
 
+* :class:`falcon.stream.BoundedStream` is no longer re-imported via
+  ``falcon.request_helpers``.
+  If needed, import it directly as :class:`falcon.stream.BoundedStream`.
+
+* A deprecated alias of :class:`falcon.stream.BoundedStream`,
+  ``falcon.stream.Body``, was removed. Use :class:`falcon.stream.BoundedStream`
+  instead.
+
 * A deprecated utility function, ``falcon.get_http_status()``, was removed.
   Please use :meth:`falcon.code_to_http_status` instead.
 

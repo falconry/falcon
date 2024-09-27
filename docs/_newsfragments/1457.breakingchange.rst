@@ -1,0 +1,25 @@
+A number of undocumented internal helpers were renamed to start with an
+underscore, indicating they are private methods intended to be used only by the
+framework itself:
+
+* ``falcon.request_helpers.header_property`` →
+  ``falcon.request_helpers._header_property``
+* ``falcon.request_helpers.parse_cookie_header`` →
+  ``falcon.request_helpers._parse_cookie_header``
+* ``falcon.response_helpers.format_content_disposition`` →
+  ``falcon.response_helpers._format_content_disposition``
+* ``falcon.response_helpers.format_etag_header`` →
+  ``falcon.response_helpers._format_etag_header``
+* ``falcon.response_helpers.format_header_value_list`` →
+  ``falcon.response_helpers._format_header_value_list``
+* ``falcon.response_helpers.format_range`` →
+  ``falcon.response_helpers._format_range``
+* ``falcon.response_helpers.header_property`` →
+  ``falcon.response_helpers._header_property``
+* ``falcon.response_helpers.is_ascii_encodable`` →
+  ``falcon.response_helpers._is_ascii_encodable``
+
+If you were relying on these internal helpers, you can either copy the
+implementation into your codebase, or switch to the underscored variants.
+(Needless to say, though, we strongly recommend against referencing private
+methods, as we provide no SemVer guarantees for them.)

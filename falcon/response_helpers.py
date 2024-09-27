@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from falcon import Response
 
 
-def header_property(
+def _header_property(
     name: str, doc: str, transform: Optional[Callable[[Any], str]] = None
 ) -> Any:
     """Create a header getter/setter.
@@ -76,7 +76,7 @@ def header_property(
     return property(fget, fset, fdel, doc)
 
 
-def format_range(value: RangeSetHeader) -> str:
+def _format_range(value: RangeSetHeader) -> str:
     """Format a range header tuple per the HTTP spec.
 
     Args:
@@ -90,7 +90,9 @@ def format_range(value: RangeSetHeader) -> str:
     return result
 
 
-def format_content_disposition(value: str, disposition_type: str = 'attachment') -> str:
+def _format_content_disposition(
+    value: str, disposition_type: str = 'attachment'
+) -> str:
     """Format a Content-Disposition header given a filename."""
 
     # NOTE(vytas): RFC 6266, Appendix D.
@@ -117,7 +119,7 @@ def format_content_disposition(value: str, disposition_type: str = 'attachment')
     )
 
 
-def format_etag_header(value: str) -> str:
+def _format_etag_header(value: str) -> str:
     """Format an ETag header, wrap it with " " in case of need."""
 
     if value[-1] != '"':
@@ -126,12 +128,12 @@ def format_etag_header(value: str) -> str:
     return value
 
 
-def format_header_value_list(iterable: Iterable[str]) -> str:
+def _format_header_value_list(iterable: Iterable[str]) -> str:
     """Join an iterable of strings with commas."""
     return ', '.join(iterable)
 
 
-def is_ascii_encodable(s: str) -> bool:
+def _is_ascii_encodable(s: str) -> bool:
     """Check if argument encodes to ascii without error."""
     try:
         s.encode('ascii')

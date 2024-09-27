@@ -343,15 +343,15 @@ class Request:
     # Properties
     # ------------------------------------------------------------------------
 
-    user_agent: Optional[str] = helpers.header_property('HTTP_USER_AGENT')
+    user_agent: Optional[str] = helpers._header_property('HTTP_USER_AGENT')
     """Value of the User-Agent header, or ``None`` if the header is missing."""
-    auth: Optional[str] = helpers.header_property('HTTP_AUTHORIZATION')
+    auth: Optional[str] = helpers._header_property('HTTP_AUTHORIZATION')
     """Value of the Authorization header, or ``None`` if the header is missing."""
-    expect: Optional[str] = helpers.header_property('HTTP_EXPECT')
+    expect: Optional[str] = helpers._header_property('HTTP_EXPECT')
     """Value of the Expect header, or ``None`` if the header is missing."""
-    if_range: Optional[str] = helpers.header_property('HTTP_IF_RANGE')
+    if_range: Optional[str] = helpers._header_property('HTTP_IF_RANGE')
     """Value of the If-Range header, or ``None`` if the header is missing."""
-    referer: Optional[str] = helpers.header_property('HTTP_REFERER')
+    referer: Optional[str] = helpers._header_property('HTTP_REFERER')
     """Value of the Referer header, or ``None`` if the header is missing."""
 
     @property
@@ -919,7 +919,7 @@ class Request:
             if self._cookies is None:
                 header_value = self.get_header('Cookie')
                 if header_value:
-                    self._cookies = helpers.parse_cookie_header(header_value)
+                    self._cookies = helpers._parse_cookie_header(header_value)
                 else:
                     self._cookies = {}
 
@@ -1363,7 +1363,7 @@ class Request:
             # point.
             header_value = self.get_header('Cookie')
             if header_value:
-                self._cookies = helpers.parse_cookie_header(header_value)
+                self._cookies = helpers._parse_cookie_header(header_value)
             else:
                 self._cookies = {}
 
