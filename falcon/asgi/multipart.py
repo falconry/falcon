@@ -25,7 +25,7 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from falcon._typing import UNSET
+from falcon._typing import _UNSET
 from falcon.asgi.reader import BufferedReader
 from falcon.errors import DelimiterError
 from falcon.media import multipart
@@ -102,7 +102,7 @@ class BodyPart(multipart.BodyPart):
         Returns:
             object: The deserialized media representation.
         """
-        if self._media is UNSET:
+        if self._media is _UNSET:
             handler, _, _ = self._parse_options.media_handlers._resolve(
                 self.content_type, 'text/plain'
             )

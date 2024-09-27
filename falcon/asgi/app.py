@@ -40,6 +40,7 @@ from typing import (
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
 from falcon._typing import AsgiReceive
 from falcon._typing import AsgiResponderCallable
@@ -47,7 +48,6 @@ from falcon._typing import AsgiResponderWsCallable
 from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import SinkPrefix
-from falcon._typing import UNSET
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
@@ -556,7 +556,7 @@ class App(falcon.app.App):
                     if data is None and resp._media is not None:
                         # NOTE(kgriffs): We use a special MISSING singleton since
                         #   None is ambiguous (the media handler might return None).
-                        if resp._media_rendered is UNSET:
+                        if resp._media_rendered is _UNSET:
                             opt = resp.options
                             if not resp.content_type:
                                 resp.content_type = opt.default_media_type

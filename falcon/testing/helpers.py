@@ -1181,7 +1181,7 @@ def create_environ(
                     f'falcon-client/{falcon.__version__}'
 
         root_path (str): Value for the ``SCRIPT_NAME`` environ variable, described in
-            PEP-333: 'The initial portion of the request URL's "path" that
+            PEP-3333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
             application corresponds to the "root" of the server.' (default ``''``)

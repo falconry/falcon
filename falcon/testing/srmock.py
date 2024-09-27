@@ -33,7 +33,7 @@ class StartResponseMock:
     status: Optional[str]
     """HTTP status line, e.g. '785 TPS Cover Sheet not attached'."""
     headers: Optional[HeaderIter]
-    """Raw headers list passed to `start_response`, per PEP-333."""
+    """Raw headers list passed to `start_response`, per PEP-3333."""
     headers_dict: Headers
     """Headers as a case-insensitive ``dict``-like object, instead of a ``list``."""
 

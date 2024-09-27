@@ -33,7 +33,7 @@ from typing import (
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
-from falcon._typing import UNSET
+from falcon._typing import _UNSET
 from falcon._typing import UnsetOr
 from falcon.errors import MultipartParseError
 from falcon.media.base import BaseHandler
@@ -80,9 +80,9 @@ class BodyPart:
 
     _content_disposition: Optional[Tuple[str, Dict[str, str]]] = None
     _data: Optional[bytes] = None
-    _filename: UnsetOr[Optional[str]] = UNSET
-    _media: UnsetOr[Any] = UNSET
-    _name: UnsetOr[Optional[str]] = UNSET
+    _filename: UnsetOr[Optional[str]] = _UNSET
+    _media: UnsetOr[Any] = _UNSET
+    _name: UnsetOr[Optional[str]] = _UNSET
 
     stream: PyBufferedReader
     """File-like input object for reading the body part of the
@@ -198,7 +198,7 @@ class BodyPart:
     @property
     def filename(self) -> Optional[str]:
         """File name if the body part is an attached file, and ``None`` otherwise."""
-        if self._filename is UNSET:
+        if self._filename is _UNSET:
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -232,10 +232,8 @@ class BodyPart:
 
         See also: :func:`~.secure_filename`
         """  # noqa: D205
-        if self.filename is None:
-            raise MultipartParseError(description='No filename available.')
         try:
-            return misc.secure_filename(self.filename)
+            return misc.secure_filename(self.filename or '')
         except ValueError as ex:
             raise MultipartParseError(description=str(ex)) from ex
 
@@ -255,7 +253,7 @@ class BodyPart:
             However, Falcon will not raise any error if this parameter is
             missing; the property value will be ``None`` in that case.
         """
-        if self._name is UNSET:
+        if self._name is _UNSET:
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -279,7 +277,7 @@ class BodyPart:
         Returns:
             object: The deserialized media representation.
         """
-        if self._media is UNSET:
+        if self._media is _UNSET:
             handler, _, _ = self._parse_options.media_handlers._resolve(
                 self.content_type, 'text/plain'
             )

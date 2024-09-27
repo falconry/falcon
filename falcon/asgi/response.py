@@ -30,8 +30,8 @@ from typing import (
 )
 
 from falcon import response
+from falcon._typing import _UNSET
 from falcon._typing import ResponseCallbacks
-from falcon._typing import UNSET
 from falcon.typing import AsyncReadableIO
 from falcon.typing import SseEmitter
 from falcon.util.misc import _encode_items_to_latin1
@@ -209,7 +209,7 @@ class Response(response.Response):
             if data is None and self._media is not None:
                 # NOTE(kgriffs): We use a special MISSING singleton since
                 #   None is ambiguous (the media handler might return None).
-                if self._media_rendered is UNSET:
+                if self._media_rendered is _UNSET:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 

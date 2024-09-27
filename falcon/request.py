@@ -40,8 +40,8 @@ import warnings
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon._typing import _UNSET
 from falcon._typing import StoreArg
-from falcon._typing import UNSET
 from falcon._typing import UnsetOr
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
@@ -114,8 +114,8 @@ class Request:
     )
     _cookies: Optional[Dict[str, List[str]]] = None
     _cookies_collapsed: Optional[Dict[str, str]] = None
-    _cached_if_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = UNSET
-    _cached_if_none_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = UNSET
+    _cached_if_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
+    _cached_if_none_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
 
     # Child classes may override this
     context_type: ClassVar[Type[structures.Context]] = structures.Context
@@ -250,7 +250,7 @@ class Request:
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
-        self._media: UnsetOr[Any] = UNSET
+        self._media: UnsetOr[Any] = _UNSET
         self._media_error: Optional[Exception] = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
@@ -490,7 +490,7 @@ class Request:
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
-        if self._cached_if_match is UNSET:
+        if self._cached_if_match is _UNSET:
             header_value = self.env.get('HTTP_IF_MATCH')
             if header_value:
                 self._cached_if_match = helpers._parse_etags(header_value)
@@ -511,7 +511,7 @@ class Request:
 
         (See also: RFC 7232, Section 3.2)
         """  # noqa: D205
-        if self._cached_if_none_match is UNSET:
+        if self._cached_if_none_match is _UNSET:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
             if header_value:
                 self._cached_if_none_match = helpers._parse_etags(header_value)
@@ -1060,7 +1060,7 @@ class Request:
 
         return netloc_value
 
-    def get_media(self, default_when_empty: UnsetOr[Any] = UNSET) -> Any:
+    def get_media(self, default_when_empty: UnsetOr[Any] = _UNSET) -> Any:
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -1101,10 +1101,10 @@ class Request:
         Returns:
             media (object): The deserialized media representation.
         """
-        if self._media is not UNSET:
+        if self._media is not _UNSET:
             return self._media
         if self._media_error is not None:
-            if default_when_empty is not UNSET and isinstance(
+            if default_when_empty is not _UNSET and isinstance(
                 self._media_error, errors.MediaNotFoundError
             ):
                 return default_when_empty
@@ -1120,7 +1120,7 @@ class Request:
             )
         except errors.MediaNotFoundError as err:
             self._media_error = err
-            if default_when_empty is not UNSET:
+            if default_when_empty is not _UNSET:
                 return default_when_empty
             raise
         except Exception as err:

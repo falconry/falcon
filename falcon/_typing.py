@@ -63,7 +63,7 @@ class _Unset(Enum):
 
 
 _T = TypeVar('_T')
-UNSET = _Unset.UNSET
+_UNSET = _Unset.UNSET
 UnsetOr = Union[Literal[_Unset.UNSET], _T]
 
 Link = Dict[str, str]
