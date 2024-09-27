@@ -20,20 +20,20 @@ from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
 
 from falcon import util
+from falcon._typing import AsgiProcessRequestMethod as APRequest
+from falcon._typing import AsgiProcessRequestWsMethod
+from falcon._typing import AsgiProcessResourceMethod as APResource
+from falcon._typing import AsgiProcessResourceWsMethod
+from falcon._typing import AsgiProcessResponseMethod as APResponse
+from falcon._typing import ProcessRequestMethod as PRequest
+from falcon._typing import ProcessResourceMethod as PResource
+from falcon._typing import ProcessResponseMethod as PResponse
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPError
 from falcon.request import Request
 from falcon.response import Response
-from falcon.typing import AsgiProcessRequestMethod as APRequest
-from falcon.typing import AsgiProcessRequestWsMethod
-from falcon.typing import AsgiProcessResourceMethod as APResource
-from falcon.typing import AsgiProcessResourceWsMethod
-from falcon.typing import AsgiProcessResponseMethod as APResponse
-from falcon.typing import ProcessRequestMethod as PRequest
-from falcon.typing import ProcessResourceMethod as PResource
-from falcon.typing import ProcessResponseMethod as PResponse
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 __all__ = (

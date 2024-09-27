@@ -300,12 +300,15 @@ class RouteMethodInfo(_Traversable):
         internal (bool): Whether or not this was a default responder added
             by the framework.
 
-    Attributes:
-        suffix (str): The suffix of this route function. This is set to an empty
-            string when the function has no suffix.
     """
 
     __visit_name__ = 'route_method'
+
+    suffix: str
+    """The suffix of this route function.
+
+    This is set to an empty string when the function has no suffix.
+    """
 
     def __init__(
         self, method: str, source_info: str, function_name: str, internal: bool
@@ -490,11 +493,12 @@ class MiddlewareInfo(_Traversable):
         independent (bool): Whether or not the middleware components are executed
             independently.
 
-    Attributes:
-        independent_text (str): Text created from the `independent` arg.
     """
 
     __visit_name__ = 'middleware'
+
+    independent_text: str
+    """Text created from the `independent` arg."""
 
     def __init__(
         self,

@@ -41,10 +41,10 @@ from falcon.util.sync import _wrap_non_coroutine_unsafe
 if TYPE_CHECKING:
     import falcon as wsgi
     from falcon import asgi
-    from falcon.typing import AsgiResponderMethod
-    from falcon.typing import Resource
-    from falcon.typing import Responder
-    from falcon.typing import ResponderMethod
+    from falcon._typing import AsgiResponderMethod
+    from falcon._typing import Resource
+    from falcon._typing import Responder
+    from falcon._typing import ResponderMethod
 
 
 # TODO: when targeting only 3.10+ these protocol would no longer be needed, since

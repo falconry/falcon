@@ -18,13 +18,21 @@ from __future__ import annotations
 
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
-from typing import Awaitable, Callable, List, Literal, Optional, Tuple, Union
+from typing import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from falcon import response
-from falcon.typing import AsyncIterator
+from falcon._typing import _UNSET
+from falcon._typing import ResponseCallbacks
 from falcon.typing import AsyncReadableIO
-from falcon.typing import MISSING
-from falcon.typing import ResponseCallbacks
 from falcon.typing import SseEmitter
 from falcon.util.misc import _encode_items_to_latin1
 from falcon.util.misc import is_python_func
@@ -201,7 +209,7 @@ class Response(response.Response):
             if data is None and self._media is not None:
                 # NOTE(kgriffs): We use a special MISSING singleton since
                 #   None is ambiguous (the media handler might return None).
-                if self._media_rendered is MISSING:
+                if self._media_rendered is _UNSET:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 

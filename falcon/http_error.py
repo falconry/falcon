@@ -25,10 +25,10 @@ from falcon.util import http_status_to_code
 from falcon.util import uri
 
 if TYPE_CHECKING:
+    from falcon._typing import HeaderArg
+    from falcon._typing import Link
+    from falcon._typing import ResponseStatus
     from falcon.media import BaseHandler
-    from falcon.typing import HeaderArg
-    from falcon.typing import Link
-    from falcon.typing import ResponseStatus
 
 
 class HTTPError(Exception):
@@ -87,21 +87,6 @@ class HTTPError(Exception):
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
-
-    Attributes:
-        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
-            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
-            status line string or byte string (e.g., ``'200 OK'``), or an
-            ``int``.
-        status_code (int): HTTP status code normalized from the ``status``
-            argument passed to the initializer.
-        title (str): Error title to send to the client.
-        description (str): Description of the error to send to the client.
-        headers (dict): Extra headers to add to the response.
-        link (str): An href that the client can provide to the user for
-            getting help.
-        code (int): An internal application code that a user can reference when
-            requesting support for the error.
     """
 
     __slots__ = (
@@ -112,6 +97,28 @@ class HTTPError(Exception):
         'link',
         'code',
     )
+
+    status: ResponseStatus
+    """HTTP status code or line (e.g., ``'200 OK'``).
+
+    This may be set to a member of :class:`http.HTTPStatus`, an HTTP
+    status line string or byte string (e.g., ``'200 OK'``), or an ``int``.
+    """
+    title: str
+    """Error title to send to the client.
+
+    Derived from the ``status`` if not provided.
+    """
+    description: Optional[str]
+    """Description of the error to send to the client."""
+    headers: Optional[HeaderArg]
+    """Extra headers to add to the response."""
+    link: Optional[Link]
+    """An href that the client can provide to the user for getting help."""
+    code: Optional[int]
+    """An internal application code that a user can reference when requesting
+    support for the error.
+    """
 
     def __init__(
         self,
@@ -135,7 +142,6 @@ class HTTPError(Exception):
         self.description = description
         self.headers = headers
         self.code = code
-        self.link: Optional[Link]
 
         if href:
             link = self.link = OrderedDict()
@@ -152,6 +158,9 @@ class HTTPError(Exception):
 
     @property
     def status_code(self) -> int:
+        """HTTP status code normalized from the ``status`` argument passed
+        to the initializer.
+        """  # noqa: D205
         return http_status_to_code(self.status)
 
     def to_dict(

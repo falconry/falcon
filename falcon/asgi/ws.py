@@ -10,14 +10,14 @@ from typing import Any, Deque, Dict, Iterable, Mapping, Optional, Tuple, Union
 from falcon import errors
 from falcon import media
 from falcon import status_codes
+from falcon._typing import AsgiReceive
+from falcon._typing import AsgiSend
+from falcon._typing import HeaderArg
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
-from falcon.typing import AsgiReceive
-from falcon.typing import AsgiSend
-from falcon.typing import HeaderArg
 from falcon.util import misc
 
 __all__ = ('WebSocket',)

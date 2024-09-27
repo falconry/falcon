@@ -7,7 +7,7 @@ import pytest
 import falcon
 from falcon import app as wsgi
 from falcon import testing
-from falcon.typing import Resource
+from falcon._typing import Resource
 
 # --------------------------------------------------------------------
 # Fixtures

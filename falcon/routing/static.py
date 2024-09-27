@@ -9,12 +9,12 @@ import re
 from typing import Any, ClassVar, IO, Optional, Pattern, Tuple, TYPE_CHECKING, Union
 
 import falcon
+from falcon.typing import ReadableIO
 
 if TYPE_CHECKING:
     from falcon import asgi
     from falcon import Request
     from falcon import Response
-from falcon.typing import ReadableIO
 
 
 def _open_range(
