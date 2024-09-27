@@ -7,7 +7,7 @@ Summary
 The first alpha release of Falcon 4.0.0 is here!
 
 We would really appreciate if you could help with early testing on your code!
-You can grab it from PyPI (``pip install falcon==4.0.0a1``),
+You can grab this release from PyPI (``pip install falcon==4.0.0a1``),
 and :ref:`let us know how it went <chat>`!
 
 Although we are still in the process of polishing the last items from the
@@ -52,7 +52,7 @@ runtime behavior, but may surface new or different errors with type checkers.
     All undocumented type aliases coming from ``falcon._typing`` are considered
     private to the framework itself, and not meant for annotating applications
     using Falcon. To that end, it is advisable to only use classes from the
-    public interface, e.g.:
+    public interface, and public aliases from :mod:`falcon.typing`, e.g.:
 
     .. code-block:: python
 
@@ -60,9 +60,11 @@ runtime behavior, but may surface new or different errors with type checkers.
             def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
                 resp.media = {'message': 'Hello, World!'}
 
-    If you do decide to reuse these aliases for some reason anyway, they should
-    preferably be imported inside  :python:`if TYPE_CHECKING:` blocks in order
+    If you still decide to reuse the private aliases anyway, they should
+    preferably be imported inside :python:`if TYPE_CHECKING:` blocks in order
     to avoid possible runtime errors after an update.
+    Also, make sure to :ref:`let us know <chat>` which essential aliases are
+    missing from the public interface!
 
 .. towncrier release notes start
 
@@ -71,7 +73,6 @@ Contributors to this Release
 
 .. note::
     If we missed you below, don’t worry!
-    (But you can :ref:`let us know <chat>`!)
 
     We will refresh the full list of contributors before the 4.0.0 final
     release.

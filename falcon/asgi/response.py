@@ -33,7 +33,7 @@ from falcon import response
 from falcon._typing import _UNSET
 from falcon._typing import ResponseCallbacks
 from falcon.typing import AsyncReadableIO
-from falcon.typing import SseEmitter
+from falcon.typing import SSEEmitter
 from falcon.util.misc import _encode_items_to_latin1
 from falcon.util.misc import is_python_func
 
@@ -53,7 +53,7 @@ class Response(response.Response):
     # PERF(kgriffs): These will be shadowed when set on an instance; let's
     #   us avoid having to implement __init__ and incur the overhead of
     #   an additional function call.
-    _sse: Optional[SseEmitter] = None
+    _sse: Optional[SSEEmitter] = None
     _registered_callbacks: Optional[List[ResponseCallbacks]] = None
 
     stream: Union[AsyncReadableIO, AsyncIterator[bytes], None]  # type: ignore[assignment]
@@ -95,7 +95,7 @@ class Response(response.Response):
     """
 
     @property
-    def sse(self) -> Optional[SseEmitter]:
+    def sse(self) -> Optional[SSEEmitter]:
         """A Server-Sent Event (SSE) emitter, implemented as
         an async iterator or generator that yields a series of
         of :class:`falcon.asgi.SSEvent` instances. Each event will be
@@ -143,7 +143,7 @@ class Response(response.Response):
         return self._sse
 
     @sse.setter
-    def sse(self, value: Optional[SseEmitter]) -> None:
+    def sse(self, value: Optional[SSEEmitter]) -> None:
         self._sse = value
 
     def set_stream(
