@@ -37,10 +37,11 @@ package namespace::
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterable, Optional, TYPE_CHECKING, Union
+from typing import Any, Iterable, Optional, TYPE_CHECKING, Union
 
 from falcon.http_error import HTTPError
 import falcon.status_codes as status
+from falcon.util import deprecation
 from falcon.util.misc import dt_to_http
 
 if TYPE_CHECKING:
@@ -73,7 +74,7 @@ __all__ = (
     'HTTPNotAcceptable',
     'HTTPNotFound',
     'HTTPNotImplemented',
-    'HTTPPayloadTooLarge',
+    'HTTPContentTooLarge',
     'HTTPPreconditionFailed',
     'HTTPPreconditionRequired',
     'HTTPRangeNotSatisfiable',
@@ -952,8 +953,8 @@ class HTTPPreconditionFailed(HTTPError):
         )
 
 
-class HTTPPayloadTooLarge(HTTPError):
-    """413 Payload Too Large.
+class HTTPContentTooLarge(HTTPError):
+    """413 Content Too Large.
 
     The server is refusing to process a request because the request
     payload is larger than the server is willing or able to process.
@@ -1023,6 +1024,17 @@ class HTTPPayloadTooLarge(HTTPError):
             headers=_parse_retry_after(headers, retry_after),
             **kwargs,  # type: ignore[arg-type]
         )
+
+
+# TODO(vytas): Remove in Falcon 5.0.
+class HTTPPayloadTooLarge(HTTPContentTooLarge):
+    """Compatibility alias of :class:`falcon.HTTPContentTooLarge`."""
+
+    @deprecation.deprecated(
+        'HTTPPayloadTooLarge is deprecated; use HTTPContentTooLarge instead.'
+    )
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
 
 
 class HTTPUriTooLong(HTTPError):
