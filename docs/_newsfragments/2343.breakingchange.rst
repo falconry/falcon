@@ -1,0 +1,5 @@
+Removed ``is_async`` argument from :meth:`~falcon.media.validators.jsonschema.validate`
+and the hooks :meth:`~falcon.before` and :meth:`~falcon.after` since it's
+no longer needed.
+Cython from 3.0 will correctly mark ``asnyc def`` as coroutine, making
+this argument no longer useful.

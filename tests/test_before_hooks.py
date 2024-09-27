@@ -338,12 +338,12 @@ def test_parser_async(body, doc, util):
     with util.disable_asgi_non_coroutine_wrapping():
 
         class WrappedRespondersBodyParserAsyncResource:
-            @falcon.before(validate_param_async, 'limit', 100, is_async=True)
+            @falcon.before(validate_param_async, 'limit', 100)
             @falcon.before(parse_body_async)
             async def on_get(self, req, resp, doc=None):
                 self.doc = doc
 
-            @falcon.before(parse_body_async, is_async=False)
+            @falcon.before(parse_body_async)
             async def on_put(self, req, resp, doc=None):
                 self.doc = doc
 

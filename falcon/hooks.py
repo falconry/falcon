@@ -27,7 +27,6 @@ from typing import (
     cast,
     Dict,
     List,
-    Protocol,
     Tuple,
     TYPE_CHECKING,
     TypeVar,
@@ -38,6 +37,12 @@ from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
+try:
+    from typing import Concatenate, ParamSpec
+except ImportError:  # pragma: no cover
+    from typing_extensions import Concatenate
+    from typing_extensions import ParamSpec  # type: ignore[assignment]
+
 if TYPE_CHECKING:
     import falcon as wsgi
     from falcon import asgi
@@ -46,62 +51,8 @@ if TYPE_CHECKING:
     from falcon._typing import Responder
     from falcon._typing import ResponderMethod
 
-
-# TODO: if is_async is removed these protocol would no longer be needed, since
-# ParamSpec could be used together with Concatenate to use a simple Callable
-# to type the before and after functions. This approach was prototyped in
-# https://github.com/falconry/falcon/pull/2234
-class SyncBeforeFn(Protocol):
-    def __call__(
-        self,
-        req: wsgi.Request,
-        resp: wsgi.Response,
-        resource: Resource,
-        params: Dict[str, Any],
-        *args: Any,
-        **kwargs: Any,
-    ) -> None: ...
-
-
-class AsyncBeforeFn(Protocol):
-    def __call__(
-        self,
-        req: asgi.Request,
-        resp: asgi.Response,
-        resource: Resource,
-        params: Dict[str, Any],
-        *args: Any,
-        **kwargs: Any,
-    ) -> Awaitable[None]: ...
-
-
-BeforeFn = Union[SyncBeforeFn, AsyncBeforeFn]
-
-
-class SyncAfterFn(Protocol):
-    def __call__(
-        self,
-        req: wsgi.Request,
-        resp: wsgi.Response,
-        resource: Resource,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None: ...
-
-
-class AsyncAfterFn(Protocol):
-    def __call__(
-        self,
-        req: asgi.Request,
-        resp: asgi.Response,
-        resource: Resource,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Awaitable[None]: ...
-
-
-AfterFn = Union[SyncAfterFn, AsyncAfterFn]
 _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
+_FN = ParamSpec('_FN')
 
 
 _DECORABLE_METHOD_NAME = re.compile(
@@ -110,7 +61,18 @@ _DECORABLE_METHOD_NAME = re.compile(
 
 
 def before(
-    action: BeforeFn, *args: Any, is_async: bool = False, **kwargs: Any
+    action: Union[
+        Callable[
+            Concatenate[wsgi.Request, wsgi.Response, Resource, Dict[str, Any], _FN],
+            None,
+        ],
+        Callable[
+            Concatenate[asgi.Request, asgi.Response, Resource, Dict[str, Any], _FN],
+            Awaitable[None],
+        ],
+    ],
+    *args: _FN.args,
+    **kwargs: _FN.kwargs,
 ) -> Callable[[_R], _R]:
     """Execute the given action function *before* the responder.
 
@@ -142,21 +104,6 @@ def before(
             and *params* arguments.
 
     Keyword Args:
-        is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
-            the decorated responder is a coroutine function (i.e., that it
-            is defined with ``async def``) or that it returns an awaitable
-            coroutine object.
-
-            Normally, when the function source is declared using ``async def``,
-            the resulting function object is flagged to indicate it returns a
-            coroutine when invoked, and this can be automatically detected.
-            However, it is possible to use a regular function to return an
-            awaitable coroutine object, in which case a hint is required to let
-            the framework know what to expect. Also, a hint is always required
-            when using a cythonized coroutine function, since Cython does not
-            flag them in a way that can be detected in advance, even when the
-            function is declared using ``async def``.
-
         **kwargs: Any additional keyword arguments will be passed through to
             *action*.
     """
@@ -168,9 +115,7 @@ def before(
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
                     responder = cast('Responder', responder)
-                    do_before_all = _wrap_with_before(
-                        responder, action, args, kwargs, is_async
-                    )
+                    do_before_all = _wrap_with_before(responder, action, args, kwargs)
 
                     setattr(responder_or_resource, responder_name, do_before_all)
 
@@ -178,7 +123,7 @@ def before(
 
         else:
             responder = cast('Responder', responder_or_resource)
-            do_before_one = _wrap_with_before(responder, action, args, kwargs, is_async)
+            do_before_one = _wrap_with_before(responder, action, args, kwargs)
 
             return cast(_R, do_before_one)
 
@@ -186,7 +131,14 @@ def before(
 
 
 def after(
-    action: AfterFn, *args: Any, is_async: bool = False, **kwargs: Any
+    action: Union[
+        Callable[Concatenate[wsgi.Request, wsgi.Response, Resource, _FN], None],
+        Callable[
+            Concatenate[asgi.Request, asgi.Response, Resource, _FN], Awaitable[None]
+        ],
+    ],
+    *args: _FN.args,
+    **kwargs: _FN.kwargs,
 ) -> Callable[[_R], _R]:
     """Execute the given action function *after* the responder.
 
@@ -201,21 +153,6 @@ def after(
             arguments.
 
     Keyword Args:
-        is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
-            the decorated responder is a coroutine function (i.e., that it
-            is defined with ``async def``) or that it returns an awaitable
-            coroutine object.
-
-            Normally, when the function source is declared using ``async def``,
-            the resulting function object is flagged to indicate it returns a
-            coroutine when invoked, and this can be automatically detected.
-            However, it is possible to use a regular function to return an
-            awaitable coroutine object, in which case a hint is required to let
-            the framework know what to expect. Also, a hint is always required
-            when using a cythonized coroutine function, since Cython does not
-            flag them in a way that can be detected in advance, even when the
-            function is declared using ``async def``.
-
         **kwargs: Any additional keyword arguments will be passed through to
             *action*.
     """
@@ -227,9 +164,7 @@ def after(
             ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
                     responder = cast('Responder', responder)
-                    do_after_all = _wrap_with_after(
-                        responder, action, args, kwargs, is_async
-                    )
+                    do_after_all = _wrap_with_after(responder, action, args, kwargs)
 
                     setattr(responder_or_resource, responder_name, do_after_all)
 
@@ -237,7 +172,7 @@ def after(
 
         else:
             responder = cast('Responder', responder_or_resource)
-            do_after_one = _wrap_with_after(responder, action, args, kwargs, is_async)
+            do_after_one = _wrap_with_after(responder, action, args, kwargs)
 
             return cast(_R, do_after_one)
 
@@ -251,10 +186,9 @@ def after(
 
 def _wrap_with_after(
     responder: Responder,
-    action: AfterFn,
+    action: Callable[..., Union[None, Awaitable[None]]],
     action_args: Any,
     action_kwargs: Any,
-    is_async: bool,
 ) -> Responder:
     """Execute the given action function after a responder method.
 
@@ -264,24 +198,16 @@ def _wrap_with_after(
             method, taking the form ``func(req, resp, resource)``.
         action_args: Additional positional arguments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
-        is_async: Set to ``True`` for cythonized responders that are
-            actually coroutine functions, since such responders can not
-            be auto-detected. A hint is also required for regular functions
-            that happen to return an awaitable coroutine object.
     """
 
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
     do_after_responder: Responder
 
-    if is_async or iscoroutinefunction(responder):
-        # NOTE(kgriffs): I manually verified that the implicit "else" branch
-        #   is actually covered, but coverage isn't tracking it for
-        #   some reason.
-        if not is_async:  # pragma: nocover
-            async_action = cast('AsyncAfterFn', _wrap_non_coroutine_unsafe(action))
-        else:
-            async_action = cast('AsyncAfterFn', action)
+    if iscoroutinefunction(responder):
+        async_action = cast(
+            Callable[..., Awaitable[None]], _wrap_non_coroutine_unsafe(action)
+        )
         async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
@@ -300,7 +226,7 @@ def _wrap_with_after(
 
         do_after_responder = cast('AsgiResponderMethod', do_after)
     else:
-        sync_action = cast('SyncAfterFn', action)
+        sync_action = cast(Callable[..., None], action)
         sync_responder = cast('ResponderMethod', responder)
 
         @wraps(sync_responder)
@@ -323,10 +249,9 @@ def _wrap_with_after(
 
 def _wrap_with_before(
     responder: Responder,
-    action: BeforeFn,
+    action: Callable[..., Union[None, Awaitable[None]]],
     action_args: Tuple[Any, ...],
     action_kwargs: Dict[str, Any],
-    is_async: bool,
 ) -> Responder:
     """Execute the given action function before a responder method.
 
@@ -336,24 +261,16 @@ def _wrap_with_before(
             method, taking the form ``func(req, resp, resource, params)``.
         action_args: Additional positional arguments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
-        is_async: Set to ``True`` for cythonized responders that are
-            actually coroutine functions, since such responders can not
-            be auto-detected. A hint is also required for regular functions
-            that happen to return an awaitable coroutine object.
     """
 
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
     do_before_responder: Responder
 
-    if is_async or iscoroutinefunction(responder):
-        # NOTE(kgriffs): I manually verified that the implicit "else" branch
-        #   is actually covered, but coverage isn't tracking it for
-        #   some reason.
-        if not is_async:  # pragma: nocover
-            async_action = cast('AsyncBeforeFn', _wrap_non_coroutine_unsafe(action))
-        else:
-            async_action = cast('AsyncBeforeFn', action)
+    if iscoroutinefunction(responder):
+        async_action = cast(
+            Callable[..., Awaitable[None]], _wrap_non_coroutine_unsafe(action)
+        )
         async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
@@ -372,7 +289,7 @@ def _wrap_with_before(
 
         do_before_responder = cast('AsgiResponderMethod', do_before)
     else:
-        sync_action = cast('SyncBeforeFn', action)
+        sync_action = cast(Callable[..., None], action)
         sync_responder = cast('ResponderMethod', responder)
 
         @wraps(sync_responder)
