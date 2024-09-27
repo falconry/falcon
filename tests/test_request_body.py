@@ -4,7 +4,6 @@ from wsgiref.validate import InputWrapper
 import pytest
 
 import falcon
-from falcon import request_helpers
 import falcon.request
 from falcon.stream import BoundedStream
 import falcon.testing as testing
@@ -110,55 +109,55 @@ class TestRequestBody:
         expected_lines[-1] = expected_lines[-1][:-1]
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.read() == expected_body
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.read(2) == expected_body[0:2]
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.read(expected_len + 1) == expected_body
 
         # NOTE(kgriffs): Test that reading past the end does not
         # hang, but returns the empty string.
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         for i in range(expected_len + 1):
             expected_value = expected_body[i : i + 1] if i < expected_len else b''
             assert body.read(1) == expected_value
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.readline() == expected_lines[0]
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.readline(-1) == expected_lines[0]
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.readline(expected_len + 1) == expected_lines[0]
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.readlines() == expected_lines
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.readlines(-1) == expected_lines
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert body.readlines(expected_len + 1) == expected_lines
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         assert next(body) == expected_lines[0]
 
         stream = io.BytesIO(expected_body)
-        body = request_helpers.Body(stream, expected_len)
+        body = BoundedStream(stream, expected_len)
         for i, line in enumerate(body):
             assert line == expected_lines[i]
 
