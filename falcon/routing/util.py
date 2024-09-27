@@ -22,7 +22,7 @@ from falcon import constants
 from falcon import responders
 
 if TYPE_CHECKING:
-    from falcon.typing import MethodDict
+    from falcon._typing import MethodDict
 
 
 class SuffixedMethodNotFoundError(Exception):

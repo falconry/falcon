@@ -20,7 +20,7 @@ ResponderMethod = Callable[..., Any]
 
 
 def validate(
-    req_schema: Schema = None, resp_schema: Schema = None, is_async: bool = False
+    req_schema: Schema = None, resp_schema: Schema = None
 ) -> Callable[[ResponderMethod], ResponderMethod]:
     """Validate ``req.media`` using JSON Schema.
 
@@ -51,20 +51,6 @@ def validate(
         resp_schema (dict): A dictionary that follows the JSON
             Schema specification. The response will be validated against this
             schema.
-        is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
-            the decorated responder is a coroutine function (i.e., that it
-            is defined with ``async def``) or that it returns an awaitable
-            coroutine object.
-
-            Normally, when the function source is declared using ``async def``,
-            the resulting function object is flagged to indicate it returns a
-            coroutine when invoked, and this can be automatically detected.
-            However, it is possible to use a regular function to return an
-            awaitable coroutine object, in which case a hint is required to let
-            the framework know what to expect. Also, a hint is always required
-            when using a cythonized coroutine function, since Cython does not
-            flag them in a way that can be detected in advance, even when the
-            function is declared using ``async def``.
 
     Example:
 
@@ -96,23 +82,10 @@ def validate(
 
                     # -- snip --
 
-            .. tab-item:: ASGI (Cythonized App)
-
-                .. code:: python
-
-                    from falcon.media.validators import jsonschema
-
-                    # -- snip --
-
-                    @jsonschema.validate(my_post_schema, is_async=True)
-                    async def on_post(self, req, resp):
-
-                    # -- snip --
-
     """
 
     def decorator(func: ResponderMethod) -> ResponderMethod:
-        if iscoroutinefunction(func) or is_async:
+        if iscoroutinefunction(func):
             return _validate_async(func, req_schema, resp_schema)
 
         return _validate(func, req_schema, resp_schema)

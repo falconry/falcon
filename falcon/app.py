@@ -45,6 +45,18 @@ from falcon import app_helpers as helpers
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import AsgiResponderWsCallable
+from falcon._typing import AsgiSinkCallable
+from falcon._typing import ErrorHandler
+from falcon._typing import ErrorSerializer
+from falcon._typing import FindMethod
+from falcon._typing import ProcessResponseMethod
+from falcon._typing import ResponderCallable
+from falcon._typing import SinkCallable
+from falcon._typing import SinkPrefix
+from falcon._typing import StartResponse
+from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPInternalServerError
@@ -56,19 +68,7 @@ from falcon.request import RequestOptions
 from falcon.response import Response
 from falcon.response import ResponseOptions
 import falcon.status_codes as status
-from falcon.typing import AsgiResponderCallable
-from falcon.typing import AsgiResponderWsCallable
-from falcon.typing import AsgiSinkCallable
-from falcon.typing import ErrorHandler
-from falcon.typing import ErrorSerializer
-from falcon.typing import FindMethod
-from falcon.typing import ProcessResponseMethod
 from falcon.typing import ReadableIO
-from falcon.typing import ResponderCallable
-from falcon.typing import SinkCallable
-from falcon.typing import SinkPrefix
-from falcon.typing import StartResponse
-from falcon.typing import WSGIEnvironment
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
@@ -303,8 +303,8 @@ class App:
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Type[Request] = Request,
-        response_type: Type[Response] = Response,
+        request_type: Optional[Type[Request]] = None,
+        response_type: Optional[Type[Response]] = None,
         middleware: Union[object, Iterable[object]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
@@ -342,8 +342,8 @@ class App:
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
 
-        self._request_type = request_type
-        self._response_type = response_type
+        self._request_type = request_type or Request
+        self._response_type = response_type or Response
 
         self._error_handlers = {}
         self._serialize_error = helpers.default_serialize_error

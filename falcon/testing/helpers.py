@@ -56,6 +56,9 @@ from typing import (
 
 import falcon
 from falcon import errors as falcon_errors
+from falcon._typing import CookieArg
+from falcon._typing import HeaderArg
+from falcon._typing import ResponseStatus
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import EventType
@@ -63,10 +66,6 @@ from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
-from falcon.typing import CookieArg
-from falcon.typing import HeaderArg
-from falcon.typing import HeaderList
-from falcon.typing import ResponseStatus
 from falcon.util import code_to_http_status
 from falcon.util import uri
 from falcon.util.mediatypes import parse_header
@@ -146,10 +145,6 @@ class ASGIRequestEventEmitter:
             ``0`` is treated as a special case, and will result in an
             ``'http.disconnect'`` event being immediately emitted (rather than
             first emitting an ``'http.request'`` event).
-
-    Attributes:
-        disconnected (bool): Returns ``True`` if the simulated client
-            connection is in a "disconnected" state.
     """
 
     # TODO(kgriffs): If this pattern later becomes useful elsewhere,
@@ -187,6 +182,9 @@ class ASGIRequestEventEmitter:
 
     @property
     def disconnected(self) -> bool:
+        """Returns ``True`` if the simulated client connection is in a
+        "disconnected" state.
+        """  # noqa: D205
         return self._disconnected or (self._disconnect_at <= time.time())
 
     def disconnect(self, exhaust_body: Optional[bool] = None) -> None:
@@ -294,20 +292,6 @@ class ASGIRequestEventEmitter:
 class ASGIResponseEventCollector:
     """Collects and validates ASGI events returned by an app.
 
-    Attributes:
-        events (iterable): An iterable of events that were emitted by
-            the app, collected as-is from the app.
-        headers (iterable): An iterable of (str, str) tuples representing
-            the ISO-8859-1 decoded headers emitted by the app in the body of
-            the ``'http.response.start'`` event.
-        status (int): HTTP status code emitted by the app in the body of
-            the ``'http.response.start'`` event.
-        body_chunks (iterable): An iterable of ``bytes`` objects emitted
-            by the app via ``'http.response.body'`` events.
-        more_body (bool): Whether or not the app expects to emit more
-            body chunks. Will be ``None`` if unknown (i.e., the app has
-            not yet emitted any ``'http.response.body'`` events.)
-
     Raises:
         TypeError: An event field emitted by the app was of an unexpected type.
         ValueError: Invalid event name or field value.
@@ -325,12 +309,35 @@ class ASGIResponseEventCollector:
     _HEADER_NAME_RE = re.compile(rb'^[a-zA-Z][a-zA-Z0-9\-_]*$')
     _BAD_HEADER_VALUE_RE = re.compile(rb'[\000-\037]')
 
+    events: List[AsgiEvent]
+    """An iterable of events that were emitted by the app,
+    collected as-is from the app.
+    """
+    headers: List[Tuple[str, str]]
+    """An iterable of (str, str) tuples representing the ISO-8859-1 decoded
+    headers emitted by the app in the body of the ``'http.response.start'`` event.
+    """
+    status: Optional[ResponseStatus]
+    """HTTP status code emitted by the app in the body of the
+    ``'http.response.start'`` event.
+    """
+    body_chunks: List[bytes]
+    """An iterable of ``bytes`` objects emitted by the app via
+    ``'http.response.body'`` events.
+    """
+    more_body: Optional[bool]
+    """Whether or not the app expects to emit more body chunks.
+
+    Will be ``None`` if unknown (i.e., the app has not yet emitted
+    any ``'http.response.body'`` events.)
+    """
+
     def __init__(self) -> None:
-        self.events: List[AsgiEvent] = []
-        self.headers: HeaderList = []
-        self.status: Optional[ResponseStatus] = None
-        self.body_chunks: list[bytes] = []
-        self.more_body: Optional[bool] = None
+        self.events = []
+        self.headers = []
+        self.status = None
+        self.body_chunks = []
+        self.more_body = None
 
     async def collect(self, event: AsgiEvent) -> None:
         if self.more_body is False:
@@ -409,23 +416,6 @@ class ASGIWebSocketSimulator:
         The ASGIWebSocketSimulator class is not designed to be instantiated
         directly; rather it should be obtained via
         :meth:`~falcon.testing.ASGIConductor.simulate_ws`.
-
-    Attributes:
-        ready (bool): ``True`` if the WebSocket connection has been
-            accepted and the client is still connected, ``False`` otherwise.
-        closed (bool): ``True`` if the WebSocket connection has been
-            denied or closed by the app, or the client has disconnected.
-        close_code (int): The WebSocket close code provided by the app if
-            the connection is closed, or ``None`` if the connection is open.
-        close_reason (str): The WebSocket close reason provided by the app if
-            the connection is closed, or ``None`` if the connection is open.
-        subprotocol (str): The subprotocol the app wishes to accept, or
-            ``None`` if not specified.
-        headers (Iterable[Iterable[bytes]]): An iterable of ``[name, value]``
-            two-item iterables, where *name* is the header name, and *value* is
-            the header value for each header returned by the app when
-            it accepted the WebSocket connection. This property resolves to
-            ``None`` if the connection has not been accepted.
     """
 
     _DEFAULT_WAIT_READY_TIMEOUT = 5
@@ -446,26 +436,46 @@ class ASGIWebSocketSimulator:
 
     @property
     def ready(self) -> bool:
+        """``True`` if the WebSocket connection has been accepted and the client is
+        still connected, ``False`` otherwise.
+        """  # noqa: D205
         return self._state == _WebSocketState.ACCEPTED
 
     @property
     def closed(self) -> bool:
+        """``True`` if the WebSocket connection has been denied or closed by the app,
+        or the client has disconnected.
+        """  # noqa: D205
         return self._state in {_WebSocketState.DENIED, _WebSocketState.CLOSED}
 
     @property
     def close_code(self) -> Optional[int]:
+        """The WebSocket close code provided by the app if the connection is closed.
+
+        Returns ``None`` if the connection is still open.
+        """
         return self._close_code
 
     @property
     def close_reason(self) -> Optional[str]:
+        """The WebSocket close reason provided by the app if the connection is closed.
+
+        Returns ``None`` if the connection is still open.
+        """
         return self._close_reason
 
     @property
     def subprotocol(self) -> Optional[str]:
+        """The subprotocol the app wishes to accept, or ``None`` if not specified."""
         return self._accepted_subprotocol
 
     @property
     def headers(self) -> Optional[List[Tuple[bytes, bytes]]]:
+        """An iterable of ``[name, value]`` two-item tuples, where *name* is the
+        header name, and *value* is the header value for each header returned by
+        the app when it accepted the WebSocket connection.
+        This property resolves to ``None`` if the connection has not been accepted.
+        """  # noqa: D205
         return self._accepted_headers
 
     async def wait_ready(self, timeout: Optional[int] = None) -> None:
@@ -1171,7 +1181,7 @@ def create_environ(
                     f'falcon-client/{falcon.__version__}'
 
         root_path (str): Value for the ``SCRIPT_NAME`` environ variable, described in
-            PEP-333: 'The initial portion of the request URL's "path" that
+            PEP-3333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
             application corresponds to the "root" of the server.' (default ``''``)
