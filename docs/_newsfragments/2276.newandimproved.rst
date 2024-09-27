@@ -1,0 +1,11 @@
+The class ``falcon.HTTPPayloadTooLarge`` was renamed to
+:class:`falcon.HTTPContentTooLarge`, together with the accompanying HTTP
+:ref:`status code <status>` update, in order to reflect the newest HTTP
+semantics as per
+`RFC 9110, Section 15.5.14 <https://datatracker.ietf.org/doc/html/rfc9110#status.413>`__.
+(The old class name remains available as a deprecated compatibility alias.)
+
+In addition, one new :ref:`status code constant <status>` was added:
+``falcon.HTTP_421`` (also available as ``falcon.HTTP_MISDIRECTED_REQUEST``)
+in accordance with
+`RFC 9110, Section 15.5.20 <https://datatracker.ietf.org/doc/html/rfc9110#status.421>`__.

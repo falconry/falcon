@@ -123,6 +123,7 @@ __all__ = (
     'HTTPNotAcceptable',
     'HTTPNotFound',
     'HTTPNotImplemented',
+    'HTTPContentTooLarge',
     'HTTPPayloadTooLarge',
     'HTTPPreconditionFailed',
     'HTTPPreconditionRequired',
@@ -303,7 +304,6 @@ __all__ = (
     'HTTP_PROCESSING',
     'HTTP_PROXY_AUTHENTICATION_REQUIRED',
     'HTTP_REQUESTED_RANGE_NOT_SATISFIABLE',
-    'HTTP_REQUEST_ENTITY_TOO_LARGE',
     'HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE',
     'HTTP_REQUEST_TIMEOUT',
     'HTTP_REQUEST_URI_TOO_LONG',
@@ -354,6 +354,7 @@ from falcon.errors import HeaderNotSupported
 from falcon.errors import HTTPBadGateway
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPConflict
+from falcon.errors import HTTPContentTooLarge
 from falcon.errors import HTTPFailedDependency
 from falcon.errors import HTTPForbidden
 from falcon.errors import HTTPGatewayTimeout
@@ -529,6 +530,7 @@ from falcon.status_codes import HTTP_ALREADY_REPORTED
 from falcon.status_codes import HTTP_BAD_GATEWAY
 from falcon.status_codes import HTTP_BAD_REQUEST
 from falcon.status_codes import HTTP_CONFLICT
+from falcon.status_codes import HTTP_CONTENT_TOO_LARGE
 from falcon.status_codes import HTTP_CONTINUE
 from falcon.status_codes import HTTP_CREATED
 from falcon.status_codes import HTTP_EARLY_HINTS
@@ -567,7 +569,6 @@ from falcon.status_codes import HTTP_PRECONDITION_FAILED
 from falcon.status_codes import HTTP_PRECONDITION_REQUIRED
 from falcon.status_codes import HTTP_PROCESSING
 from falcon.status_codes import HTTP_PROXY_AUTHENTICATION_REQUIRED
-from falcon.status_codes import HTTP_REQUEST_ENTITY_TOO_LARGE
 from falcon.status_codes import HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
 from falcon.status_codes import HTTP_REQUEST_TIMEOUT
 from falcon.status_codes import HTTP_REQUEST_URI_TOO_LONG
