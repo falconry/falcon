@@ -39,8 +39,8 @@ from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 try:
     from typing import Concatenate, ParamSpec
-except ImportError:
-    from typing_extensions import Concatenate  # type: ignore[assignment]
+except ImportError:  # pragma: no cover
+    from typing_extensions import Concatenate
     from typing_extensions import ParamSpec  # type: ignore[assignment]
 
 if TYPE_CHECKING:
