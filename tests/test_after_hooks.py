@@ -128,12 +128,12 @@ class WrappedRespondersResource:
 
 class WrappedRespondersResourceAsync:
     @falcon.after(serialize_body_async)
-    @falcon.after(validate_output, is_async=False)
+    @falcon.after(validate_output)
     async def on_get(self, req, resp):
         self.req = req
         self.resp = resp
 
-    @falcon.after(serialize_body_async, is_async=True)
+    @falcon.after(serialize_body_async)
     async def on_put(self, req, resp):
         self.req = req
         self.resp = resp
