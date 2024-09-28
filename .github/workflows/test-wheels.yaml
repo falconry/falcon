@@ -1,4 +1,5 @@
-name: Run tests (emulated)
+# Test wheels various architectures by building out binaries with cibuildwheel.
+name: test-wheels
 
 on:
   # Trigger the workflow on master but also allow it to run manually.
@@ -6,8 +7,33 @@ on:
   push:
     branches:
       - master
-
+  # TODO(vytas): Remove from PR when ready
+  pull_request:
+    branches:
+      - master
 jobs:
+  # TODO(vytas): Clean up when ready, just fail this fast on the WiP PR for now.
+  test-windows:
+    name: "cibuildwheel: ${{ matrix.platform }}"
+    runs-on: windows-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - "cp313-win_amd64"
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21.1
+        env:
+          CIBW_ARCHS_LINUX: all
+          CIBW_BUILD: ${{ matrix.platform }}
+
   test-emulated:
     name: "cibuildwheel: ${{ matrix.platform }}"
     runs-on: ubuntu-latest
@@ -30,7 +56,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.20.0
+        uses: pypa/cibuildwheel@v2.21.1
         env:
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.platform }}
