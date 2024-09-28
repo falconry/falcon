@@ -91,13 +91,46 @@ def parse_header(line: str) -> Tuple[str, Dict[str, str]]:
     return _parse_header_old_stdlib(line)
 
 
+class _MediaType:
+    main_type: str
+    subtype: str
+    params: dict
+
+    __slots__ = ('main_type', 'subtype', 'params')
+
+    def __init__(self, main_type: str, subtype: str, params: dict) -> None:
+        self.main_type = main_type
+        self.subtype = subtype
+        self.params = params
+
+    def __repr__(self) -> str:
+        return f'MediaType<{self.main_type}/{self.subtype}; {self.params}>'
+
+
 class _MediaRange(tuple):
     @classmethod
     def parse(cls, media_range):
         pass
 
-    def matches(self, media_type):
+    def match_score(self, media_type):
         pass
+
+
+def _parse_media_type(media_type: str) -> _MediaType:
+    full_type, params = parse_header(media_type)
+
+    # TODO(vytas): Workaround from python-mimeparse by J. Gregorio et al.
+    #   Do we still need this in 2024?
+    # Java URLConnection class sends an Accept header that includes a
+    #   single '*'. Turn it into a legal wildcard.
+    if full_type == '*':
+        full_type = '*/*'
+
+    main_type, separator, subtype = full_type.partition('/')
+    if not separator:
+        raise ValueError('invalid media type')
+
+    return _MediaType(main_type.strip(), subtype.strip(), params)
 
 
 @functools.lru_cache()
@@ -110,7 +143,7 @@ def quality(media_type: str, header: str) -> float:
     """Get quality of the most specific matching media range.
 
     Media-ranges are parsed from the provided `header` value according to
-    RFC 9110, Section 12.5.1 (The ``Accept`` header).
+    RFC 9110, Section 12.5.1 (the ``Accept`` header).
 
     Args:
         media_type: The Internet media type to match against the provided
@@ -122,6 +155,8 @@ def quality(media_type: str, header: str) -> float:
         Quality of the most specific media range matching the provided
         `media_type`.
     """
+    # media_ranges = _parse_media_ranges(header)
+
     return 0.0
 
 
