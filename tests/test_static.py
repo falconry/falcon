@@ -619,11 +619,11 @@ def test_file_closed(client, patch_open):
     assert patch_open.current_file.closed
 
 
-def test_options_request(util, asgi, patch_open):
+def test_options_request(client, patch_open):
     patch_open()
-    app = util.create_app(asgi, cors_enable=True)
-    app.add_static_route('/static', '/var/www/statics')
-    client = testing.TestClient(app)
+
+    client.app.add_middleware(falcon.CORSMiddleware())
+    client.app.add_static_route('/static', '/var/www/statics')
 
     resp = client.simulate_options(
         path='/static/foo/bar.txt',

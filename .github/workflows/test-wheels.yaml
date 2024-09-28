@@ -1,4 +1,4 @@
-# Test wheels various architectures by building out binaries with cibuildwheel.
+# Test various architectures by building out binaries with cibuildwheel.
 name: test-wheels
 
 on:
@@ -11,38 +11,27 @@ on:
   pull_request:
     branches:
       - master
+
 jobs:
-  # TODO(vytas): Clean up when ready, just fail this fast on the WiP PR for now.
-  test-windows:
-    name: "cibuildwheel: ${{ matrix.platform }}"
-    runs-on: windows-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        platform:
-          - "cp313-win_amd64"
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.1
-        env:
-          CIBW_ARCHS_LINUX: all
-          CIBW_BUILD: ${{ matrix.platform }}
-
   test-emulated:
-    name: "cibuildwheel: ${{ matrix.platform }}"
-    runs-on: ubuntu-latest
+    name: "cibuildwheel: ${{ matrix.platform.build }}"
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
         platform:
-          - "cp312-manylinux_aarch64"
-          - "cp312-manylinux_s390x"
+          - build: "cp313-manylinux_aarch64"
+            os: ubuntu-latest
+            emulation: true
+          - build: "cp313-manylinux_s390x"
+            os: ubuntu-latest
+            emulation: true
+          - build: "cp313-musllinux_x86_64"
+            os: ubuntu-latest
+          - build: "cp313-macosx_arm64"
+            os: macos-14
+          - build: "cp313-win_amd64"
+            os: windows-latest
 
     steps:
       - name: Checkout repo
@@ -52,6 +41,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+        if: ${{ matrix.platform.emulation }}
         with:
           platforms: all
 
@@ -59,4 +49,4 @@ jobs:
         uses: pypa/cibuildwheel@v2.21.1
         env:
           CIBW_ARCHS_LINUX: all
-          CIBW_BUILD: ${{ matrix.platform }}
+          CIBW_BUILD: ${{ matrix.platform.build }}
