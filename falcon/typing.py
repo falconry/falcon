@@ -33,13 +33,13 @@ class ReadableIO(Protocol):
 
 # ASGI
 class AsyncReadableIO(Protocol):
-    """Async file like protocol that defines only a read method and is iterable."""
+    """Async file-like protocol that defines only a read method, and is iterable."""
 
     async def read(self, n: Optional[int] = ..., /) -> bytes: ...
     def __aiter__(self) -> AsyncIterator[bytes]: ...
 
 
-SseEmitter = AsyncIterator[Optional['SSEvent']]
-"""Async iterator or generator that generates Server-Sent Events
-returning :class:`falcon.asgi.SSEvent` insatnces.
+SSEEmitter = AsyncIterator[Optional['SSEvent']]
+"""Async generator or iterator over Server-Sent Events
+(instances of :class:`falcon.asgi.SSEvent`).
 """
