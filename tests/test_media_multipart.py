@@ -300,11 +300,14 @@ def test_body_part_properties():
             assert part.secure_filename == part.filename
 
 
-def test_empty_filename():
+def test_empty_or_missing_filename():
     data = (
         b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
         b'Content-Disposition: form-data; name="file"; filename=\r\n\r\n'
         b'An empty filename.\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'Content-Disposition: form-data; name="no file";\r\n\r\n'
+        b'No filename.\r\n'
         b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
     )
 
@@ -313,10 +316,16 @@ def test_empty_filename():
     stream = BufferedReader(io.BytesIO(data).read, len(data))
     form = handler.deserialize(stream, content_type, len(data))
 
+    parts = 0
     for part in form:
-        assert part.filename == ''
+        parts += 1
+        if part.name == 'file':
+            assert part.filename == ''
+        else:
+            assert part.filename is None
         with pytest.raises(falcon.MediaMalformedError):
             part.secure_filename
+    assert parts == 2
 
 
 class MultipartAnalyzer:

@@ -1,4 +1,4 @@
-# Copyright 2019-2023 by Vytautas Liuolia.
+# Copyright 2019-2024 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ from typing import (
     TYPE_CHECKING,
 )
 
+from falcon._typing import _UNSET
 from falcon.asgi.reader import BufferedReader
 from falcon.errors import DelimiterError
 from falcon.media import multipart
 from falcon.typing import AsyncReadableIO
-from falcon.typing import MISSING
 from falcon.util.mediatypes import parse_header
 
 if TYPE_CHECKING:
@@ -102,7 +102,7 @@ class BodyPart(multipart.BodyPart):
         Returns:
             object: The deserialized media representation.
         """
-        if self._media is MISSING:
+        if self._media is _UNSET:
             handler, _, _ = self._parse_options.media_handlers._resolve(
                 self.content_type, 'text/plain'
             )

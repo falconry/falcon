@@ -36,20 +36,20 @@ from typing import (
     Union,
 )
 
+from falcon._typing import _UNSET
+from falcon._typing import RangeSetHeader
+from falcon._typing import UnsetOr
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
 from falcon.media import Handlers
-from falcon.response_helpers import format_content_disposition
-from falcon.response_helpers import format_etag_header
-from falcon.response_helpers import format_header_value_list
-from falcon.response_helpers import format_range
-from falcon.response_helpers import header_property
-from falcon.response_helpers import is_ascii_encodable
+from falcon.response_helpers import _format_content_disposition
+from falcon.response_helpers import _format_etag_header
+from falcon.response_helpers import _format_header_value_list
+from falcon.response_helpers import _format_range
+from falcon.response_helpers import _header_property
+from falcon.response_helpers import _is_ascii_encodable
 from falcon.typing import Headers
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
-from falcon.typing import RangeSetHeader
 from falcon.typing import ReadableIO
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
@@ -97,7 +97,7 @@ class Response:
     _extra_headers: Optional[List[Tuple[str, str]]]
     _headers: Headers
     _media: Optional[Any]
-    _media_rendered: MissingOr[bytes]
+    _media_rendered: UnsetOr[bytes]
 
     # Child classes may override this
     context_type: ClassVar[Type[structures.Context]] = structures.Context
@@ -178,7 +178,7 @@ class Response:
         #   only instantiating the list object later on IFF it is needed.
         self._extra_headers = None
 
-        self.options = options if options else ResponseOptions()
+        self.options = options if options is not None else ResponseOptions()
 
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
@@ -188,7 +188,7 @@ class Response:
         self.stream = None
         self._data = None
         self._media = None
-        self._media_rendered = MISSING
+        self._media_rendered = _UNSET
 
         self.context = self.context_type()
 
@@ -251,7 +251,7 @@ class Response:
     @media.setter
     def media(self, value: Any) -> None:
         self._media = value
-        self._media_rendered = MISSING
+        self._media_rendered = _UNSET
 
     def render_body(self) -> Optional[bytes]:
         """Get the raw bytestring content for the response body.
@@ -278,7 +278,7 @@ class Response:
             if data is None and self._media is not None:
                 # NOTE(kgriffs): We use a special MISSING singleton since
                 #   None is ambiguous (the media handler might return None).
-                if self._media_rendered is MISSING:
+                if self._media_rendered is _UNSET:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 
@@ -471,9 +471,9 @@ class Response:
 
         """
 
-        if not is_ascii_encodable(name):
+        if not _is_ascii_encodable(name):
             raise KeyError('name is not ascii encodable')
-        if not is_ascii_encodable(value):
+        if not _is_ascii_encodable(value):
             raise ValueError('value is not ascii encodable')
 
         value = str(value)
@@ -975,7 +975,7 @@ class Response:
             'Please use append_link() instead.'
         )
 
-    cache_control: Union[str, Iterable[str], None] = header_property(
+    cache_control: Union[str, Iterable[str], None] = _header_property(
         'Cache-Control',
         """Set the Cache-Control header.
 
@@ -983,7 +983,7 @@ class Response:
         Cache-Control header. The list will be joined with ", " to produce
         the value for the header.
         """,
-        format_header_value_list,
+        _format_header_value_list,
     )
     """Set the Cache-Control header.
 
@@ -992,7 +992,7 @@ class Response:
     the value for the header.
     """
 
-    content_location: Optional[str] = header_property(
+    content_location: Optional[str] = _header_property(
         'Content-Location',
         """Set the Content-Location header.
 
@@ -1009,7 +1009,7 @@ class Response:
     header should be set manually using the set_header method.
     """
 
-    content_length: Union[str, int, None] = header_property(
+    content_length: Union[str, int, None] = _header_property(
         'Content-Length',
         """Set the Content-Length header.
 
@@ -1047,7 +1047,7 @@ class Response:
 
     """
 
-    content_range: Union[str, RangeSetHeader, None] = header_property(
+    content_range: Union[str, RangeSetHeader, None] = _header_property(
         'Content-Range',
         """A tuple to use in constructing a value for the Content-Range header.
 
@@ -1065,7 +1065,7 @@ class Response:
 
         (See also: RFC 7233, Section 4.2)
         """,
-        format_range,
+        _format_range,
     )
     """A tuple to use in constructing a value for the Content-Range header.
 
@@ -1084,7 +1084,7 @@ class Response:
     (See also: RFC 7233, Section 4.2)
     """
 
-    content_type: Optional[str] = header_property(
+    content_type: Optional[str] = _header_property(
         'Content-Type',
         """Sets the Content-Type header.
 
@@ -1108,7 +1108,7 @@ class Response:
     and ``falcon.MEDIA_GIF``.
     """
 
-    downloadable_as: Optional[str] = header_property(
+    downloadable_as: Optional[str] = _header_property(
         'Content-Disposition',
         """Set the Content-Disposition header using the given filename.
 
@@ -1121,7 +1121,7 @@ class Response:
         ``filename*`` directive, whereas ``filename`` will contain the US
         ASCII fallback.
         """,
-        functools.partial(format_content_disposition, disposition_type='attachment'),
+        functools.partial(_format_content_disposition, disposition_type='attachment'),
     )
     """Set the Content-Disposition header using the given filename.
 
@@ -1135,7 +1135,7 @@ class Response:
     ASCII fallback.
     """
 
-    viewable_as: Optional[str] = header_property(
+    viewable_as: Optional[str] = _header_property(
         'Content-Disposition',
         """Set an inline Content-Disposition header using the given filename.
 
@@ -1150,7 +1150,7 @@ class Response:
 
         .. versionadded:: 3.1
         """,
-        functools.partial(format_content_disposition, disposition_type='inline'),
+        functools.partial(_format_content_disposition, disposition_type='inline'),
     )
     """Set an inline Content-Disposition header using the given filename.
 
@@ -1166,14 +1166,14 @@ class Response:
     .. versionadded:: 3.1
     """
 
-    etag: Optional[str] = header_property(
+    etag: Optional[str] = _header_property(
         'ETag',
         """Set the ETag header.
 
         The ETag header will be wrapped with double quotes ``"value"`` in case
         the user didn't pass it.
         """,
-        format_etag_header,
+        _format_etag_header,
     )
     """Set the ETag header.
 
@@ -1181,7 +1181,7 @@ class Response:
     the user didn't pass it.
     """
 
-    expires: Union[str, datetime, None] = header_property(
+    expires: Union[str, datetime, None] = _header_property(
         'Expires',
         """Set the Expires header. Set to a ``datetime`` (UTC) instance.
 
@@ -1196,7 +1196,7 @@ class Response:
         Falcon will format the ``datetime`` as an HTTP date string.
     """
 
-    last_modified: Union[str, datetime, None] = header_property(
+    last_modified: Union[str, datetime, None] = _header_property(
         'Last-Modified',
         """Set the Last-Modified header. Set to a ``datetime`` (UTC) instance.
 
@@ -1211,7 +1211,7 @@ class Response:
         Falcon will format the ``datetime`` as an HTTP date string.
     """
 
-    location: Optional[str] = header_property(
+    location: Optional[str] = _header_property(
         'Location',
         """Set the Location header.
 
@@ -1228,7 +1228,7 @@ class Response:
     header should be set manually using the set_header method.
     """
 
-    retry_after: Union[int, str, None] = header_property(
+    retry_after: Union[int, str, None] = _header_property(
         'Retry-After',
         """Set the Retry-After header.
 
@@ -1242,7 +1242,7 @@ class Response:
     value for the header. The HTTP-date syntax is not supported.
     """
 
-    vary: Union[str, Iterable[str], None] = header_property(
+    vary: Union[str, Iterable[str], None] = _header_property(
         'Vary',
         """Value to use for the Vary header.
 
@@ -1259,7 +1259,7 @@ class Response:
 
         (See also: RFC 7231, Section 7.1.4)
         """,
-        format_header_value_list,
+        _format_header_value_list,
     )
     """Value to use for the Vary header.
 
@@ -1277,7 +1277,7 @@ class Response:
     (See also: RFC 7231, Section 7.1.4)
     """
 
-    accept_ranges: Optional[str] = header_property(
+    accept_ranges: Optional[str] = _header_property(
         'Accept-Ranges',
         """Set the Accept-Ranges header.
 

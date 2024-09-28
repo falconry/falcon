@@ -171,7 +171,7 @@ class LengthRequiredResource:
 
 class RequestEntityTooLongResource:
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge(
+        raise falcon.HTTPContentTooLarge(
             title='Request Rejected', description='Request Body Too Large'
         )
 
@@ -181,7 +181,7 @@ class TemporaryRequestEntityTooLongResource:
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge(
+        raise falcon.HTTPContentTooLarge(
             title='Request Rejected',
             description='Request Body Too Large',
             retry_after=self.retry_after,

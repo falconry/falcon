@@ -332,7 +332,7 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-def secure_filename(filename: Optional[str]) -> str:
+def secure_filename(filename: str) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for

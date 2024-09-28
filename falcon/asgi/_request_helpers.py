@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from falcon.asgi import Request
 
 
-def header_property(header_name: str) -> Any:
+def _header_property(header_name: str) -> Any:
     """Create a read-only header property.
 
     Args:
