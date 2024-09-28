@@ -7,10 +7,6 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): Remove from PR when ready
-  pull_request:
-    branches:
-      - master
 
 jobs:
   test-emulated:
