@@ -316,7 +316,7 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
             preferred = req.client_prefers(list(resp.options.media_handlers))
 
     if preferred is not None:
-        handler, _, _ = resp.options.media_handlers._resolve(
+        handler, serialize_sync, _ = resp.options.media_handlers._resolve(
             preferred, MEDIA_JSON, raise_not_found=False
         )
         if preferred == MEDIA_JSON:
@@ -325,7 +325,12 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
             # media_handlers.
             resp.data = exception.to_json(handler)
         elif handler:
-            resp.data = handler.serialize(exception.to_dict(), preferred)
+            if serialize_sync:
+                resp.data = serialize_sync(exception.to_dict(), preferred)
+            else:
+                # NOTE(caselit): Let the app serialize the response if there is no sync
+                # serializer implemented in the handler.
+                resp.media = exception.to_dict()
         else:
             resp.data = exception.to_xml()
 

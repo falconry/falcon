@@ -212,6 +212,7 @@ class HTTPError(Exception):
         obj = self.to_dict()
         if handler is None:
             handler = _DEFAULT_JSON_HANDLER
+        # NOTE: the json handler requires the sync serialize interface
         return handler.serialize(obj, MEDIA_JSON)
 
     def to_xml(self) -> bytes:
