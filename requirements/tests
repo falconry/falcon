@@ -1,5 +1,8 @@
 coverage >= 4.1
-pytest
+# TODO(vytas): Our use of testtools breaks under pytest 8.2 along the lines of
+#   https://github.com/pytest-dev/pytest/issues/12263, unpin when fixed
+#   (or drop support for testtools altogether?)
+pytest >= 7.0, < 8.2
 pyyaml
 requests
 # TODO(vytas): Check if testtools still brings anything to the table, and
@@ -7,7 +10,6 @@ requests
 testtools; python_version < '3.10'
 
 # ASGI Specific (daphne is installed on a its own tox env)
-pytest-asyncio
 aiofiles
 httpx
 uvicorn >= 0.17.0
@@ -20,7 +22,8 @@ mujson
 ujson
 
 # it's slow to compile on emulated architectures; wheels missing for some EoL interpreters
-python-rapidjson; platform_machine != 's390x' and platform_machine != 'aarch64'
+# (and there is a new issue with building on PyPy in Actions, but we don't really need to test it with PyPy)
+python-rapidjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
 
 # wheels are missing some EoL interpreters and non-x86 platforms; build would fail unless rust is available
 orjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'

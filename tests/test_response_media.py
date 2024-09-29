@@ -3,7 +3,14 @@ import json
 import pytest
 
 import falcon
-from falcon import errors, media, testing
+from falcon import errors
+from falcon import media
+from falcon import testing
+
+try:
+    import msgpack
+except ImportError:
+    msgpack = None
 
 
 @pytest.fixture
@@ -61,7 +68,7 @@ def test_json(client, media_type):
         '',
         'I am a \u1d0a\ua731\u1d0f\u0274 string.',
         ['\u2665', '\u2660', '\u2666', '\u2663'],
-        {'message': '\xa1Hello Unicode! \U0001F638'},
+        {'message': '\xa1Hello Unicode! \U0001f638'},
         {
             'description': 'A collection of primitive Python type examples.',
             'bool': False is not True and True is not False,
@@ -71,7 +78,7 @@ def test_json(client, media_type):
             'list': ['a', 'sequence', 'of', 'items'],
             'none': None,
             'str': 'ASCII string',
-            'unicode': 'Hello Unicode! \U0001F638',
+            'unicode': 'Hello Unicode! \U0001f638',
         },
     ],
 )
@@ -92,6 +99,7 @@ def test_non_ascii_json_serialization(document):
         ('application/x-msgpack'),
     ],
 )
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 def test_msgpack(media_type):
     client = create_client(
         {

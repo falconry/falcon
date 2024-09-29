@@ -8,7 +8,6 @@ def create():
 
 
 def setup_app(config):
-
     return make_app(
         config.app.root,
         static_root=config.app.static_root,

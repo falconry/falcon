@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Vytautas Liuolia.
+# Copyright 2019-2024 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -251,7 +251,7 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
 
 
 def parse_query_string(unicode query_string not None, bint keep_blank=False,
-                       bint csv=True):
+                       bint csv=False):
     cdef bytes byte_string = query_string.encode('utf-8')
     cdef unsigned char* data = byte_string
     return cy_parse_query_string(data, len(byte_string), keep_blank, csv)

@@ -8,6 +8,7 @@ from falcon.asgi import App
 import falcon.util
 
 
+@pytest.mark.slow
 def test_sync_helpers():
     safely_values = []
     unsafely_values = []
@@ -50,21 +51,21 @@ def test_sync_helpers():
             cmus = falcon.util.wrap_sync_to_async(callme_unsafely, threadsafe=True)
             cms = falcon.util.wrap_sync_to_async(callme_safely, threadsafe=False)
 
-            loop = falcon.util.get_running_loop()
-
             # NOTE(kgriffs): create_task() is used here, so that the coroutines
             #   are scheduled immediately in the order created; under Python
             #   3.6, asyncio.gather() does not seem to always schedule
             #   them in order, so we do it this way to make it predictable.
             for i in range(1000):
                 safely_coroutine_objects.append(
-                    loop.create_task(cms(i, i + 1, c=i + 2))
+                    asyncio.create_task(cms(i, i + 1, c=i + 2))
                 )
                 unsafely_coroutine_objects.append(
-                    loop.create_task(cmus(i, i + 1, c=i + 2))
+                    asyncio.create_task(cmus(i, i + 1, c=i + 2))
                 )
                 shirley_coroutine_objects.append(
-                    loop.create_task(falcon.util.sync_to_async(callme_shirley, 24, b=i))
+                    asyncio.create_task(
+                        falcon.util.sync_to_async(callme_shirley, 24, b=i)
+                    )
                 )
 
             await asyncio.gather(
@@ -107,3 +108,22 @@ def test_sync_helpers():
     for i, val in enumerate(shirley_values):
         assert val[0] in {24, 42, 1, 5, 3}
         assert val[1] is None or (0 <= val[1] < 1000)
+
+
+async def test_sync_asyncio_aliases():
+    async def dummy_async_func():
+        pass
+
+    with pytest.warns(
+        falcon.util.deprecation.DeprecatedWarning,
+        match='Call to deprecated function create_task',
+    ):
+        task = falcon.util.create_task(dummy_async_func())
+
+    with pytest.warns(
+        falcon.util.deprecation.DeprecatedWarning,
+        match='Call to deprecated function get_running_loop',
+    ):
+        falcon.util.get_running_loop()
+
+    await task

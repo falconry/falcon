@@ -3,22 +3,20 @@ import pytest
 from falcon.request import Request
 import falcon.testing as testing
 
-from _util import create_req  # NOQA
 
-
-def test_remote_addr_default(asgi):
-    req = create_req(asgi)
+def test_remote_addr_default(asgi, util):
+    req = util.create_req(asgi)
     assert req.remote_addr == '127.0.0.1'
 
 
-def test_remote_addr_non_default(asgi):
+def test_remote_addr_non_default(asgi, util):
     client_ip = '10.132.0.5'
-    req = create_req(asgi, remote_addr=client_ip)
+    req = util.create_req(asgi, remote_addr=client_ip)
     assert req.remote_addr == client_ip
 
 
-def test_remote_addr_only(asgi):
-    req = create_req(
+def test_remote_addr_only(asgi, util):
+    req = util.create_req(
         asgi,
         host='example.com',
         path='/access_route',
@@ -35,8 +33,8 @@ def test_remote_addr_only(asgi):
     assert req.remote_addr == '127.0.0.1'
 
 
-def test_rfc_forwarded(asgi):
-    req = create_req(
+def test_rfc_forwarded(asgi, util):
+    req = util.create_req(
         asgi,
         host='example.com',
         path='/access_route',
@@ -70,8 +68,8 @@ def test_rfc_forwarded(asgi):
     assert req.access_route == compares
 
 
-def test_malformed_rfc_forwarded(asgi):
-    req = create_req(
+def test_malformed_rfc_forwarded(asgi, util):
+    req = util.create_req(
         asgi, host='example.com', path='/access_route', headers={'Forwarded': 'for'}
     )
 
@@ -82,14 +80,13 @@ def test_malformed_rfc_forwarded(asgi):
 
 
 @pytest.mark.parametrize('include_localhost', [True, False])
-def test_x_forwarded_for(asgi, include_localhost):
-
+def test_x_forwarded_for(asgi, util, include_localhost):
     forwarded_for = '192.0.2.43, 2001:db8:cafe::17,unknown, _hidden, 203.0.113.60'
 
     if include_localhost:
         forwarded_for += ', 127.0.0.1'
 
-    req = create_req(
+    req = util.create_req(
         asgi,
         host='example.com',
         path='/access_route',
@@ -106,8 +103,8 @@ def test_x_forwarded_for(asgi, include_localhost):
     ]
 
 
-def test_x_real_ip(asgi):
-    req = create_req(
+def test_x_real_ip(asgi, util):
+    req = util.create_req(
         asgi,
         host='example.com',
         path='/access_route',
@@ -118,8 +115,8 @@ def test_x_real_ip(asgi):
 
 
 @pytest.mark.parametrize('remote_addr', ['10.0.0.1', '98.245.211.177'])
-def test_remote_addr(asgi, remote_addr):
-    req = create_req(
+def test_remote_addr(asgi, util, remote_addr):
+    req = util.create_req(
         asgi,
         host='example.com',
         path='/access_route',

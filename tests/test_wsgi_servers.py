@@ -6,7 +6,11 @@ import sys
 import time
 
 import pytest
-import requests
+
+try:
+    import requests
+except ImportError:
+    requests = None  # type: ignore
 
 from falcon import testing
 
@@ -190,6 +194,9 @@ def server_url(server_args):
         )
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
 class TestWSGIServer:
     def test_get(self, server_url):
         resp = requests.get(server_url + '/hello', timeout=_REQUEST_TIMEOUT)
@@ -201,7 +208,7 @@ class TestWSGIServer:
     def test_get_deprecated(self, server_url):
         resp = requests.get(server_url + '/deprecated', timeout=_REQUEST_TIMEOUT)
 
-        # Since it tries to set .body we expect an unhandled error
+        # Since it tries to use resp.add_link() we expect an unhandled error
         assert resp.status_code == 500
 
     def test_post_multipart_form(self, server_url):

@@ -3,8 +3,6 @@
 FAQ
 ===
 
-.. contents:: :local:
-
 Design Philosophy
 ~~~~~~~~~~~~~~~~~
 
@@ -97,6 +95,27 @@ other types of hooks, such as custom error handlers, are likewise shared.
 Therefore, as long as you implement these classes and callables in a
 thread-safe manner, and ensure that any third-party libraries used by your
 app are also thread-safe, your WSGI app as a whole will be thread-safe.
+
+.. _faq_free_threading:
+
+Can I run Falcon on free-threaded CPython?
+------------------------------------------
+
+At the time of this writing, Falcon has not been extensively evaluated without
+the GIL yet.
+
+We load-tested the WSGI flavor of the framework via
+:class:`~wsgiref.simple_server.WSGIServer` +
+:class:`~socketserver.ThreadingMixIn` on
+`free-threaded CPython 3.13.0rc1
+<https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
+(under ``PYTHON_GIL=0``), and observed no issues that would point toward
+Falcon's reliance on the GIL. Thus, we would like to think that Falcon is still
+:ref:`thread-safe <faq_thread_safety>` even in free-threaded execution,
+but it is too early to provide a definite answer.
+
+If you experimented with free-threading of Falcon or other Python web services,
+please :ref:`share your experience <chat>`!
 
 Does Falcon support asyncio?
 ------------------------------
@@ -668,9 +687,10 @@ The `stream` of a body part is a file-like object implementing the ``read()``
 method, making it compatible with ``boto3``\'s
 `upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         .. code:: python
 
@@ -684,7 +704,8 @@ method, making it compatible with ``boto3``\'s
                 if part.name == 'myfile':
                     s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         .. code:: python
 
@@ -1232,6 +1253,55 @@ the tutorial in the docs provides an excellent introduction to
 `testing Falcon apps with pytest <http://falcon.readthedocs.io/en/stable/user/tutorial.html#testing-your-application>`_.
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
+
+Can I shut my server down cleanly from the app?
+-----------------------------------------------
+
+Normally, the lifetime of an app server is controlled by other means than from
+inside the running app, and there is no standardized way for a WSGI or ASGI
+framework to shut down the server programmatically.
+
+However, if you need to spin up a real server for testing purposes (such as for
+collecting coverage while interacting with other services over the network),
+your app server of choice may offer a Python API or hooks that you can
+integrate into your app.
+
+For instance, the stdlib's :mod:`wsgiref` server inherits from
+:class:`~socketserver.TCPServer`, which can be stopped by calling its
+``shutdown()`` method. Just make sure to perform the call from a different
+thread (otherwise it may deadlock):
+
+.. code:: python
+
+    import http
+    import threading
+    import wsgiref.simple_server
+
+    import falcon
+
+
+    class Shutdown:
+        def __init__(self, httpd):
+            self._httpd = httpd
+
+        def on_post(self, req, resp):
+            thread = threading.Thread(target=self._httpd.shutdown, daemon=True)
+            thread.start()
+
+            resp.content_type = falcon.MEDIA_TEXT
+            resp.text = 'Shutting down...\n'
+            resp.status = http.HTTPStatus.ACCEPTED
+
+
+    with wsgiref.simple_server.make_server('', 8000, app := falcon.App()) as httpd:
+        app.add_route('/shutdown', Shutdown(httpd))
+        print('Serving on port 8000, POST to /shutdown to stop...')
+        httpd.serve_forever()
+
+.. warning::
+   While ``wsgiref.simple_server`` is handy for integration testing, it builds
+   upon :mod:`http.server`, which is not recommended for production. (See
+   :ref:`install` on how to install a production-ready WSGI or ASGI server.)
 
 How can I set cookies when simulating requests?
 -----------------------------------------------

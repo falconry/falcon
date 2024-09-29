@@ -29,9 +29,9 @@ can be exposed.
 Usage
 -----
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -45,7 +45,7 @@ Usage
             app = falcon.App(middleware=falcon.CORSMiddleware(
                 allow_origins='example.com', allow_credentials='*'))
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -60,9 +60,15 @@ Usage
                 allow_origins='example.com', allow_credentials='*'))
 
 .. note::
-    Passing the ``cors_enable`` parameter set to ``True`` should be seen as
-    mutually exclusive with directly passing an instance of
-    :class:`~falcon.CORSMiddleware` to the application's initializer.
+    Passing the ``cors_enable`` parameter set to ``True`` is mutually exclusive
+    with directly passing an instance of :class:`~falcon.CORSMiddleware` to the
+    application's initializer.
+
+    .. versionchanged:: 4.0
+
+       Attempt to use the combination of ``cors_enable=True`` and an additional
+       instance of :class:`~falcon.CORSMiddleware` now results in a
+       :class:`ValueError`.
 
 CORSMiddleware
 --------------

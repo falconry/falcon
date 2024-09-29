@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 FALCON_ROOT=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/../.." &> /dev/null && pwd )
 MAILMAN_PATH=$FALCON_ROOT/.ecosystem/mailman
 
@@ -19,14 +21,11 @@ cd $MAILMAN_PATH
 # git checkout tags/$MAILMAN_VERSION
 
 # NOTE(vytas): Patch tox.ini to introduce a new Falcon environment.
-# TODO(vytas): Remove the shim pinning importlib-resources once
-#   https://gitlab.com/mailman/mailman/-/merge_requests/1130 is merged upstream.
 cat <<EOT >> tox.ini
 
 [testenv:falcon-nocov]
-basepython = python3.8
+basepython = python3.12
 commands_pre =
-    pip install "importlib-resources < 6.0"
     pip uninstall -y falcon
     pip install $FALCON_ROOT
 EOT

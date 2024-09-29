@@ -3,8 +3,6 @@
 Middleware
 ==========
 
-.. contents:: :local:
-
 Middleware components provide a way to execute logic before the
 framework routes each request, after each request is routed but before
 the target responder is called, or just before the response is returned
@@ -18,16 +16,19 @@ when instantiating Falcon's :ref:`App class <app>`. A middleware component
 is simply a class that implements one or more of the event handler methods
 defined below.
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         Falcon's middleware interface is defined as follows:
 
         .. code:: python
 
+            from typing import Any
+            from falcon import Request, Response
+
             class ExampleMiddleware:
-                def process_request(self, req, resp):
+                def process_request(self, req: Request, resp: Response) -> None:
                     """Process the request before routing it.
 
                     Note:
@@ -42,7 +43,13 @@ defined below.
                             the on_* responder.
                     """
 
-                def process_resource(self, req, resp, resource, params):
+                def process_resource(
+                    self,
+                    req: Request,
+                    resp: Response,
+                    resource: object,
+                    params: dict[str, Any],
+                ) -> None:
                     """Process the request after routing.
 
                     Note:
@@ -62,7 +69,13 @@ defined below.
                             method as keyword arguments.
                     """
 
-                def process_response(self, req, resp, resource, req_succeeded):
+                def process_response(
+                    self,
+                    req: Request,
+                    resp: Response,
+                    resource: object,
+                    req_succeeded: bool
+                ) -> None:
                     """Post-processing of the response (after routing).
 
                     Args:
@@ -81,7 +94,7 @@ defined below.
 
             app = App(middleware=[ExampleMiddleware()])
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         The ASGI middleware interface is similar to WSGI, but also supports the
         standard ASGI lifespan events. However, because lifespan events are an
@@ -90,8 +103,13 @@ defined below.
 
         .. code:: python
 
+            from typing import Any
+            from falcon.asgi import Request, Response, WebSocket
+
             class ExampleMiddleware:
-                async def process_startup(self, scope, event):
+                async def process_startup(
+                    self, scope: dict[str, Any], event: dict[str, Any]
+                ) -> None:
                     """Process the ASGI lifespan startup event.
 
                     Invoked when the server is ready to start up and
@@ -111,7 +129,9 @@ defined below.
                             startup event.
                     """
 
-                async def process_shutdown(self, scope, event):
+                async def process_shutdown(
+                    self, scope: dict[str, Any], event: dict[str, Any]
+                ) -> None:
                     """Process the ASGI lifespan shutdown event.
 
                     Invoked when the server has stopped accepting
@@ -130,7 +150,7 @@ defined below.
                             shutdown event.
                     """
 
-                async def process_request(self, req, resp):
+                async def process_request(self, req: Request, resp: Response) -> None:
                     """Process the request before routing it.
 
                     Note:
@@ -145,7 +165,13 @@ defined below.
                             the on_* responder.
                     """
 
-                async def process_resource(self, req, resp, resource, params):
+                async def process_resource(
+                    self,
+                    req: Request,
+                    resp: Response,
+                    resource: object,
+                    params: dict[str, Any],
+                ) -> None:
                     """Process the request after routing.
 
                     Note:
@@ -165,7 +191,13 @@ defined below.
                             method as keyword arguments.
                     """
 
-                async def process_response(self, req, resp, resource, req_succeeded):
+                async def process_response(
+                    self,
+                    req: Request,
+                    resp: Response,
+                    resource: object,
+                    req_succeeded: bool
+                ) -> None:
                     """Post-processing of the response (after routing).
 
                     Args:
@@ -179,7 +211,7 @@ defined below.
                             otherwise False.
                     """
 
-                async def process_request_ws(self, req, ws):
+                async def process_request_ws(self, req: Request, ws: WebSocket) -> None:
                     """Process a WebSocket handshake request before routing it.
 
                     Note:
@@ -194,7 +226,13 @@ defined below.
                             on_websocket() after routing.
                     """
 
-                async def process_resource_ws(self, req, ws, resource, params):
+                async def process_resource_ws(
+                    self,
+                    req: Request,
+                    ws: WebSocket,
+                    resource: object,
+                    params: dict[str, Any],
+                ) -> None:
                     """Process a WebSocket handshake request after routing.
 
                     Note:
@@ -226,15 +264,18 @@ the following example:
 
 .. code:: python
 
+    import falcon as wsgi
+    from falcon import asgi
+
     class ExampleMiddleware:
-        def process_request(self, req, resp):
+        def process_request(self, req: wsgi.Request, resp: wsgi.Response) -> None:
             """Process WSGI request using synchronous logic.
 
             Note that req and resp are instances of falcon.Request and
             falcon.Response, respectively.
             """
 
-        async def process_request_async(self, req, resp):
+        async def process_request_async(self, req: asgi.Request, resp: asgi.Response) -> None:
             """Process ASGI request using asynchronous logic.
 
             Note that req and resp are instances of falcon.asgi.Request and
@@ -254,7 +295,7 @@ the following example:
 .. Tip::
     The *process_resource* method is only called when the request matches
     a route to a resource. To take action when a route is not found, a
-    :py:meth:`sink <falcon.App.add_sink>` may be used instead.
+    :meth:`sink <falcon.App.add_sink>` may be used instead.
 
 .. Tip::
     In order to pass data from a middleware function to a resource function

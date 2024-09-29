@@ -14,10 +14,15 @@
 
 """ASGI BoundedStream class."""
 
+from __future__ import annotations
+
+from typing import AsyncIterator, NoReturn, Optional
+
+from falcon._typing import AsgiReceive
+from falcon.asgi_spec import AsgiEvent
 from falcon.errors import OperationNotAllowed
 
-
-__all__ = ['BoundedStream']
+__all__ = ('BoundedStream',)
 
 
 class BoundedStream:
@@ -95,16 +100,28 @@ class BoundedStream:
             from the Content-Length header in the request (if available).
     """
 
-    __slots__ = [
+    __slots__ = (
         '_buffer',
         '_bytes_remaining',
         '_closed',
         '_iteration_started',
         '_pos',
         '_receive',
-    ]
+    )
 
-    def __init__(self, receive, first_event=None, content_length=None):
+    _buffer: bytes
+    _bytes_remaining: int
+    _closed: bool
+    _iteration_started: bool
+    _pos: int
+    _receive: AsgiReceive
+
+    def __init__(
+        self,
+        receive: AsgiReceive,
+        first_event: Optional[AsgiEvent] = None,
+        content_length: Optional[int] = None,
+    ) -> None:
         self._closed = False
         self._iteration_started = False
 
@@ -116,7 +133,7 @@ class BoundedStream:
         #   object is created in other cases, use "in" here rather than
         #   EAFP.
         if first_event and 'body' in first_event:
-            first_chunk = first_event['body']
+            first_chunk: bytes = first_event['body']
         else:
             first_chunk = b''
 
@@ -145,7 +162,7 @@ class BoundedStream:
             if not ('more_body' in first_event and first_event['more_body']):
                 self._bytes_remaining = 0
 
-    def __aiter__(self):
+    def __aiter__(self) -> AsyncIterator[bytes]:
         # NOTE(kgriffs): This returns an async generator, but that's OK because
         #   it also implements the iterator protocol defined in PEP 492, albeit
         #   in a more efficient way than a regular async iterator.
@@ -162,41 +179,41 @@ class BoundedStream:
     #   readlines(), __iter__(), __next__(), flush(), seek(),
     #   truncate(), __del__().
 
-    def fileno(self):
+    def fileno(self) -> NoReturn:
         """Raise an instance of OSError since a file descriptor is not used."""
         raise OSError('This IO object does not use a file descriptor')
 
-    def isatty(self):
+    def isatty(self) -> bool:
         """Return ``False`` always."""
         return False
 
-    def readable(self):
+    def readable(self) -> bool:
         """Return ``True`` always."""
         return True
 
-    def seekable(self):
+    def seekable(self) -> bool:
         """Return ``False`` always."""
         return False
 
-    def writable(self):
+    def writable(self) -> bool:
         """Return ``False`` always."""
         return False
 
-    def tell(self):
+    def tell(self) -> int:
         """Return the number of bytes read from the stream so far."""
         return self._pos
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self._closed
 
     # -------------------------------------------------------------------------
 
     @property
-    def eof(self):
+    def eof(self) -> bool:
         return not self._buffer and self._bytes_remaining == 0
 
-    def close(self):
+    def close(self) -> None:
         """Clear any buffered data and close this stream.
 
         Once the stream is closed, any operation on it will
@@ -212,7 +229,7 @@ class BoundedStream:
 
             self._closed = True
 
-    async def exhaust(self):
+    async def exhaust(self) -> None:
         """Consume and immediately discard any remaining data in the stream."""
 
         if self._closed:
@@ -241,13 +258,13 @@ class BoundedStream:
                     self._bytes_remaining = 0
 
             # Immediately dereference the data so it can be discarded ASAP
-            event = None
+            event = None  # type: ignore[assignment]
 
         # NOTE(kgriffs): Ensure that if we read more than expected, this
         #   value is normalized to zero.
         self._bytes_remaining = 0
 
-    async def readall(self):
+    async def readall(self) -> bytes:
         """Read and return all remaining data in the request body.
 
         Warning:
@@ -309,7 +326,7 @@ class BoundedStream:
 
         return data
 
-    async def read(self, size=None):
+    async def read(self, size: Optional[int] = None) -> bytes:
         """Read some or all of the remaining bytes in the request body.
 
         Warning:
@@ -402,7 +419,7 @@ class BoundedStream:
 
         return data
 
-    async def _iter_content(self):
+    async def _iter_content(self) -> AsyncIterator[bytes]:
         if self._closed:
             raise OperationNotAllowed(
                 'This stream is closed; no further operations on it are permitted.'

@@ -1,13 +1,13 @@
 import functools
 import json
+import typing
 
 import pytest
 
 import falcon
+from falcon import app as wsgi
 from falcon import testing
-
-from _util import create_app, create_resp  # NOQA
-
+from falcon._typing import Resource
 
 # --------------------------------------------------------------------
 # Fixtures
@@ -20,8 +20,8 @@ def wrapped_resource_aware():
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     resource = WrappedRespondersResourceAsync() if asgi else WrappedRespondersResource()
     app.add_route('/', resource)
@@ -128,12 +128,12 @@ class WrappedRespondersResource:
 
 class WrappedRespondersResourceAsync:
     @falcon.after(serialize_body_async)
-    @falcon.after(validate_output, is_async=False)
+    @falcon.after(validate_output)
     async def on_get(self, req, resp):
         self.req = req
         self.resp = resp
 
-    @falcon.after(serialize_body_async, is_async=True)
+    @falcon.after(serialize_body_async)
     async def on_put(self, req, resp):
         self.req = req
         self.resp = resp
@@ -147,7 +147,6 @@ class WrappedRespondersResourceAsync:
 @falcon.after(cuteness, 'fluffy', postfix=' and innocent')
 @falcon.after(fluffiness, 'kitten')
 class WrappedClassResource:
-
     # Test that the decorator skips non-callables
     on_post = False
 
@@ -196,7 +195,6 @@ class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
 # at once for the sake of simplicity
 @falcon.after(resource_aware_cuteness)
 class ClassResourceWithAwareHooks:
-
     # Test that the decorator skips non-callables
     on_delete = False
 
@@ -262,8 +260,8 @@ def test_resource_with_uri_fields(client, resource):
     assert resource.fields == ('82074', '58927')
 
 
-def test_resource_with_uri_fields_async():
-    app = create_app(asgi=True)
+def test_resource_with_uri_fields_async(util):
+    app = util.create_app(asgi=True)
 
     resource = ClassResourceWithURIFieldsAsync()
     app.add_route('/{field1}/{field2}', resource)
@@ -278,7 +276,7 @@ def test_resource_with_uri_fields_async():
         resource = ClassResourceWithURIFieldsAsync()
 
         req = testing.create_asgi_req()
-        resp = create_resp(True)
+        resp = util.create_resp(True)
 
         await resource.on_get(req, resp, '1', '2')
         assert resource.fields == ('1', '2')
@@ -342,12 +340,12 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_resource_
 
 
 class ResourceAwareGameHook:
-
     VALUES = ('rock', 'scissors', 'paper')
 
     @classmethod
-    def __call__(cls, req, resp, resource):
+    def __call__(cls, req: wsgi.Request, resp: wsgi.Response, resource: Resource):
         assert resource
+        resource = typing.cast(HandGame, resource)
         assert resource.seed in cls.VALUES
         assert resp.text == 'Responder called.'
 

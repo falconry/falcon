@@ -3,8 +3,6 @@ import pytest
 import falcon
 from falcon import testing
 
-from _util import create_app  # NOQA
-
 
 def sink(req, resp, **kw):
     resp.text = 'sink'
@@ -15,12 +13,12 @@ async def sink_async(req, resp, **kw):
 
 
 @pytest.fixture
-def client(asgi, tmp_path):
+def client(asgi, util, tmp_path):
     file = tmp_path / 'file.txt'
     file.write_text('foo bar')
 
     def make(sink_before_static_route):
-        app = create_app(asgi=asgi, sink_before_static_route=sink_before_static_route)
+        app = util.create_app(asgi, sink_before_static_route=sink_before_static_route)
         app.add_sink(sink_async if asgi else sink, '/sink')
         app.add_static_route('/sink/static', str(tmp_path))
 

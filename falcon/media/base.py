@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import abc
 import io
-from typing import IO, Optional, Union
+from typing import Optional, Union
 
+from falcon._typing import DeserializeSync
+from falcon._typing import SerializeSync
 from falcon.constants import MEDIA_JSON
+from falcon.typing import AsyncReadableIO
+from falcon.typing import ReadableIO
 
 
 class BaseHandler(metaclass=abc.ABCMeta):
@@ -15,10 +21,10 @@ class BaseHandler(metaclass=abc.ABCMeta):
     #   might make it part of the public interface for use by custom
     #   media type handlers.
 
-    _serialize_sync = None
+    _serialize_sync: Optional[SerializeSync] = None
     """Override to provide a synchronous serialization method that takes an object."""
 
-    _deserialize_sync = None
+    _deserialize_sync: Optional[DeserializeSync] = None
     """Override to provide a synchronous deserialization method that
     takes a byte string."""
 
@@ -26,11 +32,11 @@ class BaseHandler(metaclass=abc.ABCMeta):
         """Serialize the media object on a :any:`falcon.Response`.
 
         By default, this method raises an instance of
-        :py:class:`NotImplementedError`. Therefore, it must be
+        :class:`NotImplementedError`. Therefore, it must be
         overridden in order to work with WSGI apps. Child classes
         can ignore this method if they are only to be used
         with ASGI apps, as long as they override
-        :py:meth:`~.BaseHandler.serialize_async`.
+        :meth:`~.BaseHandler.serialize_async`.
 
         Note:
 
@@ -57,19 +63,19 @@ class BaseHandler(metaclass=abc.ABCMeta):
     async def serialize_async(self, media: object, content_type: str) -> bytes:
         """Serialize the media object on a :any:`falcon.Response`.
 
-        This method is similar to :py:meth:`~.BaseHandler.serialize`
+        This method is similar to :meth:`~.BaseHandler.serialize`
         except that it is asynchronous. The default implementation simply calls
-        :py:meth:`~.BaseHandler.serialize`. If the media object may be
+        :meth:`~.BaseHandler.serialize`. If the media object may be
         awaitable, or is otherwise something that should be read
         asynchronously, subclasses must override the default implementation
         in order to handle that case.
 
         Note:
-            By default, the :py:meth:`~.BaseHandler.serialize`
-            method raises an instance of :py:class:`NotImplementedError`.
+            By default, the :meth:`~.BaseHandler.serialize`
+            method raises an instance of :class:`NotImplementedError`.
             Therefore, child classes must either override
-            :py:meth:`~.BaseHandler.serialize` or
-            :py:meth:`~.BaseHandler.serialize_async` in order to be
+            :meth:`~.BaseHandler.serialize` or
+            :meth:`~.BaseHandler.serialize_async` in order to be
             compatible with ASGI apps.
 
         Args:
@@ -82,16 +88,19 @@ class BaseHandler(metaclass=abc.ABCMeta):
         return self.serialize(media, content_type)
 
     def deserialize(
-        self, stream: IO, content_type: str, content_length: Optional[int]
+        self,
+        stream: ReadableIO,
+        content_type: Optional[str],
+        content_length: Optional[int],
     ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
         By default, this method raises an instance of
-        :py:class:`NotImplementedError`. Therefore, it must be
+        :class:`NotImplementedError`. Therefore, it must be
         overridden in order to work with WSGI apps. Child classes
         can ignore this method if they are only to be used
         with ASGI apps, as long as they override
-        :py:meth:`~.BaseHandler.deserialize_async`.
+        :meth:`~.BaseHandler.deserialize_async`.
 
         Note:
 
@@ -107,7 +116,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Returns:
             object: A deserialized object.
         """
-        if MEDIA_JSON in content_type:
+        if content_type and MEDIA_JSON in content_type:
             raise NotImplementedError(
                 'The JSON media handler requires the sync interface to be '
                 "implemented even in ASGI applications, because it's used "
@@ -117,22 +126,25 @@ class BaseHandler(metaclass=abc.ABCMeta):
             raise NotImplementedError()
 
     async def deserialize_async(
-        self, stream: IO, content_type: str, content_length: Optional[int]
+        self,
+        stream: AsyncReadableIO,
+        content_type: Optional[str],
+        content_length: Optional[int],
     ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
-        This method is similar to :py:meth:`~.BaseHandler.deserialize` except
+        This method is similar to :meth:`~.BaseHandler.deserialize` except
         that it is asynchronous. The default implementation adapts the
-        synchronous :py:meth:`~.BaseHandler.deserialize` method
-        via :py:class:`io.BytesIO`. For improved performance, media handlers should
+        synchronous :meth:`~.BaseHandler.deserialize` method
+        via :class:`io.BytesIO`. For improved performance, media handlers should
         override this method.
 
         Note:
-            By default, the :py:meth:`~.BaseHandler.deserialize`
-            method raises an instance of :py:class:`NotImplementedError`.
+            By default, the :meth:`~.BaseHandler.deserialize`
+            method raises an instance of :class:`NotImplementedError`.
             Therefore, child classes must either override
-            :py:meth:`~.BaseHandler.deserialize` or
-            :py:meth:`~.BaseHandler.deserialize_async` in order to be
+            :meth:`~.BaseHandler.deserialize` or
+            :meth:`~.BaseHandler.deserialize_async` in order to be
             compatible with ASGI apps.
 
         Args:
@@ -168,7 +180,7 @@ class TextBaseHandlerWS(metaclass=abc.ABCMeta):
         """Serialize the media object to a Unicode string.
 
         By default, this method raises an instance of
-        :py:class:`NotImplementedError`. Therefore, it must be
+        :class:`NotImplementedError`. Therefore, it must be
         overridden if the child class wishes to support
         serialization to TEXT (0x01) message payloads.
 
@@ -184,7 +196,7 @@ class TextBaseHandlerWS(metaclass=abc.ABCMeta):
         """Deserialize TEXT payloads from a Unicode string.
 
         By default, this method raises an instance of
-        :py:class:`NotImplementedError`. Therefore, it must be
+        :class:`NotImplementedError`. Therefore, it must be
         overridden if the child class wishes to support
         deserialization from TEXT (0x01) message payloads.
 
@@ -204,7 +216,7 @@ class BinaryBaseHandlerWS(metaclass=abc.ABCMeta):
         """Serialize the media object to a byte string.
 
         By default, this method raises an instance of
-        :py:class:`NotImplementedError`. Therefore, it must be
+        :class:`NotImplementedError`. Therefore, it must be
         overridden if the child class wishes to support
         serialization to BINARY (0x02) message payloads.
 
@@ -222,7 +234,7 @@ class BinaryBaseHandlerWS(metaclass=abc.ABCMeta):
         """Deserialize BINARY payloads from a byte string.
 
         By default, this method raises an instance of
-        :py:class:`NotImplementedError`. Therefore, it must be
+        :class:`NotImplementedError`. Therefore, it must be
         overridden if the child class wishes to support
         deserialization from BINARY (0x02) message payloads.
 

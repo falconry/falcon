@@ -1,5 +1,3 @@
-# -*- coding: utf-8
-
 import http
 
 import pytest
@@ -7,21 +5,18 @@ import pytest
 import falcon
 from falcon.http_status import HTTPStatus
 import falcon.testing as testing
-from falcon.util.deprecation import AttributeRemovedError
-
-from _util import create_app  # NOQA
 
 
-@pytest.fixture(params=[True, False])
-def client(request):
-    app = create_app(asgi=request.param)
+@pytest.fixture()
+def client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/status', TestStatusResource())
     return testing.TestClient(app)
 
 
-@pytest.fixture(params=[True, False])
-def hook_test_client(request):
-    app = create_app(asgi=request.param)
+@pytest.fixture()
+def hook_test_client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/status', TestHookResource())
     return testing.TestClient(app)
 
@@ -205,8 +200,8 @@ class NoBodyResource:
 
 
 @pytest.fixture()
-def body_client(asgi):
-    app = create_app(asgi=asgi)
+def body_client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/status', NoBodyResource())
     return testing.TestClient(app)
 
@@ -232,7 +227,7 @@ class TestNoBodyWithStatus:
 
 
 @pytest.fixture()
-def custom_status_client(asgi):
+def custom_status_client(asgi, util):
     def client(status):
         class Resource:
             def on_get(self, req, resp):
@@ -240,7 +235,7 @@ def custom_status_client(asgi):
                 resp.data = b'Hello, World!'
                 resp.status = status
 
-        app = create_app(asgi=asgi)
+        app = util.create_app(asgi)
         app.add_route('/status', Resource())
         return testing.TestClient(app)
 
@@ -281,6 +276,3 @@ def test_deprecated_body():
 
     sts = HTTPStatus(falcon.HTTP_701, text='foo')
     assert sts.text == 'foo'
-
-    with pytest.raises(AttributeRemovedError):
-        assert sts.body == 'foo'

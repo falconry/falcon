@@ -1,13 +1,94 @@
 [build-system]
-    build-backend = "setuptools.build_meta"
-    requires = [
-        "setuptools>=47",
-        "wheel>=0.34",
-        "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
-    ]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=61",
+    "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
+]
+
+[project]
+name = "falcon"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+dynamic = ["version"]
+dependencies = []
+requires-python = ">=3.8"
+description = "The ultra-reliable, fast ASGI+WSGI framework for building data plane APIs at scale."
+authors = [
+  {name = "Kurt Griffiths", email = "mail@kgriffs.com"},
+]
+license = {text = "Apache 2.0"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Natural Language :: English",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Topic :: Internet :: WWW/HTTP :: WSGI",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Cython",
+    "Typing :: Typed",
+]
+keywords = [
+    "asgi",
+    "wsgi",
+    "web",
+    "api",
+    "framework",
+    "rest",
+    "http",
+    "cloud",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+falcon-bench = "falcon.cmd.bench:main"
+falcon-inspect-app = "falcon.cmd.inspect_app:main"
+falcon-print-routes = "falcon.cmd.inspect_app:route_main"
+
+[project.urls]
+Homepage = "https://falconframework.org"
+Documentation = "https://falcon.readthedocs.io/en/stable/"
+"Release Notes" = "https://falcon.readthedocs.io/en/stable/changes/"
+"Source" = "https://github.com/falconry/falcon"
+"Issue Tracker" = "https://github.com/falconry/falcon/issues"
+Funding = "https://opencollective.com/falcon"
+Chat = "https://gitter.im/falconry/user"
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+zip-safe = false
+
+[tool.setuptools.dynamic]
+version = {attr = "falcon.version.__version__"}
+
+[tool.setuptools.packages.find]
+exclude = ["examples", "tests"]
 
 [tool.mypy]
-    exclude = "falcon/bench/|falcon/cmd/"
+    exclude = [
+        "falcon/bench",
+        "falcon/cmd",
+        "falcon/vendor",
+    ]
+    disallow_untyped_defs = true
+    warn_unused_ignores = true
+
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
@@ -35,10 +116,9 @@
 
     [[tool.mypy.overrides]]
         module = [
-            "falcon.stream",
-            "falcon.util.*"
+            "falcon.vendor.*",
         ]
-        disallow_untyped_defs = true
+        disallow_untyped_defs = false
 
 [tool.towncrier]
     package = "falcon"
@@ -76,15 +156,72 @@
 [tool.black]
     # this is kept to avoid reformatting all the code if one were to
     # inadvertently run black on the project
-    target-version = ["py37"]
+    target-version = ["py38"]
     skip-string-normalization = true
     line-length = 88
     extend-exclude = "falcon/vendor"
 
 [tool.blue]
-    target-version = ["py37"]
+    # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
+    #   With the below settings, accidentally running blue should yield
+    #   only minor cosmetic changes in a handful of files.
+    target-version = ["py38"]
     line-length = 88
     extend-exclude = "falcon/vendor"
+
+[tool.ruff]
+    target-version = "py38"
+    format.quote-style = "single"
+    line-length = 88
+    extend-exclude = ["falcon/vendor"]
+    builtins = [
+        "ignore",
+        "attr",
+        "defined",
+    ]
+    exclude = [
+        ".ecosystem",
+        ".eggs",
+        ".git",
+        ".tox",
+        ".venv",
+        "build",
+        "dist",
+        "docs",
+        "falcon/bench/nuts",
+    ]
+
+[tool.ruff.lint]
+    select = [
+        "C9",
+        "E",
+        "F",
+        "W",
+        "I",
+        "FA"
+    ]
+
+[tool.ruff.lint.mccabe]
+    max-complexity = 15
+
+[tool.ruff.lint.per-file-ignores]
+    "**/__init__.py" = [
+        "F401",
+        "E402",
+        "F403"
+    ]
+    "falcon/uri.py" = ["F401"]
+    "examples/*" = ["FA"]
+
+[tool.ruff.lint.isort]
+    case-sensitive = false
+    force-single-line = true
+    order-by-type = false
+    single-line-exclusions = [
+        "typing"
+    ]
+    force-sort-within-sections = true
+    known-local-folder = ["asgilook", "look"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
@@ -94,11 +231,17 @@ filterwarnings = [
     "ignore:Using or importing the ABCs:DeprecationWarning",
     "ignore:cannot collect test class 'TestClient':pytest.PytestCollectionWarning",
     "ignore:inspect.getargspec\\(\\) is deprecated:DeprecationWarning",
-    "ignore:.cgi. is deprecated and slated for removal:DeprecationWarning",
     "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
     "ignore:This process \\(.+\\) is multi-threaded",
-    "ignore:There is no current event loop",
+]
+markers = [
+    "slow: mark Falcon tests as slower (potentially taking more than ~500ms).",
 ]
 testpaths = [
     "tests"
 ]
+
+[tool.cibuildwheel]
+build-frontend = "build"
+test-requires = ["-r requirements/cibwtest"]
+test-command = "pytest {project}/tests"

@@ -1,4 +1,5 @@
-from datetime import date, datetime
+from datetime import date
+from datetime import datetime
 import json
 from uuid import UUID
 
@@ -7,8 +8,7 @@ import pytest
 import falcon
 from falcon.errors import HTTPInvalidParam
 import falcon.testing as testing
-
-from _util import create_app  # NOQA
+from falcon.util import deprecation
 
 
 class Resource(testing.SimpleTestResource):
@@ -44,10 +44,11 @@ def resource():
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     if not asgi:
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
     return testing.TestClient(app)
 
@@ -1017,20 +1018,20 @@ class TestPostQueryParams:
         req = resource.captured_req
         assert req.get_param('q') is None
 
-    def test_asgi_raises_error(self, resource):
-        app = create_app(asgi=True)
+    def test_asgi_raises_error(self, util, resource):
+        app = util.create_app(asgi=True)
         app.add_route('/', resource)
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
         with pytest.raises(RuntimeError) as exc_info:
             testing.simulate_get(app, '/')
         assert 'RequestOptions.auto_parse_form_urlencoded' in exc_info.value.args[0]
 
 
-@pytest.mark.parametrize('asgi', [True, False])
 class TestPostQueryParamsDefaultBehavior:
-    def test_dont_auto_parse_by_default(self, asgi):
-        app = create_app(asgi)
+    def test_dont_auto_parse_by_default(self, asgi, util):
+        app = util.create_app(asgi)
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 

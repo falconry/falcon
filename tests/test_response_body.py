@@ -2,22 +2,16 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util.deprecation import AttributeRemovedError
-
-from _util import create_app, create_resp  # NOQA
 
 
 @pytest.fixture
-def resp(asgi):
-    return create_resp(asgi)
+def resp(asgi, util):
+    return util.create_resp(asgi)
 
 
 def test_append_body(resp):
     text = 'Hello beautiful world! '
     resp.text = ''
-
-    with pytest.raises(AttributeRemovedError):
-        resp.body = 'x'
 
     for token in text.split():
         resp.text += token
@@ -25,25 +19,20 @@ def test_append_body(resp):
 
     assert resp.text == text
 
-    # NOTE(kgriffs): Ensure AttributeRemovedError inherits from AttributeError
-    for ErrorType in (AttributeError, AttributeRemovedError):
-        with pytest.raises(ErrorType):
-            resp.body
-
 
 def test_response_repr(resp):
     _repr = '<%s: %s>' % (resp.__class__.__name__, resp.status)
     assert resp.__repr__() == _repr
 
 
-def test_content_length_set_on_head_with_no_body(asgi):
+def test_content_length_set_on_head_with_no_body(asgi, util):
     class NoBody:
         def on_get(self, req, resp):
             pass
 
         on_head = on_get
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_route('/', NoBody())
 
     result = testing.simulate_head(app, '/')
@@ -53,7 +42,7 @@ def test_content_length_set_on_head_with_no_body(asgi):
 
 
 @pytest.mark.parametrize('method', ['GET', 'HEAD'])
-def test_content_length_not_set_when_streaming_response(asgi, method):
+def test_content_length_not_set_when_streaming_response(asgi, util, method):
     class SynthesizedHead:
         def on_get(self, req, resp):
             def words():
@@ -87,7 +76,7 @@ def test_content_length_not_set_when_streaming_response(asgi, method):
 
         on_head = on_get
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_route('/', SynthesizedHeadAsync() if asgi else SynthesizedHead())
 
     result = testing.simulate_request(app, method)
@@ -107,20 +96,20 @@ class CodeResource:
         resp.status = falcon.HTTP_725
 
 
-def test_unsupported_response_content_type(asgi):
-    app = create_app(asgi)
+def test_unsupported_response_content_type(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/test.mal', CodeResource())
 
     resp = testing.simulate_get(app, '/test.mal')
     assert resp.status_code == 415
 
 
-def test_response_body_rendition_error(asgi):
+def test_response_body_rendition_error(asgi, util):
     class MalbolgeHandler(falcon.media.BaseHandler):
         def serialize(self, media, content_type):
             raise falcon.HTTPError(falcon.HTTP_753)
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.resp_options.media_handlers['text/x-malbolge'] = MalbolgeHandler()
     app.add_route('/test.mal', CodeResource())
 

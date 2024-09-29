@@ -1,4 +1,4 @@
-recursive-include docs *.rst *.html *.ico *.png *.py *.svg
+recursive-include docs *.rst *.md *.html *.ico *.png *.py *.svg
 recursive-include e2e-tests *.py *.css *.html *.js
 recursive-include examples *.py
 recursive-include falcon *.pyx

@@ -4,20 +4,34 @@ import hashlib
 import os
 import platform
 import random
+import signal
 import subprocess
 import sys
 import time
 
-import httpx
 import pytest
-import requests
-import requests.exceptions
-import websockets
-import websockets.exceptions
+
+try:
+    import httpx
+except ImportError:
+    httpx = None  # type: ignore
+
+try:
+    import requests
+    import requests.exceptions
+except ImportError:
+    requests = None  # type: ignore
+
+try:
+    import websockets
+    import websockets.exceptions
+except ImportError:
+    websockets = None  # type: ignore
+
 
 from falcon import testing
-from . import _asgi_test_app
 
+from . import _asgi_test_app
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -27,11 +41,16 @@ _WIN32 = sys.platform.startswith('win')
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
 _SIZE_1_MB = _SIZE_1_KB**2
-
+# NOTE(vytas): Windows specific: {Application Exit by CTRL+C}.
+#   The application terminated as a result of a CTRL+C.
+_STATUS_CONTROL_C_EXIT = 0xC000013A
 
 _REQUEST_TIMEOUT = 10
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
 class TestASGIServer:
     def test_get(self, server_base_url):
         resp = requests.get(server_base_url, timeout=_REQUEST_TIMEOUT)
@@ -162,7 +181,7 @@ class TestASGIServer:
                 timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
 
-    @pytest.mark.asyncio
+    @pytest.mark.skipif(httpx is None, reason='httpx is required for this test')
     async def test_stream_chunked_request(self, server_base_url):
         """Regression test for https://github.com/falconry/falcon/issues/2024"""
 
@@ -180,11 +199,29 @@ class TestASGIServer:
             assert resp.json().get('drops') >= 1
 
 
+@pytest.mark.skipif(
+    requests is None, reason='requests module is required for this test'
+)
+@pytest.mark.skipif(
+    websockets is None, reason='websockets is required for this test class'
+)
 class TestWebSocket:
-    @pytest.mark.asyncio
     @pytest.mark.parametrize('explicit_close', [True, False])
     @pytest.mark.parametrize('close_code', [None, 4321])
-    async def test_hello(self, explicit_close, close_code, server_url_events_ws):
+    @pytest.mark.parametrize('max_receive_queue', [0, 4, 17])
+    async def test_hello(
+        self,
+        explicit_close,
+        close_code,
+        max_receive_queue,
+        server_base_url,
+        server_url_events_ws,
+    ):
+        resp = requests.patch(
+            server_base_url + 'wsoptions', json={'max_receive_queue': max_receive_queue}
+        )
+        resp.raise_for_status()
+
         echo_expected = 'Check 1 - \U0001f600'
 
         extra_headers = {'X-Command': 'recv'}
@@ -213,9 +250,9 @@ class TestWebSocket:
                     message_binary = await ws.recv()
                 except websockets.exceptions.ConnectionClosed as ex:
                     if explicit_close and close_code:
-                        assert ex.code == close_code
+                        assert ex.rcvd.code == close_code
                     else:
-                        assert ex.code == 1000
+                        assert ex.rcvd.code == 1000
 
                     break
 
@@ -226,7 +263,6 @@ class TestWebSocket:
 
             assert got_message
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize('explicit_close', [True, False])
     @pytest.mark.parametrize('close_code', [None, 4040])
     async def test_rejected(self, explicit_close, close_code, server_url_events_ws):
@@ -245,7 +281,6 @@ class TestWebSocket:
 
         assert exc_info.value.status_code == 403
 
-    @pytest.mark.asyncio
     async def test_missing_responder(self, server_url_events_ws):
         server_url_events_ws += '/404'
 
@@ -255,7 +290,6 @@ class TestWebSocket:
 
         assert exc_info.value.status_code == 403
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         'subprotocol, expected',
         [
@@ -274,7 +308,6 @@ class TestWebSocket:
         ) as ws:
             assert ws.subprotocol == expected
 
-    @pytest.mark.asyncio
     async def test_select_subprotocol_unknown(self, server_url_events_ws):
         extra_headers = {'X-Subprotocol': 'xmpp'}
 
@@ -306,7 +339,6 @@ class TestWebSocket:
     #   tried to capture this output and check it in the test below,
     #   but the usual ways of capturing stdout/stderr with pytest do
     #   not work.
-    @pytest.mark.asyncio
     async def test_disconnecting_client_early(self, server_url_events_ws):
         ws = await websockets.connect(
             server_url_events_ws, extra_headers={'X-Close': 'True'}
@@ -326,7 +358,6 @@ class TestWebSocket:
         #   messages after the close.
         await asyncio.sleep(1)
 
-    @pytest.mark.asyncio
     async def test_send_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip'}
 
@@ -336,7 +367,6 @@ class TestWebSocket:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
 
-    @pytest.mark.asyncio
     async def test_recv_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip', 'x-command': 'recv'}
 
@@ -346,7 +376,6 @@ class TestWebSocket:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
 
-    @pytest.mark.asyncio
     async def test_invalid_close_code(self, server_url_events_ws):
         extra_headers = {'x-close': 'True', 'x-close-code': 42}
 
@@ -363,7 +392,6 @@ class TestWebSocket:
                 elapsed = time.time() - start
                 assert elapsed < 2
 
-    @pytest.mark.asyncio
     async def test_close_code_on_unhandled_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'generic'}
 
@@ -374,7 +402,6 @@ class TestWebSocket:
 
         assert ws.close_code in {3011, 1011}
 
-    @pytest.mark.asyncio
     async def test_close_code_on_unhandled_http_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'http'}
 
@@ -385,7 +412,6 @@ class TestWebSocket:
 
         assert ws.close_code == 3400
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize('mismatch', ['send', 'recv'])
     @pytest.mark.parametrize('mismatch_type', ['text', 'data'])
     async def test_type_mismatch(self, mismatch, mismatch_type, server_url_events_ws):
@@ -407,7 +433,6 @@ class TestWebSocket:
 
         assert ws.close_code in {3011, 1011}
 
-    @pytest.mark.asyncio
     async def test_passing_path_params(self, server_base_url_ws):
         expected_feed_id = '1ee7'
         url = f'{server_base_url_ws}feeds/{expected_feed_id}'
@@ -620,7 +645,10 @@ def server_base_url(request):
 
             yield base_url
 
-        assert server.returncode == 0
+        # NOTE(vytas): Starting with 0.29.0, Uvicorn will propagate signal
+        #   values into the return code (which is a good practice in Unix);
+        #   see also https://github.com/encode/uvicorn/pull/1600
+        assert server.returncode in (0, -signal.SIGTERM, _STATUS_CONTROL_C_EXIT)
 
         break
 

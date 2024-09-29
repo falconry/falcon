@@ -3,8 +3,6 @@
 Error Handling
 ==============
 
-.. contents:: :local:
-
 When it comes to error handling, you can always directly set the error
 status, appropriate response headers, and error body using the ``resp``
 object. However, Falcon tries to make things a little easier by
@@ -48,9 +46,9 @@ To customize what data is passed to the serializer, subclass
 
 All classes are available directly in the ``falcon`` package namespace:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -68,7 +66,7 @@ All classes are available directly in the ``falcon`` package namespace:
 
                     # -- snip --
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -152,7 +150,7 @@ Predefined Errors
 .. autoclass:: falcon.HTTPPreconditionFailed
     :members:
 
-.. autoclass:: falcon.HTTPPayloadTooLarge
+.. autoclass:: falcon.HTTPContentTooLarge
     :members:
 
 .. autoclass:: falcon.HTTPUriTooLong

@@ -73,7 +73,6 @@ class Things:
             safely_values.append((a, b, c))
 
         cms = falcon.util.wrap_sync_to_async(callmesafely, threadsafe=False)
-        loop = falcon.util.get_running_loop()
 
         # NOTE(caselit): on windows it takes more time so create less tasks
         # NOTE(vytas): Tests on non-x86 platforms are run using software
@@ -86,7 +85,7 @@ class Things:
             #   are scheduled immediately in the order created; under Python
             #   3.6, asyncio.gather() does not seem to always schedule
             #   them in order, so we do it this way to make it predictable.
-            safely_tasks.append(loop.create_task(cms(i, i + 1, c=i + 2)))
+            safely_tasks.append(asyncio.create_task(cms(i, i + 1, c=i + 2)))
 
         await asyncio.gather(*safely_tasks)
 
@@ -265,6 +264,29 @@ class TestJar:
             resp.status = falcon.HTTP_403
 
 
+class WSOptions:
+    _SUPPORTED_KEYS = frozenset(
+        {'default_close_reasons', 'error_close_code', 'max_receive_queue'}
+    )
+
+    def __init__(self, ws_options):
+        self._ws_options = ws_options
+
+    async def on_get(self, req, resp):
+        resp.media = {
+            key: getattr(self._ws_options, key) for key in self._SUPPORTED_KEYS
+        }
+
+    async def on_patch(self, req, resp):
+        update = await req.get_media()
+        for key, value in update.items():
+            if key not in self._SUPPORTED_KEYS:
+                raise falcon.HTTPInvalidParam('unsupported option', key)
+            setattr(self._ws_options, key, value)
+
+        resp.status = falcon.HTTP_NO_CONTENT
+
+
 def create_app():
     app = falcon.asgi.App()
     bucket = Bucket()
@@ -277,6 +299,7 @@ def create_app():
     app.add_route('/forms', Multipart())
     app.add_route('/jars', TestJar())
     app.add_route('/feeds/{feed_id}', Feed())
+    app.add_route('/wsoptions', WSOptions(app.ws_options))
 
     app.add_middleware(lifespan_handler)
 

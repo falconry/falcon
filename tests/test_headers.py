@@ -8,15 +8,12 @@ from falcon import testing
 from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _utcnow
 
-from _util import create_app  # NOQA
-
-
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     return testing.TestClient(app)
 
 
@@ -59,7 +56,8 @@ class HeaderHelpersResource:
         resp.last_modified = self.last_modified
         resp.retry_after = 3601
 
-        # Relative URI's are OK per http://goo.gl/DbVqR
+        # Relative URI's are OK per
+        # https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.2
         resp.location = '/things/87'
         resp.content_location = '/things/78'
 
@@ -119,7 +117,6 @@ class HeaderHelpersResource:
 
 
 class LocationHeaderUnicodeResource:
-
     URL1 = '/\u00e7runchy/bacon'
     URL2 = 'ab\u00e7'
 
@@ -156,14 +153,14 @@ class UnicodeHeaderResource:
     def on_post(self, req, resp):
         resp.set_headers(
             [
-                ('X-symb\u00F6l', 'thing'),
+                ('X-symb\u00f6l', 'thing'),
             ]
         )
 
     def on_put(self, req, resp):
         resp.set_headers(
             [
-                ('X-Thing', '\u00FF'),
+                ('X-Thing', '\u00ff'),
             ]
         )
 
@@ -498,14 +495,14 @@ class TestHeaders:
     @pytest.mark.parametrize(
         'content_type,body',
         [
-            ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
+            ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001f638'),
             # NOTE(kgriffs): This only works because the client defaults to
             # ISO-8859-1 IFF the media type is 'text'.
             ('text/plain', 'Hello ISO-8859-1!'),
         ],
     )
-    def test_override_default_media_type(self, asgi, client, content_type, body):
-        client.app = create_app(asgi=asgi, media_type=content_type)
+    def test_override_default_media_type(self, asgi, util, client, content_type, body):
+        client.app = util.create_app(asgi=asgi, media_type=content_type)
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
@@ -513,17 +510,17 @@ class TestHeaders:
         assert result.headers['Content-Type'] == content_type
 
     @pytest.mark.parametrize('asgi', [True, False])
-    def test_override_default_media_type_missing_encoding(self, asgi, client):
-        body = '{"msg": "Hello Unicode! \U0001F638"}'
+    def test_override_default_media_type_missing_encoding(self, asgi, util, client):
+        body = '{"msg": "Hello Unicode! \U0001f638"}'
 
-        client.app = create_app(asgi=asgi, media_type='application/json')
+        client.app = util.create_app(asgi=asgi, media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
         assert result.content == body.encode('utf-8')
         assert isinstance(result.text, str)
         assert result.text == body
-        assert result.json == {'msg': 'Hello Unicode! \U0001F638'}
+        assert result.json == {'msg': 'Hello Unicode! \U0001f638'}
 
     def test_response_header_helpers_on_get(self, client):
         last_modified = datetime(2013, 1, 1, 10, 30, 30)
@@ -870,12 +867,12 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.add_link('/things/2842', 'next')
+        resource.append_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.add_link(uri, 'http://example.com/\u00e7runchy')
+        resource.append_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
+        resource.append_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 

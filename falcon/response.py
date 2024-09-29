@@ -14,40 +14,56 @@
 
 """Response class."""
 
+from __future__ import annotations
+
+from datetime import datetime
+from datetime import timezone
 import functools
 import mimetypes
-from typing import Optional
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NoReturn,
+    Optional,
+    overload,
+    Tuple,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)
 
+from falcon._typing import _UNSET
+from falcon._typing import RangeSetHeader
+from falcon._typing import UnsetOr
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
-from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
 from falcon.media import Handlers
-from falcon.response_helpers import format_content_disposition
-from falcon.response_helpers import format_etag_header
-from falcon.response_helpers import format_header_value_list
-from falcon.response_helpers import format_range
-from falcon.response_helpers import header_property
-from falcon.response_helpers import is_ascii_encodable
+from falcon.response_helpers import _format_content_disposition
+from falcon.response_helpers import _format_etag_header
+from falcon.response_helpers import _format_header_value_list
+from falcon.response_helpers import _format_range
+from falcon.response_helpers import _header_property
+from falcon.response_helpers import _is_ascii_encodable
+from falcon.typing import Headers
+from falcon.typing import ReadableIO
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import http_status_to_code
 from falcon.util import structures
-from falcon.util import TimezoneGMT
-from falcon.util.deprecation import AttributeRemovedError, deprecated
+from falcon.util.deprecation import AttributeRemovedError
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
+if TYPE_CHECKING:
+    import http
 
-GMT_TIMEZONE = TimezoneGMT()
-
-_STREAM_LEN_REMOVED_MSG = (
-    'The deprecated stream_len property was removed in Falcon 3.0. '
-    'Please use Response.set_stream() or Response.content_length instead.'
-)
 
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
-
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
 
 
@@ -58,100 +74,7 @@ class Response:
         ``Response`` is not meant to be instantiated directly by responders.
 
     Keyword Arguments:
-        options (dict): Set of global options passed from the App handler.
-
-    Attributes:
-        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
-            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
-            status line string or byte string (e.g., ``'200 OK'``), or an
-            ``int``.
-
-            Note:
-                The Falcon framework itself provides a number of constants for
-                common status codes. They all start with the ``HTTP_`` prefix,
-                as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
-
-        status_code (int): HTTP status code normalized from :attr:`status`.
-            When a code is assigned to this property, :attr:`status` is updated,
-            and vice-versa. The status code can be useful when needing to check
-            in middleware for codes that fall into a certain class, e.g.::
-
-                if resp.status_code >= 400:
-                    log.warning(f'returning error response: {resp.status_code}')
-
-        media (object): A serializable object supported by the media handlers
-            configured via :class:`falcon.RequestOptions`.
-
-            Note:
-                See also :ref:`media` for more information regarding media
-                handling.
-
-        text (str): String representing response content.
-
-            Note:
-                Falcon will encode the given text as UTF-8
-                in the response. If the content is already a byte string,
-                use the :attr:`data` attribute instead (it's faster).
-
-        data (bytes): Byte string representing response content.
-
-            Use this attribute in lieu of `text` when your content is
-            already a byte string (of type ``bytes``). See also the note below.
-
-            Warning:
-                Always use the `text` attribute for text, or encode it
-                first to ``bytes`` when using the `data` attribute, to
-                ensure Unicode characters are properly encoded in the
-                HTTP response.
-
-        stream: Either a file-like object with a `read()` method that takes
-            an optional size argument and returns a block of bytes, or an
-            iterable object, representing response content, and yielding
-            blocks as byte strings. Falcon will use *wsgi.file_wrapper*, if
-            provided by the WSGI server, in order to efficiently serve
-            file-like objects.
-
-            Note:
-                If the stream is set to an iterable object that requires
-                resource cleanup, it can implement a close() method to do so.
-                The close() method will be called upon completion of the request.
-
-        context (object): Empty object to hold any data (in its attributes)
-            about the response which is specific to your app (e.g. session
-            object). Falcon itself will not interact with this attribute after
-            it has been initialized.
-
-            Note:
-                **New in 2.0:** The default `context_type` (see below) was
-                changed from :class:`dict` to a bare class; the preferred way to
-                pass response-specific data is now to set attributes directly
-                on the `context` object. For example::
-
-                    resp.context.cache_strategy = 'lru'
-
-        context_type (class): Class variable that determines the factory or
-            type to use for initializing the `context` attribute. By default,
-            the framework will instantiate bare objects (instances of the bare
-            :class:`falcon.Context` class). However, you may override this
-            behavior by creating a custom child class of
-            :class:`falcon.Response`, and then passing that new class to
-            ``falcon.App()`` by way of the latter's `response_type` parameter.
-
-            Note:
-                When overriding `context_type` with a factory function (as
-                opposed to a class), the function is called like a method of
-                the current Response instance. Therefore the first argument is
-                the Response instance itself (self).
-
-        options (dict): Set of global options passed from the App handler.
-
-        headers (dict): Copy of all headers set for the response,
-            sans cookies. Note that a new copy is created and returned each
-            time this property is referenced.
-
-        complete (bool): Set to ``True`` from within a middleware method to
-            signal to the framework that request processing should be
-            short-circuited (see also :ref:`Middleware <middleware>`).
+        options (ResponseOptions): Set of global options passed from the App handler.
     """
 
     __slots__ = (
@@ -169,12 +92,81 @@ class Response:
         '__dict__',
     )
 
-    complete = False
+    _cookies: Optional[http_cookies.SimpleCookie]
+    _data: Optional[bytes]
+    _extra_headers: Optional[List[Tuple[str, str]]]
+    _headers: Headers
+    _media: Optional[Any]
+    _media_rendered: UnsetOr[bytes]
 
     # Child classes may override this
-    context_type = structures.Context
+    context_type: ClassVar[Type[structures.Context]] = structures.Context
+    """Class variable that determines the factory or
+    type to use for initializing the `context` attribute. By default,
+    the framework will instantiate bare objects (instances of the bare
+    :class:`falcon.Context` class). However, you may override this
+    behavior by creating a custom child class of
+    :class:`falcon.Response`, and then passing that new class to
+    ``falcon.App()`` by way of the latter's `response_type` parameter.
 
-    def __init__(self, options=None):
+    Note:
+        When overriding `context_type` with a factory function (as
+        opposed to a class), the function is called like a method of
+        the current Response instance. Therefore the first argument is
+        the Response instance itself (self).
+    """
+
+    # Attribute declaration
+    complete: bool = False
+    """Set to ``True`` from within a middleware method to signal to the framework that
+    request processing should be short-circuited (see also
+    :ref:`Middleware <middleware>`).
+    """
+    status: Union[str, int, http.HTTPStatus]
+    """HTTP status code or line (e.g., ``'200 OK'``).
+
+    This may be set to a member of :class:`http.HTTPStatus`, an HTTP status line
+    string (e.g., ``'200 OK'``), or an ``int``.
+
+    Note:
+        The Falcon framework itself provides a number of constants for
+        common status codes. They all start with the ``HTTP_`` prefix,
+        as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
+    """
+    text: Optional[str]
+    """String representing response content.
+
+    Note:
+        Falcon will encode the given text as UTF-8 in the response. If the content
+        is already a byte string, use the :attr:`data` attribute instead (it's faster).
+    """
+    stream: Union[ReadableIO, Iterable[bytes], None]
+    """Either a file-like object with a `read()` method that takes an optional size
+    argument and returns a block of bytes, or an iterable object, representing response
+    content, and yielding blocks as byte strings. Falcon will use *wsgi.file_wrapper*,
+    if provided by the WSGI server, in order to efficiently serve file-like objects.
+
+    Note:
+        If the stream is set to an iterable object that requires
+        resource cleanup, it can implement a close() method to do so.
+        The close() method will be called upon completion of the request.
+    """
+    context: structures.Context
+    """Empty object to hold any data (in its attributes) about the response which is
+    specific to your app (e.g. session object).
+    Falcon itself will not interact with this attribute after it has been initialized.
+
+    Note:
+        The preferred way to pass response-specific data, when using the
+        default context type, is to set attributes directly on the
+        `context` object. For example::
+
+            resp.context.cache_strategy = 'lru'
+    """
+    options: ResponseOptions
+    """Set of global options passed in from the App handler."""
+
+    def __init__(self, options: Optional[ResponseOptions] = None) -> None:
         self.status = '200 OK'
         self._headers = {}
 
@@ -186,7 +178,7 @@ class Response:
         #   only instantiating the list object later on IFF it is needed.
         self._extra_headers = None
 
-        self.options = options if options else ResponseOptions()
+        self.options = options if options is not None else ResponseOptions()
 
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
@@ -202,60 +194,66 @@ class Response:
 
     @property
     def status_code(self) -> int:
+        """HTTP status code normalized from :attr:`status`.
+
+        When a code is assigned to this property, :attr:`status` is updated,
+        and vice-versa. The status code can be useful when needing to check
+        in middleware for codes that fall into a certain class, e.g.::
+
+            if resp.status_code >= 400:
+                log.warning(f'returning error response: {resp.status_code}')
+        """
         return http_status_to_code(self.status)
 
     @status_code.setter
-    def status_code(self, value):
+    def status_code(self, value: int) -> None:
         self.status = value
 
-    @property  # type: ignore
-    def body(self):
-        raise AttributeRemovedError(
-            'The body attribute is no longer supported. '
-            'Please use the text attribute instead.'
-        )
-
-    @body.setter  # type: ignore
-    def body(self, value):
-        raise AttributeRemovedError(
-            'The body attribute is no longer supported. '
-            'Please use the text attribute instead.'
-        )
-
     @property
-    def data(self):
+    def data(self) -> Optional[bytes]:
+        """Byte string representing response content.
+
+        Use this attribute in lieu of `text` when your content is
+        already a byte string (of type ``bytes``). See also the note below.
+
+        Warning:
+            Always use the `text` attribute for text, or encode it
+            first to ``bytes`` when using the `data` attribute, to
+            ensure Unicode characters are properly encoded in the
+            HTTP response.
+        """
         return self._data
 
     @data.setter
-    def data(self, value):
+    def data(self, value: Optional[bytes]) -> None:
         self._data = value
 
     @property
-    def headers(self):
+    def headers(self) -> Headers:
+        """Copy of all headers set for the response, without cookies.
+
+        Note that a new copy is created and returned each time this property is
+        referenced.
+        """
         return self._headers.copy()
 
     @property
-    def media(self):
+    def media(self) -> Any:
+        """A serializable object supported by the media handlers configured via
+        :class:`falcon.RequestOptions`.
+
+        Note:
+            See also :ref:`media` for more information regarding media
+            handling.
+        """  # noqa D205
         return self._media
 
     @media.setter
-    def media(self, value):
+    def media(self, value: Any) -> None:
         self._media = value
         self._media_rendered = _UNSET
 
-    @property
-    def stream_len(self):
-        # NOTE(kgriffs): Provide some additional information by raising the
-        #   error explicitly.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
-
-    @stream_len.setter
-    def stream_len(self, value):
-        # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
-        #   so that apps relying on it do not fail silently.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
-
-    def render_body(self):
+    def render_body(self) -> Optional[bytes]:
         """Get the raw bytestring content for the response body.
 
         This method returns the raw data for the HTTP response body, taking
@@ -272,13 +270,13 @@ class Response:
             finally the serialized value of the `media` attribute. If
             none of these attributes are set, ``None`` is returned.
         """
-
+        data: Optional[bytes]
         text = self.text
         if text is None:
             data = self._data
 
             if data is None and self._media is not None:
-                # NOTE(kgriffs): We use a special _UNSET singleton since
+                # NOTE(kgriffs): We use a special MISSING singleton since
                 #   None is ambiguous (the media handler might return None).
                 if self._media_rendered is _UNSET:
                     if not self.content_type:
@@ -299,14 +297,16 @@ class Response:
                 data = text.encode()
             except AttributeError:
                 # NOTE(kgriffs): Assume it was a bytes object already
-                data = text
+                data = text  # type: ignore[assignment]
 
         return data
 
-    def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, self.status)
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__}: {self.status}>'
 
-    def set_stream(self, stream, content_length):
+    def set_stream(
+        self, stream: Union[ReadableIO, Iterable[bytes]], content_length: int
+    ) -> None:
         """Set both `stream` and `content_length`.
 
         Although the :attr:`~falcon.Response.stream` and
@@ -336,18 +336,19 @@ class Response:
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    def set_cookie(
+    def set_cookie(  # noqa: C901
         self,
-        name,
-        value,
-        expires=None,
-        max_age=None,
-        domain=None,
-        path=None,
-        secure=None,
-        http_only=True,
-        same_site=None,
-    ):
+        name: str,
+        value: str,
+        expires: Optional[datetime] = None,
+        max_age: Optional[int] = None,
+        domain: Optional[str] = None,
+        path: Optional[str] = None,
+        secure: Optional[bool] = None,
+        http_only: bool = True,
+        same_site: Optional[str] = None,
+        partitioned: bool = False,
+    ) -> None:
         """Set a response cookie.
 
         Note:
@@ -413,7 +414,7 @@ class Response:
                 Note:
                     The default value for this argument is normally
                     ``True``, but can be modified by setting
-                    :py:attr:`~.ResponseOptions.secure_cookies_by_default`
+                    :attr:`~.ResponseOptions.secure_cookies_by_default`
                     via :any:`App.resp_options`.
 
                 Warning:
@@ -447,6 +448,14 @@ class Response:
 
                 (See also: `Same-Site RFC Draft`_)
 
+            partitioned (bool): Prevents cookies from being accessed from other
+                subdomains. With partitioned enabled, a cookie set by
+                https://3rd-party.example which is embedded inside
+                https://site-a.example can no longer be accessed by
+                https://site-b.example. While this attribute is not yet
+                standardized, it is already used by Chrome.
+
+                (See also: `CHIPS`_)
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -457,11 +466,14 @@ class Response:
         .. _Same-Site RFC Draft:
             https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7
 
+        .. _CHIPS:
+            https://developer.mozilla.org/en-US/docs/Web/Privacy/Privacy_sandbox/Partitioned_cookies
+
         """
 
-        if not is_ascii_encodable(name):
+        if not _is_ascii_encodable(name):
             raise KeyError('name is not ascii encodable')
-        if not is_ascii_encodable(value):
+        if not _is_ascii_encodable(value):
             raise ValueError('value is not ascii encodable')
 
         value = str(value)
@@ -489,7 +501,7 @@ class Response:
                 self._cookies[name]['expires'] = expires.strftime(fmt)
             else:
                 # aware
-                gmt_expires = expires.astimezone(GMT_TIMEZONE)
+                gmt_expires = expires.astimezone(timezone.utc)
                 self._cookies[name]['expires'] = gmt_expires.strftime(fmt)
 
         if max_age:
@@ -528,7 +540,16 @@ class Response:
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
-    def unset_cookie(self, name, samesite='Lax', domain=None, path=None):
+        if partitioned:
+            self._cookies[name]['partitioned'] = True
+
+    def unset_cookie(
+        self,
+        name: str,
+        samesite: str = 'Lax',
+        domain: Optional[str] = None,
+        path: Optional[str] = None,
+    ) -> None:
         """Unset a cookie in the response.
 
         Clears the contents of the cookie, and instructs the user
@@ -604,7 +625,13 @@ class Response:
         if path:
             self._cookies[name]['path'] = path
 
-    def get_header(self, name, default=None):
+    @overload
+    def get_header(self, name: str, default: str) -> str: ...
+
+    @overload
+    def get_header(self, name: str, default: Optional[str] = ...) -> Optional[str]: ...
+
+    def get_header(self, name: str, default: Optional[str] = None) -> Optional[str]:
         """Retrieve the raw string value for the given header.
 
         Normally, when a header has multiple values, they will be
@@ -636,7 +663,7 @@ class Response:
 
         return self._headers.get(name, default)
 
-    def set_header(self, name, value):
+    def set_header(self, name: str, value: str) -> None:
         """Set a header for this response to a given value.
 
         Warning:
@@ -672,7 +699,7 @@ class Response:
 
         self._headers[name] = value
 
-    def delete_header(self, name):
+    def delete_header(self, name: str) -> None:
         """Delete a header that was previously set for this response.
 
         If the header was not previously set, nothing is done (no error is
@@ -706,7 +733,7 @@ class Response:
 
         self._headers.pop(name, None)
 
-    def append_header(self, name, value):
+    def append_header(self, name: str, value: str) -> None:
         """Set or append a header for this response.
 
         If the header already exists, the new value will normally be appended
@@ -717,7 +744,7 @@ class Response:
         Note:
             While this method can be used to efficiently append raw
             Set-Cookie headers to the response, you may find
-            :py:meth:`~.set_cookie` to be more convenient.
+            :meth:`~.set_cookie` to be more convenient.
 
         Args:
             name (str): Header name (case-insensitive). The name may contain
@@ -746,7 +773,9 @@ class Response:
 
             self._headers[name] = value
 
-    def set_headers(self, headers):
+    def set_headers(
+        self, headers: Union[Mapping[str, str], Iterable[Tuple[str, str]]]
+    ) -> None:
         """Set several headers at once.
 
         This method can be used to set a collection of raw header names and
@@ -787,7 +816,7 @@ class Response:
         # normalize the header names.
         _headers = self._headers
 
-        for name, value in headers:
+        for name, value in headers:  # type: ignore[misc]
             # NOTE(kgriffs): uwsgi fails with a TypeError if any header
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode
@@ -802,16 +831,16 @@ class Response:
 
     def append_link(
         self,
-        target,
-        rel,
-        title=None,
-        title_star=None,
-        anchor=None,
-        hreflang=None,
-        type_hint=None,
-        crossorigin=None,
-        link_extension=None,
-    ):
+        target: str,
+        rel: str,
+        title: Optional[str] = None,
+        title_star: Optional[Tuple[str, str]] = None,
+        anchor: Optional[str] = None,
+        hreflang: Optional[Union[str, Iterable[str]]] = None,
+        type_hint: Optional[str] = None,
+        crossorigin: Optional[str] = None,
+        link_extension: Optional[Iterable[Tuple[str, str]]] = None,
+    ) -> None:
         """Append a link header to the response.
 
         (See also: RFC 5988, Section 1)
@@ -836,7 +865,7 @@ class Response:
                 characters, you will need to use `title_star` instead, or
                 provide both a US-ASCII version using `title` and a
                 Unicode version using `title_star`.
-            title_star (tuple of str): Localized title describing the
+            title_star (tuple[str, str]): Localized title describing the
                 destination of the link (default ``None``). The value must be a
                 two-member tuple in the form of (*language-tag*, *text*),
                 where *language-tag* is a standard language identifier as
@@ -893,40 +922,34 @@ class Response:
             if ' ' in rel:
                 rel = '"' + ' '.join([uri_encode(r) for r in rel.split()]) + '"'
             else:
-                rel = '"' + uri_encode(rel) + '"'
+                rel = f'"{uri_encode(rel)}"'
 
         value = '<' + uri_encode(target) + '>; rel=' + rel
 
         if title is not None:
-            value += '; title="' + title + '"'
+            value += f'; title="{title}"'
 
         if title_star is not None:
-            value += (
-                "; title*=UTF-8'"
-                + title_star[0]
-                + "'"
-                + uri_encode_value(title_star[1])
-            )
+            value += f"; title*=UTF-8'{title_star[0]}'{uri_encode_value(title_star[1])}"
 
         if type_hint is not None:
-            value += '; type="' + type_hint + '"'
+            value += f'; type="{type_hint}"'
 
         if hreflang is not None:
             if isinstance(hreflang, str):
-                value += '; hreflang=' + hreflang
+                value += f'; hreflang={hreflang}'
             else:
                 value += '; '
                 value += '; '.join(['hreflang=' + lang for lang in hreflang])
 
         if anchor is not None:
-            value += '; anchor="' + uri_encode(anchor) + '"'
+            value += f'; anchor="{uri_encode(anchor)}"'
 
         if crossorigin is not None:
             crossorigin = crossorigin.lower()
             if crossorigin not in _RESERVED_CROSSORIGIN_VALUES:
                 raise ValueError(
-                    'crossorigin must be set to either '
-                    "'anonymous' or 'use-credentials'"
+                    "crossorigin must be set to either 'anonymous' or 'use-credentials'"
                 )
             if crossorigin == 'anonymous':
                 value += '; crossorigin'
@@ -937,32 +960,39 @@ class Response:
 
         if link_extension is not None:
             value += '; '
-            value += '; '.join([p + '=' + v for p, v in link_extension])
+            value += '; '.join([f'{p}={v}' for p, v in link_extension])
 
         _headers = self._headers
         if 'link' in _headers:
-            _headers['link'] += ', ' + value
+            _headers['link'] += f', {value}'
         else:
             _headers['link'] = value
 
-    # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = deprecated('Please use append_link() instead.', method_name='add_link')(
-        append_link
-    )
+    @property
+    def add_link(self) -> NoReturn:
+        raise AttributeRemovedError(
+            'The add_link() method is no longer supported. '
+            'Please use append_link() instead.'
+        )
 
-    cache_control = header_property(
+    cache_control: Union[str, Iterable[str], None] = _header_property(
         'Cache-Control',
         """Set the Cache-Control header.
 
         Used to set a list of cache directives to use as the value of the
         Cache-Control header. The list will be joined with ", " to produce
         the value for the header.
-
         """,
-        format_header_value_list,
+        _format_header_value_list,
     )
+    """Set the Cache-Control header.
 
-    content_location = header_property(
+    Used to set a list of cache directives to use as the value of the
+    Cache-Control header. The list will be joined with ", " to produce
+    the value for the header.
+    """
+
+    content_location: Optional[str] = _header_property(
         'Content-Location',
         """Set the Content-Location header.
 
@@ -972,8 +1002,14 @@ class Response:
         """,
         uri_encode,
     )
+    """Set the Content-Location header.
 
-    content_length = header_property(
+    This value will be URI encoded per RFC 3986. If the value that is
+    being set is already URI encoded it should be decoded first or the
+    header should be set manually using the set_header method.
+    """
+
+    content_length: Union[str, int, None] = _header_property(
         'Content-Length',
         """Set the Content-Length header.
 
@@ -993,8 +1029,25 @@ class Response:
 
         """,
     )
+    """Set the Content-Length header.
 
-    content_range = header_property(
+    This property can be used for responding to HEAD requests when you
+    aren't actually providing the response body, or when streaming the
+    response. If either the `text` property or the `data` property is set
+    on the response, the framework will force Content-Length to be the
+    length of the given text bytes. Therefore, it is only necessary to
+    manually set the content length when those properties are not used.
+
+    Note:
+        In cases where the response content is a stream (readable
+        file-like object), Falcon will not supply a Content-Length header
+        to the server unless `content_length` is explicitly set.
+        Consequently, the server may choose to use chunked encoding in this
+        case.
+
+    """
+
+    content_range: Union[str, RangeSetHeader, None] = _header_property(
         'Content-Range',
         """A tuple to use in constructing a value for the Content-Range header.
 
@@ -1012,10 +1065,26 @@ class Response:
 
         (See also: RFC 7233, Section 4.2)
         """,
-        format_range,
+        _format_range,
     )
+    """A tuple to use in constructing a value for the Content-Range header.
 
-    content_type = header_property(
+    The tuple has the form (*start*, *end*, *length*, [*unit*]), where *start* and
+    *end* designate the range (inclusive), and *length* is the
+    total length, or '\\*' if unknown. You may pass ``int``'s for
+    these numbers (no need to convert to ``str`` beforehand). The optional value
+    *unit* describes the range unit and defaults to 'bytes'
+
+    Note:
+        You only need to use the alternate form, 'bytes \\*/1234', for
+        responses that use the status '416 Range Not Satisfiable'. In this
+        case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
+        thing.
+
+    (See also: RFC 7233, Section 4.2)
+    """
+
+    content_type: Optional[str] = _header_property(
         'Content-Type',
         """Sets the Content-Type header.
 
@@ -1028,8 +1097,18 @@ class Response:
         and ``falcon.MEDIA_GIF``.
         """,
     )
+    """Sets the Content-Type header.
 
-    downloadable_as = header_property(
+    The ``falcon`` module provides a number of constants for
+    common media types, including ``falcon.MEDIA_JSON``,
+    ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
+    ``falcon.MEDIA_XML``, ``falcon.MEDIA_HTML``,
+    ``falcon.MEDIA_JS``, ``falcon.MEDIA_TEXT``,
+    ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
+    and ``falcon.MEDIA_GIF``.
+    """
+
+    downloadable_as: Optional[str] = _header_property(
         'Content-Disposition',
         """Set the Content-Disposition header using the given filename.
 
@@ -1042,10 +1121,21 @@ class Response:
         ``filename*`` directive, whereas ``filename`` will contain the US
         ASCII fallback.
         """,
-        functools.partial(format_content_disposition, disposition_type='attachment'),
+        functools.partial(_format_content_disposition, disposition_type='attachment'),
     )
+    """Set the Content-Disposition header using the given filename.
 
-    viewable_as = header_property(
+    The value will be used for the ``filename`` directive. For example,
+    given ``'report.pdf'``, the Content-Disposition header would be set
+    to: ``'attachment; filename="report.pdf"'``.
+
+    As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+    recommendations, non-ASCII filenames will be encoded using the
+    ``filename*`` directive, whereas ``filename`` will contain the US
+    ASCII fallback.
+    """
+
+    viewable_as: Optional[str] = _header_property(
         'Content-Disposition',
         """Set an inline Content-Disposition header using the given filename.
 
@@ -1060,20 +1150,38 @@ class Response:
 
         .. versionadded:: 3.1
         """,
-        functools.partial(format_content_disposition, disposition_type='inline'),
+        functools.partial(_format_content_disposition, disposition_type='inline'),
     )
+    """Set an inline Content-Disposition header using the given filename.
 
-    etag = header_property(
+    The value will be used for the ``filename`` directive. For example,
+    given ``'report.pdf'``, the Content-Disposition header would be set
+    to: ``'inline; filename="report.pdf"'``.
+
+    As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+    recommendations, non-ASCII filenames will be encoded using the
+    ``filename*`` directive, whereas ``filename`` will contain the US
+    ASCII fallback.
+
+    .. versionadded:: 3.1
+    """
+
+    etag: Optional[str] = _header_property(
         'ETag',
         """Set the ETag header.
 
         The ETag header will be wrapped with double quotes ``"value"`` in case
         the user didn't pass it.
         """,
-        format_etag_header,
+        _format_etag_header,
     )
+    """Set the ETag header.
 
-    expires = header_property(
+    The ETag header will be wrapped with double quotes ``"value"`` in case
+    the user didn't pass it.
+    """
+
+    expires: Union[str, datetime, None] = _header_property(
         'Expires',
         """Set the Expires header. Set to a ``datetime`` (UTC) instance.
 
@@ -1082,8 +1190,13 @@ class Response:
         """,
         dt_to_http,
     )
+    """Set the Expires header. Set to a ``datetime`` (UTC) instance.
 
-    last_modified = header_property(
+    Note:
+        Falcon will format the ``datetime`` as an HTTP date string.
+    """
+
+    last_modified: Union[str, datetime, None] = _header_property(
         'Last-Modified',
         """Set the Last-Modified header. Set to a ``datetime`` (UTC) instance.
 
@@ -1092,8 +1205,13 @@ class Response:
         """,
         dt_to_http,
     )
+    """Set the Last-Modified header. Set to a ``datetime`` (UTC) instance.
 
-    location = header_property(
+    Note:
+        Falcon will format the ``datetime`` as an HTTP date string.
+    """
+
+    location: Optional[str] = _header_property(
         'Location',
         """Set the Location header.
 
@@ -1103,18 +1221,28 @@ class Response:
         """,
         uri_encode,
     )
+    """Set the Location header.
 
-    retry_after = header_property(
+    This value will be URI encoded per RFC 3986. If the value that is
+    being set is already URI encoded it should be decoded first or the
+    header should be set manually using the set_header method.
+    """
+
+    retry_after: Union[int, str, None] = _header_property(
         'Retry-After',
         """Set the Retry-After header.
 
         The expected value is an integral number of seconds to use as the
         value for the header. The HTTP-date syntax is not supported.
         """,
-        str,
     )
+    """Set the Retry-After header.
 
-    vary = header_property(
+    The expected value is an integral number of seconds to use as the
+    value for the header. The HTTP-date syntax is not supported.
+    """
+
+    vary: Union[str, Iterable[str], None] = _header_property(
         'Vary',
         """Value to use for the Vary header.
 
@@ -1131,10 +1259,25 @@ class Response:
 
         (See also: RFC 7231, Section 7.1.4)
         """,
-        format_header_value_list,
+        _format_header_value_list,
     )
+    """Value to use for the Vary header.
 
-    accept_ranges = header_property(
+    Set this property to an iterable of header names. For a single
+    asterisk or field value, simply pass a single-element ``list``
+    or ``tuple``.
+
+    The "Vary" header field in a response describes what parts of
+    a request message, aside from the method, Host header field,
+    and request target, might influence the origin server's
+    process for selecting and representing this response.  The
+    value consists of either a single asterisk ("*") or a list of
+    header field names (case-insensitive).
+
+    (See also: RFC 7231, Section 7.1.4)
+    """
+
+    accept_ranges: Optional[str] = _header_property(
         'Accept-Ranges',
         """Set the Accept-Ranges header.
 
@@ -1152,8 +1295,23 @@ class Response:
 
         """,
     )
+    """Set the Accept-Ranges header.
 
-    def _set_media_type(self, media_type=None):
+    The Accept-Ranges header field indicates to the client which
+    range units are supported (e.g. "bytes") for the target
+    resource.
+
+    If range requests are not supported for the target resource,
+    the header may be set to "none" to advise the client not to
+    attempt any such requests.
+
+    Note:
+        "none" is the literal string, not Python's built-in ``None``
+        type.
+
+    """
+
+    def _set_media_type(self, media_type: Optional[str] = None) -> None:
         """Set a content-type; wrapper around set_header.
 
         Args:
@@ -1168,7 +1326,7 @@ class Response:
         if media_type is not None and 'content-type' not in self._headers:
             self._headers['content-type'] = media_type
 
-    def _wsgi_headers(self, media_type=None):
+    def _wsgi_headers(self, media_type: Optional[str] = None) -> list[tuple[str, str]]:
         """Convert headers into the format expected by WSGI servers.
 
         Args:
@@ -1208,36 +1366,35 @@ class ResponseOptions:
 
     An instance of this class is exposed via :attr:`falcon.App.resp_options`
     and :attr:`falcon.asgi.App.resp_options` for configuring certain
-    :py:class:`~.Response` behaviors.
-
-    Attributes:
-        secure_cookies_by_default (bool): Set to ``False`` in development
-            environments to make the `secure` attribute for all cookies
-            default to ``False``. This can make testing easier by
-            not requiring HTTPS. Note, however, that this setting can
-            be overridden via `set_cookie()`'s `secure` kwarg.
-
-        default_media_type (str): The default Internet media type (RFC 2046) to
-            use when rendering a response, when the Content-Type header
-            is not set explicitly. This value is normally set to the
-            media type provided when a :class:`falcon.App` is initialized;
-            however, if created independently, this will default to
-            :attr:`falcon.DEFAULT_MEDIA_TYPE`..
-
-        media_handlers (Handlers): A dict-like object for configuring the
-            media-types to handle. By default, handlers are provided for the
-            ``application/json``, ``application/x-www-form-urlencoded`` and
-            ``multipart/form-data`` media types.
-
-        static_media_types (dict): A mapping of dot-prefixed file extensions to
-            Internet media types (RFC 2046). Defaults to ``mimetypes.types_map``
-            after calling ``mimetypes.init()``.
+    :class:`~.Response` behaviors.
     """
 
     secure_cookies_by_default: bool
-    default_media_type: Optional[str]
+    """Set to ``False`` in development environments to make the ``secure`` attribute
+    for all cookies. (default ``False``).
+
+    This can make testing easier by not requiring HTTPS. Note, however, that this
+    setting can be overridden via :meth:`~.Response.set_cookie()`'s ``secure`` kwarg.
+    """
+    default_media_type: str
+    """The default Internet media type (RFC 2046) to use when rendering a response,
+    when the Content-Type header is not set explicitly.
+
+    This value is normally set to the media type provided when a :class:`falcon.App`
+    is initialized; however, if created independently, this will default to
+    :attr:`falcon.DEFAULT_MEDIA_TYPE`.
+    """
     media_handlers: Handlers
-    static_media_types: dict
+    """A dict-like object for configuring the media-types to handle.
+
+    default, handlers are provided for the ``application/json``,
+    ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
+    """
+    static_media_types: Dict[str, str]
+    """A mapping of dot-prefixed file extensions to Internet media types (RFC 2046).
+
+    Defaults to ``mimetypes.types_map`` after calling ``mimetypes.init()``.
+    """
 
     __slots__ = (
         'secure_cookies_by_default',
@@ -1246,7 +1403,7 @@ class ResponseOptions:
         'static_media_types',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()

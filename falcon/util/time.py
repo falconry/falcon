@@ -9,17 +9,27 @@ for convenience::
     tz = falcon.TimezoneGMT()
 """
 
+from __future__ import annotations
+
 import datetime
 from typing import Optional
 
+from .deprecation import deprecated
 
-__all__ = ['TimezoneGMT']
+__all__ = ('TimezoneGMT',)
 
 
 class TimezoneGMT(datetime.tzinfo):
-    """GMT timezone class implementing the :py:class:`datetime.tzinfo` interface."""
+    """GMT timezone class implementing the :class:`datetime.tzinfo` interface."""
 
     GMT_ZERO = datetime.timedelta(hours=0)
+
+    @deprecated(
+        'TimezoneGMT is deprecated, use datetime.timezone.utc instead. '
+        '(TimezoneGMT will be removed in Falcon 5.0.)'
+    )
+    def __init__(self) -> None:
+        super().__init__()
 
     def utcoffset(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
         """Get the offset from UTC.

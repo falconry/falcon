@@ -1,13 +1,17 @@
 from functools import partial
 import os
+import pathlib
 import sys
 
 import _inspect_fixture as i_f
 import pytest
 
 import falcon
-from falcon import inspect, routing
+from falcon import inspect
+from falcon import routing
 import falcon.asgi
+
+HERE = pathlib.Path(__file__).resolve().parent
 
 
 def get_app(asgi, cors=True, **kw):
@@ -32,9 +36,7 @@ def make_app():
     app.add_route('/bar', i_f.OtherResponder(), suffix='id')
 
     app.add_static_route('/fal', os.path.abspath('falcon'))
-    app.add_static_route(
-        '/tes', os.path.abspath('tests'), fallback_filename='conftest.py'
-    )
+    app.add_static_route('/tes', HERE, fallback_filename='conftest.py')
     return app
 
 
@@ -53,9 +55,7 @@ def make_app_async():
     app.add_route('/bar', i_f.OtherResponderAsync(), suffix='id')
 
     app.add_static_route('/fal', os.path.abspath('falcon'))
-    app.add_static_route(
-        '/tes', os.path.abspath('tests'), fallback_filename='conftest.py'
-    )
+    app.add_static_route('/tes', HERE, fallback_filename='conftest.py')
     return app
 
 
@@ -153,7 +153,7 @@ class TestInspectApp:
         assert routes[-1].directory == os.path.abspath('falcon')
         assert routes[-1].fallback_filename is None
         assert routes[-2].prefix == '/tes/'
-        assert routes[-2].directory == os.path.abspath('tests')
+        assert routes[-2].directory == str(HERE)
         assert routes[-2].fallback_filename.endswith('conftest.py')
 
     def test_sink(self, asgi):
@@ -233,7 +233,7 @@ class TestInspectApp:
         mi = inspect.inspect_middleware(make_app_async() if asgi else make_app())
 
         def test(tl, names, cls):
-            for (t, n, c) in zip(tl, names, cls):
+            for t, n, c in zip(tl, names, cls):
                 assert isinstance(t, inspect.MiddlewareTreeItemInfo)
                 assert t.name == n
                 assert t.class_name == c

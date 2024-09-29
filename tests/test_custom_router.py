@@ -3,11 +3,8 @@ import pytest
 import falcon
 from falcon import testing
 
-from _util import create_app  # NOQA
 
-
-@pytest.mark.parametrize('asgi', [True, False])
-def test_custom_router_add_route_should_be_used(asgi):
+def test_custom_router_add_route_should_be_used(asgi, util):
     check = []
 
     class CustomRouter:
@@ -17,15 +14,14 @@ def test_custom_router_add_route_should_be_used(asgi):
         def find(self, uri):
             pass
 
-    app = create_app(asgi=asgi, router=CustomRouter())
+    app = util.create_app(asgi=asgi, router=CustomRouter())
     app.add_route('/test', 'resource')
 
     assert len(check) == 1
     assert '/test' in check
 
 
-@pytest.mark.parametrize('asgi', [True, False])
-def test_custom_router_find_should_be_used(asgi):
+def test_custom_router_find_should_be_used(asgi, util):
     if asgi:
 
         async def resource(req, resp, **kwargs):
@@ -57,7 +53,7 @@ def test_custom_router_find_should_be_used(asgi):
             return None
 
     router = CustomRouter()
-    app = create_app(asgi=asgi, router=router)
+    app = util.create_app(asgi=asgi, router=router)
     client = testing.TestClient(app)
 
     response = client.simulate_request(path='/test/42')
@@ -77,9 +73,7 @@ def test_custom_router_find_should_be_used(asgi):
     assert router.reached_backwards_compat
 
 
-@pytest.mark.parametrize('asgi', [True, False])
-def test_can_pass_additional_params_to_add_route(asgi):
-
+def test_can_pass_additional_params_to_add_route(asgi, util):
     check = []
 
     class CustomRouter:
@@ -91,7 +85,7 @@ def test_can_pass_additional_params_to_add_route(asgi):
         def find(self, uri):
             pass
 
-    app = create_app(asgi=asgi, router=CustomRouter())
+    app = util.create_app(asgi=asgi, router=CustomRouter())
     app.add_route('/test', 'resource', name='my-url-name')
 
     assert len(check) == 1
@@ -104,8 +98,7 @@ def test_can_pass_additional_params_to_add_route(asgi):
         app.add_route('/test', 'resource', 'xarg1', 'xarg2')
 
 
-@pytest.mark.parametrize('asgi', [True, False])
-def test_custom_router_takes_req_positional_argument(asgi):
+def test_custom_router_takes_req_positional_argument(asgi, util):
     if asgi:
 
         async def responder(req, resp):
@@ -122,14 +115,13 @@ def test_custom_router_takes_req_positional_argument(asgi):
                 return responder, {'GET': responder}, {}, None
 
     router = CustomRouter()
-    app = create_app(asgi=asgi, router=router)
+    app = util.create_app(asgi=asgi, router=router)
     client = testing.TestClient(app)
     response = client.simulate_request(path='/test')
     assert response.content == b'OK'
 
 
-@pytest.mark.parametrize('asgi', [True, False])
-def test_custom_router_takes_req_keyword_argument(asgi):
+def test_custom_router_takes_req_keyword_argument(asgi, util):
     if asgi:
 
         async def responder(req, resp):
@@ -146,7 +138,7 @@ def test_custom_router_takes_req_keyword_argument(asgi):
                 return responder, {'GET': responder}, {}, None
 
     router = CustomRouter()
-    app = create_app(asgi=asgi, router=router)
+    app = util.create_app(asgi=asgi, router=router)
     client = testing.TestClient(app)
     response = client.simulate_request(path='/test')
     assert response.content == b'OK'

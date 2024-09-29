@@ -4,14 +4,13 @@ import itertools
 import pytest
 
 import falcon
-from falcon.request import Request, RequestOptions
+from falcon.request import Request
+from falcon.request import RequestOptions
 from falcon.request_helpers import _parse_etags
 import falcon.testing as testing
 import falcon.uri
+from falcon.util import DeprecatedWarning
 from falcon.util.structures import ETag
-
-from _util import create_req  # NOQA
-
 
 _HTTP_VERSIONS = ['1.0', '1.1', '2']
 
@@ -33,6 +32,13 @@ def _make_etag(value, is_weak=False):
     return etag
 
 
+# NOTE(vytas): create_req is very heavily used in this module in unittest-style
+#   classes, so we simply recreate the function here.
+def create_req(asgi, options=None, **environ_or_scope_kwargs):
+    create_method = testing.create_asgi_req if asgi else testing.create_req
+    return create_method(options=options, **environ_or_scope_kwargs)
+
+
 def test_missing_qs():
     env = testing.create_environ()
     if 'QUERY_STRING' in env:
@@ -47,10 +53,11 @@ def test_app_missing():
     del env['SCRIPT_NAME']
     req = Request(env)
 
-    assert req.app == ''
+    assert req.root_path == ''
+    with pytest.warns(DeprecatedWarning):
+        assert req.app == ''
 
 
-@pytest.mark.parametrize('asgi', [True, False])
 class TestRequestAttributes:
     def setup_method(self, method):
         asgi = self._item.callspec.getparam('asgi')
@@ -129,7 +136,9 @@ class TestRequestAttributes:
 
         scheme = req.scheme
         host = req.get_header('host')
-        app = req.app
+        app = req.root_path
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == app
         path = req.path
         query_string = req.query_string
 
@@ -693,7 +702,7 @@ class TestRequestAttributes:
         ],
     )
     def test_date(self, asgi, header, attr):
-        date = datetime.datetime(2013, 4, 4, 5, 19, 18)
+        date = datetime.datetime(2013, 4, 4, 5, 19, 18, tzinfo=datetime.timezone.utc)
         date_str = 'Thu, 04 Apr 2013 05:19:18 GMT'
 
         headers = {header: date_str}
@@ -709,7 +718,6 @@ class TestRequestAttributes:
         ],
     )
     def test_date_invalid(self, asgi, header, attr):
-
         # Date formats don't conform to RFC 1123
         headers = {header: 'Thu, 04 Apr 2013'}
         expected_desc = (
@@ -902,11 +910,15 @@ class TestRequestAttributes:
 
     def test_app_present(self, asgi):
         req = create_req(asgi, root_path='/moving-pictures')
-        assert req.app == '/moving-pictures'
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == '/moving-pictures'
+        assert req.root_path == '/moving-pictures'
 
     def test_app_blank(self, asgi):
         req = create_req(asgi, root_path='')
-        assert req.app == ''
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == ''
+        assert req.root_path == ''
 
     @pytest.mark.parametrize(
         'etag,expected_value',

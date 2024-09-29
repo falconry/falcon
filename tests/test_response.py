@@ -1,15 +1,16 @@
+from io import BytesIO
 from unittest.mock import MagicMock
 
 import pytest
 
-from falcon import MEDIA_TEXT, ResponseOptions
+from falcon import MEDIA_TEXT
+from falcon import ResponseOptions
+from falcon.util.deprecation import AttributeRemovedError
 
-from _util import create_resp  # NOQA
 
-
-@pytest.fixture(params=[True, False])
-def resp(request):
-    return create_resp(asgi=request.param)
+@pytest.fixture()
+def resp(asgi, util):
+    return util.create_resp(asgi)
 
 
 def test_response_set_content_type_set(resp):
@@ -39,6 +40,13 @@ def test_response_get_headers(resp):
     assert 'set-cookie' not in headers
 
 
+def test_add_link_removed(resp):
+    # NOTE(kgriffs): Ensure AttributeRemovedError inherits from AttributeError
+    for exc_type in (AttributeError, AttributeRemovedError):
+        with pytest.raises(exc_type):
+            resp.add_link('/things/1337', 'next')
+
+
 def test_response_attempt_to_set_read_only_headers(resp):
     resp.append_header('x-things1', 'thing-1')
     resp.append_header('x-things2', 'thing-2')
@@ -52,14 +60,6 @@ def test_response_attempt_to_set_read_only_headers(resp):
     assert headers['x-things1'] == 'thing-1'
     assert headers['x-things2'] == 'thing-2'
     assert headers['x-things3'] == 'thing-3a, thing-3b'
-
-
-def test_response_removed_stream_len(resp):
-    with pytest.raises(AttributeError):
-        resp.stream_len = 128
-
-    with pytest.raises(AttributeError):
-        resp.stream_len
 
 
 def test_response_option_mimetype_init(monkeypatch):
@@ -82,3 +82,14 @@ def test_response_option_mimetype_init(monkeypatch):
     assert ro.static_media_types['.js'] == 'text/javascript'
     assert ro.static_media_types['.json'] == 'application/json'
     assert ro.static_media_types['.mjs'] == 'text/javascript'
+
+
+@pytest.mark.parametrize('content', [b'', b'dummy content'])
+def test_response_set_stream(resp, content):
+    stream = BytesIO(content)
+    content_length = len(content)
+
+    resp.set_stream(stream, content_length)
+
+    assert resp.stream is stream
+    assert resp.headers['content-length'] == str(content_length)

@@ -19,7 +19,9 @@ from __future__ import annotations
 import io
 from typing import BinaryIO, Callable, List, Optional, TypeVar, Union
 
-__all__ = ['BoundedStream']
+from falcon.util import deprecated
+
+__all__ = ('BoundedStream',)
 
 
 Result = TypeVar('Result', bound=Union[bytes, List[bytes]])
@@ -43,12 +45,6 @@ class BoundedStream(io.IOBase):
         stream: Instance of ``socket._fileobject`` from
             ``environ['wsgi.input']``
         stream_len: Expected content length of the stream.
-
-    Attributes:
-        eof (bool): ``True`` if there is no more data to read from
-            the stream, otherwise ``False``.
-        is_exhausted (bool): Deprecated alias for `eof`.
-
     """
 
     def __init__(self, stream: BinaryIO, stream_len: int) -> None:
@@ -166,9 +162,21 @@ class BoundedStream(io.IOBase):
 
     @property
     def eof(self) -> bool:
+        """``True`` if there is no more data to read from the stream,
+        otherwise ``False``.
+        """  # noqa: D205
         return self._bytes_remaining <= 0
 
-    is_exhausted = eof
+    @property
+    # NOTE(caselit): Deprecated long ago. Warns since 4.0.
+    @deprecated(
+        'Use `eof` instead. '
+        '(This compatibility alias will be removed in Falcon 5.0.)',
+        is_property=True,
+    )
+    def is_exhausted(self) -> bool:
+        """Deprecated alias for `eof`."""
+        return self.eof
 
 
 # NOTE(kgriffs): Alias for backwards-compat

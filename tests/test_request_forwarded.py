@@ -1,10 +1,8 @@
 import pytest
 
-from _util import create_req  # NOQA
 
-
-def test_no_forwarded_headers(asgi):
-    req = create_req(
+def test_no_forwarded_headers(asgi, util):
+    req = util.create_req(
         asgi, host='example.com', path='/languages', root_path='backoffice'
     )
 
@@ -14,8 +12,8 @@ def test_no_forwarded_headers(asgi):
     assert req.forwarded_prefix == 'http://example.com/backoffice'
 
 
-def test_no_forwarded_headers_with_port(asgi):
-    req = create_req(
+def test_no_forwarded_headers_with_port(asgi, util):
+    req = util.create_req(
         asgi, host='example.com', port=8000, path='/languages', root_path='backoffice'
     )
 
@@ -25,8 +23,8 @@ def test_no_forwarded_headers_with_port(asgi):
     assert req.forwarded_prefix == 'http://example.com:8000/backoffice'
 
 
-def test_x_forwarded_host(asgi):
-    req = create_req(
+def test_x_forwarded_host(asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy.suchtesting.com',
         path='/languages',
@@ -41,8 +39,8 @@ def test_x_forwarded_host(asgi):
     assert req.forwarded_prefix == 'http://something.org'  # Check cached value
 
 
-def test_x_forwarded_host_with_port(asgi):
-    req = create_req(
+def test_x_forwarded_host_with_port(asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy.suchtesting.com',
         path='/languages',
@@ -57,8 +55,8 @@ def test_x_forwarded_host_with_port(asgi):
     assert req.forwarded_prefix == 'http://something.org:8000'  # Check cached value
 
 
-def test_x_forwarded_proto(asgi):
-    req = create_req(
+def test_x_forwarded_proto(asgi, util):
+    req = util.create_req(
         asgi,
         host='example.org',
         path='/languages',
@@ -72,8 +70,8 @@ def test_x_forwarded_proto(asgi):
     assert req.forwarded_prefix == 'https://example.org'
 
 
-def test_forwarded_host(asgi):
-    req = create_req(
+def test_forwarded_host(asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
@@ -96,8 +94,8 @@ def test_forwarded_host(asgi):
     assert req.forwarded_prefix == 'http://something.org'
 
 
-def test_forwarded_invalid(asgi):
-    req = create_req(
+def test_forwarded_invalid(asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
@@ -112,8 +110,8 @@ def test_forwarded_invalid(asgi):
     assert req.forwarded_prefix == 'http://suchproxy02.suchtesting.com'
 
 
-def test_forwarded_multiple_params(asgi):
-    req = create_req(
+def test_forwarded_multiple_params(asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
@@ -144,8 +142,8 @@ def test_forwarded_multiple_params(asgi):
     assert req.forwarded_prefix == 'https://something.org'
 
 
-def test_forwarded_missing_first_hop_host(asgi):
-    req = create_req(
+def test_forwarded_missing_first_hop_host(asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
@@ -166,8 +164,8 @@ def test_forwarded_missing_first_hop_host(asgi):
     assert req.forwarded_prefix == 'http://suchproxy02.suchtesting.com/doge'
 
 
-def test_forwarded_quote_escaping(asgi):
-    req = create_req(
+def test_forwarded_quote_escaping(asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
@@ -189,9 +187,8 @@ def test_forwarded_quote_escaping(asgi):
         ('for=1.2.3.4;by="4.3.\\2\\.1" thing="blah"', '4.3.2.1'),
     ],
 )
-def test_escape_malformed_requests(forwarded, expected_dest, asgi):
-
-    req = create_req(
+def test_escape_malformed_requests(forwarded, expected_dest, asgi, util):
+    req = util.create_req(
         asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',

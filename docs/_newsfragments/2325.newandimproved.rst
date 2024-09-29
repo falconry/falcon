@@ -1,0 +1,4 @@
+The :class:`~CORSMiddleware` now properly handles the missing ``Allow``
+header case, by denying the preflight CORS request.
+The static resource has been updated to properly support CORS request,
+by allowing GET requests.

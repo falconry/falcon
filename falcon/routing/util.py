@@ -14,92 +14,24 @@
 
 """Routing utilities."""
 
-import re
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
 
 from falcon import constants
 from falcon import responders
-from falcon.util.deprecation import deprecated
+
+if TYPE_CHECKING:
+    from falcon._typing import MethodDict
 
 
 class SuffixedMethodNotFoundError(Exception):
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         super(SuffixedMethodNotFoundError, self).__init__(message)
         self.message = message
 
 
-# NOTE(kgriffs): Published method; take care to avoid breaking changes.
-@deprecated('This method will be removed in Falcon 4.0.')
-def compile_uri_template(template):
-    """Compile the given URI template string into a pattern matcher.
-
-    This function can be used to construct custom routing engines that
-    iterate through a list of possible routes, attempting to match
-    an incoming request against each route's compiled regular expression.
-
-    Each field is converted to a named group, so that when a match
-    is found, the fields can be easily extracted using
-    :py:meth:`re.MatchObject.groupdict`.
-
-    This function does not support the more flexible templating
-    syntax used in the default router. Only simple paths with bracketed
-    field expressions are recognized. For example::
-
-        /
-        /books
-        /books/{isbn}
-        /books/{isbn}/characters
-        /books/{isbn}/characters/{name}
-
-    Warning:
-        If the template contains a trailing slash character, it will be
-        stripped.
-
-        Note that this is **different** from :ref:`the default behavior
-        <trailing_slash_in_path>` of :func:`~falcon.App.add_route` used
-        with the default :class:`~falcon.routing.CompiledRouter`.
-
-        The :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`
-        request option is not considered by ``compile_uri_template()``.
-
-
-    Args:
-        template(str): The template to compile. Note that field names are
-            restricted to ASCII a-z, A-Z, and the underscore character.
-
-    Returns:
-        tuple: (template_field_names, template_regex)
-
-    .. deprecated:: 3.1
-    """
-
-    if not isinstance(template, str):
-        raise TypeError('uri_template is not a string')
-
-    if not template.startswith('/'):
-        raise ValueError("uri_template must start with '/'")
-
-    if '//' in template:
-        raise ValueError("uri_template may not contain '//'")
-
-    if template != '/' and template.endswith('/'):
-        template = template[:-1]
-
-    # template names should be able to start with A-Za-z
-    # but also contain 0-9_ in the remaining portion
-    expression_pattern = r'{([a-zA-Z]\w*)}'
-
-    # Get a list of field names
-    fields = set(re.findall(expression_pattern, template))
-
-    # Convert Level 1 var patterns to equivalent named regex groups
-    escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
-    pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
-    pattern = r'\A' + pattern + r'\Z'
-
-    return fields, re.compile(pattern, re.IGNORECASE)
-
-
-def map_http_methods(resource, suffix=None):
+def map_http_methods(resource: object, suffix: Optional[str] = None) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
@@ -146,7 +78,7 @@ def map_http_methods(resource, suffix=None):
     return method_map
 
 
-def set_default_responders(method_map, asgi=False):
+def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
     """Map HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
@@ -164,11 +96,11 @@ def set_default_responders(method_map, asgi=False):
     if 'OPTIONS' not in method_map:
         # OPTIONS itself is intentionally excluded from the Allow header
         opt_responder = responders.create_default_options(allowed_methods, asgi=asgi)
-        method_map['OPTIONS'] = opt_responder
+        method_map['OPTIONS'] = opt_responder  # type: ignore[assignment]
         allowed_methods.append('OPTIONS')
 
     na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
 
     for method in constants.COMBINED_METHODS:
         if method not in method_map:
-            method_map[method] = na_responder
+            method_map[method] = na_responder  # type: ignore[assignment]

@@ -1,7 +1,12 @@
+from __future__ import annotations
+
+from typing import Any, Optional
 from urllib.parse import urlencode
 
 from falcon import errors
 from falcon.media.base import BaseHandler
+from falcon.typing import AsyncReadableIO
+from falcon.typing import ReadableIO
 from falcon.util.uri import parse_query_string
 
 
@@ -28,7 +33,7 @@ class URLEncodedFormHandler(BaseHandler):
             when deserializing.
     """
 
-    def __init__(self, keep_blank=True, csv=False):
+    def __init__(self, keep_blank: bool = True, csv: bool = False) -> None:
         self._keep_blank = keep_blank
         self._csv = csv
 
@@ -40,23 +45,37 @@ class URLEncodedFormHandler(BaseHandler):
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def serialize(self, media, content_type=None) -> bytes:
+    def serialize(self, media: Any, content_type: Optional[str] = None) -> bytes:
         # NOTE(vytas): Setting doseq to True to mirror the parse_query_string
         # behaviour.
         return urlencode(media, doseq=True).encode()
 
-    def _deserialize(self, body):
+    def _deserialize(self, body: bytes) -> Any:
         try:
-            # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+            # NOTE(kgriffs): According to
+            # https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm
+            # the
             # body should be US-ASCII. Enforcing this also helps
             # catch malicious input.
-            body = body.decode('ascii')
-            return parse_query_string(body, keep_blank=self._keep_blank, csv=self._csv)
+            body_str = body.decode('ascii')
+            return parse_query_string(
+                body_str, keep_blank=self._keep_blank, csv=self._csv
+            )
         except Exception as err:
             raise errors.MediaMalformedError('URL-encoded') from err
 
-    def deserialize(self, stream, content_type, content_length):
+    def deserialize(
+        self,
+        stream: ReadableIO,
+        content_type: Optional[str],
+        content_length: Optional[int],
+    ) -> Any:
         return self._deserialize(stream.read())
 
-    async def deserialize_async(self, stream, content_type, content_length):
+    async def deserialize_async(
+        self,
+        stream: AsyncReadableIO,
+        content_type: Optional[str],
+        content_length: Optional[int],
+    ) -> Any:
         return self._deserialize(await stream.read())

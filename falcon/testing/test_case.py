@@ -21,7 +21,7 @@ utilities for simulating and validating HTTP requests.
 try:
     import testtools as unittest
 except ImportError:  # pragma: nocover
-    import unittest  # type: ignore
+    import unittest
 
 import falcon
 import falcon.request
@@ -32,53 +32,54 @@ from falcon.testing.client import TestClient
 
 
 class TestCase(unittest.TestCase, TestClient):
-    """Extends :py:mod:`unittest` to support WSGI/ASGI functional testing.
+    """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
-        If available, uses :py:mod:`testtools` in lieu of
-        :py:mod:`unittest`.
+        If available, uses :mod:`testtools` in lieu of
+        :mod:`unittest`.
 
     This base class provides some extra plumbing for unittest-style
     test cases, to help simulate WSGI or ASGI requests without having
     to spin up an actual web server. Various simulation methods are
-    derived from :py:class:`falcon.testing.TestClient`.
+    derived from :class:`falcon.testing.TestClient`.
 
     Simply inherit from this class in your test case classes instead of
-    :py:class:`unittest.TestCase` or :py:class:`testtools.TestCase`.
-
-    Attributes:
-        app (object): A WSGI or ASGI application to target when simulating
-            requests (defaults to ``falcon.App()``). When testing your
-            application, you will need to set this to your own instance
-            of :class:`falcon.App` or :class:`falcon.asgi.App`. For
-            example::
-
-                from falcon import testing
-                import myapp
-
-
-                class MyTestCase(testing.TestCase):
-                    def setUp(self):
-                        super(MyTestCase, self).setUp()
-
-                        # Assume the hypothetical `myapp` package has a
-                        # function called `create()` to initialize and
-                        # return a `falcon.App` instance.
-                        self.app = myapp.create()
-
-
-                class TestMyApp(MyTestCase):
-                    def test_get_message(self):
-                        doc = {'message': 'Hello world!'}
-
-                        result = self.simulate_get('/messages/42')
-                        self.assertEqual(result.json, doc)
+    :class:`unittest.TestCase` or :class:`testtools.TestCase`.
     """
 
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
-    def setUp(self):
+    app: falcon.App
+    """A WSGI or ASGI application to target when simulating
+    requests (defaults to ``falcon.App()``). When testing your
+    application, you will need to set this to your own instance
+    of :class:`falcon.App` or :class:`falcon.asgi.App`. For
+    example::
+
+        from falcon import testing
+        import myapp
+
+
+        class MyTestCase(testing.TestCase):
+            def setUp(self):
+                super(MyTestCase, self).setUp()
+
+                # Assume the hypothetical `myapp` package has a
+                # function called `create()` to initialize and
+                # return a `falcon.App` instance.
+                self.app = myapp.create()
+
+
+        class TestMyApp(MyTestCase):
+            def test_get_message(self):
+                doc = {'message': 'Hello world!'}
+
+                result = self.simulate_get('/messages/42')
+                self.assertEqual(result.json, doc)
+    """
+
+    def setUp(self) -> None:
         super(TestCase, self).setUp()
 
         app = falcon.App()

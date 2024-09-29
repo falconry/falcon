@@ -4,9 +4,10 @@ import json
 import logging
 import uuid
 
+import httpx
+
 import falcon
 import falcon.asgi
-import httpx
 
 
 class StorageEngine:
@@ -20,13 +21,12 @@ class StorageEngine:
 
 class StorageError(Exception):
     @staticmethod
-    async def handle(ex, req, resp, params):
+    async def handle(req, resp, ex, params):
         # TODO: Log the error, clean up, etc. before raising
         raise falcon.HTTPInternalServerError()
 
 
 class SinkAdapter:
-
     engines = {
         'ddg': 'https://duckduckgo.com',
         'y': 'https://search.yahoo.com/search',
@@ -143,7 +143,7 @@ def max_body(limit):
                 'exceed ' + str(limit) + ' bytes in length.'
             )
 
-            raise falcon.HTTPPayloadTooLarge(
+            raise falcon.HTTPContentTooLarge(
                 title='Request body is too large', description=msg
             )
 
@@ -202,7 +202,7 @@ class ThingsResource:
 # The app instance is an ASGI callable
 app = falcon.asgi.App(
     middleware=[
-        # AuthMiddleware(),
+        AuthMiddleware(),
         RequireJSON(),
         JSONTranslator(),
     ]

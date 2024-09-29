@@ -1,18 +1,12 @@
 import json
 
-try:
-    import cython
-except ImportError:
-    cython = None
 import pytest
 
 import falcon
 import falcon.errors
 import falcon.testing as testing
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _utcnow
-
-from _util import create_app  # NOQA
-
 
 _EXPECTED_BODY = {'status': 'ok'}
 
@@ -121,7 +115,6 @@ class RemoveBasePathMiddleware:
 
 
 class ResponseCacheMiddlware:
-
     PROCESS_REQUEST_CACHED_BODY = {'cached': True}
     PROCESS_RESOURCE_CACHED_BODY = {'cached': True, 'resource': True}
 
@@ -176,9 +169,9 @@ class TestMiddleware:
 
 
 class TestRequestTimeMiddleware(TestMiddleware):
-    def test_skip_process_resource(self, asgi):
+    def test_skip_process_resource(self, asgi, util):
         global context
-        app = create_app(asgi, middleware=[RequestTimeMiddleware()])
+        app = util.create_app(asgi, middleware=[RequestTimeMiddleware()])
 
         app.add_route('/', MiddlewareClassResource())
         client = testing.TestClient(app)
@@ -190,7 +183,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
         assert 'end_time' in context
         assert not context['req_succeeded']
 
-    def test_add_invalid_middleware(self, asgi):
+    def test_add_invalid_middleware(self, asgi, util):
         """Test than an invalid class can not be added as middleware"""
 
         class InvalidMiddleware:
@@ -199,24 +192,24 @@ class TestRequestTimeMiddleware(TestMiddleware):
 
         mw_list = [RequestTimeMiddleware(), InvalidMiddleware]
         with pytest.raises(AttributeError):
-            create_app(asgi, middleware=mw_list)
+            util.create_app(asgi, middleware=mw_list)
 
         mw_list = [RequestTimeMiddleware(), 'InvalidMiddleware']
         with pytest.raises(TypeError):
-            create_app(asgi, middleware=mw_list)
+            util.create_app(asgi, middleware=mw_list)
 
         mw_list = [{'process_request': 90}]
         with pytest.raises(TypeError):
-            create_app(asgi, middleware=mw_list)
+            util.create_app(asgi, middleware=mw_list)
 
-    def test_response_middleware_raises_exception(self, asgi):
+    def test_response_middleware_raises_exception(self, asgi, util):
         """Test that error in response middleware is propagated up"""
 
         class RaiseErrorMiddleware:
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = create_app(asgi, middleware=[RaiseErrorMiddleware()])
+        app = util.create_app(asgi, middleware=[RaiseErrorMiddleware()])
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
@@ -225,10 +218,10 @@ class TestRequestTimeMiddleware(TestMiddleware):
         assert result.status_code == 500
 
     @pytest.mark.parametrize('independent_middleware', [True, False])
-    def test_log_get_request(self, independent_middleware, asgi):
+    def test_log_get_request(self, independent_middleware, asgi, util):
         """Test that Log middleware is executed"""
         global context
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=[RequestTimeMiddleware()],
             independent_middleware=independent_middleware,
@@ -255,14 +248,14 @@ class TestRequestTimeMiddleware(TestMiddleware):
 
 
 class TestTransactionIdMiddleware(TestMiddleware):
-    def test_generate_trans_id_with_request(self, asgi):
+    def test_generate_trans_id_with_request(self, asgi, util):
         """Test that TransactionIdmiddleware is executed"""
         global context
 
         middleware = (
             TransactionIdMiddlewareAsync() if asgi else TransactionIdMiddleware()
         )
-        app = create_app(asgi, middleware=middleware)
+        app = util.create_app(asgi, middleware=middleware)
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
@@ -277,7 +270,7 @@ class TestTransactionIdMiddleware(TestMiddleware):
 class TestSeveralMiddlewares(TestMiddleware):
     @pytest.mark.parametrize('independent_middleware', [True, False])
     def test_generate_trans_id_and_time_with_request(
-        self, independent_middleware, asgi
+        self, independent_middleware, asgi, util
     ):
         # NOTE(kgriffs): We test both so that we can cover the code paths
         # where only a single middleware method is implemented by a
@@ -286,7 +279,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         cresp = CaptureResponseMiddleware()
 
         global context
-        app = create_app(
+        app = util.create_app(
             asgi,
             independent_middleware=independent_middleware,
             # NOTE(kgriffs): Pass as a generic iterable to verify that works.
@@ -321,9 +314,9 @@ class TestSeveralMiddlewares(TestMiddleware):
             context['end_time'] >= context['start_time']
         ), 'process_response not executed after request'
 
-    def test_legacy_middleware_called_with_correct_args(self, asgi):
+    def test_legacy_middleware_called_with_correct_args(self, asgi, util):
         global context
-        app = create_app(asgi, middleware=[ExecutedFirstMiddleware()])
+        app = util.create_app(asgi, middleware=[ExecutedFirstMiddleware()])
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
 
@@ -332,9 +325,9 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert isinstance(context['resp'], falcon.Response)
         assert isinstance(context['resource'], MiddlewareClassResource)
 
-    def test_middleware_execution_order(self, asgi):
+    def test_middleware_execution_order(self, asgi, util):
         global context
-        app = create_app(
+        app = util.create_app(
             asgi,
             independent_middleware=False,
             middleware=[ExecutedFirstMiddleware(), ExecutedLastMiddleware()],
@@ -358,9 +351,9 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_independent_middleware_execution_order(self, asgi):
+    def test_independent_middleware_execution_order(self, asgi, util):
         global context
-        app = create_app(
+        app = util.create_app(
             asgi,
             independent_middleware=True,
             middleware=[ExecutedFirstMiddleware(), ExecutedLastMiddleware()],
@@ -384,7 +377,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_multiple_response_mw_throw_exception(self, asgi):
+    def test_multiple_response_mw_throw_exception(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -403,7 +396,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                 context['executed_methods'].append('process_response')
                 context['req_succeeded'].append(req_succeeded)
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=[
                 ProcessResponseMiddleware(),
@@ -425,7 +418,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert context['executed_methods'] == expected_methods
         assert context['req_succeeded'] == [True, False, False]
 
-    def test_inner_mw_throw_exception(self, asgi):
+    def test_inner_mw_throw_exception(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -436,7 +429,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise MyException('Always fail')
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=[
                 TransactionIdMiddleware(),
@@ -470,7 +463,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         #   middleware methods.
         assert 'end_time' not in context
 
-    def test_inner_mw_throw_exception_while_processing_resp(self, asgi):
+    def test_inner_mw_throw_exception_while_processing_resp(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -481,7 +474,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_response(self, req, resp, resource, req_succeeded):
                 raise MyException('Always fail')
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=[
                 TransactionIdMiddleware(),
@@ -515,7 +508,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         #   middleware methods.
         assert 'end_time' not in context
 
-    def test_inner_mw_with_ex_handler_throw_exception(self, asgi):
+    def test_inner_mw_with_ex_handler_throw_exception(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -523,7 +516,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=[
                 TransactionIdMiddleware(),
@@ -549,7 +542,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert 'end_time' in context
         assert 'error_handler' in context
 
-    def test_outer_mw_with_ex_handler_throw_exception(self, asgi):
+    def test_outer_mw_with_ex_handler_throw_exception(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -557,7 +550,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=[
                 TransactionIdMiddleware(),
@@ -583,7 +576,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert 'end_time' in context
         assert 'error_handler' in context
 
-    def test_order_mw_executed_when_exception_in_resp(self, asgi):
+    def test_order_mw_executed_when_exception_in_resp(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -591,7 +584,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=[
                 ExecutedFirstMiddleware(),
@@ -621,7 +614,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_order_independent_mw_executed_when_exception_in_resp(self, asgi):
+    def test_order_independent_mw_executed_when_exception_in_resp(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -629,7 +622,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             independent_middleware=True,
             middleware=[
@@ -660,7 +653,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_order_mw_executed_when_exception_in_req(self, asgi):
+    def test_order_mw_executed_when_exception_in_req(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -674,7 +667,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         rem = RaiseErrorMiddlewareAsync() if asgi else RaiseErrorMiddleware()
 
-        app = create_app(
+        app = util.create_app(
             asgi, middleware=[ExecutedFirstMiddleware(), rem, ExecutedLastMiddleware()]
         )
 
@@ -696,7 +689,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_order_independent_mw_executed_when_exception_in_req(self, asgi):
+    def test_order_independent_mw_executed_when_exception_in_req(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -710,7 +703,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         rem = RaiseErrorMiddlewareAsync() if asgi else RaiseErrorMiddleware()
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             independent_middleware=True,
             middleware=[ExecutedFirstMiddleware(), rem, ExecutedLastMiddleware()],
@@ -734,7 +727,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_order_mw_executed_when_exception_in_rsrc(self, asgi):
+    def test_order_mw_executed_when_exception_in_rsrc(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -750,7 +743,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         rem = RaiseErrorMiddlewareAsync() if asgi else RaiseErrorMiddleware()
 
-        app = create_app(
+        app = util.create_app(
             asgi, middleware=[ExecutedFirstMiddleware(), rem, ExecutedLastMiddleware()]
         )
 
@@ -774,7 +767,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_order_independent_mw_executed_when_exception_in_rsrc(self, asgi):
+    def test_order_independent_mw_executed_when_exception_in_rsrc(self, asgi, util):
         """Test that error in inner middleware leaves"""
         global context
 
@@ -788,7 +781,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         rem = RaiseErrorMiddlewareAsync() if asgi else RaiseErrorMiddleware()
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             independent_middleware=True,
             middleware=[ExecutedFirstMiddleware(), rem, ExecutedLastMiddleware()],
@@ -816,9 +809,9 @@ class TestSeveralMiddlewares(TestMiddleware):
 
 
 class TestRemoveBasePathMiddleware(TestMiddleware):
-    def test_base_path_is_removed_before_routing(self, asgi):
+    def test_base_path_is_removed_before_routing(self, asgi, util):
         """Test that RemoveBasePathMiddleware is executed before routing"""
-        app = create_app(asgi, middleware=RemoveBasePathMiddleware())
+        app = util.create_app(asgi, middleware=RemoveBasePathMiddleware())
 
         # We dont include /base_path as it will be removed in middleware
         app.add_route('/sub_path', MiddlewareClassResource())
@@ -833,7 +826,7 @@ class TestRemoveBasePathMiddleware(TestMiddleware):
 
 class TestResourceMiddleware(TestMiddleware):
     @pytest.mark.parametrize('independent_middleware', [True, False])
-    def test_can_access_resource_params(self, asgi, independent_middleware):
+    def test_can_access_resource_params(self, asgi, util, independent_middleware):
         """Test that params can be accessed from within process_resource"""
         global context
 
@@ -841,7 +834,7 @@ class TestResourceMiddleware(TestMiddleware):
             def on_get(self, req, resp, **params):
                 resp.text = json.dumps(params)
 
-        app = create_app(
+        app = util.create_app(
             asgi,
             middleware=AccessParamsMiddleware(),
             independent_middleware=independent_middleware,
@@ -857,7 +850,7 @@ class TestResourceMiddleware(TestMiddleware):
 
 
 class TestEmptySignatureMiddleware(TestMiddleware):
-    def test_dont_need_params_in_signature(self, asgi):
+    def test_dont_need_params_in_signature(self, asgi, util):
         """
         Verify that we don't need parameters in the process_* signatures (for
         side-effect-only middlewares, mostly). Makes no difference on py27
@@ -865,13 +858,13 @@ class TestEmptySignatureMiddleware(TestMiddleware):
 
         https://github.com/falconry/falcon/issues/1254
         """
-        create_app(asgi, middleware=EmptySignatureMiddleware())
+        util.create_app(asgi, middleware=EmptySignatureMiddleware())
 
 
 class TestErrorHandling(TestMiddleware):
-    def test_error_composed_before_resp_middleware_called(self, asgi):
+    def test_error_composed_before_resp_middleware_called(self, asgi, util):
         mw = CaptureResponseMiddleware()
-        app = create_app(asgi, middleware=mw)
+        app = util.create_app(asgi, middleware=mw)
         app.add_route('/', MiddlewareClassResource())
         client = testing.TestClient(app)
 
@@ -889,9 +882,9 @@ class TestErrorHandling(TestMiddleware):
         assert isinstance(mw.req, falcon.Request)
         assert isinstance(mw.resource, MiddlewareClassResource)
 
-    def test_http_status_raised_from_error_handler(self, asgi):
+    def test_http_status_raised_from_error_handler(self, asgi, util):
         mw = CaptureResponseMiddleware()
-        app = create_app(asgi, middleware=mw)
+        app = util.create_app(asgi, middleware=mw)
         app.add_route('/', MiddlewareClassResource())
         client = testing.TestClient(app)
 
@@ -900,14 +893,19 @@ class TestErrorHandling(TestMiddleware):
         def _http_error_handler(error, req, resp, params):
             raise falcon.HTTPStatus(falcon.HTTP_201)
 
-        async def _http_error_handler_async(error, req, resp, params):
+        async def _http_error_handler_async(req, resp, error, params):
             raise falcon.HTTPStatus(falcon.HTTP_201)
 
         h = _http_error_handler_async if asgi else _http_error_handler
 
         # NOTE(kgriffs): This will take precedence over the default
         # handler for facon.HTTPError.
-        app.add_error_handler(falcon.HTTPError, h)
+        if asgi:
+            # NOTE(vytas): The ASGI flavour supports no reordering shim.
+            app.add_error_handler(falcon.HTTPError, h)
+        else:
+            with pytest.warns(DeprecatedWarning, match='deprecated signature'):
+                app.add_error_handler(falcon.HTTPError, h)
 
         response = client.simulate_request(path='/', method='POST')
         assert response.status == falcon.HTTP_201
@@ -918,13 +916,13 @@ class TestShortCircuiting(TestMiddleware):
     def setup_method(self, method):
         super(TestShortCircuiting, self).setup_method(method)
 
-    def _make_client(self, asgi, independent_middleware=True):
+    def _make_client(self, asgi, util, independent_middleware=True):
         mw = [
             RequestTimeMiddleware(),
             ResponseCacheMiddlware(),
             TransactionIdMiddleware(),
         ]
-        app = create_app(
+        app = util.create_app(
             asgi, middleware=mw, independent_middleware=independent_middleware
         )
         app.add_route('/', MiddlewareClassResource())
@@ -933,8 +931,8 @@ class TestShortCircuiting(TestMiddleware):
 
         return testing.TestClient(app)
 
-    def test_process_request_not_cached(self, asgi):
-        response = self._make_client(asgi).simulate_get('/')
+    def test_process_request_not_cached(self, asgi, util):
+        response = self._make_client(asgi, util).simulate_get('/')
         assert response.status == falcon.HTTP_200
         assert response.json == _EXPECTED_BODY
         assert 'transaction_id' in context
@@ -943,8 +941,8 @@ class TestShortCircuiting(TestMiddleware):
         assert 'end_time' in context
 
     @pytest.mark.parametrize('independent_middleware', [True, False])
-    def test_process_request_cached(self, asgi, independent_middleware):
-        response = self._make_client(asgi, independent_middleware).simulate_get(
+    def test_process_request_cached(self, asgi, util, independent_middleware):
+        response = self._make_client(asgi, util, independent_middleware).simulate_get(
             '/cached'
         )
         assert response.status == falcon.HTTP_200
@@ -966,8 +964,8 @@ class TestShortCircuiting(TestMiddleware):
         assert 'end_time' in context
 
     @pytest.mark.parametrize('independent_middleware', [True, False])
-    def test_process_resource_cached(self, asgi, independent_middleware):
-        response = self._make_client(asgi, independent_middleware).simulate_get(
+    def test_process_resource_cached(self, asgi, util, independent_middleware):
+        response = self._make_client(asgi, util, independent_middleware).simulate_get(
             '/cached/resource'
         )
         assert response.status == falcon.HTTP_200
@@ -994,24 +992,31 @@ class TestShortCircuiting(TestMiddleware):
 
 class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
     @pytest.mark.parametrize(
-        'mw',
+        'mw,allowed',
         [
-            CaptureResponseMiddleware(),
-            [CaptureResponseMiddleware()],
-            (CaptureResponseMiddleware(),),
-            iter([CaptureResponseMiddleware()]),
+            (CaptureResponseMiddleware(), True),
+            ([CaptureResponseMiddleware()], True),
+            ((CaptureResponseMiddleware(),), True),
+            (iter([CaptureResponseMiddleware()]), True),
+            (falcon.CORSMiddleware(), False),
+            ([falcon.CORSMiddleware()], False),
         ],
     )
-    def test_api_initialization_with_cors_enabled_and_middleware_param(self, mw, asgi):
-        app = create_app(asgi, middleware=mw, cors_enable=True)
-        app.add_route('/', TestCorsResource())
-        client = testing.TestClient(app)
-        result = client.simulate_get(headers={'Origin': 'localhost'})
-        assert result.headers['Access-Control-Allow-Origin'] == '*'
+    def test_api_initialization_with_cors_enabled_and_middleware_param(
+        self, mw, asgi, util, allowed
+    ):
+        if allowed:
+            app = util.create_app(asgi, middleware=mw, cors_enable=True)
+            app.add_route('/', TestCorsResource())
+            client = testing.TestClient(app)
+            result = client.simulate_get(headers={'Origin': 'localhost'})
+            assert result.headers['Access-Control-Allow-Origin'] == '*'
+        else:
+            with pytest.raises(ValueError, match='CORSMiddleware'):
+                app = util.create_app(asgi, middleware=mw, cors_enable=True)
 
 
-@pytest.mark.skipif(cython, reason='Cythonized coroutine functions cannot be detected')
-def test_async_postfix_method_must_be_coroutine():
+def test_async_postfix_method_must_be_coroutine(util):
     class FaultyComponentA:
         def process_request_async(self, req, resp):
             pass
@@ -1024,6 +1029,9 @@ def test_async_postfix_method_must_be_coroutine():
         def process_response_async(self, req, resp, resource, req_succeeded):
             pass
 
+    if util.HAS_CYTHON:
+        pytest.skip(reason='Cythonized coroutine functions cannot be detected')
+
     for mw in (FaultyComponentA, FaultyComponentB, FaultyComponentC):
         with pytest.raises(falcon.errors.CompatibilityError):
-            create_app(True, middleware=[mw()])
+            util.create_app(True, middleware=[mw()])

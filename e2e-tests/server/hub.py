@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 import asyncio
 import typing
 import uuid
 
-from falcon.asgi import Request, Response, SSEvent, WebSocket
+from falcon.asgi import Request
+from falcon.asgi import Response
+from falcon.asgi import SSEvent
+from falcon.asgi import WebSocket
 
 
 class Emitter:
     POLL_TIMEOUT = 3.0
 
-    def __init__(self):
-        self._done = False
-        self._queue = asyncio.Queue()
+    def __init__(self) -> None:
+        self._done: bool = False
+        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue()
 
     async def events(self) -> typing.AsyncGenerator[typing.Optional[SSEvent], None]:
         try:
@@ -34,16 +39,16 @@ class Emitter:
         await self._queue.put(event)
 
     @property
-    def done(self):
+    def done(self) -> bool:
         return self._done
 
 
 class Hub:
-    def __init__(self):
-        self._emitters = set()
-        self._users = {}
+    def __init__(self) -> None:
+        self._emitters: set[Emitter] = set()
+        self._users: dict[str, WebSocket] = {}
 
-    def _update_emitters(self) -> set:
+    def _update_emitters(self) -> set[Emitter]:
         done = {emitter for emitter in self._emitters if emitter.done}
         self._emitters.difference_update(done)
         return self._emitters.copy()

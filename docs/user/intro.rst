@@ -15,7 +15,7 @@ architectural style, and tries to do as little as possible while
 remaining highly effective.
 
 Falcon apps work with any WSGI server, and run like a champ under
-CPython 3.7+ and PyPy 3.7+.
+CPython 3.8+ and PyPy 3.8+.
 
 Features
 --------
@@ -35,7 +35,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic :ref:`HTTP error <errors>` responses
 - Straightforward exception handling
 - Snappy :ref:`testing <testing>` with WSGI/ASGI helpers and mocks
-- CPython 3.7+ and PyPy 3.7+ support
+- CPython 3.8+ and PyPy 3.8+ support
 
 How is Falcon different?
 ------------------------
@@ -87,7 +87,7 @@ Now, if you do make changes to Falcon itself, please consider contributing your 
 Falcon License
 --------------
 
-Copyright 2012-2017 by Rackspace Hosting, Inc. and other contributors,
+Copyright 2012-2024 by Rackspace Hosting, Inc. and other contributors,
 as noted in the individual source code files.
 
 Licensed under the Apache License, Version 2.0 (the "License");

@@ -22,6 +22,7 @@ parts
 sdist
 var
 pip-wheel-metadata
+wheelhouse
 
 # Installer logs
 pip-log.txt
@@ -33,6 +34,7 @@ pip-log.txt
 .ecosystem
 .tox
 .pytest_cache
+downloaded_files/
 geckodriver.log
 htmlcov
 nosetests.xml

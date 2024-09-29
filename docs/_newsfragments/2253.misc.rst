@@ -1,0 +1,3 @@
+The :ref:`utility functions <util>` ``create_task()`` and
+``get_running_loop()`` are now deprecated in favor of their standard library
+counterparts, :func:`asyncio.create_task` and :func:`asyncio.get_running_loop`.

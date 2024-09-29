@@ -25,26 +25,29 @@ for convenience::
 
     things = falcon.CaseInsensitiveDict()
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping
 from collections.abc import MutableMapping
-from typing import Any
-from typing import Dict
-from typing import ItemsView
-from typing import Iterable
-from typing import Iterator
-from typing import KeysView
-from typing import Optional
-from typing import Tuple
-from typing import ValuesView
+from typing import (
+    Any,
+    Dict,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Optional,
+    Tuple,
+    TYPE_CHECKING,
+    ValuesView,
+)
 
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
 # then we will need write tests and remove the "no cover" pragma.
 class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
-    """
-    A case-insensitive ``dict``-like object.
+    """A case-insensitive ``dict``-like object.
 
     Implements all methods and operations of
     ``collections.abc.MutableMapping`` as well as dict's `copy`. Also
@@ -119,8 +122,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 #   Context is, by design, a bare class, and the mapping interface may be
 #   removed in a future Falcon release.
 class Context:
-    """
-    Convenience class to hold contextual information in its attributes.
+    """Convenience class to hold contextual information in its attributes.
 
     This class is used as the default :class:`~.Request` and :class:`~Response`
     context type (see
@@ -140,6 +142,16 @@ class Context:
     >>> 'cache_strategy' in context
     True
     """
+
+    # NOTE(vytas): Define synthetic attr access methods (under TYPE_CHECKING)
+    #   merely to let mypy know this is a namespace object.
+    if TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> Any: ...
+
+        def __setattr__(self, name: str, value: Any) -> None: ...
+
+        def __delattr__(self, name: str) -> None: ...
 
     def __contains__(self, key: str) -> bool:
         return self.__dict__.__contains__(key)
@@ -203,7 +215,6 @@ class Context:
         return self.__dict__.pop(key, default)
 
     def popitem(self) -> Tuple[str, Any]:
-
         return self.__dict__.popitem()
 
     def setdefault(
@@ -248,13 +259,10 @@ class ETag(str):
             resp.status = falcon.HTTP_200
 
     (See also: RFC 7232)
-
-    Attributes:
-        is_weak (bool): ``True`` if the entity-tag is weak, otherwise ``False``.
-
     """
 
-    is_weak = False
+    is_weak: bool = False
+    """``True`` if the entity-tag is weak, otherwise ``False``."""
 
     def strong_compare(self, other: ETag) -> bool:
         """Perform a strong entity-tag comparison.

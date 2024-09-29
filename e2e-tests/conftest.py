@@ -1,4 +1,4 @@
-# Copyright 2020-2021 by Vytautas Liuolia.
+# Copyright 2020-2024 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import pytest
 import requests
 
 import falcon.testing
-
 
 HERE = pathlib.Path(__file__).resolve().parent
 INDEX = '/static/index.html'

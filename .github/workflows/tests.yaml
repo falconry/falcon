@@ -18,24 +18,30 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.10"
+          - "3.12"
+        python-dev-version:
+          - ""
         os:
           - "ubuntu-latest"
         toxenv:
           - "pep8"
-          - "blue"
-          - "pep8-examples"
           - "pep8-docstrings"
+          - "pep8-examples"
+          - "ruff"
           - "mypy"
           - "mypy_tests"
-          - "py310"
-          - "py310_sans_msgpack"
-          - "py310_cython"
+          - "py312"
+          - "py312_sans_msgpack"
+          - "py312_cython"
           - "docs"
           - "towncrier"
           - "look"
           - "asgilook"
-          - "check_vendored"
+          - "ws_tutorial"
+          # NOTE(vytas): Temporarily disabled while we are releasing a
+          #   new version of python-mimeparse, and haven't decided yet whether
+          #   to keep vendoring or reimplement.
+          # - "check_vendored"
           - "twine_check"
           - "daphne"
           - "hypercorn"
@@ -49,15 +55,9 @@ jobs:
           - python-version: pypy3.9
             os: ubuntu-latest
             toxenv: pypy3
-          - python-version: "3.7"
-            os: ubuntu-latest
-            toxenv: py37
           - python-version: "3.8"
             os: ubuntu-latest
             toxenv: py38
-          - python-version: "3.8"
-            os: ubuntu-latest
-            toxenv: py38_cython
           - python-version: "3.9"
             os: ubuntu-latest
             toxenv: py39
@@ -82,12 +82,20 @@ jobs:
           - python-version: "3.12"
             os: ubuntu-latest
             toxenv: py312_cython
-          - python-version: "3.10"
+          - python-version: "3.12"
             os: macos-latest
-            toxenv: py310_nocover
-          - python-version: "3.10"
+            toxenv: py312_nocover
+          - python-version: "3.12"
             os: windows-latest
-            toxenv: py310_nocover
+            toxenv: py312_nocover
+          - python-version: "3.13"
+            python-dev-version: "3.13.0-rc.1 - 3.13"
+            os: ubuntu-latest
+            toxenv: py313
+          - python-version: "3.13"
+            python-dev-version: "3.13.0-rc.1 - 3.13"
+            os: ubuntu-latest
+            toxenv: py313_cython
           # These env require 3.8 and 20.04, see tox.ini
           - python-version: "3.8"
             os: ubuntu-20.04
@@ -103,16 +111,23 @@ jobs:
     # Some are GitHub actions, others run shell commands.
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         # NOTE(vytas): Work around
         #   https://github.com/codecov/codecov-action/issues/190
         with:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
+        if: ${{ !matrix.python-dev-version }}
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Set up Python (pre-release)
+        uses: actions/setup-python@v5
+        if: ${{ matrix.python-dev-version }}
+        with:
+          python-version: ${{ matrix.python-dev-version }}
 
       - name: Install smoke test dependencies
         if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
@@ -133,14 +148,15 @@ jobs:
         run: tox -e ${{ matrix.toxenv }}
 
       - name: Combine coverage
-        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py312' || matrix.toxenv == 'py312_sans_msgpack' }}
         run: |
           coverage --version
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
+        uses: codecov/codecov-action@v4
+        if: ${{ matrix.toxenv == 'py312' || matrix.toxenv == 'py312_sans_msgpack' }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}

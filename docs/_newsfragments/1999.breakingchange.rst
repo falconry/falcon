@@ -1,0 +1,6 @@
+The default value of the ``csv`` parameter in
+:func:`~falcon.uri.parse_query_string` was changed to ``False``, matching the
+default behavior of other parts of the framework (such as
+:attr:`req.params <falcon.Request.params>`, the test client, etc).
+If the old behavior fits your use case better, pass the ``csv=True`` keyword
+argument explicitly.

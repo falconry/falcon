@@ -3,7 +3,7 @@
 Utilities
 =========
 
-.. contents:: :local:
+This page describes miscellaneous utilities provided by Falcon.
 
 URI
 ---
@@ -32,7 +32,11 @@ HTTP Status
 
 .. autofunction:: falcon.http_status_to_code
 .. autofunction:: falcon.code_to_http_status
-.. autofunction:: falcon.get_http_status
+
+Media types
+-----------
+
+.. autofunction:: falcon.parse_header
 
 Async
 -----
@@ -40,11 +44,19 @@ Async
 Aliases
 ~~~~~~~
 
-These functions provide simple aliases for those implemented in :any:`asyncio`, with
-fallbacks for older versions of Python.
+Falcon used to provide aliases for the below functions implemented in
+:mod:`asyncio`, with fallbacks for older versions of Python:
 
-.. autofunction:: falcon.get_running_loop
-.. autofunction:: falcon.create_task
+* ``falcon.get_running_loop()`` → :func:`asyncio.get_running_loop`
+
+* ``falcon.create_task(coro, *, name=None)``  → :func:`asyncio.create_task`
+
+However, as of Falcon 4.0+, these aliases are identical to their :mod:`asyncio`
+counterparts on all supported Python versions. (They are only kept for
+compatibility purposes.)
+
+Simply use :func:`asyncio.get_running_loop` or :func:`asyncio.create_task`
+directly in new code.
 
 Adapters
 ~~~~~~~~
@@ -72,4 +84,10 @@ Other
     :no-undoc-members:
 
 .. autoclass:: falcon.ETag
+    :members:
+
+Type Aliases
+------------
+
+.. automodule:: falcon.typing
     :members:

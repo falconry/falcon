@@ -14,12 +14,21 @@
 
 """Utilities for the Response class."""
 
+from __future__ import annotations
+
+from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
+
+from falcon._typing import RangeSetHeader
 from falcon.util import uri
-from falcon.util.misc import isascii
 from falcon.util.misc import secure_filename
 
+if TYPE_CHECKING:
+    from falcon import Response
 
-def header_property(name, doc, transform=None):
+
+def _header_property(
+    name: str, doc: str, transform: Optional[Callable[[Any], str]] = None
+) -> Any:
     """Create a header getter/setter.
 
     Args:
@@ -33,7 +42,7 @@ def header_property(name, doc, transform=None):
     """
     normalized_name = name.lower()
 
-    def fget(self):
+    def fget(self: Response) -> Optional[str]:
         try:
             return self._headers[normalized_name]
         except KeyError:
@@ -41,7 +50,7 @@ def header_property(name, doc, transform=None):
 
     if transform is None:
 
-        def fset(self, value):
+        def fset(self: Response, value: Optional[Any]) -> None:
             if value is None:
                 try:
                     del self._headers[normalized_name]
@@ -52,7 +61,7 @@ def header_property(name, doc, transform=None):
 
     else:
 
-        def fset(self, value):
+        def fset(self: Response, value: Optional[Any]) -> None:
             if value is None:
                 try:
                     del self._headers[normalized_name]
@@ -61,37 +70,35 @@ def header_property(name, doc, transform=None):
             else:
                 self._headers[normalized_name] = transform(value)
 
-    def fdel(self):
+    def fdel(self: Response) -> None:
         del self._headers[normalized_name]
 
     return property(fget, fset, fdel, doc)
 
 
-def format_range(value):
+def _format_range(value: RangeSetHeader) -> str:
     """Format a range header tuple per the HTTP spec.
 
     Args:
         value: ``tuple`` passed to `req.range`
     """
-
-    # PERF(kgriffs): % was found to be faster than str.format(),
-    # string concatenation, and str.join() in this case.
-
     if len(value) == 4:
-        result = '%s %s-%s/%s' % (value[3], value[0], value[1], value[2])
+        result = f'{value[3]} {value[0]}-{value[1]}/{value[2]}'
     else:
-        result = 'bytes %s-%s/%s' % (value[0], value[1], value[2])
+        result = f'bytes {value[0]}-{value[1]}/{value[2]}'
 
     return result
 
 
-def format_content_disposition(value, disposition_type='attachment'):
+def _format_content_disposition(
+    value: str, disposition_type: str = 'attachment'
+) -> str:
     """Format a Content-Disposition header given a filename."""
 
     # NOTE(vytas): RFC 6266, Appendix D.
     #   Include a "filename" parameter when US-ASCII ([US-ASCII]) is
     #   sufficiently expressive.
-    if isascii(value):
+    if value.isascii():
         return '%s; filename="%s"' % (disposition_type, value)
 
     # NOTE(vytas): RFC 6266, Appendix D.
@@ -112,7 +119,7 @@ def format_content_disposition(value, disposition_type='attachment'):
     )
 
 
-def format_etag_header(value):
+def _format_etag_header(value: str) -> str:
     """Format an ETag header, wrap it with " " in case of need."""
 
     if value[-1] != '"':
@@ -121,12 +128,12 @@ def format_etag_header(value):
     return value
 
 
-def format_header_value_list(iterable):
+def _format_header_value_list(iterable: Iterable[str]) -> str:
     """Join an iterable of strings with commas."""
     return ', '.join(iterable)
 
 
-def is_ascii_encodable(s):
+def _is_ascii_encodable(s: str) -> bool:
     """Check if argument encodes to ascii without error."""
     try:
         s.encode('ascii')

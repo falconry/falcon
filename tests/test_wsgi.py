@@ -1,14 +1,15 @@
 import multiprocessing
 import os
+import os.path
 import time
 from wsgiref.simple_server import make_server
 
 import pytest
-import requests
 
 import falcon
 import falcon.testing as testing
 
+_HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = 'localhost'
 _SERVER_PORT = 9800 + os.getpid() % 100  # Facilitates parallel test execution
 _SERVER_BASE_URL = 'http://{}:{}/'.format(_SERVER_HOST, _SERVER_PORT)
@@ -17,41 +18,48 @@ _SIZE_1_KB = 1024
 
 @pytest.mark.usefixtures('_setup_wsgi_server')
 class TestWSGIServer:
-    def test_get(self):
-        resp = requests.get(_SERVER_BASE_URL)
+    def test_get(self, requests_lite):
+        resp = requests_lite.get(_SERVER_BASE_URL)
         assert resp.status_code == 200
         assert resp.text == '127.0.0.1'
 
-    def test_put(self):
+    def test_get_file(self, requests_lite):
+        # NOTE(vytas): There was a breaking change in the behaviour of
+        #   ntpath.isabs() in CPython 3.13, let us verify basic file serving.
+        resp = requests_lite.get(_SERVER_BASE_URL + 'tests/test_wsgi.py')
+        assert resp.status_code == 200
+        assert 'class TestWSGIServer:' in resp.text
+
+    def test_put(self, requests_lite):
         body = '{}'
-        resp = requests.put(_SERVER_BASE_URL, data=body)
+        resp = requests_lite.put(_SERVER_BASE_URL, data=body)
         assert resp.status_code == 200
         assert resp.text == '{}'
 
-    def test_head_405(self):
+    def test_head_405(self, requests_lite):
         body = '{}'
-        resp = requests.head(_SERVER_BASE_URL, data=body)
+        resp = requests_lite.head(_SERVER_BASE_URL, data=body)
         assert resp.status_code == 405
 
-    def test_post(self):
+    def test_post(self, requests_lite):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
-        resp = requests.post(_SERVER_BASE_URL, data=body)
+        resp = requests_lite.post(_SERVER_BASE_URL, data=body)
         assert resp.status_code == 200
         assert resp.text == body
 
-    def test_post_invalid_content_length(self):
+    def test_post_invalid_content_length(self, requests_lite):
         headers = {'Content-Length': 'invalid'}
-        resp = requests.post(_SERVER_BASE_URL, headers=headers)
+        resp = requests_lite.post(_SERVER_BASE_URL, headers=headers)
         assert resp.status_code == 400
 
-    def test_post_read_bounded_stream(self):
+    def test_post_read_bounded_stream(self, requests_lite):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
-        resp = requests.post(_SERVER_BASE_URL + 'bucket', data=body)
+        resp = requests_lite.post(_SERVER_BASE_URL + 'bucket', data=body)
         assert resp.status_code == 200
         assert resp.text == body
 
-    def test_post_read_bounded_stream_no_body(self):
-        resp = requests.post(_SERVER_BASE_URL + 'bucket')
+    def test_post_read_bounded_stream_no_body(self, requests_lite):
+        resp = requests_lite.post(_SERVER_BASE_URL + 'bucket')
         assert not resp.text
 
 
@@ -91,6 +99,7 @@ def _run_server(stop_event, host, port):
     api = application = falcon.App()
     api.add_route('/', Things())
     api.add_route('/bucket', Bucket())
+    api.add_static_route('/tests', _HERE)
 
     server = make_server(host, port, application)
 
@@ -99,7 +108,7 @@ def _run_server(stop_event, host, port):
 
 
 @pytest.fixture(scope='module')
-def _setup_wsgi_server():
+def _setup_wsgi_server(requests_lite):
     stop_event = multiprocessing.Event()
     process = multiprocessing.Process(
         target=_run_server,
@@ -114,9 +123,9 @@ def _setup_wsgi_server():
     # NOTE(vytas): Give the server some time to start.
     for attempt in range(3):
         try:
-            requests.get(_SERVER_BASE_URL, timeout=1)
+            requests_lite.get(_SERVER_BASE_URL, timeout=1)
             break
-        except requests.exceptions.RequestException:
+        except OSError:
             pass
 
         time.sleep(attempt + 0.2)
@@ -129,8 +138,8 @@ def _setup_wsgi_server():
     # made it to the next server.handle_request() before we sent the
     # event.
     try:
-        requests.get(_SERVER_BASE_URL)
-    except Exception:
+        requests_lite.get(_SERVER_BASE_URL)
+    except OSError:
         pass  # Process already exited
 
     process.join()

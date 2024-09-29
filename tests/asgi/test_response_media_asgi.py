@@ -3,9 +3,15 @@ import json
 import pytest
 
 import falcon
-from falcon import errors, media, testing
+from falcon import errors
+from falcon import media
+from falcon import testing
 import falcon.asgi
-from falcon.util.deprecation import DeprecatedWarning
+
+try:
+    import msgpack
+except ImportError:
+    msgpack = None
 
 
 def create_client(resource, handlers=None):
@@ -59,7 +65,7 @@ def test_json(media_type):
         '',
         'I am a \u1d0a\ua731\u1d0f\u0274 string.',
         ['\u2665', '\u2660', '\u2666', '\u2663'],
-        {'message': '\xa1Hello Unicode! \U0001F638'},
+        {'message': '\xa1Hello Unicode! \U0001f638'},
         {
             'description': 'A collection of primitive Python type examples.',
             'bool': False is not True and True is not False,
@@ -69,7 +75,7 @@ def test_json(media_type):
             'list': ['a', 'sequence', 'of', 'items'],
             'none': None,
             'str': 'ASCII string',
-            'unicode': 'Hello Unicode! \U0001F638',
+            'unicode': 'Hello Unicode! \U0001f638',
         },
     ],
 )
@@ -87,6 +93,7 @@ def test_non_ascii_json_serialization(document):
         ('application/x-msgpack'),
     ],
 )
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 def test_msgpack(media_type):
     class TestResource:
         async def on_get(self, req, resp):
@@ -174,8 +181,7 @@ def test_default_media_type():
     assert result.json == doc
 
 
-@pytest.mark.parametrize('monkeypatch_resolver', [True, False])
-def test_mimeparse_edgecases(monkeypatch_resolver):
+def test_mimeparse_edgecases():
     doc = {'something': True}
 
     class TestResource:
@@ -197,21 +203,6 @@ def test_mimeparse_edgecases(monkeypatch_resolver):
 
     client = create_client(TestResource())
 
-    handlers = client.app.resp_options.media_handlers
-
-    # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
-    #   technically a public method, and so we make sure it still works here.
-    if monkeypatch_resolver:
-
-        def _resolve(media_type, default, raise_not_found=True):
-            with pytest.warns(DeprecatedWarning, match='This undocumented method'):
-                h = handlers.find_by_media_type(
-                    media_type, default, raise_not_found=raise_not_found
-                )
-            return h, None, None
-
-        handlers._resolve = _resolve
-
     result = client.simulate_get('/')
     assert result.json == doc
 
@@ -221,7 +212,6 @@ def run_test(test_fn):
 
     class TestResource:
         async def on_get(self, req, resp):
-
             await test_fn(resp)
 
             resp.text = None

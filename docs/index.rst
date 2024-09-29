@@ -18,8 +18,9 @@ while remaining highly effective.
 
 .. code:: python
 
-    class QuoteResource:
+    import falcon
 
+    class QuoteResource:
         def on_get(self, req, resp):
             """Handles GET requests"""
             quote = {
@@ -35,6 +36,8 @@ while remaining highly effective.
 
     app = falcon.App()
     app.add_route('/quote', QuoteResource())
+
+For a fully working example, check out the :ref:`quickstart`.
 
 Quick Links
 -----------
@@ -90,7 +93,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic :ref:`HTTP error <errors>` responses
 - Straightforward exception handling
 - Snappy :ref:`testing <testing>` with WSGI/ASGI helpers and mocks
-- CPython 3.7+ and PyPy 3.7+ support
+- CPython 3.8+ and PyPy 3.8+ support
 
 Who's Using Falcon?
 -------------------
@@ -124,7 +127,7 @@ Documentation
    :maxdepth: 3
 
    user/index
-   deploy/index
    community/index
    api/index
    changes/index
+   deploy/index

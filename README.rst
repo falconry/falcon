@@ -1,14 +1,10 @@
-.. raw:: html
+.. image:: https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg
+   :align: center
+   :alt: Falcon logo
+   :target: https://falconframework.org/
+   :width: 100 %
 
-    <a href="https://falconframework.org" target="_blank">
-    <img
-        src="https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg"
-        alt="Falcon web framework logo"
-        style="width:100%"
-    >
-    </a>
-
-|Build Status| |Docs| |codecov.io| |Blue|
+|Build Status| |Docs| |codecov.io|
 
 The Falcon Web Framework
 ========================
@@ -23,7 +19,7 @@ clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
-champ under CPython 3.7+ and PyPy 3.7+.
+champ under CPython 3.8+ and PyPy 3.8+.
 
 Quick Links
 -----------
@@ -79,7 +75,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic HTTP error responses
 - Straightforward exception handling
 - Snappy testing with WSGI/ASGI helpers and mocks
-- CPython 3.7+ and PyPy 3.7+ support
+- CPython 3.8+ and PyPy 3.8+ support
 
 .. Patron list starts here. For Python package, we substitute this section with:
    Support Falcon Development
@@ -88,31 +84,12 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-.. raw:: html
+|Backer:GovCert| |Backer:Sentry|
 
-    <p>
-    <a href="https://www.govcert.lu/" target="_blank"><img src="https://falconframework.org/assets/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
-     </p>
-
-    <p>
-        <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/assets/rabota.jpg" height="30" alt="Examination RU" style="margin-right: 10px"></a>
-
-        <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/assets/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
-
-        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/algolia.svg" height="30" alt="Algolia"></a>
-
-        <a href="https://www.salesforce.com" target="_blank"><img src="https://falconframework.org/assets/salesforce.svg" height="30" alt="Salesforce"></a>
-    </p>
-
-    <p>
-        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/misaka.svg" height="30" alt="Misaka Network"></a>
-        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/likalo.png" height="30" alt="Likalo"></a>
-    </p>
-
-.. Patron list ends here (see the comment above this section).
-
-Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
-prioritized support.
+Has Falcon helped you make an awesome app? Show your support today with a
+one-time donation or by becoming a patron.
+Supporters get cool gear, an opportunity to promote their brand to Python
+developers, and prioritized support.
 
 * `Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
 
@@ -210,7 +187,7 @@ PyPy
 ^^^^
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.7+ is supported as of PyPy v7.3.4+.
+PyPy3.8+ is supported as of PyPy v7.3.7+.
 
 .. code:: bash
 
@@ -226,7 +203,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.7+.
+`CPython <https://www.python.org/downloads/>`__ 3.8+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
@@ -240,63 +217,21 @@ Or, to install the latest beta or release candidate, if any:
 
     $ pip install --pre falcon
 
-In order to provide an extra speed boost, Falcon can compile itself with
-Cython. Wheels containing pre-compiled binaries are available from PyPI for
-several common platforms. However, if a wheel for your platform of choice is not
-available, you can install the source distribution. The installation process
-will automatically try to cythonize Falcon for your environment, falling back to
-a normal pure-Python install if any issues are encountered during the
-cythonization step:
+In order to provide an extra speed boost, Falcon automatically compiles itself
+with `Cython <https://cython.org/>`__ under any
+`PEP 517 <https://peps.python.org/pep-0517/>`__\-compliant installer.
 
-.. code:: bash
-
-    $ pip install --no-binary :all: falcon
-
-If you want to verify that Cython is being invoked, simply
-pass the verbose flag `-v` to pip in order to echo the compilation commands.
-
-The cythonization step is only active when using the ``CPython`` Python
-implementation, so installing using ``PyPy`` will skip it.
-If you want to skip Cython compilation step and install
-the pure-Python version directly you can set the environment variable
-``FALCON_DISABLE_CYTHON`` to a non empty value before install:
-
-.. code:: bash
-
-    $ FALCON_DISABLE_CYTHON=Y pip install -v --no-binary :all: falcon
-
-Please note that ``pip>=10`` is required to be able to install Falcon from
-source.
-
-**Installing on OS X**
-
-Xcode Command Line Tools are required to compile Cython. Install them
-with this command:
-
-.. code:: bash
-
-    $ xcode-select --install
-
-The Clang compiler treats unrecognized command-line options as
-errors, for example:
-
-.. code:: bash
-
-    clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
-
-You might also see warnings about unused functions. You can work around
-these issues by setting additional Clang C compiler flags as follows:
-
-.. code:: bash
-
-    $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
+For your convenience, wheels containing pre-compiled binaries are available
+from PyPI for the majority of common platforms. Even if a binary build for your
+platform of choice is not available, ``pip`` will pick a pure-Python wheel.
+You can also cythonize Falcon for your environment; see our
+`Installation docs <https://falcon.readthedocs.io/en/stable/user/install.html>`__
+for more information on this and other advanced options.
 
 Dependencies
 ^^^^^^^^^^^^
 
-Falcon does not require the installation of any other packages, although if
-Cython has been installed into the environment, it will be used to optimize
-the framework as explained above.
+Falcon does not require the installation of any other packages.
 
 WSGI Server
 -----------
@@ -638,7 +573,7 @@ Note that this example assumes that the
                 msg = ('The size of the request is too large. The body must not '
                        'exceed ' + str(limit) + ' bytes in length.')
 
-                raise falcon.HTTPPayloadTooLarge(
+                raise falcon.HTTPContentTooLarge(
                     title='Request body is too large', description=msg)
 
         return hook
@@ -895,7 +830,7 @@ Here's the ASGI version of the app from above. Note that it uses the
                 msg = ('The size of the request is too large. The body must not '
                        'exceed ' + str(limit) + ' bytes in length.')
 
-                raise falcon.HTTPPayloadTooLarge(
+                raise falcon.HTTPContentTooLarge(
                     title='Request body is too large', description=msg)
 
         return hook
@@ -991,7 +926,8 @@ we invite you to take a look at the issues listed under our
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
 
-Please note that all contributors and maintainers of this project are subject to our `Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
+Please note that all contributors and maintainers of this project are subject to our
+`Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
 
 Before submitting a pull request, please ensure you have added/updated
 the appropriate tests (and that all existing tests still pass with your
@@ -1027,7 +963,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2023 by Individual and corporate contributors as
+Copyright 2013-2024 by Individual and corporate contributors as
 noted in the individual source files.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -1043,12 +979,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
-    :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
+    :target: https://falcon.readthedocs.io/en/stable/?badge=stable
 .. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
-   :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
+    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
-   :target: http://codecov.io/gh/falconry/falcon
-.. |Blue| image:: https://img.shields.io/badge/code%20style-blue-blue.svg
-    :target: https://blue.readthedocs.io/
-    :alt: code style: blue
+    :target: http://codecov.io/gh/falconry/falcon
+.. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
+    :alt: CERT Gouvernemental Luxembourg
+    :height: 60px
+    :target: https://www.govcert.lu/
+.. |Backer:Sentry| image:: https://falconframework.org/assets/sentry-dark.svg
+    :alt: Sentry
+    :height: 60px
+    :target: https://sentry.io

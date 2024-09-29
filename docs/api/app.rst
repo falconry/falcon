@@ -3,10 +3,6 @@
 The App Class
 =============
 
-* `WSGI App`_
-* `ASGI App`_
-* `Options`_
-
 Falcon supports both the WSGI (:class:`falcon.App`) and
 ASGI (:class:`falcon.asgi.App`) protocols. This is done
 by instantiating the respective ``App`` class to create a
@@ -48,4 +44,4 @@ Options
 
 .. _compiled_router_options:
 .. autoclass:: falcon.routing.CompiledRouterOptions
-    :noindex:
+    :members:

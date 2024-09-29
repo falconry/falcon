@@ -1,0 +1,10 @@
+Customizing
+:attr:`MultipartParseOptions.media_handlers
+<falcon.media.multipart.MultipartParseOptions.media_handlers>` could previously
+lead to unintentionally modifying a shared class variable.
+This has been fixed, and the
+:attr:`~falcon.media.multipart.MultipartParseOptions.media_handlers` attribute
+is now initialized to a fresh copy of handlers for every instance of
+:class:`~falcon.media.multipart.MultipartParseOptions`. To that end, a proper
+:meth:`~falcon.media.Handlers.copy` method has been implemented for the media
+:class:`~falcon.media.Handlers` class.

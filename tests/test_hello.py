@@ -71,7 +71,6 @@ class HelloResource:
 
 
 class ClosingBytesIO(io.BytesIO):
-
     close_called = False
 
     def close(self):
@@ -79,10 +78,16 @@ class ClosingBytesIO(io.BytesIO):
         self.close_called = True
 
 
-class NonClosingBytesIO(io.BytesIO):
-
+# NOTE(vytas): Do not inherit from BytesIO but encapsulate instead, as on
+#   CPython 3.13 garbage-collecting a BytesIO instance with an invalid .close()
+#   sometimes bubbles up a warning about exception when trying to call it.
+class NonClosingBytesIO:
     # Not callable; test that CloseableStreamIterator ignores it
-    close = False  # type: ignore
+    close = False
+
+    def __init__(self, data=b''):
+        self._stream = io.BytesIO(data)
+        self.read = self._stream.read
 
 
 class ClosingFilelikeHelloResource:

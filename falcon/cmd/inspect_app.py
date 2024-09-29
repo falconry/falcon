@@ -12,9 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Script that prints out the routes of an App instance.
-"""
+"""Script that prints out the routes of an App instance."""
+
 import argparse
 import importlib
 import os
@@ -59,7 +58,6 @@ def make_parser():
 
 
 def load_app(parser, args):
-
     try:
         module, instance = args.app_module.split(':', 1)
     except ValueError:
@@ -86,12 +84,13 @@ def load_app(parser, args):
     return app
 
 
+# TODO(vytas): Remove this placeholder altogether in Falcon 5.0.
 def route_main():
-    print(
-        'The "falcon-print-routes" command is deprecated. '
-        'Please use "falcon-inspect-app"'
+    sys.stderr.write(
+        'The "falcon-print-routes" command is no longer supported. \n\n'
+        'Please use "falcon-inspect-app" instead.\n\n'
     )
-    main()
+    sys.exit(2)
 
 
 def main():

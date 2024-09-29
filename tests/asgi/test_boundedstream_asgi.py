@@ -3,7 +3,8 @@ import os
 import pytest
 
 import falcon
-from falcon import asgi, testing
+from falcon import asgi
+from falcon import testing
 
 
 @pytest.mark.parametrize(
@@ -11,9 +12,9 @@ from falcon import asgi, testing
     [
         b'',
         b'\x00',
-        b'\x00\xFF',
+        b'\x00\xff',
         b'catsup',
-        b'\xDE\xAD\xBE\xEF' * 512,
+        b'\xde\xad\xbe\xef' * 512,
         testing.rand_string(1, 2048),
         os.urandom(100 * 2**20),
     ],
@@ -21,6 +22,7 @@ from falcon import asgi, testing
 )
 @pytest.mark.parametrize('extra_body', [True, False])
 @pytest.mark.parametrize('set_content_length', [True, False])
+@pytest.mark.slow
 def test_read_all(body, extra_body, set_content_length):
     if extra_body and not set_content_length:
         pytest.skip(
@@ -164,7 +166,6 @@ def test_filelike():
     falcon.async_to_sync(test_iteration)
 
 
-@falcon.runs_sync
 async def test_iterate_streaming_request():
     events = iter(
         (
@@ -193,9 +194,9 @@ async def test_iterate_streaming_request():
     [
         b'',
         b'\x00',
-        b'\x00\xFF',
+        b'\x00\xff',
         b'catsup',
-        b'\xDE\xAD\xBE\xEF' * 512,
+        b'\xde\xad\xbe\xef' * 512,
         testing.rand_string(1, 2048).encode(),
     ],
     ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random'],
@@ -272,7 +273,6 @@ def test_exhaust_with_disconnect():
     falcon.async_to_sync(t)
 
 
-@falcon.runs_sync
 async def test_exhaust():
     emitter = testing.ASGIRequestEventEmitter(b'123456798' * 1024)
     stream = asgi.BoundedStream(emitter)

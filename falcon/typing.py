@@ -1,4 +1,4 @@
-# Copyright 2021-2023 by Vytautas Liuolia.
+# Copyright 2024 by Federico Caselli
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,26 +11,35 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module that defines public Falcon type definitions."""
 
-"""Shorthand definitions for more complex types."""
+from __future__ import annotations
 
-from typing import Any, Callable, Pattern, Union
+from typing import AsyncIterator, Dict, Optional, Protocol, TYPE_CHECKING
 
-from falcon.request import Request
-from falcon.response import Response
+if TYPE_CHECKING:
+    from falcon.asgi import SSEvent
+
+Headers = Dict[str, str]
+"""Headers dictionary returned by the framework."""
 
 
-# Error handlers
-ErrorHandler = Callable[[Request, Response, BaseException, dict], Any]
+# WSGI
+class ReadableIO(Protocol):
+    """File like protocol that defines only a read method."""
 
-# Error serializers
-ErrorSerializer = Callable[[Request, Response, BaseException], Any]
+    def read(self, n: Optional[int] = ..., /) -> bytes: ...
 
-# Sinks
-SinkPrefix = Union[str, Pattern]
 
-# TODO(vytas): Is it possible to specify a Callable or a Protocol that defines
-#   type hints for the two first parameters, but accepts any number of keyword
-#   arguments afterwords?
-# class SinkCallable(Protocol):
-#     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
+# ASGI
+class AsyncReadableIO(Protocol):
+    """Async file-like protocol that defines only a read method, and is iterable."""
+
+    async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    def __aiter__(self) -> AsyncIterator[bytes]: ...
+
+
+SSEEmitter = AsyncIterator[Optional['SSEvent']]
+"""Async generator or iterator over Server-Sent Events
+(instances of :class:`falcon.asgi.SSEvent`).
+"""

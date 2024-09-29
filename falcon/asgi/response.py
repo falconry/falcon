@@ -14,14 +14,30 @@
 
 """ASGI Response class."""
 
+from __future__ import annotations
+
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
+from typing import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from falcon import response
-from falcon.constants import _UNSET
-from falcon.util.misc import _encode_items_to_latin1, is_python_func
+from falcon._typing import _UNSET
+from falcon._typing import ResponseCallbacks
+from falcon.typing import AsyncReadableIO
+from falcon.typing import SSEEmitter
+from falcon.util.misc import _encode_items_to_latin1
+from falcon.util.misc import is_python_func
 
-__all__ = ['Response']
+__all__ = ('Response',)
 
 
 class Response(response.Response):
@@ -32,184 +48,109 @@ class Response(response.Response):
 
     Keyword Arguments:
         options (dict): Set of global options passed from the App handler.
-
-    Attributes:
-        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
-            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
-            status line string or byte string (e.g., ``'200 OK'``), or an
-            ``int``.
-
-            Note:
-                The Falcon framework itself provides a number of constants for
-                common status codes. They all start with the ``HTTP_`` prefix,
-                as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
-
-        status_code (int): HTTP status code normalized from :attr:`status`.
-            When a code is assigned to this property, :attr:`status` is updated,
-            and vice-versa. The status code can be useful when needing to check
-            in middleware for codes that fall into a certain class, e.g.::
-
-                if resp.status_code >= 400:
-                    log.warning(f'returning error response: {resp.status_code}')
-
-        media (object): A serializable object supported by the media handlers
-            configured via :class:`falcon.RequestOptions`.
-
-            Note:
-                See also :ref:`media` for more information regarding media
-                handling.
-
-        text (str): String representing response content.
-
-            Note:
-                Falcon will encode the given text as UTF-8
-                in the response. If the content is already a byte string,
-                use the :attr:`data` attribute instead (it's faster).
-
-        data (bytes): Byte string representing response content.
-
-            Use this attribute in lieu of `text` when your content is
-            already a byte string (of type ``bytes``).
-
-            Warning:
-                Always use the `text` attribute for text, or encode it
-                first to ``bytes`` when using the `data` attribute, to
-                ensure Unicode characters are properly encoded in the
-                HTTP response.
-
-        stream: An async iterator or generator that yields a series of
-            byte strings that will be streamed to the ASGI server as a
-            series of "http.response.body" events. Falcon will assume the
-            body is complete when the iterable is exhausted or as soon as it
-            yields ``None`` rather than an instance of ``bytes``::
-
-                async def producer():
-                    while True:
-                        data_chunk = await read_data()
-                        if not data_chunk:
-                            break
-
-                        yield data_chunk
-
-                resp.stream = producer
-
-            Alternatively, a file-like object may be used as long as it
-            implements an awaitable ``read()`` method::
-
-                resp.stream = await aiofiles.open('resp_data.bin', 'rb')
-
-            If the object assigned to :py:attr:`~.stream` holds any resources
-            (such as a file handle) that must be explicitly released, the
-            object must implement a ``close()`` method. The ``close()`` method
-            will be called after exhausting the iterable or file-like object.
-
-            Note:
-                In order to be compatible with Python 3.7+ and PEP 479,
-                async iterators must return ``None`` instead of raising
-                :py:class:`StopIteration`. This requirement does not
-                apply to async generators (PEP 525).
-
-            Note:
-                If the stream length is known in advance, you may wish to
-                also set the Content-Length header on the response.
-
-        sse (coroutine): A Server-Sent Event (SSE) emitter, implemented as
-            an async iterator or generator that yields a series of
-            of :py:class:`falcon.asgi.SSEvent` instances. Each event will be
-            serialized and sent to the client as HTML5 Server-Sent Events::
-
-                async def emitter():
-                    while True:
-                        some_event = await get_next_event()
-
-                        if not some_event:
-                            # Send an event consisting of a single "ping"
-                            #   comment to keep the connection alive.
-                            yield SSEvent()
-
-                            # Alternatively, one can simply yield None and
-                            #   a "ping" will also be sent as above.
-
-                            # yield
-
-                            continue
-
-                        yield SSEvent(json=some_event, retry=5000)
-
-                        # ...or
-
-                        yield SSEvent(data=b'something', event_id=some_id)
-
-                        # Alternatively, you may yield anything that implements
-                        #   a serialize() method that returns a byte string
-                        #   conforming to the SSE event stream format.
-
-                        # yield some_event
-
-                resp.sse = emitter()
-
-            Note:
-                When the `sse` property is set, it supersedes both the
-                `text` and `data` properties.
-
-            Note:
-                When hosting an app that emits Server-Sent Events, the web
-                server should be set with a relatively long keep-alive TTL to
-                minimize the overhead of connection renegotiations.
-
-        context (object): Empty object to hold any data (in its attributes)
-            about the response which is specific to your app (e.g. session
-            object). Falcon itself will not interact with this attribute after
-            it has been initialized.
-
-            Note:
-                The preferred way to pass response-specific data, when using the
-                default context type, is to set attributes directly on the
-                `context` object. For example::
-
-                    resp.context.cache_strategy = 'lru'
-
-        context_type (class): Class variable that determines the factory or
-            type to use for initializing the `context` attribute. By default,
-            the framework will instantiate bare objects (instances of the bare
-            :class:`falcon.Context` class). However, you may override this
-            behavior by creating a custom child class of
-            :class:`falcon.asgi.Response`, and then passing that new class
-            to ``falcon.App()`` by way of the latter's `response_type`
-            parameter.
-
-            Note:
-                When overriding `context_type` with a factory function (as
-                opposed to a class), the function is called like a method of
-                the current Response instance. Therefore the first argument is
-                the Response instance itself (self).
-
-        options (dict): Set of global options passed in from the App handler.
-
-        headers (dict): Copy of all headers set for the response,
-            sans cookies. Note that a new copy is created and returned each
-            time this property is referenced.
-
-        complete (bool): Set to ``True`` from within a middleware method to
-            signal to the framework that request processing should be
-            short-circuited (see also :ref:`Middleware <middleware>`).
     """
 
     # PERF(kgriffs): These will be shadowed when set on an instance; let's
     #   us avoid having to implement __init__ and incur the overhead of
     #   an additional function call.
-    _sse = None
-    _registered_callbacks = None
+    _sse: Optional[SSEEmitter] = None
+    _registered_callbacks: Optional[List[ResponseCallbacks]] = None
+
+    stream: Union[AsyncReadableIO, AsyncIterator[bytes], None]  # type: ignore[assignment]
+    """An async iterator or generator that yields a series of
+    byte strings that will be streamed to the ASGI server as a
+    series of "http.response.body" events. Falcon will assume the
+    body is complete when the iterable is exhausted or as soon as it
+    yields ``None`` rather than an instance of ``bytes``::
+
+        async def producer():
+            while True:
+                data_chunk = await read_data()
+                if not data_chunk:
+                    break
+
+                yield data_chunk
+
+        resp.stream = producer
+
+    Alternatively, a file-like object may be used as long as it
+    implements an awaitable ``read()`` method::
+
+        resp.stream = await aiofiles.open('resp_data.bin', 'rb')
+
+    If the object assigned to :attr:`~.stream` holds any resources
+    (such as a file handle) that must be explicitly released, the
+    object must implement a ``close()`` method. The ``close()`` method
+    will be called after exhausting the iterable or file-like object.
+
+    Note:
+        In order to be compatible with Python 3.7+ and PEP 479,
+        async iterators must return ``None`` instead of raising
+        :class:`StopIteration`. This requirement does not
+        apply to async generators (PEP 525).
+
+    Note:
+        If the stream length is known in advance, you may wish to
+        also set the Content-Length header on the response.
+    """
 
     @property
-    def sse(self):
+    def sse(self) -> Optional[SSEEmitter]:
+        """A Server-Sent Event (SSE) emitter, implemented as
+        an async iterator or generator that yields a series of
+        of :class:`falcon.asgi.SSEvent` instances. Each event will be
+        serialized and sent to the client as HTML5 Server-Sent Events::
+
+            async def emitter():
+                while True:
+                    some_event = await get_next_event()
+
+                    if not some_event:
+                        # Send an event consisting of a single "ping"
+                        #   comment to keep the connection alive.
+                        yield SSEvent()
+
+                        # Alternatively, one can simply yield None and
+                        #   a "ping" will also be sent as above.
+
+                        # yield
+
+                        continue
+
+                    yield SSEvent(json=some_event, retry=5000)
+
+                    # ...or
+
+                    yield SSEvent(data=b'something', event_id=some_id)
+
+                    # Alternatively, you may yield anything that implements
+                    #   a serialize() method that returns a byte string
+                    #   conforming to the SSE event stream format.
+
+                    # yield some_event
+
+            resp.sse = emitter()
+
+        Note:
+            When the `sse` property is set, it supersedes both the
+            `text` and `data` properties.
+
+        Note:
+            When hosting an app that emits Server-Sent Events, the web
+            server should be set with a relatively long keep-alive TTL to
+            minimize the overhead of connection renegotiations.
+        """  # noqa: D400 D205
         return self._sse
 
     @sse.setter
-    def sse(self, value):
+    def sse(self, value: Optional[SSEEmitter]) -> None:
         self._sse = value
 
-    def set_stream(self, stream, content_length):
+    def set_stream(
+        self,
+        stream: Union[AsyncReadableIO, AsyncIterator[bytes]],  # type: ignore[override]
+        content_length: int,
+    ) -> None:
         """Set both `stream` and `content_length`.
 
         Although the :attr:`~falcon.asgi.Response.stream` and
@@ -240,7 +181,7 @@ class Response(response.Response):
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    async def render_body(self):
+    async def render_body(self) -> Optional[bytes]:  # type: ignore[override]
         """Get the raw bytestring content for the response body.
 
         This coroutine can be awaited to get the raw data for the
@@ -260,12 +201,13 @@ class Response(response.Response):
 
         # NOTE(vytas): The code below is also inlined in asgi.App.__call__.
 
+        data: Optional[bytes]
         text = self.text
         if text is None:
             data = self._data
 
             if data is None and self._media is not None:
-                # NOTE(kgriffs): We use a special _UNSET singleton since
+                # NOTE(kgriffs): We use a special MISSING singleton since
                 #   None is ambiguous (the media handler might return None).
                 if self._media_rendered is _UNSET:
                     if not self.content_type:
@@ -289,11 +231,11 @@ class Response(response.Response):
                 data = text.encode()
             except AttributeError:
                 # NOTE(kgriffs): Assume it was a bytes object already
-                data = text
+                data = text  # type: ignore[assignment]
 
         return data
 
-    def schedule(self, callback):
+    def schedule(self, callback: Callable[[], Awaitable[None]]) -> None:
         """Schedule an async callback to run soon after sending the HTTP response.
 
         This method can be used to execute a background job after the response
@@ -340,14 +282,14 @@ class Response(response.Response):
             #   by tests running in a Cython environment, but we can't
             #   detect it with the coverage tool.
 
-        rc = (callback, True)
+        rc: Tuple[Callable[[], Awaitable[None]], Literal[True]] = (callback, True)
 
         if not self._registered_callbacks:
             self._registered_callbacks = [rc]
         else:
             self._registered_callbacks.append(rc)
 
-    def schedule_sync(self, callback):
+    def schedule_sync(self, callback: Callable[[], None]) -> None:
         """Schedule a synchronous callback to run soon after sending the HTTP response.
 
         This method can be used to execute a background job after the
@@ -386,7 +328,7 @@ class Response(response.Response):
                 callable. The callback will be called without arguments.
         """
 
-        rc = (callback, False)
+        rc: Tuple[Callable[[], None], Literal[False]] = (callback, False)
 
         if not self._registered_callbacks:
             self._registered_callbacks = [rc]
@@ -397,7 +339,9 @@ class Response(response.Response):
     # Helper methods
     # ------------------------------------------------------------------------
 
-    def _asgi_headers(self, media_type=None):
+    def _asgi_headers(
+        self, media_type: Optional[str] = None
+    ) -> List[Tuple[bytes, bytes]]:
         """Convert headers into the format expected by ASGI servers.
 
         Header names must be lowercased and both name and value must be

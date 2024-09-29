@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Vytautas Liuolia.
+# Copyright 2019-2024 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,14 +13,12 @@
 # limitations under the License.
 
 """Buffered stream reader."""
+
 from __future__ import annotations
 
 import functools
 import io
-from typing import Callable
-from typing import IO
-from typing import List
-from typing import Optional
+from typing import Callable, IO, List, Optional
 
 from falcon.errors import DelimiterError
 
@@ -122,7 +120,7 @@ class BufferedReader:
             return max_size
         return size
 
-    def read(self, size: int = -1) -> bytes:
+    def read(self, size: Optional[int] = -1) -> bytes:
         return self._read(self._normalize_size(size))
 
     def _read(self, size: int) -> bytes:
@@ -189,7 +187,6 @@ class BufferedReader:
         next_chunk: Optional[bytes] = None,
         next_chunk_len: int = 0,
     ) -> bytes:
-
         if delimiter_pos < 0 and delimiter is not None:
             delimiter_pos = self._buffer.find(delimiter, self._buffer_pos)
 

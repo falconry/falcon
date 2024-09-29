@@ -3,15 +3,22 @@ import math
 import string
 import uuid
 
-from _util import as_params
 import pytest
 
 from falcon.routing import converters
 
-
 _TEST_UUID = uuid.uuid4()
 _TEST_UUID_STR = str(_TEST_UUID)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
+
+
+def _as_params(*values, prefix=''):
+    # NOTE(caselit): each value must be a tuple/list even when using one
+    #   single argument
+    return [
+        pytest.param(*value, id=f'{prefix}_{i}' if prefix else f'{i}')
+        for i, value in enumerate(values, 1)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -151,7 +158,7 @@ def test_datetime_converter_default_format():
 
 @pytest.mark.parametrize(
     'value, expected',
-    as_params(
+    _as_params(
         (_TEST_UUID_STR, _TEST_UUID),
         (_TEST_UUID_STR.replace('-', '', 1), _TEST_UUID),
         (_TEST_UUID_STR_SANS_HYPHENS, _TEST_UUID),

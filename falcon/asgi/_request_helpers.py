@@ -11,9 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
+from typing import Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from falcon.asgi import Request
 
 
-def header_property(header_name):
+def _header_property(header_name: str) -> Any:
     """Create a read-only header property.
 
     Args:
@@ -25,14 +31,14 @@ def header_property(header_name):
 
     """
 
-    header_name = header_name.lower().encode()
+    header_bytes = header_name.lower().encode()
 
-    def fget(self):
+    def fget(self: Request) -> Optional[str]:
         try:
             # NOTE(vytas): Supporting ISO-8859-1 for historical reasons as per
             #   RFC 7230, Section 3.2.4; and to strive for maximum
             #   compatibility with WSGI.
-            return self._asgi_headers[header_name].decode('latin1') or None
+            return self._asgi_headers[header_bytes].decode('latin1') or None
         except KeyError:
             return None
 

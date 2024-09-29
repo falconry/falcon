@@ -17,12 +17,11 @@
 This module provides decorators to mark functions and classes as deprecated.
 """
 
-import functools
-from typing import Any
-from typing import Callable
-from typing import Optional
-import warnings
+from __future__ import annotations
 
+import functools
+from typing import Any, Callable, Optional
+import warnings
 
 __all__ = (
     'AttributeRemovedError',
@@ -66,7 +65,6 @@ def deprecated(
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[[Callable[..., Any]], Any]:
-
         object_name = 'property' if is_property else 'function'
         post_name = '' if is_property else '(...)'
         message = 'Call to deprecated {} {}{}. {}'.format(
