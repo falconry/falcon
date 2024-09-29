@@ -4,10 +4,10 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The first alpha release of Falcon 4.0.0 is here!
+The alpha release of Falcon 4.0.0 is here!
 
 We would really appreciate if you could help with early testing on your code!
-You can grab this release from PyPI (``pip install falcon==4.0.0a1``),
+You can grab this release from PyPI (``pip install falcon==4.0.0a2``),
 and :ref:`let us know how it went <chat>`!
 
 Although we are still in the process of polishing the last items from the

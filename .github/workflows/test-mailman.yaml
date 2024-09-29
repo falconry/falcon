@@ -1,4 +1,5 @@
-name: Run tests (GNU Mailman 3)
+# Test that the current dev branch does not break GNU Mailman 3.
+name: test-mailman
 
 on:
   # Trigger the workflow on master but also allow it to run manually.
