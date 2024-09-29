@@ -1,4 +1,4 @@
 The default error serializer will now use the response media handlers
-to better negotiate the response format with the client.
+to better negotiate the response serialization with the client.
 The implementation still default to JSON in case a client does not specify
 any preference.

@@ -4,6 +4,7 @@ import falcon
 from falcon import App
 from falcon import status_codes
 from falcon import testing
+from falcon.util.sync import async_to_sync
 
 
 class CustomCookies:
@@ -101,6 +102,32 @@ def test_simulate_request_content_type():
         app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML
     )
     assert result.text == falcon.MEDIA_JSON
+
+
+@pytest.mark.parametrize('mode', ['wsgi', 'asgi', 'asgi-stream'])
+def test_content_type(util, mode):
+    class Responder:
+        def on_get(self, req, resp):
+            resp.content_type = req.content_type
+
+    app = util.create_app('asgi' in mode)
+    app.add_route('/', Responder())
+
+    if 'stream' in mode:
+
+        async def go():
+            async with testing.ASGIConductor(app) as ac:
+                async with ac.simulate_get_stream(
+                    '/', content_type='my-content-type'
+                ) as r:
+                    assert r.content_type == 'my-content-type'
+            return 1
+
+        assert async_to_sync(go) == 1
+    else:
+        client = testing.TestClient(app)
+        res = client.simulate_get('/', content_type='foo-content')
+        assert res.content_type == 'foo-content'
 
 
 @pytest.mark.parametrize('cookies', [{'foo': 'bar', 'baz': 'foo'}, CustomCookies()])
