@@ -43,6 +43,40 @@ def test_parse_header(value, expected):
     assert mediatypes.parse_header(value) == expected
 
 
+def test_media_type_private_cls():
+    mt1 = mediatypes._MediaType.parse('image/png')
+    assert mt1.main_type == 'image'
+    assert mt1.subtype == 'png'
+    assert mt1.params == {}
+    assert repr(mt1) == 'MediaType<image/png; {}>'
+
+    mt2 = mediatypes._MediaType.parse('text/plain; charset=latin-1')
+    assert mt2.main_type == 'text'
+    assert mt2.subtype == 'plain'
+    assert mt2.params == {'charset': 'latin-1'}
+
+
+def test_media_range_private_cls():
+    mr1 = mediatypes._MediaRange.parse('image/png')
+    assert mr1.main_type == 'image'
+    assert mr1.subtype == 'png'
+    assert mr1.quality == 1.0
+    assert mr1.params == {}
+    assert repr(mr1) == 'MediaRange<image/png; q=1.0; {}>'
+
+    mr2 = mediatypes._MediaRange.parse('text/plain; charset=latin-1; Q=0.9')
+    assert mr2.main_type == 'text'
+    assert mr2.subtype == 'plain'
+    assert pytest.approx(mr2.quality) == 0.9
+    assert mr2.params == {'charset': 'latin-1'}
+
+    mr3 = mediatypes._MediaRange.parse('*; q=0.7')
+    assert mr3.main_type == '*'
+    assert mr3.subtype == '*'
+    assert pytest.approx(mr3.quality) == 0.7
+    assert mr3.params == {}
+
+
 _RFC_7231_EXAMPLE_ACCEPT = (
     'text/*;q=0.3, text/html;q=0.7, text/html;level=1, '
     'text/html;level=2;q=0.4, */*;q=0.5'
@@ -75,7 +109,7 @@ _RFC_EXAMPLES = list(
         ((accept,) + media_type_quality for media_type_quality in example_values)
         for accept, example_values in (
             (_RFC_7231_EXAMPLE_ACCEPT, _RFC_7231_EXAMPLE_VALUES),
-            (_RFC_9110_EXAMPLE_ACCEPT, _RFC_7231_EXAMPLE_VALUES),
+            (_RFC_9110_EXAMPLE_ACCEPT, _RFC_9110_EXAMPLE_VALUES),
         )
     )
 )

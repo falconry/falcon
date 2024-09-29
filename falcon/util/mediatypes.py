@@ -91,32 +91,7 @@ def parse_header(line: str) -> Tuple[str, Dict[str, str]]:
     return _parse_header_old_stdlib(line)
 
 
-class _MediaType:
-    main_type: str
-    subtype: str
-    params: dict
-
-    __slots__ = ('main_type', 'subtype', 'params')
-
-    def __init__(self, main_type: str, subtype: str, params: dict) -> None:
-        self.main_type = main_type
-        self.subtype = subtype
-        self.params = params
-
-    def __repr__(self) -> str:
-        return f'MediaType<{self.main_type}/{self.subtype}; {self.params}>'
-
-
-class _MediaRange(tuple):
-    @classmethod
-    def parse(cls, media_range):
-        pass
-
-    def match_score(self, media_type):
-        pass
-
-
-def _parse_media_type(media_type: str) -> _MediaType:
+def _parse_media_type_header(media_type: str) -> Tuple[str, str, dict]:
     full_type, params = parse_header(media_type)
 
     # TODO(vytas): Workaround from python-mimeparse by J. Gregorio et al.
@@ -130,11 +105,108 @@ def _parse_media_type(media_type: str) -> _MediaType:
     if not separator:
         raise ValueError('invalid media type')
 
-    return _MediaType(main_type.strip(), subtype.strip(), params)
+    return (main_type.strip(), subtype.strip(), params)
+
+
+# TODO(vytas): Should we make these structures public?
+class _MediaType:
+    main_type: str
+    subtype: str
+    params: dict
+
+    __slots__ = ('main_type', 'subtype', 'params')
+
+    @classmethod
+    def parse(cls, media_type: str) -> _MediaType:
+        return cls(*_parse_media_type_header(media_type))
+
+    def __init__(self, main_type: str, subtype: str, params: dict) -> None:
+        self.main_type = main_type
+        self.subtype = subtype
+        self.params = params
+
+    def __repr__(self) -> str:
+        return f'MediaType<{self.main_type}/{self.subtype}; {self.params}>'
+
+
+class _MediaRange:
+    main_type: str
+    subtype: str
+    quality: float
+    params: dict
+
+    __slots__ = ('main_type', 'subtype', 'quality', 'params')
+
+    _NOT_MATCHING = (-1, -1, -1, 0.0, -1)
+
+    def __init__(
+        self, main_type: str, subtype: str, quality: float, params: dict
+    ) -> None:
+        self.main_type = main_type
+        self.subtype = subtype
+        self.quality = quality
+        self.params = params
+
+    @classmethod
+    def parse(cls, media_range: str) -> _MediaRange:
+        main_type, subtype, params = _parse_media_type_header(media_range)
+
+        # NOTE(vytas): We don't need to special-case Q since the above
+        #   parse_header always lowercases parameters.
+        q = params.pop('q', 1.0)
+
+        try:
+            quality = float(q)
+        except (TypeError, ValueError) as ex:
+            raise ValueError('invalid media range') from ex
+        if not (0.0 <= quality <= 1.0):
+            raise ValueError('q is not between 0.0 and 1.0')
+
+        return cls(main_type, subtype, quality, params)
+
+    def match_score(
+        self, media_type: _MediaType, index: int = -1
+    ) -> Tuple[int, int, int, float, int]:
+        if self.main_type == '*' or media_type.main_type == '*':
+            main_matches = 0
+        elif self.main_type != media_type.main_type:
+            return self._NOT_MATCHING
+        else:
+            main_matches = 1
+
+        if self.subtype == '*' or media_type.subtype == '*':
+            sub_matches = 0
+        elif self.subtype != media_type.subtype:
+            return self._NOT_MATCHING
+        else:
+            sub_matches = 1
+
+        mr_pnames = frozenset(self.params)
+        mt_pnames = frozenset(media_type.params)
+        param_score = -len(mr_pnames.symmetric_difference(mt_pnames))
+        matching = mr_pnames & mt_pnames
+        for pname in matching:
+            if self.params[pname] != media_type.params[pname]:
+                return self._NOT_MATCHING
+        param_score += len(matching)
+
+        score = (main_matches, sub_matches, param_score, self.quality, index)
+        print(f'score({self}, {media_type}) -> {score}')
+        return (main_matches, sub_matches, param_score, self.quality, index)
+
+    def __repr__(self) -> str:
+        q = self.quality
+        return f'MediaRange<{self.main_type}/{self.subtype}; {q=}; {self.params}>'
+
+
+# PERF(vytas): It is possible to cache a classmethod too, but the invocation is
+#   less efficient, especially in the case of a cache hit.
+_parse_media_type = functools.lru_cache(_MediaType.parse)
+_parse_media_range = functools.lru_cache(_MediaRange.parse)
 
 
 @functools.lru_cache()
-def _parse_media_ranges(header):
+def _parse_media_ranges(header: str) -> Tuple[_MediaRange, ...]:
     return tuple(_MediaRange.parse(media_range) for media_range in header.split(','))
 
 
@@ -153,11 +225,15 @@ def quality(media_type: str, header: str) -> float:
 
     Returns:
         Quality of the most specific media range matching the provided
-        `media_type`.
+        `media_type`. (If none matches, 0.0 is returned.)
     """
-    # media_ranges = _parse_media_ranges(header)
+    parsed_media_type = _parse_media_type(media_type)
+    media_ranges = _parse_media_ranges(header)
 
-    return 0.0
+    most_specific = max(
+        media_range.match_score(parsed_media_type) for media_range in media_ranges
+    )
+    return most_specific[-2]
 
 
 def best_match(media_types: Iterable[str], header: str) -> Optional[str]:
