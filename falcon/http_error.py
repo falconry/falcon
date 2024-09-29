@@ -23,13 +23,12 @@ from falcon.constants import MEDIA_JSON
 from falcon.util import code_to_http_status
 from falcon.util import http_status_to_code
 from falcon.util import uri
-from falcon.util.deprecation import deprecated_args
 
 if TYPE_CHECKING:
+    from falcon._typing import HeaderArg
+    from falcon._typing import Link
+    from falcon._typing import ResponseStatus
     from falcon.media import BaseHandler
-    from falcon.typing import HeaderList
-    from falcon.typing import Link
-    from falcon.typing import ResponseStatus
 
 
 class HTTPError(Exception):
@@ -49,11 +48,8 @@ class HTTPError(Exception):
     is implemented via ``to_dict()``). To also support XML, override
     the ``to_xml()`` method.
 
-    Note:
-        ``status`` is the only positional argument allowed, the other
-        arguments should be used as keyword only. Using them as positional
-        arguments will raise a deprecation warning and will result in an
-        error in a future version of falcon.
+    `status` is the only positional argument allowed,
+    the other arguments are defined as keyword-only.
 
     Args:
         status (Union[str,int]): HTTP status code or line (e.g.,
@@ -91,21 +87,6 @@ class HTTPError(Exception):
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
-
-    Attributes:
-        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
-            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
-            status line string or byte string (e.g., ``'200 OK'``), or an
-            ``int``.
-        status_code (int): HTTP status code normalized from the ``status``
-            argument passed to the initializer.
-        title (str): Error title to send to the client.
-        description (str): Description of the error to send to the client.
-        headers (dict): Extra headers to add to the response.
-        link (str): An href that the client can provide to the user for
-            getting help.
-        code (int): An internal application code that a user can reference when
-            requesting support for the error.
     """
 
     __slots__ = (
@@ -117,13 +98,35 @@ class HTTPError(Exception):
         'code',
     )
 
-    @deprecated_args(allowed_positional=1)
+    status: ResponseStatus
+    """HTTP status code or line (e.g., ``'200 OK'``).
+
+    This may be set to a member of :class:`http.HTTPStatus`, an HTTP
+    status line string or byte string (e.g., ``'200 OK'``), or an ``int``.
+    """
+    title: str
+    """Error title to send to the client.
+
+    Derived from the ``status`` if not provided.
+    """
+    description: Optional[str]
+    """Description of the error to send to the client."""
+    headers: Optional[HeaderArg]
+    """Extra headers to add to the response."""
+    link: Optional[Link]
+    """An href that the client can provide to the user for getting help."""
+    code: Optional[int]
+    """An internal application code that a user can reference when requesting
+    support for the error.
+    """
+
     def __init__(
         self,
         status: ResponseStatus,
+        *,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: Optional[HeaderList] = None,
+        headers: Optional[HeaderArg] = None,
         href: Optional[str] = None,
         href_text: Optional[str] = None,
         code: Optional[int] = None,
@@ -139,7 +142,6 @@ class HTTPError(Exception):
         self.description = description
         self.headers = headers
         self.code = code
-        self.link: Optional[Link]
 
         if href:
             link = self.link = OrderedDict()
@@ -156,6 +158,9 @@ class HTTPError(Exception):
 
     @property
     def status_code(self) -> int:
+        """HTTP status code normalized from the ``status`` argument passed
+        to the initializer.
+        """  # noqa: D205
         return http_status_to_code(self.status)
 
     def to_dict(

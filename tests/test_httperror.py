@@ -8,7 +8,6 @@ import pytest
 
 import falcon
 import falcon.testing as testing
-from falcon.util.deprecation import DeprecatedWarning
 
 try:
     import yaml
@@ -172,7 +171,7 @@ class LengthRequiredResource:
 
 class RequestEntityTooLongResource:
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge(
+        raise falcon.HTTPContentTooLarge(
             title='Request Rejected', description='Request Body Too Large'
         )
 
@@ -182,7 +181,7 @@ class TemporaryRequestEntityTooLongResource:
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge(
+        raise falcon.HTTPContentTooLarge(
             title='Request Rejected',
             description='Request Body Too Large',
             retry_after=self.retry_after,
@@ -946,8 +945,5 @@ class TestHTTPError:
 
 
 def test_kw_only():
-    # only deprecated for now
-    # with pytest.raises(TypeError, match='positional argument'):
-    #     falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
-    with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
+    with pytest.raises(TypeError, match='positional argument'):
         falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')

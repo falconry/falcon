@@ -225,7 +225,7 @@ For your convenience, wheels containing pre-compiled binaries are available
 from PyPI for the majority of common platforms. Even if a binary build for your
 platform of choice is not available, ``pip`` will pick a pure-Python wheel.
 You can also cythonize Falcon for your environment; see our
-`Installation docs <https://falcon.readthedocs.io/en/stable/user/install.html>`__.
+`Installation docs <https://falcon.readthedocs.io/en/stable/user/install.html>`__
 for more information on this and other advanced options.
 
 Dependencies
@@ -573,7 +573,7 @@ Note that this example assumes that the
                 msg = ('The size of the request is too large. The body must not '
                        'exceed ' + str(limit) + ' bytes in length.')
 
-                raise falcon.HTTPPayloadTooLarge(
+                raise falcon.HTTPContentTooLarge(
                     title='Request body is too large', description=msg)
 
         return hook
@@ -830,7 +830,7 @@ Here's the ASGI version of the app from above. Note that it uses the
                 msg = ('The size of the request is too large. The body must not '
                        'exceed ' + str(limit) + ' bytes in length.')
 
-                raise falcon.HTTPPayloadTooLarge(
+                raise falcon.HTTPContentTooLarge(
                     title='Request body is too large', description=msg)
 
         return hook

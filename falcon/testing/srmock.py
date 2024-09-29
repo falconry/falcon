@@ -18,30 +18,37 @@ This module implements a callable StartResponseMock class that can be
 used, along with a mock environ dict, to simulate a WSGI request.
 """
 
+from __future__ import annotations
+
+from typing import Any, Optional
+
 from falcon import util
+from falcon._typing import HeaderIter
+from falcon.typing import Headers
 
 
 class StartResponseMock:
-    """Mock object representing a WSGI `start_response` callable.
+    """Mock object representing a WSGI `start_response` callable."""
 
-    Attributes:
-        call_count (int): Number of times `start_response` was called.
-        status (str): HTTP status line, e.g. '785 TPS Cover Sheet
-            not attached'.
-        headers (list): Raw headers list passed to `start_response`,
-            per PEP-333.
-        headers_dict (dict): Headers as a case-insensitive
-            ``dict``-like object, instead of a ``list``.
+    status: Optional[str]
+    """HTTP status line, e.g. '785 TPS Cover Sheet not attached'."""
+    headers: Optional[HeaderIter]
+    """Raw headers list passed to `start_response`, per PEP-3333."""
+    headers_dict: Headers
+    """Headers as a case-insensitive ``dict``-like object, instead of a ``list``."""
 
-    """
-
-    def __init__(self):
+    def __init__(self) -> None:
         self._called = 0
         self.status = None
         self.headers = None
-        self.exc_info = None
+        self.exc_info: Optional[Any] = None
 
-    def __call__(self, status, headers, exc_info=None):
+    def __call__(
+        self,
+        status: str,
+        headers: HeaderIter,
+        exc_info: Optional[Any] = None,
+    ) -> Any:
         """Implement the PEP-3333 `start_response` protocol."""
 
         self._called += 1
@@ -52,9 +59,10 @@ class StartResponseMock:
         # worry about the case-insensitive nature of header names.
         self.headers = [(name.lower(), value) for name, value in headers]
 
-        self.headers_dict = util.CaseInsensitiveDict(headers)
+        self.headers_dict = util.CaseInsensitiveDict(headers)  # type: ignore[assignment]
         self.exc_info = exc_info
 
     @property
-    def call_count(self):
+    def call_count(self) -> int:
+        """Number of times `start_response` was called."""
         return self._called

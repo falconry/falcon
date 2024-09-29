@@ -21,7 +21,6 @@ while remaining highly effective.
     import falcon
 
     class QuoteResource:
-
         def on_get(self, req, resp):
             """Handles GET requests"""
             quote = {
@@ -128,7 +127,7 @@ Documentation
    :maxdepth: 3
 
    user/index
-   deploy/index
    community/index
    api/index
    changes/index
+   deploy/index

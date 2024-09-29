@@ -4,18 +4,31 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-Falcon 4.0 is in development. The progress is tracked via the
-`Version 4.0 milestone <https://github.com/falconry/falcon/milestone/34>`__
-on GitHub.
+The alpha release of Falcon 4.0.0 is here!
+
+We would really appreciate if you could help with early testing on your code!
+You can grab this release from PyPI (``pip install falcon==4.0.0a2``),
+and :ref:`let us know how it went <chat>`!
+
+Although we are still in the process of polishing the last items from the
+`version 4.0 milestone <https://github.com/falconry/falcon/milestone/34>`__,
+we do not expect (m)any radical changes from now on until Falcon 4.0.0 final.
+The full changelog of new features, breaking changes and fixes will be rendered
+as part of the first beta release.
 
 
 Changes to Supported Platforms
 ------------------------------
 
-- CPython 3.11 is now fully supported. (`#2072 <https://github.com/falconry/falcon/issues/2072>`__)
-- CPython 3.12 is now fully supported. (`#2196 <https://github.com/falconry/falcon/issues/2196>`__)
-- CPython 3.13 is now fully supported. (`#2258 <https://github.com/falconry/falcon/issues/2258>`__)
-- End-of-life Python 3.5, 3.6 & 3.7 are no longer supported. (`#2074 <https://github.com/falconry/falcon/pull/2074>`__, `#2273 <https://github.com/falconry/falcon/pull/2273>`__)
+- CPython 3.11 is now fully supported.
+  (`#2072 <https://github.com/falconry/falcon/issues/2072>`__)
+- CPython 3.12 is now fully supported.
+  (`#2196 <https://github.com/falconry/falcon/issues/2196>`__)
+- CPython 3.13 is now fully supported.
+  (`#2258 <https://github.com/falconry/falcon/issues/2258>`__)
+- End-of-life Python 3.5, 3.6 & 3.7 are no longer supported.
+  (`#2074 <https://github.com/falconry/falcon/pull/2074>`__,
+  `#2273 <https://github.com/falconry/falcon/pull/2273>`__)
 - Soon end-of-life Python 3.8 is no longer actively supported, but
   the framework should still continue to install from source and function.
 - The Falcon 4.x series is guaranteed to support CPython 3.10 and
@@ -32,16 +45,37 @@ now typed, further type annotations may be added throughout the 4.x release cycl
 To improve them, we may introduce changes to the typing that do not affect
 runtime behavior, but may surface new or different errors with type checkers.
 
-.. note::
+.. role:: python(code)
+    :language: python
 
-  All type aliases in falcon are considered private, and if used should be
-  imported inside ``if TYPE_CHECKING:`` blocks to avoid possible import errors
-  after an update.
+.. note::
+    All undocumented type aliases coming from ``falcon._typing`` are considered
+    private to the framework itself, and not meant for annotating applications
+    using Falcon. To that end, it is advisable to only use classes from the
+    public interface, and public aliases from :mod:`falcon.typing`, e.g.:
+
+    .. code-block:: python
+
+        class MyResource:
+            def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
+                resp.media = {'message': 'Hello, World!'}
+
+    If you still decide to reuse the private aliases anyway, they should
+    preferably be imported inside :python:`if TYPE_CHECKING:` blocks in order
+    to avoid possible runtime errors after an update.
+    Also, make sure to :ref:`let us know <chat>` which essential aliases are
+    missing from the public interface!
 
 .. towncrier release notes start
 
 Contributors to this Release
 ----------------------------
+
+.. note::
+    If we missed you below, don’t worry!
+
+    We will refresh the full list of contributors before the 4.0.0 final
+    release.
 
 Many thanks to all of our talented and stylish contributors for this release!
 

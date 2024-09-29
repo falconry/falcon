@@ -3,8 +3,6 @@
 WebSocket (ASGI Only)
 =====================
 
-.. contents:: :local:
-
 Falcon builds upon the
 `ASGI WebSocket Specification <https://asgi.readthedocs.io/en/latest/specs/www.html#websocket>`_
 to provide a simple, no-nonsense WebSocket server implementation.
@@ -112,32 +110,36 @@ Lost Connections
 ----------------
 
 When the app attempts to receive a message from the client, the ASGI server
-emits a `disconnect` event if the connection has been lost for any reason. Falcon
-surfaces this event by raising an instance of :class:`~.WebSocketDisconnected`
-to the caller.
+emits a ``disconnect`` event if the connection has been lost for any
+reason. Falcon surfaces this event by raising an instance of
+:class:`~.WebSocketDisconnected` to the caller.
 
-On the other hand, the ASGI spec requires the ASGI server to silently consume
-messages sent by the app after the connection has been lost (i.e.,  it should
-not be considered an error). Therefore, an endpoint that primarily streams
-outbound events to the client might continue consuming resources unnecessarily
-for some time after the connection is lost.
+On the other hand, the ASGI spec previously required the ASGI server to
+silently consume messages sent by the app after the connection has been lost
+(i.e.,  it should not be considered an error). Therefore, an endpoint that
+primarily streams outbound events to the client could continue consuming
+resources unnecessarily for some time after the connection is lost.
+This aspect has been rectified in the ASGI HTTP spec version ``2.4``,
+and calling ``send()``  on a closed connection should now raise an
+error. Unfortunately, not all ASGI servers have adopted this new behavior
+uniformly yet.
 
 As a workaround, Falcon implements a small incoming message queue that is used
 to detect a lost connection and then raise an instance of
-:class:`~.WebSocketDisconnected` to the caller the next time it attempts to send
-a message.
-
-This workaround is only necessary when the app itself does not consume messages
-from the client often enough to quickly detect when the connection is lost.
-Otherwise, Falcon's receive queue can be disabled for a slight performance boost
-by setting :attr:`~falcon.asgi.WebSocketOptions.max_receive_queue` to ``0`` via
+:class:`~.WebSocketDisconnected` to the caller the next time it attempts to
+send a message.
+If your ASGI server of choice adheres to the spec version ``2.4``, this receive
+queue can be safely disabled for a slight performance boost by setting
+:attr:`~falcon.asgi.WebSocketOptions.max_receive_queue` to ``0`` via
 :attr:`~falcon.asgi.App.ws_options`.
+(We may revise this setting, and disable the queue by default in the future if
+our testing indicates that all major ASGI servers have caught up with the
+spec.)
 
-Note also that some ASGI server implementations do not strictly follow the ASGI
-spec in this regard, and in fact will raise an error when the app attempts to
-send a message after the client disconnects. If testing reveals this to be the
-case for your ASGI server of choice, Falcon's own receive queue can be safely
-disabled.
+Furthermore, even on non-compliant or older ASGI servers, this workaround is
+only necessary when the app itself does not consume messages from the client
+often enough to quickly detect when the connection is lost.
+Otherwise, Falcon's receive queue can also be disabled as described above.
 
 .. _ws_error_handling:
 

@@ -1,6 +1,7 @@
 import pytest
 
 from falcon.request import RequestOptions
+from falcon.util import deprecation
 
 
 class TestRequestOptions:
@@ -24,7 +25,11 @@ class TestRequestOptions:
     def test_options_toggle(self, option_name):
         options = RequestOptions()
 
-        setattr(options, option_name, True)
+        if option_name == 'auto_parse_form_urlencoded':
+            with pytest.warns(deprecation.DeprecatedWarning):
+                setattr(options, option_name, True)
+        else:
+            setattr(options, option_name, True)
         assert getattr(options, option_name)
 
         setattr(options, option_name, False)

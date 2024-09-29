@@ -18,27 +18,58 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
+from __future__ import annotations
+
 import asyncio
 import datetime as dt
+from http.cookies import Morsel
 import inspect
 import json as json_module
 import time
-from typing import Dict, Optional, Sequence, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    cast,
+    Coroutine,
+    Dict,
+    Iterable,
+    Literal,
+    Mapping,
+    Optional,
+    overload,
+    Sequence,
+    TextIO,
+    Tuple,
+    TYPE_CHECKING,
+    TypeVar,
+    Union,
+)
 import warnings
 import wsgiref.validate
 
+from falcon._typing import CookieArg
+from falcon._typing import HeaderArg
+from falcon._typing import HeaderIter
+from falcon._typing import HeaderMapping
+from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
+from falcon.typing import Headers
 from falcon.util import async_to_sync
 from falcon.util import CaseInsensitiveDict
 from falcon.util import code_to_http_status
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
 from falcon.util import to_query_str
+
+if TYPE_CHECKING:
+    import falcon
+    from falcon import asgi
 
 warnings.filterwarnings(
     'error',
@@ -48,18 +79,21 @@ warnings.filterwarnings(
     0,
 )
 
+_T = TypeVar('_T', bound=Callable[..., Any])
 
-def _simulate_method_alias(method, version_added='3.1', replace_name=None):
-    return_type = inspect.signature(method).return_annotation
 
-    def alias(client, *args, **kwargs) -> return_type:
+def _simulate_method_alias(
+    method: _T, version_added: str = '3.1', replace_name: Optional[str] = None
+) -> _T:
+    def alias(client: Any, *args: Any, **kwargs: Any) -> Any:
         return method(client, *args, **kwargs)
 
-    async def async_alias(client, *args, **kwargs) -> return_type:
+    async def async_alias(client: Any, *args: Any, **kwargs: Any) -> Any:
         return await method(client, *args, **kwargs)
 
     alias = async_alias if inspect.iscoroutinefunction(method) else alias
 
+    assert method.__doc__
     alias.__doc__ = method.__doc__ + '\n        .. versionadded:: {}\n'.format(
         version_added
     )
@@ -69,39 +103,26 @@ def _simulate_method_alias(method, version_added='3.1', replace_name=None):
     else:
         alias.__name__ = method.__name__.partition('simulate_')[-1]
 
-    return alias
+    return cast(_T, alias)
 
 
 class Cookie:
     """Represents a cookie returned by a simulated request.
 
     Args:
-        morsel: A ``Morsel`` object from which to derive the cookie
-            data.
-
-    Attributes:
-        name (str): The cookie's name.
-        value (str): The value of the cookie.
-        expires(datetime.datetime): Expiration timestamp for the cookie,
-            or ``None`` if not specified.
-        path (str): The path prefix to which this cookie is restricted,
-            or ``None`` if not specified.
-        domain (str): The domain to which this cookie is restricted,
-            or ``None`` if not specified.
-        max_age (int): The lifetime of the cookie in seconds, or
-            ``None`` if not specified.
-        secure (bool): Whether or not the cookie may only only be
-            transmitted from the client via HTTPS.
-        http_only (bool): Whether or not the cookie may only be
-            included in unscripted requests from the client.
-        same_site (str): Specifies whether cookies are send in
-            cross-site requests. Possible values are 'Lax', 'Strict'
-            and 'None'. ``None`` if not specified.
-        partitioned (bool): Indicates if the cookie has the
-            ``Partitioned`` flag set.
+        morsel: A ``Morsel`` object from which to derive the cookie data.
     """
 
-    def __init__(self, morsel):
+    _expires: Optional[str]
+    _path: str
+    _domain: str
+    _max_age: Optional[str]
+    _secure: Optional[str]
+    _httponly: Optional[str]
+    _samesite: Optional[str]
+    _partitioned: Optional[str]
+
+    def __init__(self, morsel: Morsel) -> None:
         self._name = morsel.key
         self._value = morsel.value
 
@@ -120,46 +141,67 @@ class Cookie:
 
     @property
     def name(self) -> str:
+        """The cookie's name."""
         return self._name
 
     @property
     def value(self) -> str:
+        """The value of the cookie."""
         return self._value
 
     @property
     def expires(self) -> Optional[dt.datetime]:
-        if self._expires:  # type: ignore[attr-defined]
-            return http_date_to_dt(self._expires, obs_date=True)  # type: ignore[attr-defined]  # noqa E501
+        """Expiration timestamp for the cookie, or ``None`` if not specified."""
+        if self._expires:
+            return http_date_to_dt(self._expires, obs_date=True)
 
         return None
 
     @property
     def path(self) -> str:
-        return self._path  # type: ignore[attr-defined]
+        """The path prefix to which this cookie is restricted.
+
+        An empty string if not specified.
+        """
+        return self._path
 
     @property
     def domain(self) -> str:
-        return self._domain  # type: ignore[attr-defined]
+        """The domain to which this cookie is restricted.
+
+        An empty string if not specified.
+        """
+        return self._domain
 
     @property
     def max_age(self) -> Optional[int]:
-        return int(self._max_age) if self._max_age else None  # type: ignore[attr-defined]  # noqa E501
+        """The lifetime of the cookie in seconds, or ``None`` if not specified."""
+        return int(self._max_age) if self._max_age else None
 
     @property
     def secure(self) -> bool:
-        return bool(self._secure)  # type: ignore[attr-defined]
+        """Whether or not the cookie may only only be transmitted
+        from the client via HTTPS.
+        """  # noqa: D205
+        return bool(self._secure)
 
     @property
     def http_only(self) -> bool:
-        return bool(self._httponly)  # type: ignore[attr-defined]
+        """Whether or not the cookie will be visible from JavaScript in the client."""
+        return bool(self._httponly)
 
     @property
     def same_site(self) -> Optional[str]:
-        return self._samesite if self._samesite else None  # type: ignore[attr-defined]
+        """Specifies whether cookies are send in cross-site requests.
+
+        Possible values are 'Lax', 'Strict' and 'None'. ``None`` if not specified.
+        """
+        return self._samesite if self._samesite else None
 
     @property
     def partitioned(self) -> bool:
-        return bool(self._partitioned)  # type: ignore[attr-defined]
+        """Indicates if the cookie has the ``Partitioned`` flag set."""
+        return bool(self._partitioned)
 
 
 class _ResultBase:
@@ -170,36 +212,9 @@ class _ResultBase:
             reason string
         headers (list): A list of (header_name, header_value) tuples,
             per PEP-3333
-
-    Attributes:
-        status (str): HTTP status string given in the response
-        status_code (int): The code portion of the HTTP status string
-        headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response, except for
-            cookies, which may be accessed via the `cookies`
-            attribute.
-
-            Note:
-
-                Multiple instances of a header in the response are
-                currently not supported; it is unspecified which value
-                will "win" and be represented in `headers`.
-
-        cookies (dict): A dictionary of
-            :class:`falcon.testing.Cookie` values parsed from the
-            response, by name.
-
-            The cookies dictionary can be used directly in subsequent requests::
-
-                client = testing.TestClient(app)
-                response_one = client.simulate_get('/')
-                response_two = client.simulate_post('/', cookies=response_one.cookies)
-
-        encoding (str): Text encoding of the response body, or ``None``
-            if the encoding can not be determined.
     """
 
-    def __init__(self, status, headers):
+    def __init__(self, status: str, headers: HeaderIter) -> None:
         self._status = status
         self._status_code = int(status[:3])
         self._headers = CaseInsensitiveDict(headers)
@@ -217,29 +232,46 @@ class _ResultBase:
 
     @property
     def status(self) -> str:
+        """HTTP status string given in the response."""
         return self._status
 
     @property
     def status_code(self) -> int:
+        """The code portion of the HTTP status string."""
         return self._status_code
 
     @property
-    def headers(self) -> CaseInsensitiveDict:
-        # NOTE(kgriffs): It would probably be better to annotate this with
-        #   a generic Mapping[str, str] type, but currently there is an
-        #   incompatibility with Cython that prevents us from modifying
-        #   CaseInsensitiveDict to inherit from a generic MutableMapping
-        #   type. This might be resolved in the future by moving
-        #   the CaseInsensitiveDict implementation to the falcon.testing
-        #   module so that it is no longer cythonized.
-        return self._headers
+    def headers(self) -> Headers:
+        """A case-insensitive dictionary containing all the headers in the response,
+        except for cookies, which may be accessed via the `cookies` attribute.
+
+        Note:
+
+            Multiple instances of a header in the response are
+            currently not supported; it is unspecified which value
+            will "win" and be represented in `headers`.
+        """  # noqa: D205
+        return self._headers  # type: ignore[return-value]
 
     @property
     def cookies(self) -> Dict[str, Cookie]:
+        """A dictionary of :class:`falcon.testing.Cookie` values parsed from
+        the response, by name.
+
+        The cookies dictionary can be used directly in subsequent requests::
+
+            client = testing.TestClient(app)
+            response_one = client.simulate_get('/')
+            response_two = client.simulate_post('/', cookies=response_one.cookies)
+        """  # noqa: D205
         return self._cookies
 
     @property
-    def encoding(self) -> str:
+    def encoding(self) -> Optional[str]:
+        """Text encoding of the response body.
+
+        Returns ``None`` if the encoding can not be determined.
+        """
         return self._encoding
 
 
@@ -252,7 +284,7 @@ class ResultBodyStream:
             collected.
     """
 
-    def __init__(self, chunks: Sequence[bytes]):
+    def __init__(self, chunks: Sequence[bytes]) -> None:
         self._chunks = chunks
         self._chunk_pos = 0
 
@@ -290,48 +322,27 @@ class Result(_ResultBase):
             reason string
         headers (list): A list of (header_name, header_value) tuples,
             per PEP-3333
-
-    Attributes:
-        status (str): HTTP status string given in the response
-        status_code (int): The code portion of the HTTP status string
-        headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response, except for
-            cookies, which may be accessed via the `cookies`
-            attribute.
-
-            Note:
-
-                Multiple instances of a header in the response are
-                currently not supported; it is unspecified which value
-                will "win" and be represented in `headers`.
-
-        cookies (dict): A dictionary of
-            :class:`falcon.testing.Cookie` values parsed from the
-            response, by name.
-        encoding (str): Text encoding of the response body, or ``None``
-            if the encoding can not be determined.
-        content (bytes): Raw response body, or ``bytes`` if the
-            response body was empty.
-        text (str): Decoded response body of type ``str``.
-            If the content type does not specify an encoding, UTF-8 is
-            assumed.
-        json (JSON serializable): Deserialized JSON body. Will be ``None`` if
-            the body has no content to deserialize. Otherwise, raises an error
-            if the response is not valid JSON.
     """
 
-    def __init__(self, iterable, status, headers):
+    def __init__(
+        self, iterable: Iterable[bytes], status: str, headers: HeaderIter
+    ) -> None:
         super().__init__(status, headers)
 
-        self._text = None
+        self._text: Optional[str] = None
         self._content = b''.join(iterable)
 
     @property
     def content(self) -> bytes:
+        """Raw response body, or an ``b''`` if the response body was empty."""
         return self._content
 
     @property
     def text(self) -> str:
+        """Decoded response body of type ``str``.
+
+        If the content type does not specify an encoding, UTF-8 is assumed.
+        """
         if self._text is None:
             if not self.content:
                 self._text = ''
@@ -346,13 +357,18 @@ class Result(_ResultBase):
         return self._text
 
     @property
-    def json(self) -> Optional[Union[dict, list, str, int, float, bool]]:
+    def json(self) -> Any:
+        """Deserialized JSON body.
+
+        Will be ``None`` if the body has no content to deserialize.
+        Otherwise, raises an error if the response is not valid JSON.
+        """
         if not self.text:
             return None
 
         return json_module.loads(self.text)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         content_type = self.headers.get('Content-Type', '')
 
         if len(self.content) > 40:
@@ -384,30 +400,16 @@ class StreamedResult(_ResultBase):
             application via its receive() method.
             :meth:`~.finalize` will cause the event emitter to
             simulate an ``'http.disconnect'`` event before returning.
-
-    Attributes:
-        status (str): HTTP status string given in the response
-        status_code (int): The code portion of the HTTP status string
-        headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response, except for
-            cookies, which may be accessed via the `cookies`
-            attribute.
-
-            Note:
-
-                Multiple instances of a header in the response are
-                currently not supported; it is unspecified which value
-                will "win" and be represented in `headers`.
-
-        cookies (dict): A dictionary of
-            :class:`falcon.testing.Cookie` values parsed from the
-            response, by name.
-        encoding (str): Text encoding of the response body, or ``None``
-            if the encoding can not be determined.
-        stream (ResultStream): Raw response body, as a byte stream.
     """
 
-    def __init__(self, body_chunks, status, headers, task, req_event_emitter):
+    def __init__(
+        self,
+        body_chunks: Sequence[bytes],
+        status: str,
+        headers: HeaderIter,
+        task: asyncio.Task,
+        req_event_emitter: helpers.ASGIRequestEventEmitter,
+    ):
         super().__init__(status, headers)
 
         self._task = task
@@ -416,9 +418,10 @@ class StreamedResult(_ResultBase):
 
     @property
     def stream(self) -> ResultBodyStream:
+        """Raw response body, as a byte stream."""
         return self._stream
 
-    async def finalize(self):
+    async def finalize(self) -> None:
         """Finalize the encapsulated simulated request.
 
         This method causes the request event emitter to begin emitting
@@ -434,29 +437,29 @@ class StreamedResult(_ResultBase):
 #   appears to be "hanging", which might indicates that the app is
 #   not handling the reception of events correctly.
 def simulate_request(
-    app,
-    method='GET',
-    path='/',
-    query_string=None,
-    headers=None,
-    content_type=None,
-    body=None,
-    json=None,
-    file_wrapper=None,
-    wsgierrors=None,
-    params=None,
-    params_csv=False,
-    protocol='http',
-    host=helpers.DEFAULT_HOST,
-    remote_addr=None,
-    extras=None,
-    http_version='1.1',
-    port=None,
-    root_path=None,
-    cookies=None,
-    asgi_chunk_size=4096,
-    asgi_disconnect_ttl=300,
-) -> _ResultBase:
+    app: Callable[..., Any],  # accept any asgi/wsgi app
+    method: str = 'GET',
+    path: str = '/',
+    query_string: Optional[str] = None,
+    headers: Optional[HeaderArg] = None,
+    content_type: Optional[str] = None,
+    body: Optional[Union[str, bytes]] = None,
+    json: Optional[Any] = None,
+    file_wrapper: Optional[Callable[..., Any]] = None,
+    wsgierrors: Optional[TextIO] = None,
+    params: Optional[Mapping[str, Any]] = None,
+    params_csv: bool = False,
+    protocol: str = 'http',
+    host: str = helpers.DEFAULT_HOST,
+    remote_addr: Optional[str] = None,
+    extras: Optional[Mapping[str, Any]] = None,
+    http_version: str = '1.1',
+    port: Optional[int] = None,
+    root_path: Optional[str] = None,
+    cookies: Optional[CookieArg] = None,
+    asgi_chunk_size: int = 4096,
+    asgi_disconnect_ttl: int = 300,
+) -> Result:
     """Simulate a request to a WSGI or ASGI application.
 
     Performs a request against a WSGI or ASGI application. In the case of
@@ -569,7 +572,7 @@ def simulate_request(
     """
 
     if _is_asgi_app(app):
-        return async_to_sync(
+        return async_to_sync(  # type: ignore[return-value]
             _simulate_request_asgi,
             app,
             method=method,
@@ -611,7 +614,7 @@ def simulate_request(
         path=path,
         query_string=(query_string or ''),
         headers=headers,
-        body=body,
+        body=body or b'',
         file_wrapper=file_wrapper,
         host=host,
         remote_addr=remote_addr,
@@ -639,7 +642,63 @@ def simulate_request(
 
     iterable = validator(env, srmock)
 
-    return Result(helpers.closed_wsgi_iterable(iterable), srmock.status, srmock.headers)
+    data = helpers.closed_wsgi_iterable(iterable)
+    assert srmock.status is not None and srmock.headers is not None
+    return Result(data, srmock.status, srmock.headers)
+
+
+@overload
+async def _simulate_request_asgi(
+    app: Callable[..., Coroutine[Any, Any, Any]],
+    method: str = ...,
+    path: str = ...,
+    query_string: Optional[str] = ...,
+    headers: Optional[HeaderArg] = ...,
+    content_type: Optional[str] = ...,
+    body: Optional[Union[str, bytes]] = ...,
+    json: Optional[Any] = ...,
+    params: Optional[Mapping[str, Any]] = ...,
+    params_csv: bool = ...,
+    protocol: str = ...,
+    host: str = ...,
+    remote_addr: Optional[str] = ...,
+    extras: Optional[Mapping[str, Any]] = ...,
+    http_version: str = ...,
+    port: Optional[int] = ...,
+    root_path: Optional[str] = ...,
+    asgi_chunk_size: int = ...,
+    asgi_disconnect_ttl: int = ...,
+    cookies: Optional[CookieArg] = ...,
+    _one_shot: Literal[False] = ...,
+    _stream_result: Literal[True] = ...,
+) -> StreamedResult: ...
+
+
+@overload
+async def _simulate_request_asgi(
+    app: Callable[..., Coroutine[Any, Any, Any]],
+    method: str = ...,
+    path: str = ...,
+    query_string: Optional[str] = ...,
+    headers: Optional[HeaderArg] = ...,
+    content_type: Optional[str] = ...,
+    body: Optional[Union[str, bytes]] = ...,
+    json: Optional[Any] = ...,
+    params: Optional[Mapping[str, Any]] = ...,
+    params_csv: bool = ...,
+    protocol: str = ...,
+    host: str = ...,
+    remote_addr: Optional[str] = ...,
+    extras: Optional[Mapping[str, Any]] = ...,
+    http_version: str = ...,
+    port: Optional[int] = ...,
+    root_path: Optional[str] = ...,
+    asgi_chunk_size: int = ...,
+    asgi_disconnect_ttl: int = ...,
+    cookies: Optional[CookieArg] = ...,
+    _one_shot: Literal[True] = ...,
+    _stream_result: bool = ...,
+) -> Result: ...
 
 
 # NOTE(kgriffs): The default of asgi_disconnect_ttl was chosen to be
@@ -647,34 +706,34 @@ def simulate_request(
 #   appears to be "hanging", which might indicates that the app is
 #   not handling the reception of events correctly.
 async def _simulate_request_asgi(
-    app,
-    method='GET',
-    path='/',
-    query_string=None,
-    headers=None,
-    content_type=None,
-    body=None,
-    json=None,
-    params=None,
-    params_csv=True,
-    protocol='http',
-    host=helpers.DEFAULT_HOST,
-    remote_addr=None,
-    extras=None,
-    http_version='1.1',
-    port=None,
-    root_path=None,
-    asgi_chunk_size=4096,
-    asgi_disconnect_ttl=300,
-    cookies=None,
+    app: Callable[..., Coroutine[Any, Any, Any]],  # accept any asgi app
+    method: str = 'GET',
+    path: str = '/',
+    query_string: Optional[str] = None,
+    headers: Optional[HeaderArg] = None,
+    content_type: Optional[str] = None,
+    body: Optional[Union[str, bytes]] = None,
+    json: Optional[Any] = None,
+    params: Optional[Mapping[str, Any]] = None,
+    params_csv: bool = False,
+    protocol: str = 'http',
+    host: str = helpers.DEFAULT_HOST,
+    remote_addr: Optional[str] = None,
+    extras: Optional[Mapping[str, Any]] = None,
+    http_version: str = '1.1',
+    port: Optional[int] = None,
+    root_path: Optional[str] = None,
+    asgi_chunk_size: int = 4096,
+    asgi_disconnect_ttl: int = 300,
+    cookies: Optional[CookieArg] = None,
     # NOTE(kgriffs): These are undocumented because they are only
     #   meant to be used internally by the framework (i.e., they are
     #   not part of the public interface.) In case we ever expose
     #   simulate_request_asgi() as part of the public interface, we
     #   don't want these kwargs to be documented.
-    _one_shot=True,
-    _stream_result=False,
-) -> _ResultBase:
+    _one_shot: bool = True,
+    _stream_result: bool = False,
+) -> Union[Result, StreamedResult]:
     """Simulate a request to an ASGI application.
 
     Keyword Args:
@@ -816,7 +875,7 @@ async def _simulate_request_asgi(
     # ---------------------------------------------------------------------
 
     if asgi_disconnect_ttl == 0:  # Special case
-        disconnect_at = 0
+        disconnect_at = 0.0
     else:
         disconnect_at = time.time() + max(0, asgi_disconnect_ttl)
 
@@ -872,7 +931,7 @@ async def _simulate_request_asgi(
     lifespan_event_collector = helpers.ASGIResponseEventCollector()
     # ---------------------------------------------------------------------
 
-    async def conductor():
+    async def conductor() -> None:
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
@@ -990,24 +1049,29 @@ class ASGIConductor:
         headers (dict): Default headers to set on every request (default
             ``None``). These defaults may be overridden by passing values
             for the same headers to one of the ``simulate_*()`` methods.
-
-    Attributes:
-        app: The app that this client instance was configured to use.
-
     """
 
-    def __init__(self, app, headers=None):
+    # NOTE(caseit): while any asgi app is accept, type this as a falcon
+    # asgi app for user convenience
+    app: asgi.App
+    """The app that this client instance was configured to use."""
+
+    def __init__(
+        self,
+        app: Callable[..., Any],  # accept any asgi app
+        headers: Optional[HeaderMapping] = None,
+    ):
         if not _is_asgi_app(app):
             raise CompatibilityError('ASGIConductor may only be used with an ASGI app')
 
-        self.app = app
+        self.app = app  # type: ignore[assignment]
         self._default_headers = headers
 
         self._shutting_down = asyncio.Condition()
         self._lifespan_event_collector = helpers.ASGIResponseEventCollector()
-        self._lifespan_task = None
+        self._lifespan_task: Optional[asyncio.Task] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> ASGIConductor:
         lifespan_scope = {
             'type': ScopeType.LIFESPAN,
             'asgi': {
@@ -1031,7 +1095,7 @@ class ASGIConductor:
 
         return self
 
-    async def __aexit__(self, ex_type, ex, tb):
+    async def __aexit__(self, ex_type: Any, ex: Any, tb: Any) -> bool:
         if ex_type:
             return False
 
@@ -1041,18 +1105,21 @@ class ASGIConductor:
             self._shutting_down.notify()
 
         await _wait_for_shutdown(self._lifespan_event_collector.events)
+        assert self._lifespan_task is not None
         await self._lifespan_task
 
         return True
 
-    async def simulate_get(self, path='/', **kwargs) -> _ResultBase:
+    async def simulate_get(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a GET request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_get`)
         """
         return await self.simulate_request('GET', path, **kwargs)
 
-    def simulate_get_stream(self, path='/', **kwargs):
+    def simulate_get_stream(
+        self, path: str = '/', **kwargs: Any
+    ) -> _AsyncContextManager:
         """Simulate a GET request to an ASGI application with a streamed response.
 
         (See also: :meth:`falcon.testing.simulate_get` for a list of
@@ -1086,7 +1153,7 @@ class ASGIConductor:
 
         return _AsyncContextManager(self.simulate_request('GET', path, **kwargs))
 
-    def simulate_ws(self, path='/', **kwargs):
+    def simulate_ws(self, path: str = '/', **kwargs: Any) -> _WSContextManager:
         """Simulate a WebSocket connection to an ASGI application.
 
         All keyword arguments are passed through to
@@ -1114,53 +1181,63 @@ class ASGIConductor:
 
         return _WSContextManager(ws, task_req)
 
-    async def simulate_head(self, path='/', **kwargs) -> _ResultBase:
+    async def simulate_head(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a HEAD request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_head`)
         """
         return await self.simulate_request('HEAD', path, **kwargs)
 
-    async def simulate_post(self, path='/', **kwargs) -> _ResultBase:
+    async def simulate_post(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a POST request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_post`)
         """
         return await self.simulate_request('POST', path, **kwargs)
 
-    async def simulate_put(self, path='/', **kwargs) -> _ResultBase:
+    async def simulate_put(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PUT request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_put`)
         """
         return await self.simulate_request('PUT', path, **kwargs)
 
-    async def simulate_options(self, path='/', **kwargs) -> _ResultBase:
+    async def simulate_options(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate an OPTIONS request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_options`)
         """
         return await self.simulate_request('OPTIONS', path, **kwargs)
 
-    async def simulate_patch(self, path='/', **kwargs) -> _ResultBase:
+    async def simulate_patch(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PATCH request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_patch`)
         """
         return await self.simulate_request('PATCH', path, **kwargs)
 
-    async def simulate_delete(self, path='/', **kwargs) -> _ResultBase:
+    async def simulate_delete(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a DELETE request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_delete`)
         """
         return await self.simulate_request('DELETE', path, **kwargs)
 
-    async def simulate_request(self, *args, **kwargs) -> _ResultBase:
+    @overload
+    async def simulate_request(
+        self, *args: Any, _stream_result: Literal[True], **kwargs: Any
+    ) -> StreamedResult: ...
+
+    @overload
+    async def simulate_request(self, *args: Any, **kwargs: Any) -> Result: ...
+
+    async def simulate_request(
+        self, *args: Any, **kwargs: Any
+    ) -> Union[Result, StreamedResult]:
         """Simulate a request to an ASGI application.
 
-        Wraps :meth:`falcon.testing.simulate_request` to perform a
-        WSGI request directly against ``self.app``. Equivalent to::
+        Wraps :meth:`falcon.testing.simulate_request` to perform an
+        ASGI request directly against ``self.app``. Equivalent to::
 
             falcon.testing.simulate_request(self.app, *args, **kwargs)
         """
@@ -1168,9 +1245,9 @@ class ASGIConductor:
         if self._default_headers:
             # NOTE(kgriffs): Handle the case in which headers is explicitly
             # set to None.
-            additional_headers = kwargs.get('headers', {}) or {}
+            additional_headers = kwargs.get('headers') or {}
 
-            merged_headers = self._default_headers.copy()
+            merged_headers = dict(self._default_headers)
             merged_headers.update(additional_headers)
 
             kwargs['headers'] = merged_headers
@@ -1192,7 +1269,7 @@ class ASGIConductor:
     websocket = _simulate_method_alias(simulate_ws, replace_name='websocket')
 
 
-def simulate_get(app, path, **kwargs) -> _ResultBase:
+def simulate_get(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a GET request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1295,7 +1372,7 @@ def simulate_get(app, path, **kwargs) -> _ResultBase:
     return simulate_request(app, 'GET', path, **kwargs)
 
 
-def simulate_head(app, path, **kwargs) -> _ResultBase:
+def simulate_head(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a HEAD request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1392,7 +1469,7 @@ def simulate_head(app, path, **kwargs) -> _ResultBase:
     return simulate_request(app, 'HEAD', path, **kwargs)
 
 
-def simulate_post(app, path, **kwargs) -> _ResultBase:
+def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a POST request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1503,7 +1580,7 @@ def simulate_post(app, path, **kwargs) -> _ResultBase:
     return simulate_request(app, 'POST', path, **kwargs)
 
 
-def simulate_put(app, path, **kwargs) -> _ResultBase:
+def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a PUT request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1614,7 +1691,7 @@ def simulate_put(app, path, **kwargs) -> _ResultBase:
     return simulate_request(app, 'PUT', path, **kwargs)
 
 
-def simulate_options(app, path, **kwargs) -> _ResultBase:
+def simulate_options(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate an OPTIONS request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1703,7 +1780,7 @@ def simulate_options(app, path, **kwargs) -> _ResultBase:
     return simulate_request(app, 'OPTIONS', path, **kwargs)
 
 
-def simulate_patch(app, path, **kwargs) -> _ResultBase:
+def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a PATCH request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1809,7 +1886,7 @@ def simulate_patch(app, path, **kwargs) -> _ResultBase:
     return simulate_request(app, 'PATCH', path, **kwargs)
 
 
-def simulate_delete(app, path, **kwargs) -> _ResultBase:
+def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
     """Simulate a DELETE request to a WSGI or ASGI application.
 
     Equivalent to::
@@ -1971,21 +2048,26 @@ class TestClient:
         headers (dict): Default headers to set on every request (default
             ``None``). These defaults may be overridden by passing values
             for the same headers to one of the ``simulate_*()`` methods.
-
-    Attributes:
-        app: The app that this client instance was configured to use.
-
     """
 
     # NOTE(aryaniyaps): Prevent pytest from collecting tests on the class.
     __test__ = False
 
-    def __init__(self, app, headers=None):
-        self.app = app
-        self._default_headers = headers
-        self._conductor = None
+    # NOTE(caseit): while any asgi/wsgi app is accept, type this as a falcon
+    # app for user convenience
+    app: falcon.App
+    """The app that this client instance was configured to use."""
 
-    async def __aenter__(self):
+    def __init__(
+        self,
+        app: Callable[..., Any],  # accept any asgi/wsgi app
+        headers: Optional[HeaderMapping] = None,
+    ) -> None:
+        self.app = app  # type: ignore[assignment]
+        self._default_headers = headers
+        self._conductor: Optional[ASGIConductor] = None
+
+    async def __aenter__(self) -> ASGIConductor:
         if not _is_asgi_app(self.app):
             raise CompatibilityError(
                 'a conductor context manager may only be used with a Falcon ASGI app'
@@ -2000,7 +2082,8 @@ class TestClient:
 
         return self._conductor
 
-    async def __aexit__(self, ex_type, ex, tb):
+    async def __aexit__(self, ex_type: Any, ex: Any, tb: Any) -> bool:
+        assert self._conductor is not None
         result = await self._conductor.__aexit__(ex_type, ex, tb)
 
         # NOTE(kgriffs): Reset to allow this instance of TestClient to be
@@ -2009,56 +2092,56 @@ class TestClient:
 
         return result
 
-    def simulate_get(self, path='/', **kwargs) -> _ResultBase:
+    def simulate_get(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a GET request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_get`)
         """
         return self.simulate_request('GET', path, **kwargs)
 
-    def simulate_head(self, path='/', **kwargs) -> _ResultBase:
+    def simulate_head(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a HEAD request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_head`)
         """
         return self.simulate_request('HEAD', path, **kwargs)
 
-    def simulate_post(self, path='/', **kwargs) -> _ResultBase:
+    def simulate_post(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a POST request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_post`)
         """
         return self.simulate_request('POST', path, **kwargs)
 
-    def simulate_put(self, path='/', **kwargs) -> _ResultBase:
+    def simulate_put(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PUT request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_put`)
         """
         return self.simulate_request('PUT', path, **kwargs)
 
-    def simulate_options(self, path='/', **kwargs) -> _ResultBase:
+    def simulate_options(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate an OPTIONS request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_options`)
         """
         return self.simulate_request('OPTIONS', path, **kwargs)
 
-    def simulate_patch(self, path='/', **kwargs) -> _ResultBase:
+    def simulate_patch(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PATCH request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_patch`)
         """
         return self.simulate_request('PATCH', path, **kwargs)
 
-    def simulate_delete(self, path='/', **kwargs) -> _ResultBase:
+    def simulate_delete(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a DELETE request to a WSGI application.
 
         (See also: :meth:`falcon.testing.simulate_delete`)
         """
         return self.simulate_request('DELETE', path, **kwargs)
 
-    def simulate_request(self, *args, **kwargs) -> _ResultBase:
+    def simulate_request(self, *args: Any, **kwargs: Any) -> Result:
         """Simulate a request to a WSGI application.
 
         Wraps :meth:`falcon.testing.simulate_request` to perform a
@@ -2070,9 +2153,9 @@ class TestClient:
         if self._default_headers:
             # NOTE(kgriffs): Handle the case in which headers is explicitly
             # set to None.
-            additional_headers = kwargs.get('headers', {}) or {}
+            additional_headers = kwargs.get('headers') or {}
 
-            merged_headers = self._default_headers.copy()
+            merged_headers = dict(self._default_headers)
             merged_headers.update(additional_headers)
 
             kwargs['headers'] = merged_headers
@@ -2095,25 +2178,28 @@ class TestClient:
 
 
 class _AsyncContextManager:
-    def __init__(self, coro):
+    def __init__(self, coro: Awaitable[StreamedResult]):
         self._coro = coro
-        self._obj = None
+        self._obj: Optional[StreamedResult] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> StreamedResult:
         self._obj = await self._coro
         return self._obj
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+        assert self._obj is not None
         await self._obj.finalize()
         self._obj = None
 
 
 class _WSContextManager:
-    def __init__(self, ws, task_req):
+    def __init__(
+        self, ws: helpers.ASGIWebSocketSimulator, task_req: asyncio.Task
+    ) -> None:
         self._ws = ws
         self._task_req = task_req
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> helpers.ASGIWebSocketSimulator:
         ready_waiter = asyncio.create_task(self._ws.wait_ready())
 
         # NOTE(kgriffs): Wait on both so that in the case that the request
@@ -2138,14 +2224,24 @@ class _WSContextManager:
 
         return self._ws
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
         await self._ws.close()
         await self._task_req
 
 
 def _prepare_sim_args(
-    path, query_string, params, params_csv, content_type, headers, body, json, extras
-):
+    path: str,
+    query_string: Optional[str],
+    params: Optional[Mapping[str, Any]],
+    params_csv: bool,
+    content_type: Optional[str],
+    headers: Optional[HeaderArg],
+    body: Optional[Union[str, bytes]],
+    json: Optional[Any],
+    extras: Optional[Mapping[str, Any]],
+) -> Tuple[
+    str, str, Optional[HeaderArg], Optional[Union[str, bytes]], Mapping[str, Any]
+]:
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
 
@@ -2170,18 +2266,18 @@ def _prepare_sim_args(
         )
 
     if content_type is not None:
-        headers = headers or {}
+        headers = dict(headers or {})
         headers['Content-Type'] = content_type
 
     if json is not None:
         body = json_module.dumps(json, ensure_ascii=False)
-        headers = headers or {}
+        headers = dict(headers or {})
         headers['Content-Type'] = MEDIA_JSON
 
     return path, query_string, headers, body, extras
 
 
-def _is_asgi_app(app):
+def _is_asgi_app(app: Callable[..., Any]) -> bool:
     app_args = inspect.getfullargspec(app).args
     num_app_args = len(app_args)
 
@@ -2196,7 +2292,7 @@ def _is_asgi_app(app):
     return is_asgi
 
 
-async def _wait_for_startup(events):
+async def _wait_for_startup(events: Iterable[AsgiEvent]) -> None:
     # NOTE(kgriffs): This is covered, but our gate for some reason doesn't
     #   understand `while True`.
     while True:  # pragma: nocover
@@ -2213,7 +2309,7 @@ async def _wait_for_startup(events):
         await asyncio.sleep(0)
 
 
-async def _wait_for_shutdown(events):
+async def _wait_for_shutdown(events: Iterable[AsgiEvent]) -> None:
     # NOTE(kgriffs): This is covered, but our gate for some reason doesn't
     #   understand `while True`.
     while True:  # pragma: nocover

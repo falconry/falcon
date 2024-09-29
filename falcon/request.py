@@ -35,10 +35,14 @@ from typing import (
     Union,
 )
 from uuid import UUID
+import warnings
 
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon._typing import _UNSET
+from falcon._typing import StoreArg
+from falcon._typing import UnsetOr
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
 from falcon.forwarded import _parse_forwarded_header
@@ -46,11 +50,8 @@ from falcon.forwarded import Forwarded
 from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
 from falcon.typing import ReadableIO
-from falcon.typing import StoreArgument
-from falcon.util import deprecated
+from falcon.util import deprecation
 from falcon.util import ETag
 from falcon.util import structures
 from falcon.util.uri import parse_host
@@ -81,7 +82,7 @@ class Request:
             also PEP-3333.
 
     Keyword Arguments:
-        options (dict): Set of global options passed from the App handler.
+        options (RequestOptions): Set of global options passed from the App handler.
     """
 
     __slots__ = (
@@ -113,10 +114,8 @@ class Request:
     )
     _cookies: Optional[Dict[str, List[str]]] = None
     _cookies_collapsed: Optional[Dict[str, str]] = None
-    _cached_if_match: MissingOr[Optional[List[Union[ETag, Literal['*']]]]] = MISSING
-    _cached_if_none_match: MissingOr[Optional[List[Union[ETag, Literal['*']]]]] = (
-        MISSING
-    )
+    _cached_if_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
+    _cached_if_none_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
 
     # Child classes may override this
     context_type: ClassVar[Type[structures.Context]] = structures.Context
@@ -245,13 +244,13 @@ class Request:
         self.is_websocket: bool = False
 
         self.env = env
-        self.options = options if options else RequestOptions()
+        self.options = options if options is not None else RequestOptions()
 
         self._wsgierrors: TextIO = env['wsgi.errors']
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
-        self._media: MissingOr[Any] = MISSING
+        self._media: UnsetOr[Any] = _UNSET
         self._media_error: Optional[Exception] = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
@@ -323,7 +322,7 @@ class Request:
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
         if (
-            self.options.auto_parse_form_urlencoded
+            self.options._auto_parse_form_urlencoded
             and self.content_type is not None
             and 'application/x-www-form-urlencoded' in self.content_type
             and
@@ -344,15 +343,15 @@ class Request:
     # Properties
     # ------------------------------------------------------------------------
 
-    user_agent: Optional[str] = helpers.header_property('HTTP_USER_AGENT')
+    user_agent: Optional[str] = helpers._header_property('HTTP_USER_AGENT')
     """Value of the User-Agent header, or ``None`` if the header is missing."""
-    auth: Optional[str] = helpers.header_property('HTTP_AUTHORIZATION')
+    auth: Optional[str] = helpers._header_property('HTTP_AUTHORIZATION')
     """Value of the Authorization header, or ``None`` if the header is missing."""
-    expect: Optional[str] = helpers.header_property('HTTP_EXPECT')
+    expect: Optional[str] = helpers._header_property('HTTP_EXPECT')
     """Value of the Expect header, or ``None`` if the header is missing."""
-    if_range: Optional[str] = helpers.header_property('HTTP_IF_RANGE')
+    if_range: Optional[str] = helpers._header_property('HTTP_IF_RANGE')
     """Value of the If-Range header, or ``None`` if the header is missing."""
-    referer: Optional[str] = helpers.header_property('HTTP_REFERER')
+    referer: Optional[str] = helpers._header_property('HTTP_REFERER')
     """Value of the Referer header, or ``None`` if the header is missing."""
 
     @property
@@ -491,7 +490,7 @@ class Request:
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
-        if self._cached_if_match is MISSING:
+        if self._cached_if_match is _UNSET:
             header_value = self.env.get('HTTP_IF_MATCH')
             if header_value:
                 self._cached_if_match = helpers._parse_etags(header_value)
@@ -512,7 +511,7 @@ class Request:
 
         (See also: RFC 7232, Section 3.2)
         """  # noqa: D205
-        if self._cached_if_none_match is MISSING:
+        if self._cached_if_none_match is _UNSET:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
             if header_value:
                 self._cached_if_none_match = helpers._parse_etags(header_value)
@@ -634,8 +633,12 @@ class Request:
             return ''
 
     @property
-    # NOTE(caselit): Deprecated long ago. Warns since 4.0
-    @deprecated('Use `root_path` instead', is_property=True)
+    # NOTE(caselit): Deprecated long ago. Warns since 4.0.
+    @deprecation.deprecated(
+        'Use `root_path` instead. '
+        '(This compatibility alias will be removed in Falcon 5.0.)',
+        is_property=True,
+    )
     def app(self) -> str:
         """Deprecated alias for :attr:`root_path`."""
         return self.root_path
@@ -916,7 +919,7 @@ class Request:
             if self._cookies is None:
                 header_value = self.get_header('Cookie')
                 if header_value:
-                    self._cookies = helpers.parse_cookie_header(header_value)
+                    self._cookies = helpers._parse_cookie_header(header_value)
                 else:
                     self._cookies = {}
 
@@ -1057,7 +1060,7 @@ class Request:
 
         return netloc_value
 
-    def get_media(self, default_when_empty: MissingOr[Any] = MISSING) -> Any:
+    def get_media(self, default_when_empty: UnsetOr[Any] = _UNSET) -> Any:
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -1098,10 +1101,10 @@ class Request:
         Returns:
             media (object): The deserialized media representation.
         """
-        if self._media is not MISSING:
+        if self._media is not _UNSET:
             return self._media
         if self._media_error is not None:
-            if default_when_empty is not MISSING and isinstance(
+            if default_when_empty is not _UNSET and isinstance(
                 self._media_error, errors.MediaNotFoundError
             ):
                 return default_when_empty
@@ -1117,7 +1120,7 @@ class Request:
             )
         except errors.MediaNotFoundError as err:
             self._media_error = err
-            if default_when_empty is not MISSING:
+            if default_when_empty is not _UNSET:
                 return default_when_empty
             raise
         except Exception as err:
@@ -1360,7 +1363,7 @@ class Request:
             # point.
             header_value = self.get_header('Cookie')
             if header_value:
-                self._cookies = helpers.parse_cookie_header(header_value)
+                self._cookies = helpers._parse_cookie_header(header_value)
             else:
                 self._cookies = {}
 
@@ -1371,7 +1374,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[str] = ...,
     ) -> str: ...
 
@@ -1380,7 +1383,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: str,
     ) -> str: ...
@@ -1390,7 +1393,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]: ...
 
@@ -1398,7 +1401,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]:
         """Return the raw value of a query string parameter as a string.
@@ -1483,7 +1486,7 @@ class Request:
         required: Literal[True],
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[int] = ...,
     ) -> int: ...
 
@@ -1494,7 +1497,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: int,
     ) -> int: ...
@@ -1506,7 +1509,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[int] = ...,
     ) -> Optional[int]: ...
 
@@ -1516,7 +1519,7 @@ class Request:
         required: bool = False,
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[int] = None,
     ) -> Optional[int]:
         """Return the value of a query string parameter as an int.
@@ -1596,7 +1599,7 @@ class Request:
         required: Literal[True],
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[float] = ...,
     ) -> float: ...
 
@@ -1607,7 +1610,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: float,
     ) -> float: ...
@@ -1619,7 +1622,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[float] = ...,
     ) -> Optional[float]: ...
 
@@ -1629,7 +1632,7 @@ class Request:
         required: bool = False,
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[float] = None,
     ) -> Optional[float]:
         """Return the value of a query string parameter as an float.
@@ -1707,7 +1710,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[UUID] = ...,
     ) -> UUID: ...
 
@@ -1716,7 +1719,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: UUID,
     ) -> UUID: ...
@@ -1726,7 +1729,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[UUID] = ...,
     ) -> Optional[UUID]: ...
 
@@ -1734,7 +1737,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[UUID] = None,
     ) -> Optional[UUID]:
         """Return the value of a query string parameter as an UUID.
@@ -1807,7 +1810,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         blank_as_true: bool = ...,
         default: Optional[bool] = ...,
     ) -> bool: ...
@@ -1817,7 +1820,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         blank_as_true: bool = ...,
         *,
         default: bool,
@@ -1828,7 +1831,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         blank_as_true: bool = ...,
         default: Optional[bool] = ...,
     ) -> Optional[bool]: ...
@@ -1837,7 +1840,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         blank_as_true: bool = True,
         default: Optional[bool] = None,
     ) -> Optional[bool]:
@@ -1921,7 +1924,7 @@ class Request:
         transform: None = ...,
         *,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[str]] = ...,
     ) -> List[str]: ...
 
@@ -1931,7 +1934,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[_T]] = ...,
     ) -> List[_T]: ...
 
@@ -1941,7 +1944,7 @@ class Request:
         name: str,
         transform: None = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: List[str],
     ) -> List[str]: ...
@@ -1952,7 +1955,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: List[_T],
     ) -> List[_T]: ...
@@ -1963,7 +1966,7 @@ class Request:
         name: str,
         transform: None = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[str]] = ...,
     ) -> Optional[List[str]]: ...
 
@@ -1973,7 +1976,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[_T]] = ...,
     ) -> Optional[List[_T]]: ...
 
@@ -1982,7 +1985,7 @@ class Request:
         name: str,
         transform: Optional[Callable[[str], _T]] = None,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[List[_T]] = None,
     ) -> Optional[List[_T] | List[str]]:
         """Return the value of a query string parameter as a list.
@@ -2082,7 +2085,7 @@ class Request:
         format_string: str = ...,
         *,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[datetime] = ...,
     ) -> datetime: ...
 
@@ -2092,7 +2095,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: datetime,
     ) -> datetime: ...
@@ -2103,7 +2106,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[datetime] = ...,
     ) -> Optional[datetime]: ...
 
@@ -2112,7 +2115,7 @@ class Request:
         name: str,
         format_string: str = '%Y-%m-%dT%H:%M:%SZ',
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[datetime] = None,
     ) -> Optional[datetime]:
         """Return the value of a query string parameter as a datetime.
@@ -2166,7 +2169,7 @@ class Request:
         format_string: str = ...,
         *,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[py_date] = ...,
     ) -> py_date: ...
 
@@ -2176,7 +2179,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: py_date,
     ) -> py_date: ...
@@ -2187,7 +2190,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[py_date] = ...,
     ) -> Optional[py_date]: ...
 
@@ -2196,7 +2199,7 @@ class Request:
         name: str,
         format_string: str = '%Y-%m-%d',
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[py_date] = None,
     ) -> Optional[py_date]:
         """Return the value of a query string parameter as a date.
@@ -2242,7 +2245,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[Any] = None,
     ) -> Any:
         """Return the decoded JSON value of a query string parameter.
@@ -2368,7 +2371,9 @@ class Request:
 
         body_bytes = self.stream.read(content_length)
 
-        # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+        # NOTE(kgriffs): According to
+        # https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm
+        # the
         # body should be US-ASCII. Enforcing this also helps
         # catch malicious input.
         try:
@@ -2409,37 +2414,58 @@ class RequestOptions:
     For comma-separated values, this option also determines whether or not
     empty elements in the parsed list are retained.
     """
-    auto_parse_form_urlencoded: bool
-    """Set to ``True`` in order to automatically consume the request stream and merge
-    the results into the request's query string params when the request's content
-    type is ``application/x-www-form-urlencoded``` (default ``False``).
 
-    Enabling this option for WSGI apps makes the form parameters accessible via
-    :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`, etc.
+    @property
+    def auto_parse_form_urlencoded(self) -> bool:
+        """Set to ``True`` in order to automatically consume the request stream
+        and merge the results into the request's query string params when the
+        request's content type is ``application/x-www-form-urlencoded```
+        (default ``False``).
 
-    Warning:
-        The `auto_parse_form_urlencoded` option is not supported for
-        ASGI apps, and is considered deprecated for WSGI apps as of
-        Falcon 3.0, in favor of accessing URL-encoded forms
-        through :attr:`~Request.media`.
+        Enabling this option for WSGI apps makes the form parameters accessible
+        via :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`,
+        etc.
 
-        See also: :ref:`access_urlencoded_form`
+        Warning:
+            The `auto_parse_form_urlencoded` option is not supported for
+            ASGI apps, and is considered deprecated for WSGI apps as of
+            Falcon 3.0, in favor of accessing URL-encoded forms
+            through :attr:`~Request.media`.
 
-    Warning:
-        When this option is enabled, the request's body
-        stream will be left at EOF. The original data is
-        not retained by the framework.
+            The attribute and the auto-parsing functionality will be removed
+            entirely in Falcon 5.0.
 
-    Note:
-        The character encoding for fields, before
-        percent-encoding non-ASCII bytes, is assumed to be
-        UTF-8. The special `_charset_` field is ignored if
-        present.
+            See also: :ref:`access_urlencoded_form`.
 
-        Falcon expects form-encoded request bodies to be
-        encoded according to the standard W3C algorithm (see
-        also https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm).
-    """
+        Warning:
+            When this option is enabled, the request's body
+            stream will be left at EOF. The original data is
+            not retained by the framework.
+
+        Note:
+            The character encoding for fields, before
+            percent-encoding non-ASCII bytes, is assumed to be
+            UTF-8. The special `_charset_` field is ignored if
+            present.
+
+            Falcon expects form-encoded request bodies to be
+            encoded according to the standard W3C algorithm (see
+            also https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#application%2Fx-www-form-urlencoded-encoding-algorithm).
+        """  # noqa: D205
+        return self._auto_parse_form_urlencoded
+
+    @auto_parse_form_urlencoded.setter
+    def auto_parse_form_urlencoded(self, value: bool) -> None:
+        if value:
+            warnings.warn(
+                'The RequestOptions.auto_parse_form_urlencoded option is '
+                'deprecated. Please use Request.get_media() to consume '
+                'the submitted URL-encoded form instead.',
+                category=deprecation.DeprecatedWarning,
+            )
+
+        self._auto_parse_form_urlencoded = value
+
     auto_parse_qs_csv: bool
     """Set to ``True`` to split query string values on any non-percent-encoded
     commas (default ``False``).
@@ -2485,7 +2511,7 @@ class RequestOptions:
 
     __slots__ = (
         'keep_blank_qs_values',
-        'auto_parse_form_urlencoded',
+        '_auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
         'strip_url_path_trailing_slash',
         'default_media_type',
@@ -2494,7 +2520,7 @@ class RequestOptions:
 
     def __init__(self) -> None:
         self.keep_blank_qs_values = True
-        self.auto_parse_form_urlencoded = False
+        self._auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = False
         self.strip_url_path_trailing_slash = False
         self.default_media_type = DEFAULT_MEDIA_TYPE

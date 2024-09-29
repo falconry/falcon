@@ -18,9 +18,9 @@ from __future__ import annotations
 
 from typing import AsyncIterator, NoReturn, Optional
 
+from falcon._typing import AsgiReceive
 from falcon.asgi_spec import AsgiEvent
 from falcon.errors import OperationNotAllowed
-from falcon.typing import AsgiReceive
 
 __all__ = ('BoundedStream',)
 

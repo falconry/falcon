@@ -3,8 +3,6 @@
 Status Codes
 ============
 
-.. contents:: :local:
-
 Falcon provides a list of constants for common
 `HTTP response status codes <http://httpstatus.es>`_.
 
@@ -141,7 +139,7 @@ HTTPStatus
     HTTP_GONE = HTTP_410
     HTTP_LENGTH_REQUIRED = HTTP_411
     HTTP_PRECONDITION_FAILED = HTTP_412
-    HTTP_REQUEST_ENTITY_TOO_LARGE = HTTP_413
+    HTTP_CONTENT_TOO_LARGE = HTTP_413
     HTTP_REQUEST_URI_TOO_LONG = HTTP_414
     HTTP_UNSUPPORTED_MEDIA_TYPE = HTTP_415
     HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = HTTP_416
@@ -170,7 +168,7 @@ HTTPStatus
     HTTP_410 = '410 Gone'
     HTTP_411 = '411 Length Required'
     HTTP_412 = '412 Precondition Failed'
-    HTTP_413 = '413 Payload Too Large'
+    HTTP_413 = '413 Content Too Large'
     HTTP_414 = '414 URI Too Long'
     HTTP_415 = '415 Unsupported Media Type'
     HTTP_416 = '416 Range Not Satisfiable'
