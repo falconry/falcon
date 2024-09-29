@@ -7,6 +7,8 @@ import xml.etree.ElementTree as et  # noqa: I202
 import pytest
 
 import falcon
+from falcon.constants import MEDIA_JSON
+from falcon.media import BaseHandler
 import falcon.testing as testing
 
 try:
@@ -943,7 +945,64 @@ class TestHTTPError:
         err.__cause__ = ValueError('some error')
         assert err.description == 'Could not parse foo-media body - some error'
 
+    def test_kw_only(self):
+        with pytest.raises(TypeError, match='positional argument'):
+            falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
 
-def test_kw_only():
-    with pytest.raises(TypeError, match='positional argument'):
-        falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
+
+JSON_CONTENT = b'{"title": "410 Gone"}'
+JSON = ('application/json', 'application/json', JSON_CONTENT)
+CUSTOM_JSON = ('custom/any+json', 'application/json', JSON_CONTENT)
+
+XML_CONTENT = (
+    b'<?xml version="1.0" encoding="UTF-8"?><error><title>410 Gone</title></error>'
+)
+XML = ('application/xml', 'application/xml', XML_CONTENT)
+CUSTOM_XML = ('custom/any+xml', 'application/xml', XML_CONTENT)
+
+YAML = ('application/yaml', 'application/yaml', (b'title: 410 Gone!'))
+
+
+class FakeYamlMediaHandler(BaseHandler):
+    def serialize(self, media: object, content_type: str) -> bytes:
+        assert media == {'title': '410 Gone'}
+        return b'title: 410 Gone!'
+
+
+class TestDefaultSerializeError:
+    @pytest.fixture
+    def client(self, util, asgi):
+        app = util.create_app(asgi)
+        app.add_route('/', GoneResource())
+        return testing.TestClient(app)
+
+    @pytest.mark.parametrize('has_json_handler', [True, False])
+    def test_defaults_to_json(self, client, has_json_handler):
+        if not has_json_handler:
+            client.app.req_options.media_handlers.pop(MEDIA_JSON)
+            client.app.resp_options.media_handlers.pop(MEDIA_JSON)
+        res = client.simulate_get()
+        assert res.content_type == 'application/json'
+        assert res.headers['vary'] == 'Accept'
+        assert res.content == JSON_CONTENT
+
+    @pytest.mark.parametrize(
+        'accept, content_type, content',
+        (
+            JSON,
+            XML,
+            CUSTOM_JSON,
+            CUSTOM_XML,
+            YAML,
+        ),
+    )
+    def test_serializes_error_to_preferred_by_sender(
+        self, accept, content_type, content, client
+    ):
+        client.app.resp_options.media_handlers['application/yaml'] = (
+            FakeYamlMediaHandler()
+        )
+        res = client.simulate_get(headers={'Accept': accept})
+        assert res.content_type == content_type
+        assert res.headers['vary'] == 'Accept'
+        assert res.content == content

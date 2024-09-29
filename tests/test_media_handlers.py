@@ -9,6 +9,8 @@ import falcon
 from falcon import media
 from falcon import testing
 from falcon.asgi.stream import BoundedStream
+from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_YAML
 
 mujson = None
 orjson = None
@@ -373,17 +375,13 @@ def test_json_err_no_handler(asgi, util):
 
 
 def test_handlers_include_new_media_handlers_in_resolving() -> None:
-    class FakeHandler:
-        ...
-
     handlers = media.Handlers({falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler()})
-    handler = FakeHandler()
-    handlers['application/yaml'] = handler
-    resolved, _, _ = handlers._resolve(
-        'application/yaml', 'application/json', raise_not_found=False
-    )
-    assert resolved.__class__.__name__ == handler.__class__.__name__
-    assert resolved == handler
+    assert handlers._resolve(MEDIA_YAML, MEDIA_JSON, raise_not_found=False)[0] is None
+
+    js_handler = media.JSONHandler()
+    handlers[MEDIA_YAML] = js_handler
+    resolved = handlers._resolve(MEDIA_YAML, MEDIA_JSON, raise_not_found=False)[0]
+    assert resolved is js_handler
 
 
 class TestBaseHandler:
