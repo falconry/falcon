@@ -566,7 +566,9 @@ class App(falcon.app.App):
                             )
 
                             if serialize_sync:
-                                resp._media_rendered = serialize_sync(resp._media)
+                                resp._media_rendered = serialize_sync(
+                                    resp._media, resp.content_type
+                                )
                             else:
                                 resp._media_rendered = await handler.serialize_async(
                                     resp._media, resp.content_type
