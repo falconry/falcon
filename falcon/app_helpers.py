@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-from collections import OrderedDict
 from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
 
@@ -299,7 +298,7 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
             preferred, MEDIA_JSON, raise_not_found=False
         )
         if handler:
-            resp.data = handler.serialize(exception.to_dict(OrderedDict), preferred)
+            resp.data = handler.serialize(exception.to_dict(), preferred)
         else:
             resp.data = exception.to_xml()
 
