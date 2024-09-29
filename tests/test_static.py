@@ -694,3 +694,82 @@ def test_if_none_match_header_when_etag_has_changed(client, patch_open):
     )
     assert response.status == falcon.HTTP_200
     assert response.headers.get('Etag') is not None
+
+
+def test_etag_with_fallback_filename(client, patch_open, monkeypatch):
+    def fake_generate_etag(file_path):
+        if normalize_path('thing.zip') in file_path:
+            raise OSError(errno.ENOENT, 'File not found')
+        elif normalize_path('index.html') in file_path:
+            return '"etag-fallback-file"'
+        return '"some etag"'
+
+    monkeypatch.setattr('falcon.routing.static._generate_etag', fake_generate_etag)
+
+    patch_open(b'<html>Fallback content</html>')
+
+    monkeypatch.setattr('os.path.isfile', lambda file: file.endswith('index.html'))
+
+    client.app.add_static_route(
+        '/downloads', '/opt/somesite/downloads', fallback_filename='index.html'
+    )
+
+    response = client.simulate_request(path='/downloads/thing.zip')
+
+    assert response.status == falcon.HTTP_200
+    assert response.text == '<html>Fallback content</html>'
+    assert response.headers.get('Etag') == '"etag-fallback-file"'
+
+
+def test_etag_with_fallback_filename_also_missing(client, patch_open, monkeypatch):
+    def fake_generate_etag(file_path):
+        if normalize_path('thing.zip') in file_path:
+            raise OSError(errno.ENOENT, 'File not found')
+        elif normalize_path('index.html') in file_path:
+            raise OSError(errno.ENOENT, 'File not found')
+        return '"some etag"'
+
+    monkeypatch.setattr('falcon.routing.static._generate_etag', fake_generate_etag)
+
+    def validate(path):
+        if normalize_path('thing.zip') in path:
+            raise IOError()
+
+    patch_open(b'<html>Fallback content</html>', validate)
+
+    monkeypatch.setattr('os.path.isfile', lambda file: file.endswith('index.html'))
+
+    client.app.add_static_route(
+        '/downloads', '/opt/somesite/downloads', fallback_filename='index.html'
+    )
+
+    response = client.simulate_request(path='/downloads/thing.zip')
+
+    assert response.headers.get('Etag') is None
+    assert response.status == falcon.HTTP_404
+    assert response.text != '<html>Fallback content</html>'
+
+
+def test_etag_with_no_fallback_filename(client, patch_open, monkeypatch):
+    def fake_generate_etag(file_path):
+        if normalize_path('thing.zip') in file_path:
+            raise OSError(errno.ENOENT, 'File not found')
+        return '"some etag"'
+
+    monkeypatch.setattr('falcon.routing.static._generate_etag', fake_generate_etag)
+
+    def validate(path):
+        if normalize_path('thing.zip') in path:
+            raise IOError()
+
+    patch_open(b'<html>Fallback content</html>', validate)
+
+    client.app.add_static_route(
+        '/downloads', '/opt/somesite/downloads', fallback_filename=None
+    )
+
+    response = client.simulate_request(path='/downloads/thing.zip')
+
+    assert response.headers.get('Etag') is None
+    assert response.status == falcon.HTTP_404
+    assert response.text != '<html>Fallback content</html>'

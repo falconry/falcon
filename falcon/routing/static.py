@@ -226,7 +226,16 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        etag = _generate_etag(file_path)
+        try:
+            etag = _generate_etag(file_path)
+        except IOError:
+            try:
+                if self._fallback_filename is None:
+                    raise falcon.HTTPNotFound()
+                etag = _generate_etag(self._fallback_filename)
+            except IOError:
+                raise falcon.HTTPNotFound()
+
         if req.get_header('If-None-Match') == etag:
             resp.status = falcon.HTTP_304
             resp.content_type = None
