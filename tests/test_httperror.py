@@ -972,23 +972,23 @@ ASYNC_WITH_SYNC = (
 
 
 class FakeYamlMediaHandler(BaseHandler):
-    def serialize(self, media: object, content_type: str) -> bytes:
+    def serialize(self, media, content_type):
         assert media == {'title': '410 Gone'}
         return b'title: 410 Gone!'
 
 
 class AsyncOnlyMediaHandler(BaseHandler):
-    async def serialize_async(self, media: object, content_type: str) -> bytes:
+    async def serialize_async(self, media, content_type):
         assert media == {'title': '410 Gone'}
         return b'this is async'
 
 
 class SyncInterfaceMediaHandler(AsyncOnlyMediaHandler):
-    def serialize(self, media: object, content_type: str) -> bytes:
+    def serialize(self, media, content_type):
         assert media == {'title': '410 Gone'}
         return b'this is sync instead'
 
-    _serialize_sync = serialize
+    _serialize_sync = serialize  # type: ignore[assignment]
 
 
 class TestDefaultSerializeError:
