@@ -291,7 +291,12 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    preferred = req.client_prefers((MEDIA_XML, 'text/xml', MEDIA_JSON))
+    predefined = [MEDIA_XML, 'text/xml', MEDIA_JSON]
+    media_handlers = [mt for mt in resp.options.media_handlers if mt not in predefined]
+    # NOTE(caselit) add all the registered before the predefined ones. This ensures that
+    # in case of equal match the last one (json) is selected and that the q= is taken
+    # into consideration when selecting the media
+    preferred = req.client_prefers(media_handlers + predefined)
 
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media
@@ -311,10 +316,6 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
             preferred = MEDIA_JSON
         elif '+xml' in accept:
             preferred = MEDIA_XML
-        else:
-            # NOTE(caselit): if nothing else matchers try using the media handlers
-            # registered in the response
-            preferred = req.client_prefers(resp.options.media_handlers)
 
     if preferred is not None:
         handler, _, _ = resp.options.media_handlers._resolve(

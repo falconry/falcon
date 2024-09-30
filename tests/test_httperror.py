@@ -962,7 +962,7 @@ XML_CONTENT = (
 XML = (MEDIA_XML, MEDIA_XML, XML_CONTENT)
 CUSTOM_XML = ('custom/any+xml', MEDIA_XML, XML_CONTENT)
 
-YAML = (MEDIA_YAML, MEDIA_YAML, (b'title: 410 Gone!'))
+YAML = (MEDIA_YAML, MEDIA_YAML, b'title: 410 Gone!')
 ASYNC_ONLY = ('application/only_async', 'application/only_async', b'this is async')
 ASYNC_WITH_SYNC = (
     'application/async_with_sync',
@@ -1040,3 +1040,34 @@ class TestDefaultSerializeError:
         client = testing.TestClient(app)
         with pytest.raises(NotImplementedError, match='requires the sync interface'):
             client.simulate_get()
+
+    def test_add_xml_handler(self, client):
+        client.app.resp_options.media_handlers[MEDIA_XML] = FakeYamlMediaHandler()
+        res = client.simulate_get(headers={'Accept': 'application/xhtml+xml'})
+        assert res.content_type == MEDIA_XML
+        assert res.content == YAML[-1]
+
+    @pytest.mark.parametrize(
+        'accept, content_type',
+        [
+            (
+                # firefox
+                'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,'
+                'image/webp,image/png,image/svg+xml,*/*;q=0.8',
+                MEDIA_XML,
+            ),
+            (
+                # safari / chrome
+                'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,'
+                'image/apng,*/*;q=0.8',
+                MEDIA_XML,
+            ),
+            ('text/html, application/xhtml+xml, image/jxr, */*', MEDIA_JSON),  # edge
+            (f'text/html,{MEDIA_YAML};q=0.8,*/*;q=0.7', MEDIA_YAML),
+            (f'text/html,{MEDIA_YAML};q=0.8,{MEDIA_JSON};q=0.8', MEDIA_JSON),
+        ],
+    )
+    def test_hard_content_types(self, client, accept, content_type):
+        client.app.resp_options.media_handlers[MEDIA_YAML] = FakeYamlMediaHandler()
+        res = client.simulate_get(headers={'Accept': accept})
+        assert res.content_type == content_type

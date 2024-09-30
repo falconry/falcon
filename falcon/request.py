@@ -28,7 +28,6 @@ from typing import (
     Mapping,
     Optional,
     overload,
-    Sequence,
     TextIO,
     Tuple,
     Type,
