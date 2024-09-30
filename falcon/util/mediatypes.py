@@ -188,8 +188,6 @@ class _MediaRange:
                 return self._NOT_MATCHING
         param_score += len(matching)
 
-        score = (main_matches, sub_matches, param_score, self.quality)
-        print(f'score({self}, {media_type}) -> {score}')
         return (main_matches, sub_matches, param_score, self.quality)
 
     def __repr__(self) -> str:
@@ -246,16 +244,10 @@ def best_match(media_types: Iterable[str], header: str) -> Optional[str]:
         Best match from the supported candidates, or an empty string if the
         provided header value does not match any of the given types.
     """
-    for media_type in media_types:
-        q = quality(media_type, header)
-        print(f'quality{(media_type, header)} -> {q}')
-
     matching, best_quality = max(
         ((media_type, quality(media_type, header)) for media_type in media_types),
         key=lambda mt_quality: mt_quality[1],
     )
     if best_quality > 0.0:
-        print(f'returning {matching} with q={best_quality}')
         return matching
-    print('returning no match')
     return ''
