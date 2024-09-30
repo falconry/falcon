@@ -89,8 +89,9 @@ class ResourceInvalidMediaAsync:
 def test_json(client, media_type):
     expected_body = b'{"something": true}'
     headers = {'Content-Type': media_type}
-    client.simulate_post('/', body=expected_body, headers=headers)
-
+    resp = client.simulate_post('/', body=expected_body, headers=headers)
+    print(resp.text)
+    assert resp.status_code == 200
     media = client.resource.captured_req_media
     assert media is not None
     assert media.get('something') is True

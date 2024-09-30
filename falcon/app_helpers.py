@@ -291,7 +291,9 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    preferred = req.client_prefers((MEDIA_XML, 'text/xml', MEDIA_JSON))
+    # NOTE(vytas): Unlike python-mimeparse, our reimplementation returns the
+    #   first item if all of them have the same score.
+    preferred = req.client_prefers((MEDIA_JSON, 'text/xml', MEDIA_XML))
 
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media

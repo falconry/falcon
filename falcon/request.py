@@ -53,10 +53,10 @@ from falcon.stream import BoundedStream
 from falcon.typing import ReadableIO
 from falcon.util import deprecation
 from falcon.util import ETag
+from falcon.util import mediatypes
 from falcon.util import structures
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
-from falcon.vendor import mimeparse
 
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
@@ -1167,7 +1167,7 @@ class Request:
 
         # Fall back to full-blown parsing
         try:
-            return mimeparse.quality(media_type, accept) != 0.0
+            return mediatypes.quality(media_type, accept) != 0.0
         except ValueError:
             return False
 
@@ -1187,7 +1187,7 @@ class Request:
 
         try:
             # NOTE(kgriffs): best_match will return '' if no match is found
-            preferred_type = mimeparse.best_match(media_types, self.accept)
+            preferred_type = mediatypes.best_match(media_types, self.accept)
         except ValueError:
             # Value for the accept header was not formatted correctly
             preferred_type = ''

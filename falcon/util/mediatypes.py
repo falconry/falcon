@@ -137,7 +137,7 @@ class _MediaRange:
 
     __slots__ = ('main_type', 'subtype', 'quality', 'params')
 
-    _NOT_MATCHING = (-1, -1, -1, 0.0, -1)
+    _NOT_MATCHING = (-1, -1, -1, 0.0)
 
     def __init__(
         self, main_type: str, subtype: str, quality: float, params: dict
@@ -164,9 +164,7 @@ class _MediaRange:
 
         return cls(main_type, subtype, quality, params)
 
-    def match_score(
-        self, media_type: _MediaType, index: int = -1
-    ) -> Tuple[int, int, int, float, int]:
+    def match_score(self, media_type: _MediaType) -> Tuple[int, int, int, float]:
         if self.main_type == '*' or media_type.main_type == '*':
             main_matches = 0
         elif self.main_type != media_type.main_type:
@@ -190,9 +188,9 @@ class _MediaRange:
                 return self._NOT_MATCHING
         param_score += len(matching)
 
-        score = (main_matches, sub_matches, param_score, self.quality, index)
+        score = (main_matches, sub_matches, param_score, self.quality)
         print(f'score({self}, {media_type}) -> {score}')
-        return (main_matches, sub_matches, param_score, self.quality, index)
+        return (main_matches, sub_matches, param_score, self.quality)
 
     def __repr__(self) -> str:
         q = self.quality
@@ -228,12 +226,11 @@ def quality(media_type: str, header: str) -> float:
         `media_type`. (If none matches, 0.0 is returned.)
     """
     parsed_media_type = _parse_media_type(media_type)
-    media_ranges = _parse_media_ranges(header)
-
     most_specific = max(
-        media_range.match_score(parsed_media_type) for media_range in media_ranges
+        media_range.match_score(parsed_media_type)
+        for media_range in _parse_media_ranges(header)
     )
-    return most_specific[-2]
+    return most_specific[-1]
 
 
 def best_match(media_types: Iterable[str], header: str) -> Optional[str]:
@@ -246,8 +243,19 @@ def best_match(media_types: Iterable[str], header: str) -> Optional[str]:
             HTTP ``Accept`` header.
 
     Returns:
-        Best match from the supported candidates, or ``None`` if the provided
-        header value does not match any of the given types.
+        Best match from the supported candidates, or an empty string if the
+        provided header value does not match any of the given types.
     """
-    # media_ranges = _parse_media_ranges(header)
-    return None
+    for media_type in media_types:
+        q = quality(media_type, header)
+        print(f'quality{(media_type, header)} -> {q}')
+
+    matching, best_quality = max(
+        ((media_type, quality(media_type, header)) for media_type in media_types),
+        key=lambda mt_quality: mt_quality[1],
+    )
+    if best_quality > 0.0:
+        print(f'returning {matching} with q={best_quality}')
+        return matching
+    print('returning no match')
+    return ''

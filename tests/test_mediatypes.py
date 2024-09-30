@@ -150,3 +150,34 @@ def test_quality_rfc_examples(accept, media_type, quality_value):
 )
 def test_quality_none_matches(accept, media_type):
     assert mediatypes.quality(media_type, accept) == 0.0
+
+
+@pytest.mark.parametrize(
+    'media_types,accept,expected',
+    [
+        (['application/json'], 'application/json', 'application/json'),
+        (['application/json'], 'application/json; charset=utf-8', 'application/json'),
+        (
+            ['application/json', 'application/yaml'],
+            'application/json, */*; q=0.2',
+            'application/json',
+        ),
+    ],
+)
+def test_best_match(media_types, accept, expected):
+    assert mediatypes.best_match(media_types, accept) == expected
+
+
+@pytest.mark.parametrize(
+    'media_types,accept',
+    [
+        (['application/json'], 'application/yaml'),
+        (['application/json', 'application/yaml'], 'application/xml, text/*; q=0.7'),
+        (
+            ['text/plain', 'falcon/peregrine; load=unladen'],
+            'falcon/peregrine; load=heavy',
+        ),
+    ],
+)
+def test_best_match_none_matches(media_types, accept):
+    assert mediatypes.best_match(media_types, accept) == ''
