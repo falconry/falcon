@@ -22,6 +22,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Iterable,
     List,
     Literal,
     Mapping,
@@ -1171,7 +1172,7 @@ class Request:
         except ValueError:
             return False
 
-    def client_prefers(self, media_types: Sequence[str]) -> Optional[str]:
+    def client_prefers(self, media_types: Iterable[str]) -> Optional[str]:
         """Return the client's preferred media type, given several choices.
 
         Args:
