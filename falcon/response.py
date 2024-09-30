@@ -1387,7 +1387,7 @@ class ResponseOptions:
     media_handlers: Handlers
     """A dict-like object for configuring the media-types to handle.
 
-    default, handlers are provided for the ``application/json``,
+    Default handlers are provided for the ``application/json``,
     ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
     """
     static_media_types: Dict[str, str]
@@ -1395,18 +1395,35 @@ class ResponseOptions:
 
     Defaults to ``mimetypes.types_map`` after calling ``mimetypes.init()``.
     """
+    enable_xml_error_serialization: bool
+    """When ``False`` disables support for serializing http errors using XML when using
+    the default error serializer. Defaults to ``True``.
+
+    In any case the request ``Accept`` headers it taken into consideration when
+    selecting the serialization format of the errors.
+
+    Note:
+
+        The default value will change to ``False`` in Falcon 5.0.
+
+    Note:
+
+        Has no effect when using a custom error serializers.
+    """
 
     __slots__ = (
         'secure_cookies_by_default',
         'default_media_type',
         'media_handlers',
         'static_media_types',
+        'enable_xml_error_serialization',
     )
 
     def __init__(self) -> None:
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
+        self.enable_xml_error_serialization = True
 
         if not mimetypes.inited:
             mimetypes.init()

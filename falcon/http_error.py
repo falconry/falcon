@@ -20,6 +20,7 @@ import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
 from falcon.util import code_to_http_status
+from falcon.util import deprecated
 from falcon.util import http_status_to_code
 from falcon.util import uri
 
@@ -44,8 +45,7 @@ class HTTPError(Exception):
 
     To customize what data is passed to the serializer, subclass
     ``HTTPError`` and override the ``to_dict()`` method (``to_json()``
-    is implemented via ``to_dict()``). To also support XML, override
-    the ``to_xml()`` method.
+    is implemented via ``to_dict()``).
 
     `status` is the only positional argument allowed,
     the other arguments are defined as keyword-only.
@@ -215,13 +215,8 @@ class HTTPError(Exception):
         # NOTE: the json handler requires the sync serialize interface
         return handler.serialize(obj, MEDIA_JSON)
 
-    def to_xml(self) -> bytes:
-        """Return an XML-encoded representation of the error.
-
-        Returns:
-            bytes: An XML document for the error.
-
-        """
+    def _to_xml(self) -> bytes:
+        """Return an XML-encoded representation of the error."""
 
         error_element = et.Element('error')
 
@@ -242,6 +237,18 @@ class HTTPError(Exception):
         return b'<?xml version="1.0" encoding="UTF-8"?>' + et.tostring(
             error_element, encoding='utf-8'
         )
+
+    @deprecated(
+        'The internal serialization to xml is deprecated. A similar output can be '
+        'obtained by serializing to xml the output of ``.to_dict()``'
+    )
+    def to_xml(self) -> bytes:
+        """Return an XML-encoded representation of the error.
+
+        Returns:
+            bytes: An XML document for the error.
+        """
+        return self._to_xml()
 
 
 # NOTE: initialized in falcon.media.json, that is always imported since Request/Response
