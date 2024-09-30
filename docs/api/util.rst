@@ -33,6 +33,8 @@ HTTP Status
 .. autofunction:: falcon.http_status_to_code
 .. autofunction:: falcon.code_to_http_status
 
+.. _mediatype_util:
+
 Media types
 -----------
 
