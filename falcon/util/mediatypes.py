@@ -291,8 +291,7 @@ def quality(media_type: str, header: str) -> float:
 
 
 def best_match(media_types: Iterable[str], header: str) -> str:
-    """Choose media type with the highest :func:`quality` from a list of
-    candidates.
+    """Choose media type with the highest :func:`quality` from a list of candidates.
 
     Args:
         media_types: An iterable over one or more Internet media types
