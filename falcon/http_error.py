@@ -15,7 +15,6 @@
 
 from __future__ import annotations
 
-from collections import OrderedDict
 from typing import MutableMapping, Optional, Type, TYPE_CHECKING, Union
 import xml.etree.ElementTree as et
 
@@ -144,10 +143,11 @@ class HTTPError(Exception):
         self.code = code
 
         if href:
-            link = self.link = OrderedDict()
-            link['text'] = href_text or 'Documentation related to this error'
-            link['href'] = uri.encode(href)
-            link['rel'] = 'help'
+            self.link = {
+                'text': href_text or 'Documentation related to this error',
+                'href': uri.encode(href),
+                'rel': 'help',
+            }
         else:
             self.link = None
 
@@ -209,9 +209,10 @@ class HTTPError(Exception):
 
         """
 
-        obj = self.to_dict(OrderedDict)
+        obj = self.to_dict()
         if handler is None:
             handler = _DEFAULT_JSON_HANDLER
+        # NOTE: the json handler requires the sync serialize interface
         return handler.serialize(obj, MEDIA_JSON)
 
     def to_xml(self) -> bytes:

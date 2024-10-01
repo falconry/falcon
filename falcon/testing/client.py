@@ -274,6 +274,11 @@ class _ResultBase:
         """
         return self._encoding
 
+    @property
+    def content_type(self) -> Optional[str]:
+        """Return the ``Content-Type`` header or ``None`` if missing."""
+        return self.headers.get('Content-Type')
+
 
 class ResultBodyStream:
     """Simple forward-only reader for a streamed test result body.
@@ -369,7 +374,7 @@ class Result(_ResultBase):
         return json_module.loads(self.text)
 
     def __repr__(self) -> str:
-        content_type = self.headers.get('Content-Type', '')
+        content_type = self.content_type or ''
 
         if len(self.content) > 40:
             content = self.content[:20] + b'...' + self.content[-20:]
