@@ -291,9 +291,14 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    # NOTE(vytas): Unlike python-mimeparse, our reimplementation returns the
-    #   first item if all of them have the same score.
-    preferred = req.client_prefers((MEDIA_JSON, 'text/xml', MEDIA_XML))
+
+    predefined = [MEDIA_JSON, 'text/xml', MEDIA_XML]
+    media_handlers = [mt for mt in resp.options.media_handlers if mt not in predefined]
+    # NOTE(caselit,vytas): Add the registered handlers after the predefined
+    #   ones. This ensures that in the case of an equal match, the first one
+    #   (JSON) is selected and that the q parameter is taken into consideration
+    #   when selecting the media handler.
+    preferred = req.client_prefers(predefined + media_handlers)
 
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media
@@ -315,11 +320,19 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
             preferred = MEDIA_XML
 
     if preferred is not None:
+        handler, _, _ = resp.options.media_handlers._resolve(
+            preferred, MEDIA_JSON, raise_not_found=False
+        )
         if preferred == MEDIA_JSON:
-            handler, _, _ = resp.options.media_handlers._resolve(
-                MEDIA_JSON, MEDIA_JSON, raise_not_found=False
-            )
+            # NOTE(caselit): special case json to ensure that it's always possible to
+            # serialize an error in json even if no handler is set in the
+            # media_handlers.
             resp.data = exception.to_json(handler)
+        elif handler:
+            # NOTE(caselit): Let the app serialize the response even if it needs
+            # to re-get the handler, since async handlers may not have a sync
+            # version available.
+            resp.media = exception.to_dict()
         else:
             resp.data = exception.to_xml()
 
