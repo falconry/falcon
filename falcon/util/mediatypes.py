@@ -140,7 +140,7 @@ class _MediaRange:
 
     __slots__ = ('main_type', 'subtype', 'quality', 'params')
 
-    _NOT_MATCHING = (-1, -1, -1, 0.0)
+    _NOT_MATCHING = (-1, -1, -1, -1, 0.0)
 
     _Q_VALUE_ERROR_MESSAGE = (
         'If provided, the q parameter must be a real number '
@@ -186,7 +186,7 @@ class _MediaRange:
 
         return cls(main_type, subtype, quality, params)
 
-    def match_score(self, media_type: _MediaType) -> Tuple[int, int, int, float]:
+    def match_score(self, media_type: _MediaType) -> Tuple[int, int, int, int, float]:
         if self.main_type == '*' or media_type.main_type == '*':
             main_matches = 0
         elif self.main_type != media_type.main_type:
@@ -203,14 +203,15 @@ class _MediaRange:
 
         mr_pnames = frozenset(self.params)
         mt_pnames = frozenset(media_type.params)
-        param_score = -len(mr_pnames.symmetric_difference(mt_pnames))
+
+        exact_match = 0 if mr_pnames.symmetric_difference(mt_pnames) else 1
+
         matching = mr_pnames & mt_pnames
         for pname in matching:
             if self.params[pname] != media_type.params[pname]:
                 return self._NOT_MATCHING
-        param_score += len(matching)
 
-        return (main_matches, sub_matches, param_score, self.quality)
+        return (main_matches, sub_matches, exact_match, len(matching), self.quality)
 
     def __repr__(self) -> str:
         q = self.quality
@@ -235,6 +236,42 @@ def quality(media_type: str, header: str) -> float:
     Media-ranges are parsed from the provided `header` value according to
     RFC 9110, Section 12.5.1 (the ``Accept`` header).
 
+    The provided `media_type` is matched against each of the parsed media
+    ranges, and the fitness of each match is assessed as follows
+    (in the decreasing priority list of criteria):
+
+    1. Do the main types (as in ``type/subtype``) match?
+
+       The types must either match exactly, or as wildcard (``*``).
+       The matches involving a wildcard are prioritized lower.
+
+    2. Do the subtypes (as in ``type/subtype``) match?
+
+       The subtypes must either match exactly, or as wildcard (``*``).
+       The matches involving a wildcard are prioritized lower.
+
+    3. Do the parameters match exactly?
+
+       If all the parameter names and values (if any) between the media range
+       and media type match exactly, such match is prioritized higher than
+       matches involving extraneous parameters on either side.
+
+       Note that if parameter names match, the corresponding values must also
+       be equal, or the provided media type is considered not to match the
+       media range in question at all.
+
+    4. The number of matching parameters.
+
+    5. Finally, if two or more best media range matches are equally fit
+       according to all of the above criteria (1) through (4), the highest
+       quality (i.e., the value of the ``q`` parameter) of these is returned.
+
+    Note:
+        With the exception of evaluating the exact parameter match (3), the
+        number of extraneous parameters (i.e. where the names are only present
+        in the media type, or only in the media range) currently does not
+        influence the described specificity sort order.
+
     Args:
         media_type: The Internet media type to match against the provided
             HTTP ``Accept`` header value.
@@ -254,7 +291,8 @@ def quality(media_type: str, header: str) -> float:
 
 
 def best_match(media_types: Iterable[str], header: str) -> Optional[str]:
-    """Choose media type with the highest quality from a list of candidates.
+    """Choose media type with the highest :func:`quality` from a list of
+    candidates.
 
     Args:
         media_types: An iterable over one or more Internet media types

@@ -159,6 +159,15 @@ def test_quality_rfc_examples(accept, media_type, quality_value):
             'text/plain; format=flowed',
             0.33,
         ),
+        (
+            # NOTE(vytas): Same as one of the RFC 7231 examples, just with some
+            #   media ranges reordered. python-mimeparse fails to yield the
+            #   correct result in this specific case.
+            'text/*;q=0.3, text/html;level=1, text/html;q=0.7, '
+            'text/html;level=2;q=0.4, */*;q=0.5',
+            'text/html; level=3',
+            0.7,
+        ),
     ],
 )
 def test_quality(accept, media_type, quality_value):
