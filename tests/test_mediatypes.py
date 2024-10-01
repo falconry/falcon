@@ -2,6 +2,7 @@ import itertools
 
 import pytest
 
+from falcon import errors
 from falcon.util import mediatypes
 
 
@@ -181,3 +182,27 @@ def test_best_match(media_types, accept, expected):
 )
 def test_best_match_none_matches(media_types, accept):
     assert mediatypes.best_match(media_types, accept) == ''
+
+
+@pytest.mark.parametrize('media_type', ['', 'word document', 'text'])
+def test_invalid_media_type(media_type):
+    with pytest.raises(errors.InvalidMediaType):
+        mediatypes.quality(media_type, '*/*')
+
+
+@pytest.mark.parametrize(
+    'media_range',
+    [
+        '',
+        'word document',
+        'text',
+        'text/plain; q=high',
+        '*/*; q=inf',
+        '*/*; q=-inf',
+        '*/*; q=nan',
+        'application/very-important; q=1337.0',
+    ],
+)
+def test_invalid_media_range(media_range):
+    with pytest.raises(errors.InvalidMediaRange):
+        mediatypes.quality('falcon/peregrine', media_range)

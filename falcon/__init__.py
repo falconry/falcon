@@ -84,6 +84,7 @@ __all__ = (
     'http_status_to_code',
     'IS_64_BITS',
     'is_python_func',
+    'mediatypes',
     'misc',
     'parse_header',
     'reader',
@@ -138,6 +139,8 @@ __all__ = (
     'HTTPUnsupportedMediaType',
     'HTTPUriTooLong',
     'HTTPVersionNotSupported',
+    'InvalidMediaRange',
+    'InvalidMediaType',
     'MediaMalformedError',
     'MediaNotFoundError',
     'MediaValidationError',
@@ -388,6 +391,8 @@ from falcon.errors import HTTPUnprocessableEntity
 from falcon.errors import HTTPUnsupportedMediaType
 from falcon.errors import HTTPUriTooLong
 from falcon.errors import HTTPVersionNotSupported
+from falcon.errors import InvalidMediaRange
+from falcon.errors import InvalidMediaType
 from falcon.errors import MediaMalformedError
 from falcon.errors import MediaNotFoundError
 from falcon.errors import MediaValidationError

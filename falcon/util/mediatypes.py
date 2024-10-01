@@ -17,7 +17,10 @@
 from __future__ import annotations
 
 import functools
+import math
 from typing import Dict, Iterable, Iterator, Optional, Tuple
+
+from falcon import errors
 
 __all__ = ('best_match', 'parse_header', 'quality')
 
@@ -103,7 +106,7 @@ def _parse_media_type_header(media_type: str) -> Tuple[str, str, dict]:
 
     main_type, separator, subtype = full_type.partition('/')
     if not separator:
-        raise ValueError('invalid media type')
+        raise errors.InvalidMediaType('The media type value must contain type/subtype.')
 
     return (main_type.strip(), subtype.strip(), params)
 
@@ -139,6 +142,11 @@ class _MediaRange:
 
     _NOT_MATCHING = (-1, -1, -1, 0.0)
 
+    _Q_VALUE_ERROR_MESSAGE = (
+        'If provided, the q parameter must be a real number '
+        'in the range 0 through 1.'
+    )
+
     def __init__(
         self, main_type: str, subtype: str, quality: float, params: dict
     ) -> None:
@@ -149,7 +157,12 @@ class _MediaRange:
 
     @classmethod
     def parse(cls, media_range: str) -> _MediaRange:
-        main_type, subtype, params = _parse_media_type_header(media_range)
+        try:
+            main_type, subtype, params = _parse_media_type_header(media_range)
+        except errors.InvalidMediaType as ex:
+            raise errors.InvalidMediaRange(
+                'The media range value must contain type/subtype.'
+            ) from ex
 
         # NOTE(vytas): We don't need to special-case Q since the above
         #   parse_header always lowercases parameters.
@@ -158,9 +171,18 @@ class _MediaRange:
         try:
             quality = float(q)
         except (TypeError, ValueError) as ex:
-            raise ValueError('invalid media range') from ex
-        if not (0.0 <= quality <= 1.0):
-            raise ValueError('q is not between 0.0 and 1.0')
+            # NOTE(vytas): RFC 9110, Section 12.4.2:
+            #   weight = OWS ";" OWS "q=" qvalue
+            #   qvalue = ( "0" [ "." 0*3DIGIT ] ) / ( "1" [ "." 0*3("0") ] )
+            raise errors.InvalidMediaRange(cls._Q_VALUE_ERROR_MESSAGE) from ex
+
+        if not (0.0 <= quality <= 1.0) or not math.isfinite(quality):
+            raise errors.InvalidMediaRange(cls._Q_VALUE_ERROR_MESSAGE)
+
+        # NOTE(vytas): RFC 9110, Section 12.4.2 states that a sender of qvalue
+        #   MUST NOT generate more than three digits after the decimal point,
+        #   but we are more permissive here, and opt not to spend any extra CPU
+        #   cycles, if we have already managed to convert the value to float.
 
         return cls(main_type, subtype, quality, params)
 
