@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import functools
 import math
-from typing import Dict, Iterable, Iterator, Optional, Tuple
+from typing import Dict, Iterable, Iterator, Tuple
 
 from falcon import errors
 
