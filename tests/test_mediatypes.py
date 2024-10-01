@@ -97,7 +97,7 @@ _RFC_9110_EXAMPLE_ACCEPT = (
 )
 # NOTE(vytas): Including the errata https://www.rfc-editor.org/errata/eid7138.
 _RFC_9110_EXAMPLE_VALUES = [
-    ('text/plain;format=flowed', 1),
+    ('text/plain;format=flowed', 1.0),
     ('text/plain', 0.7),
     ('text/html', 0.3),
     ('image/jpeg', 0.5),
@@ -137,6 +137,53 @@ def test_quality_rfc_examples(accept, media_type, quality_value):
 
 
 @pytest.mark.parametrize(
+    'accept,media_type,quality_value',
+    [
+        (
+            'application/*, */wildcard; q=0.7, */*; q=0.25',
+            'test/wildcard; expect=pass',
+            0.7,
+        ),
+        (
+            'application/*, */wildcard; q=0.7, */*; q=0.25',
+            'application/wildcard; expect=pass',
+            1.0,
+        ),
+        (
+            'application/*, */wildcard; q=0.7, */*; q=0.25',
+            'test/wildcard; expect=pass',
+            0.7,
+        ),
+        (
+            'text/x-python, text/*; q=0.33, text/plain; format=fixed',
+            'text/plain; format=flowed',
+            0.33,
+        ),
+    ],
+)
+def test_quality(accept, media_type, quality_value):
+    assert pytest.approx(mediatypes.quality(media_type, accept)) == quality_value
+
+
+@pytest.mark.parametrize(
+    'accept,media_type',
+    [
+        (
+            'foo/bar, test/app; q=0.2, test/app; p=1; q=0.9, test/app;p=1;r=2',
+            'test/app',
+        ),
+        ('test/app; q=0.1, test/app; p=1; q=0.2, test/app;p=1;r=2', 'test/app; p=1'),
+        (
+            '*/app; q=0.1, simple/app; test=true; q=0.2, simple/app; color=blue',
+            'simple/app; test=true',
+        ),
+    ],
+)
+def test_quality_prefer_exact_match(accept, media_type):
+    assert pytest.approx(mediatypes.quality(media_type, accept)) == 0.2
+
+
+@pytest.mark.parametrize(
     'accept,media_type',
     [
         ('application/json', 'application/yaml'),
@@ -147,6 +194,10 @@ def test_quality_rfc_examples(accept, media_type, quality_value):
         ),
         ('text/html, text/plain', 'text/x-python'),
         ('*/json; q=0.2, application/json', 'application/msgpack'),
+        (
+            'text/x-python, image/*; q=0.33, text/plain; format=fixed',
+            'text/plain; format=flowed',
+        ),
     ],
 )
 def test_quality_none_matches(accept, media_type):

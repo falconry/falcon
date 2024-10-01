@@ -207,7 +207,7 @@ class Response(response.Response):
             data = self._data
 
             if data is None and self._media is not None:
-                # NOTE(kgriffs): We use a special MISSING singleton since
+                # NOTE(kgriffs): We use a special _UNSET singleton since
                 #   None is ambiguous (the media handler might return None).
                 if self._media_rendered is _UNSET:
                     if not self.content_type:

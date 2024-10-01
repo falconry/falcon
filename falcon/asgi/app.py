@@ -554,7 +554,7 @@ class App(falcon.app.App):
                     data = resp._data
 
                     if data is None and resp._media is not None:
-                        # NOTE(kgriffs): We use a special MISSING singleton since
+                        # NOTE(kgriffs): We use a special _UNSET singleton since
                         #   None is ambiguous (the media handler might return None).
                         if resp._media_rendered is _UNSET:
                             opt = resp.options

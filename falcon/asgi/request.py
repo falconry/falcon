@@ -169,7 +169,7 @@ class Request(request.Request):
 
         self.uri_template = None
         # PERF(vytas): Fall back to class variable(s) when unset.
-        # self._media = MISSING
+        # self._media = _UNSET
         # self._media_error = None
 
         # TODO(kgriffs): ASGI does not specify whether 'path' may be empty,
