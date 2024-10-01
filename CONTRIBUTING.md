@@ -53,16 +53,16 @@ Falcon is used in a number of mission-critical applications and is known for its
 
 Project maintainers review each PR for the following:
 
-- [ ] **Design.** Does it do the right thing? Is the end goal well understood and correct?
-- [ ] **Correctness.** Is the logic correct? Does it behave correctly according to the goal of the feature or bug fix?
-- [ ] **Fit.** Is this feature or fix in keeping with the spirit of the project? Would this idea be better implemented as an add-on?
-- [ ] **Standards.** Does this change align with approved or standards-track RFCs, de-facto standards, and currently accepted best practices?
-- [ ] **Tests.** Does the PR implement sufficient test coverage in terms of value inputs, Python versions, and lines tested?
-- [ ] **Compatibility.** Does it work across all of Falcon's supported Python versions and operating systems?
-- [ ] **Performance.** Will this degrade performance for request or response handling? Are there opportunities to optimize the implementation?
-- [ ] **Docs.** Does this impact any existing documentation or require new documentation? If so, does this PR include the aforementioned docs, and is the language friendly, clear, helpful, and grammatically correct with no misspellings? Do all docstrings conform to Google style ala [sphinx.ext.napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html)?
-- [ ] **Dependencies.** Does this PR bring in any unnecessary dependencies that would prevent us from keeping the framework lean and mean, jeopardize the reliability of the project, or significantly increase Falcon's attack service?
-- [ ] **Changelog.** Does the PR have a changelog entry in newsfragments? Is the
+* **Design.** Does it do the right thing? Is the end goal well understood and correct?
+* **Correctness.** Is the logic correct? Does it behave correctly according to the goal of the feature or bug fix?
+* **Fit.** Is this feature or fix in keeping with the spirit of the project? Would this idea be better implemented as an add-on?
+* **Standards.** Does this change align with approved or standards-track RFCs, de-facto standards, and currently accepted best practices?
+* **Tests.** Does the PR implement sufficient test coverage in terms of value inputs, Python versions, and lines tested?
+* **Compatibility.** Does it work across all of Falcon's supported Python versions and operating systems?
+* **Performance.** Will this degrade performance for request or response handling? Are there opportunities to optimize the implementation?
+* **Docs.** Does this impact any existing documentation or require new documentation? If so, does this PR include the aforementioned docs, and is the language friendly, clear, helpful, and grammatically correct with no misspellings? Do all docstrings conform to Google style ala [sphinx.ext.napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html)?
+* **Dependencies.** Does this PR bring in any unnecessary dependencies that would prevent us from keeping the framework lean and mean, jeopardize the reliability of the project, or significantly increase Falcon's attack service?
+* **Changelog.** Does the PR have a changelog entry in newsfragments? Is the
 type correct? Try running `towncrier --draft` to ensure it renders correctly.
 
 ## Test coverage
