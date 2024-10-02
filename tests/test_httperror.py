@@ -7,6 +7,10 @@ import xml.etree.ElementTree as et  # noqa: I202
 import pytest
 
 import falcon
+from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_XML
+from falcon.constants import MEDIA_YAML
+from falcon.media import BaseHandler
 import falcon.testing as testing
 
 try:
@@ -943,7 +947,127 @@ class TestHTTPError:
         err.__cause__ = ValueError('some error')
         assert err.description == 'Could not parse foo-media body - some error'
 
+    def test_kw_only(self):
+        with pytest.raises(TypeError, match='positional argument'):
+            falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
 
-def test_kw_only():
-    with pytest.raises(TypeError, match='positional argument'):
-        falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
+
+JSON_CONTENT = b'{"title": "410 Gone"}'
+JSON = (MEDIA_JSON, MEDIA_JSON, JSON_CONTENT)
+CUSTOM_JSON = ('custom/any+json', MEDIA_JSON, JSON_CONTENT)
+
+XML_CONTENT = (
+    b'<?xml version="1.0" encoding="UTF-8"?><error><title>410 Gone</title></error>'
+)
+XML = (MEDIA_XML, MEDIA_XML, XML_CONTENT)
+CUSTOM_XML = ('custom/any+xml', MEDIA_XML, XML_CONTENT)
+
+YAML = (MEDIA_YAML, MEDIA_YAML, b'title: 410 Gone!')
+ASYNC_ONLY = ('application/only_async', 'application/only_async', b'this is async')
+ASYNC_WITH_SYNC = (
+    'application/async_with_sync',
+    'application/async_with_sync',
+    b'this is sync instead',
+)
+
+
+class FakeYamlMediaHandler(BaseHandler):
+    def serialize(self, media, content_type=None):
+        assert media == {'title': '410 Gone'}
+        return b'title: 410 Gone!'
+
+
+class AsyncOnlyMediaHandler(BaseHandler):
+    async def serialize_async(self, media, content_type=None):
+        assert media == {'title': '410 Gone'}
+        return b'this is async'
+
+
+class SyncInterfaceMediaHandler(AsyncOnlyMediaHandler):
+    def serialize(self, media, content_type=None):
+        assert media == {'title': '410 Gone'}
+        return b'this is sync instead'
+
+    _serialize_sync = serialize  # type: ignore[assignment]
+
+
+class TestDefaultSerializeError:
+    @pytest.fixture
+    def client(self, util, asgi):
+        app = util.create_app(asgi)
+        app.add_route('/', GoneResource())
+        return testing.TestClient(app)
+
+    @pytest.mark.parametrize('has_json_handler', [True, False])
+    def test_defaults_to_json(self, client, has_json_handler):
+        if not has_json_handler:
+            client.app.req_options.media_handlers.pop(MEDIA_JSON)
+            client.app.resp_options.media_handlers.pop(MEDIA_JSON)
+        res = client.simulate_get()
+        assert res.content_type == 'application/json'
+        assert res.headers['vary'] == 'Accept'
+        assert res.content == JSON_CONTENT
+
+    @pytest.mark.parametrize(
+        'accept, content_type, content',
+        (JSON, XML, CUSTOM_JSON, CUSTOM_XML, YAML, ASYNC_ONLY, ASYNC_WITH_SYNC),
+    )
+    def test_serializes_error_to_preferred_by_sender(
+        self, accept, content_type, content, client, asgi
+    ):
+        client.app.resp_options.media_handlers[MEDIA_YAML] = FakeYamlMediaHandler()
+        client.app.resp_options.media_handlers[ASYNC_WITH_SYNC[0]] = (
+            SyncInterfaceMediaHandler()
+        )
+        if asgi:
+            client.app.resp_options.media_handlers[ASYNC_ONLY[0]] = (
+                AsyncOnlyMediaHandler()
+            )
+        res = client.simulate_get(headers={'Accept': accept})
+        assert res.headers['vary'] == 'Accept'
+        if content_type == ASYNC_ONLY[0] and not asgi:
+            # media-json is the default content type
+            assert res.content_type == MEDIA_JSON
+            assert res.content == b''
+        else:
+            assert res.content_type == content_type
+            assert res.content == content
+
+    def test_json_async_only_error(self, util):
+        app = util.create_app(True)
+        app.add_route('/', GoneResource())
+        app.resp_options.media_handlers[MEDIA_JSON] = AsyncOnlyMediaHandler()
+        client = testing.TestClient(app)
+        with pytest.raises(NotImplementedError, match='requires the sync interface'):
+            client.simulate_get()
+
+    def test_add_xml_handler(self, client):
+        client.app.resp_options.media_handlers[MEDIA_XML] = FakeYamlMediaHandler()
+        res = client.simulate_get(headers={'Accept': 'application/xhtml+xml'})
+        assert res.content_type == MEDIA_XML
+        assert res.content == YAML[-1]
+
+    @pytest.mark.parametrize(
+        'accept, content_type',
+        [
+            (
+                # firefox
+                'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,'
+                'image/webp,image/png,image/svg+xml,*/*;q=0.8',
+                MEDIA_XML,
+            ),
+            (
+                # safari / chrome
+                'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,'
+                'image/apng,*/*;q=0.8',
+                MEDIA_XML,
+            ),
+            ('text/html, application/xhtml+xml, image/jxr, */*', MEDIA_JSON),  # edge
+            (f'text/html,{MEDIA_YAML};q=0.8,*/*;q=0.7', MEDIA_YAML),
+            (f'text/html,{MEDIA_YAML};q=0.8,{MEDIA_JSON};q=0.8', MEDIA_JSON),
+        ],
+    )
+    def test_hard_content_types(self, client, accept, content_type):
+        client.app.resp_options.media_handlers[MEDIA_YAML] = FakeYamlMediaHandler()
+        res = client.simulate_get(headers={'Accept': accept})
+        assert res.content_type == content_type
