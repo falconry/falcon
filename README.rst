@@ -4,7 +4,7 @@
    :target: https://falconframework.org/
    :width: 100 %
 
-|Build Status| |Docs| |codecov.io|
+|Build status| |Docs| |codecov.io| |PyPI package| |Python versions|
 
 The Falcon Web Framework
 ========================
@@ -981,10 +981,14 @@ limitations under the License.
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :alt: Falcon web framework docs
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
-.. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
+.. |Build status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
     :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
-    :target: http://codecov.io/gh/falconry/falcon
+    :target: https://codecov.io/gh/falconry/falcon
+.. |PyPI package| image:: https://badge.fury.io/py/falcon.svg
+    :target: https://pypi.org/project/falcon/
+.. |Python versions| image:: https://img.shields.io/pypi/pyversions/falcon.svg
+    :target: https://pypi.org/project/falcon/
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px
