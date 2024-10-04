@@ -1,4 +1,4 @@
-name: Run tests
+name: tests
 
 on:
   # NOTE(vytas): Trigger the tests workflow on push or pull request
@@ -11,7 +11,7 @@ on:
       - master
 
 jobs:
-  run_tox:
+  run-tox:
     name: tox -e ${{ matrix.toxenv }} (${{matrix.python-version}} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
