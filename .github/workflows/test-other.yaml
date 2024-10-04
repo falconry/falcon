@@ -1,0 +1,48 @@
+# Other tests, primarily those requiring obsolete dependencies.
+name: test-other
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  run-tox:
+    name: tox -e ${{ matrix.toxenv }}
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.8"
+        toxenv:
+          - "py38_smoke"
+          - "py38_smoke_cython"
+          - "wsgi_meinheld"
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install smoke test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libunwind-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools tox wheel
+          python --version
+          pip --version
+          tox --version
+
+      - name: Run tox
+        run: tox -e ${{ matrix.toxenv }}
