@@ -337,12 +337,12 @@ class TestHTTPError:
         assert response.content == expected_xml
         assert response.content_type == 'application/xml'
 
-    def test_xml_enable(self, client, enable_xml):
+    @pytest.mark.parametrize('custom_xml', [True, False])
+    def test_xml_enable(self, client, enable_xml, custom_xml):
         has_xml = enable_xml(client.app)
         client.app.resp_options.default_media_type = 'app/foo'
-        response = client.simulate_patch(
-            path='/fail', headers={'Accept': 'application/xml'}
-        )
+        accept = 'app/falcon+xml' if custom_xml else 'application/xml'
+        response = client.simulate_patch(path='/fail', headers={'Accept': accept})
         assert response.status == falcon.HTTP_400
 
         if has_xml:
@@ -1045,6 +1045,12 @@ class TestDefaultSerializeError:
         app = util.create_app(asgi)
         app.add_route('/', GoneResource())
         return testing.TestClient(app)
+
+    def test_unknown_accept(self, client):
+        res = client.simulate_get(headers={'Accept': 'foo/bar'})
+        assert res.content_type == 'application/json'
+        assert res.headers['vary'] == 'Accept'
+        assert res.content == b''
 
     @pytest.mark.parametrize('has_json_handler', [True, False])
     def test_defaults_to_json(self, client, has_json_handler):
