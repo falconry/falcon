@@ -303,10 +303,23 @@ def best_match(media_types: Iterable[str], header: str) -> str:
         Best match from the supported candidates, or an empty string if the
         provided header value does not match any of the given types.
     """
-    matching, best_quality = max(
-        ((media_type, quality(media_type, header)) for media_type in media_types),
-        key=lambda mt_quality: mt_quality[1],
-    )
-    if best_quality > 0.0:
-        return matching
+    # PERF(vytas): Using the default parameter, i.e., max(..., default='', 0.0)
+    #   would be much nicer than EAFP, but for some reason it is quite slow
+    #   regardless of whether media_types is empty or not.
+    try:
+        matching, best_quality = max(
+            ((media_type, quality(media_type, header)) for media_type in media_types),
+            key=lambda mt_quality: mt_quality[1],
+        )
+        if best_quality > 0.0:
+            return matching
+    except errors.InvalidMediaType:
+        # NOTE(vytas): Do not swallow instances of InvalidMediaType
+        #   (it a subclass of ValueError).
+        raise
+    except ValueError:
+        # NOTE(vytas): Barring unknown bugs, we only expect unhandled
+        #   ValueErrors from supplying an empty media_types value.
+        pass
+
     return ''

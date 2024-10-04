@@ -151,8 +151,8 @@ def test_quality_rfc_examples(accept, media_type, quality_value):
         ),
         (
             'application/*, */wildcard; q=0.7, */*; q=0.25',
-            'test/wildcard; expect=pass',
-            0.7,
+            'test/something; expect=pass',
+            0.25,
         ),
         (
             'text/x-python, text/*; q=0.33, text/plain; format=fixed',
@@ -192,23 +192,23 @@ def test_quality_prefer_exact_match(accept, media_type):
     assert pytest.approx(mediatypes.quality(media_type, accept)) == 0.2
 
 
-@pytest.mark.parametrize(
-    'accept,media_type',
-    [
-        ('application/json', 'application/yaml'),
-        ('audio/*; q=0.2, audio/basic', 'video/mp3'),
-        (
-            'falcon/peregrine; speed=high; unladen=true',
-            'falcon/peregrine; speed=average',
-        ),
-        ('text/html, text/plain', 'text/x-python'),
-        ('*/json; q=0.2, application/json', 'application/msgpack'),
-        (
-            'text/x-python, image/*; q=0.33, text/plain; format=fixed',
-            'text/plain; format=flowed',
-        ),
-    ],
-)
+_QUALITY_NONE_MATCHES_EXAMPLES = [
+    ('application/json', 'application/yaml'),
+    ('audio/*; q=0.2, audio/basic', 'video/mp3'),
+    (
+        'falcon/peregrine; speed=high; unladen=true',
+        'falcon/peregrine; speed=average',
+    ),
+    ('text/html, text/plain', 'text/x-python'),
+    ('*/json; q=0.2, application/json', 'application/msgpack'),
+    (
+        'text/x-python, image/*; q=0.33, text/plain; format=fixed',
+        'text/plain; format=flowed',
+    ),
+]
+
+
+@pytest.mark.parametrize('accept,media_type', _QUALITY_NONE_MATCHES_EXAMPLES)
 def test_quality_none_matches(accept, media_type):
     assert mediatypes.quality(media_type, accept) == 0.0
 
@@ -229,17 +229,18 @@ def test_best_match(media_types, accept, expected):
     assert mediatypes.best_match(media_types, accept) == expected
 
 
-@pytest.mark.parametrize(
-    'media_types,accept',
-    [
-        (['application/json'], 'application/yaml'),
-        (['application/json', 'application/yaml'], 'application/xml, text/*; q=0.7'),
-        (
-            ['text/plain', 'falcon/peregrine; load=unladen'],
-            'falcon/peregrine; load=heavy',
-        ),
-    ],
-)
+_BEST_MATCH_NONE_MATCHES_EXAMPLES = [
+    ([_mt], _acc) for _mt, _acc in _QUALITY_NONE_MATCHES_EXAMPLES
+] + [
+    (['application/json', 'application/yaml'], 'application/xml, text/*; q=0.7'),
+    (
+        ['text/plain', 'falcon/peregrine; load=unladen'],
+        'falcon/peregrine; load=heavy',
+    ),
+]
+
+
+@pytest.mark.parametrize('media_types,accept', _BEST_MATCH_NONE_MATCHES_EXAMPLES)
 def test_best_match_none_matches(media_types, accept):
     assert mediatypes.best_match(media_types, accept) == ''
 
@@ -248,6 +249,10 @@ def test_best_match_none_matches(media_types, accept):
 def test_invalid_media_type(media_type):
     with pytest.raises(errors.InvalidMediaType):
         mediatypes.quality(media_type, '*/*')
+
+
+def _generate_strings(items):
+    yield from items
 
 
 @pytest.mark.parametrize(
@@ -266,3 +271,15 @@ def test_invalid_media_type(media_type):
 def test_invalid_media_range(media_range):
     with pytest.raises(errors.InvalidMediaRange):
         mediatypes.quality('falcon/peregrine', media_range)
+
+    with pytest.raises(errors.InvalidMediaRange):
+        mediatypes.best_match(_generate_strings(['falcon/peregrine']), media_range)
+
+
+@pytest.mark.parametrize(
+    'accept',
+    ['*/*', 'application/xml, text/*; q=0.7, */*; q=0.3'],
+)
+@pytest.mark.parametrize('media_types', [(), [], {}, _generate_strings(())])
+def test_empty_media_types(accept, media_types):
+    assert mediatypes.best_match(media_types, accept) == ''
