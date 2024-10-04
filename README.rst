@@ -978,11 +978,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+.. |Build status| image:: https://github.com/falconry/falcon/actions/workflows/tests.yaml/badge.svg
+    :target: https://github.com/falconry/falcon/actions/workflows/tests.yaml
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :alt: Falcon web framework docs
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
-.. |Build status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
-    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
     :target: https://codecov.io/gh/falconry/falcon
 .. |PyPI package| image:: https://badge.fury.io/py/falcon.svg

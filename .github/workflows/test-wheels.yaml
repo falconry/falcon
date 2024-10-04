@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   test-emulated:
@@ -22,6 +25,8 @@ jobs:
           - build: "cp313-manylinux_s390x"
             os: ubuntu-latest
             emulation: true
+          - build: "cp38-manylinux_x86_64"
+            os: ubuntu-latest
           - build: "cp313-musllinux_x86_64"
             os: ubuntu-latest
           - build: "cp313-macosx_arm64"
