@@ -1,4 +1,4 @@
-name: Run tests (contributor's checklist)
+name: test-tox-sdist
 
 on:
   # Trigger the workflow on master but also allow it to run manually.
