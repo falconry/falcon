@@ -165,18 +165,21 @@ class _MediaRange:
             ) from ex
 
         # NOTE(vytas): We don't need to special-case Q since the above
-        #   parse_header always lowercases parameters.
-        q = params.pop('q', 1.0)
+        #   parse_header always lowercases parameter names.
+
+        # PERF(vytas): Short-circuit if q is absent.
+        if 'q' not in params:
+            return cls(main_type, subtype, 1.0, params)
 
         try:
-            quality = float(q)
+            q = float(params.pop('q'))
         except (TypeError, ValueError) as ex:
             # NOTE(vytas): RFC 9110, Section 12.4.2:
             #   weight = OWS ";" OWS "q=" qvalue
             #   qvalue = ( "0" [ "." 0*3DIGIT ] ) / ( "1" [ "." 0*3("0") ] )
             raise errors.InvalidMediaRange(cls._Q_VALUE_ERROR_MESSAGE) from ex
 
-        if not (0.0 <= quality <= 1.0) or not math.isfinite(quality):
+        if not (0.0 <= q <= 1.0) or not math.isfinite(q):
             raise errors.InvalidMediaRange(cls._Q_VALUE_ERROR_MESSAGE)
 
         # NOTE(vytas): RFC 9110, Section 12.4.2 states that a sender of qvalue
@@ -184,7 +187,7 @@ class _MediaRange:
         #   but we are more permissive here, and opt not to spend any extra CPU
         #   cycles, if we have already managed to convert the value to float.
 
-        return cls(main_type, subtype, quality, params)
+        return cls(main_type, subtype, q, params)
 
     def match_score(self, media_type: _MediaType) -> Tuple[int, int, int, int, float]:
         if self.main_type == '*' or media_type.main_type == '*':
