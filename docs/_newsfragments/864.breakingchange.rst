@@ -17,6 +17,14 @@ The following new behaviors are considered breaking changes:
   :ref:`media type utilities <mediatype_util>` consider media types with
   different values for the same parameters as non-matching.
 
+  One theoretically possible scenario where this change can affect you is only
+  installing a :ref:`media <media>` handler for a content type with parameters;
+  it then may not match media types with conflicting values (that used to match
+  before Falcon 4.0).
+  If this turns out to be the case, also
+  :ref:`install the same handler <custom_media_handlers>` for the generic
+  ``type/subtype`` without parameters.
+
 The new functions,
 :func:`falcon.mediatypes.quality` and :func:`falcon.mediatypes.best_match`,
 otherwise have the same signature as the corresponding methods from
