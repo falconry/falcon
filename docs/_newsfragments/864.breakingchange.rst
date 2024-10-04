@@ -1,7 +1,12 @@
 Falcon is no longer vendoring the
-`python-mimeparse <https://github.com/falconry/python-mimeparse>`_ library;
+`python-mimeparse <https://github.com/falconry/python-mimeparse>`__ library;
 the relevant functionality has instead been reimplemented in the framework
 itself, fixing a handful of long-standing bugs in the new implementation.
+
+If you use standalone
+`python-mimeparse <https://github.com/falconry/python-mimeparse>`__ in your
+project, do not worry! We will continue to maintain it as a separate package
+under the Falconry umbrella (we took over about 3 years ago).
 
 The following new behaviors are considered breaking changes:
 
