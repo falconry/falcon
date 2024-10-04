@@ -6,7 +6,7 @@ itself, fixing a handful of long-standing bugs in the new implementation.
 The following new behaviors are considered breaking changes:
 
 * Previously, the iterable passed to
-  :meth:`req.client_prefers <falcon.Request.client_prefers>` had be sorted in
+  :meth:`req.client_prefers <falcon.Request.client_prefers>` had to be sorted in
   the order of increasing desirability.
   :func:`~falcon.mediatypes.best_match`, and by proxy
   :meth:`~falcon.Request.client_prefers`, now consider the provided media types
