@@ -40,7 +40,7 @@ def _process_line(line):
     section = m.group(2)
 
     template = (
-        '`RFC {rfc}, Section {section} ' '<{ietf_docs}/rfc{rfc}#section-{section}>`__'
+        '`RFC {rfc}, Section {section} <{ietf_docs}/rfc{rfc}#section-{section}>`__'
     )
 
     rendered_text = template.format(rfc=rfc, section=section, ietf_docs=IETF_DOCS)
