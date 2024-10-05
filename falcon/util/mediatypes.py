@@ -216,8 +216,8 @@ class _MediaRange:
 
 # PERF(vytas): It is possible to cache a classmethod too, but the invocation is
 #   less efficient, especially in the case of a cache hit.
-# NOTE(vytas): Also, if we decide to make these classes public, we either need
-#   to keep these cached parsers private, or to make sure we use frozen classes.
+# NOTE(vytas): Also, if we decide to make these classes public, we need to keep
+#   these cached parsers private.
 _parse_media_type = functools.lru_cache(_MediaType.parse)
 _parse_media_range = functools.lru_cache(_MediaRange.parse)
 
