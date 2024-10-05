@@ -1,0 +1,36 @@
+Falcon is no longer vendoring the
+`python-mimeparse <https://github.com/falconry/python-mimeparse>`__ library;
+the relevant functionality has instead been reimplemented in the framework
+itself, fixing a handful of long-standing bugs in the new implementation.
+
+If you use standalone
+`python-mimeparse <https://github.com/falconry/python-mimeparse>`__ in your
+project, do not worry! We will continue to maintain it as a separate package
+under the Falconry umbrella (we took over about 3 years ago).
+
+The following new behaviors are considered breaking changes:
+
+* Previously, the iterable passed to
+  :meth:`req.client_prefers <falcon.Request.client_prefers>` had to be sorted in
+  the order of increasing desirability.
+  :func:`~falcon.mediatypes.best_match`, and by proxy
+  :meth:`~falcon.Request.client_prefers`, now consider the provided media types
+  to be sorted in the (more intuitive, we hope) order of decreasing
+  desirability.
+
+* Unlike ``python-mimeparse``, the new
+  :ref:`media type utilities <mediatype_util>` consider media types with
+  different values for the same parameters as non-matching.
+
+  One theoretically possible scenario where this change can affect you is only
+  installing a :ref:`media <media>` handler for a content type with parameters;
+  it then may not match media types with conflicting values (that used to match
+  before Falcon 4.0).
+  If this turns out to be the case, also
+  :ref:`install the same handler <custom_media_handlers>` for the generic
+  ``type/subtype`` without parameters.
+
+The new functions,
+:func:`falcon.mediatypes.quality` and :func:`falcon.mediatypes.best_match`,
+otherwise have the same signature as the corresponding methods from
+``python-mimeparse``.

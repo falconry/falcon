@@ -1,0 +1,3 @@
+The new implementation of :ref:`media type utilities <mediatype_util>`
+(Falcon was using the ``python-mimeparse`` library before) now always favors
+the exact media type match, if one is available.
