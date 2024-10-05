@@ -19,8 +19,7 @@ from typing import MutableMapping, Optional, Type, TYPE_CHECKING, Union
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
-from falcon.util import code_to_http_status
-from falcon.util import http_status_to_code
+from falcon.util import misc
 from falcon.util import uri
 
 if TYPE_CHECKING:
@@ -136,7 +135,7 @@ class HTTPError(Exception):
         #   we'll probably switch over to making everything code-based to more
         #   easily support HTTP/2. When that happens, should we continue to
         #   include the reason phrase in the title?
-        self.title = title or code_to_http_status(status)
+        self.title = title or misc.code_to_http_status(status)
 
         self.description = description
         self.headers = headers
@@ -161,7 +160,7 @@ class HTTPError(Exception):
         """HTTP status code normalized from the ``status`` argument passed
         to the initializer.
         """  # noqa: D205
-        return http_status_to_code(self.status)
+        return misc.http_status_to_code(self.status)
 
     def to_dict(
         self, obj_type: Type[MutableMapping[str, Union[str, int, None, Link]]] = dict
