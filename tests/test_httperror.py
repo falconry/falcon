@@ -351,9 +351,11 @@ class TestHTTPError:
                 b'<title>400 Bad Request</title></error>'
             )
             assert response.content == expected_xml
-            assert response.content_type == 'application/xml'
         else:
             assert response.content == b''
+        if has_xml or custom_xml:
+            assert response.content_type == 'application/xml'
+        else:
             assert response.content_type == 'app/foo'
 
     def test_to_xml_deprecated(self):
