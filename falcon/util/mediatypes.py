@@ -19,6 +19,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import math
+import sys
 from typing import Dict, Iterable, Iterator, Tuple
 
 from falcon import errors
@@ -114,10 +115,17 @@ def _parse_media_type_header(media_type: str) -> Tuple[str, str, dict]:
 
 # TODO(vytas): Should we make these data structures public?
 
+# NOTE(vytas): The slots parameter requires Python 3.10.
+_dataclass_with_slots = (
+    dataclasses.dataclass(slots=True)
+    if sys.version_info >= (3, 10)
+    else dataclasses.dataclass()
+)
+
 
 # PERF(vytas): It would be nice to use frozen=True as we never modify the data,
 #   but it seems to incur a performance hit (~2-3x) on CPython 3.12.
-@dataclasses.dataclass(slots=True)
+@_dataclass_with_slots
 class _MediaType:
     main_type: str
     subtype: str
@@ -128,7 +136,7 @@ class _MediaType:
         return cls(*_parse_media_type_header(media_type))
 
 
-@dataclasses.dataclass(slots=True)
+@_dataclass_with_slots
 class _MediaRange:
     main_type: str
     subtype: str
