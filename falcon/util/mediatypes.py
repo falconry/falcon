@@ -19,7 +19,6 @@ from __future__ import annotations
 import dataclasses
 import functools
 import math
-import sys
 from typing import Dict, Iterable, Iterator, Tuple
 
 from falcon import errors
@@ -115,33 +114,32 @@ def _parse_media_type_header(media_type: str) -> Tuple[str, str, dict]:
 
 # TODO(vytas): Should we make these data structures public?
 
-# NOTE(vytas): The slots parameter requires Python 3.10.
-_dataclass_with_slots = (
-    dataclasses.dataclass(slots=True)
-    if sys.version_info >= (3, 10)
-    else dataclasses.dataclass()
-)
-
 
 # PERF(vytas): It would be nice to use frozen=True as we never modify the data,
 #   but it seems to incur a performance hit (~2-3x) on CPython 3.12.
-@_dataclass_with_slots
+@dataclasses.dataclass
 class _MediaType:
     main_type: str
     subtype: str
     params: dict
+
+    # NOTE(vytas): Using __slots__ with dataclasses is tricky, but it seems to
+    #   work here since we are not using any default values in the definition.
+    __slots__ = ('main_type', 'subtype', 'params')
 
     @classmethod
     def parse(cls, media_type: str) -> _MediaType:
         return cls(*_parse_media_type_header(media_type))
 
 
-@_dataclass_with_slots
+@dataclasses.dataclass
 class _MediaRange:
     main_type: str
     subtype: str
     quality: float
     params: dict
+
+    __slots__ = ('main_type', 'subtype', 'quality', 'params')
 
     _NOT_MATCHING = (-1, -1, -1, -1, 0.0)
 
