@@ -1395,20 +1395,21 @@ class ResponseOptions:
 
     Defaults to ``mimetypes.types_map`` after calling ``mimetypes.init()``.
     """
-    enable_xml_error_serialization: bool
-    """When ``False`` disables support for serializing http errors using XML when using
-    the default error serializer. Defaults to ``True``.
+    xml_error_serialization: bool
+    """Set to ``False`` to disable automatic inclusion of the XML handler
+    in the default error serializer (:ref:`errors`) (default ``True``).
 
-    In any case the request ``Accept`` headers it taken into consideration when
-    selecting the serialization format of the errors.
-
-    Note:
-
-        The default value will change to ``False`` in Falcon 5.0.
+    Enabling this option does not automatically render all error response in XML,
+    but only if the client prefers (via the ``Accept`` request header) XML to JSON
+    and other configured media handlers.
 
     Note:
+        This option will be removed in Falcon 5.0 (with XML error
+        serialization disabled by default).
 
-        Has no effect when using a custom error serializers.
+    Note:
+        This option has no effect when a custom error serializer, set using
+        :meth:`~falcon.App.set_error_serializer`, is in use.
     """
 
     __slots__ = (
@@ -1416,14 +1417,14 @@ class ResponseOptions:
         'default_media_type',
         'media_handlers',
         'static_media_types',
-        'enable_xml_error_serialization',
+        'xml_error_serialization',
     )
 
     def __init__(self) -> None:
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
-        self.enable_xml_error_serialization = True
+        self.xml_error_serialization = True
 
         if not mimetypes.inited:
             mimetypes.init()

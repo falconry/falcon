@@ -294,7 +294,7 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
     options = resp.options
     predefined = (
         [MEDIA_XML, 'text/xml', MEDIA_JSON]
-        if options.enable_xml_error_serialization
+        if options.xml_error_serialization
         else [MEDIA_JSON]
     )
     media_handlers = [mt for mt in options.media_handlers if mt not in predefined]
@@ -320,7 +320,7 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         if '+json' in accept:
             preferred = MEDIA_JSON
         elif '+xml' in accept:
-            # NOTE(caselit): ignore enable_xml_error_serialization when
+            # NOTE(caselit): ignore xml_error_serialization when
             # checking if the media should be xml. This gives a chance to
             # a xml media handler, if any, to be used
             preferred = MEDIA_XML
@@ -339,7 +339,7 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
             # to re-get the handler, since async handlers may not have a sync
             # version available.
             resp.media = exception.to_dict()
-        elif options.enable_xml_error_serialization:
+        elif options.xml_error_serialization:
             resp.data = exception._to_xml()
 
         # NOTE(kgriffs): No need to append the charset param, since

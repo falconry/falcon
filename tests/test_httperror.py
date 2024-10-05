@@ -40,7 +40,7 @@ def client(asgi, util):
 def enable_xml(request):
     def go(app):
         if request.param is not None:
-            app.resp_options.enable_xml_error_serialization = request.param
+            app.resp_options.xml_error_serialization = request.param
         # return bool(request.param)
         return request.param is not False
 
@@ -323,7 +323,7 @@ class TestHTTPError:
         assert response.content_type == 'application/json'
 
     def test_no_description_xml(self, client):
-        client.app.resp_options.enable_xml_error_serialization = True
+        client.app.resp_options.xml_error_serialization = True
         response = client.simulate_patch(
             path='/fail', headers={'Accept': 'application/xml'}
         )
@@ -546,7 +546,7 @@ class TestHTTPError:
         ],
     )
     def test_epic_fail_xml(self, client, media_type):
-        client.app.resp_options.enable_xml_error_serialization = True
+        client.app.resp_options.xml_error_serialization = True
         headers = {'Accept': media_type}
 
         expected_body = (
@@ -595,7 +595,7 @@ class TestHTTPError:
         assert expected_body == response.json
 
     def test_unicode_xml(self, client):
-        client.app.resp_options.enable_xml_error_serialization = True
+        client.app.resp_options.xml_error_serialization = True
         unicode_resource = UnicodeFaultyResource()
 
         expected_body = (
@@ -787,7 +787,7 @@ class TestHTTPError:
 
     def test_416(self, client, asgi, util):
         client.app = util.create_app(asgi)
-        client.app.resp_options.enable_xml_error_serialization = True
+        client.app.resp_options.xml_error_serialization = True
         client.app.add_route('/416', RangeNotSatisfiableResource())
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 
@@ -1071,7 +1071,7 @@ class TestDefaultSerializeError:
     def test_serializes_error_to_preferred_by_sender(
         self, accept, content_type, content, client, asgi
     ):
-        client.app.resp_options.enable_xml_error_serialization = True
+        client.app.resp_options.xml_error_serialization = True
         client.app.resp_options.media_handlers[MEDIA_YAML] = FakeYamlMediaHandler()
         client.app.resp_options.media_handlers[ASYNC_WITH_SYNC[0]] = (
             SyncInterfaceMediaHandler()
