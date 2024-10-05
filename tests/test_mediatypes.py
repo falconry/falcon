@@ -49,7 +49,6 @@ def test_media_type_private_cls():
     assert mt1.main_type == 'image'
     assert mt1.subtype == 'png'
     assert mt1.params == {}
-    assert repr(mt1) == 'MediaType<image/png; {}>'
 
     mt2 = mediatypes._MediaType.parse('text/plain; charset=latin-1')
     assert mt2.main_type == 'text'
@@ -63,7 +62,6 @@ def test_media_range_private_cls():
     assert mr1.subtype == 'png'
     assert mr1.quality == 1.0
     assert mr1.params == {}
-    assert repr(mr1) == 'MediaRange<image/png; q=1.0; {}>'
 
     mr2 = mediatypes._MediaRange.parse('text/plain; charset=latin-1; Q=0.9')
     assert mr2.main_type == 'text'

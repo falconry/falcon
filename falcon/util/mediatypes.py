@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import math
 from typing import Dict, Iterable, Iterator, Tuple
@@ -111,34 +112,28 @@ def _parse_media_type_header(media_type: str) -> Tuple[str, str, dict]:
     return (main_type.strip(), subtype.strip(), params)
 
 
-# TODO(vytas): Should we make these structures public?
+# TODO(vytas): Should we make these data structures public?
+
+
+# PERF(vytas): It would be nice to use frozen=True as we never modify the data,
+#   but it seems to incur a performance hit (~2-3x) on CPython 3.12.
+@dataclasses.dataclass(slots=True)
 class _MediaType:
     main_type: str
     subtype: str
     params: dict
 
-    __slots__ = ('main_type', 'subtype', 'params')
-
     @classmethod
     def parse(cls, media_type: str) -> _MediaType:
         return cls(*_parse_media_type_header(media_type))
 
-    def __init__(self, main_type: str, subtype: str, params: dict) -> None:
-        self.main_type = main_type
-        self.subtype = subtype
-        self.params = params
 
-    def __repr__(self) -> str:
-        return f'MediaType<{self.main_type}/{self.subtype}; {self.params}>'
-
-
+@dataclasses.dataclass(slots=True)
 class _MediaRange:
     main_type: str
     subtype: str
     quality: float
     params: dict
-
-    __slots__ = ('main_type', 'subtype', 'quality', 'params')
 
     _NOT_MATCHING = (-1, -1, -1, -1, 0.0)
 
@@ -146,14 +141,6 @@ class _MediaRange:
         'If provided, the q parameter must be a real number '
         'in the range 0 through 1.'
     )
-
-    def __init__(
-        self, main_type: str, subtype: str, quality: float, params: dict
-    ) -> None:
-        self.main_type = main_type
-        self.subtype = subtype
-        self.quality = quality
-        self.params = params
 
     @classmethod
     def parse(cls, media_range: str) -> _MediaRange:
@@ -204,10 +191,14 @@ class _MediaRange:
         else:
             sub_matches = 1
 
+        # PERF(vytas): We could also use bitwise operators directly between
+        #   params.keys(), but set()/frozenset() seem to outperform dict.keys()
+        #   slightly regardless of the number of elements, especially when we
+        #   reuse the same sets for both intersection and symmetric_difference.
         mr_pnames = frozenset(self.params)
         mt_pnames = frozenset(media_type.params)
 
-        exact_match = 0 if mr_pnames.symmetric_difference(mt_pnames) else 1
+        exact_match = 0 if mr_pnames ^ mt_pnames else 1
 
         matching = mr_pnames & mt_pnames
         for pname in matching:
@@ -216,13 +207,11 @@ class _MediaRange:
 
         return (main_matches, sub_matches, exact_match, len(matching), self.quality)
 
-    def __repr__(self) -> str:
-        q = self.quality
-        return f'MediaRange<{self.main_type}/{self.subtype}; {q=}; {self.params}>'
-
 
 # PERF(vytas): It is possible to cache a classmethod too, but the invocation is
 #   less efficient, especially in the case of a cache hit.
+# NOTE(vytas): Also, if we decide to make these classes public, we either need
+#   to keep these cached parsers private, or to make sure we use frozen classes.
 _parse_media_type = functools.lru_cache(_MediaType.parse)
 _parse_media_range = functools.lru_cache(_MediaRange.parse)
 
