@@ -37,6 +37,14 @@ $ pip install -U ruff
 $ ruff format
 ```
 
+You can also reformat your code, and apply safe ``ruff`` fixes, via the
+``reformat`` ``tox`` environment:
+
+```bash
+$ pip install -U tox
+$ tox -e reformat
+```
+
 You can check all this by running ``tox`` from within the Falcon project directory.
 Your environment must be based on CPython 3.10, 3.11, 3.12 or 3.13:
 

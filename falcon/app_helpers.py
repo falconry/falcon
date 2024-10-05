@@ -293,15 +293,16 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
     """
     options = resp.options
     predefined = (
-        [MEDIA_XML, 'text/xml', MEDIA_JSON]
+        [MEDIA_JSON, 'text/xml', MEDIA_XML]
         if options.xml_error_serialization
         else [MEDIA_JSON]
     )
     media_handlers = [mt for mt in options.media_handlers if mt not in predefined]
-    # NOTE(caselit) add all the registered before the predefined ones. This ensures that
-    # in case of equal match the last one (json) is selected and that the q= is taken
-    # into consideration when selecting the media
-    preferred = req.client_prefers(media_handlers + predefined)
+    # NOTE(caselit,vytas): Add the registered handlers after the predefined
+    #   ones. This ensures that in the case of an equal match, the first one
+    #   (JSON) is selected and that the q parameter is taken into consideration
+    #   when selecting the media handler.
+    preferred = req.client_prefers(predefined + media_handlers)
 
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media

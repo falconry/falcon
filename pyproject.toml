@@ -84,7 +84,6 @@ exclude = ["examples", "tests"]
     exclude = [
         "falcon/bench",
         "falcon/cmd",
-        "falcon/vendor",
     ]
     disallow_untyped_defs = true
     warn_unused_ignores = true
@@ -113,12 +112,6 @@ exclude = ["examples", "tests"]
             "falcon.cyutil.uri"
         ]
         ignore_missing_imports = true
-
-    [[tool.mypy.overrides]]
-        module = [
-            "falcon.vendor.*",
-        ]
-        disallow_untyped_defs = false
 
 [tool.towncrier]
     package = "falcon"
@@ -159,7 +152,6 @@ exclude = ["examples", "tests"]
     target-version = ["py38"]
     skip-string-normalization = true
     line-length = 88
-    extend-exclude = "falcon/vendor"
 
 [tool.blue]
     # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
@@ -167,13 +159,11 @@ exclude = ["examples", "tests"]
     #   only minor cosmetic changes in a handful of files.
     target-version = ["py38"]
     line-length = 88
-    extend-exclude = "falcon/vendor"
 
 [tool.ruff]
     target-version = "py38"
     format.quote-style = "single"
     line-length = 88
-    extend-exclude = ["falcon/vendor"]
     builtins = [
         "ignore",
         "attr",

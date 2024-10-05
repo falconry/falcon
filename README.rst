@@ -278,7 +278,7 @@ available to your app without having to reinstall the package:
 .. code:: bash
 
     $ cd falcon
-    $ pip install -e .
+    $ FALCON_DISABLE_CYTHON=Y pip install -e .
 
 You can manually test changes to the Falcon framework by switching to the
 directory of the cloned repo and then running pytest:

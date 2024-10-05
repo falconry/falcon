@@ -101,7 +101,9 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `mgorny <https://github.com/mgorny>`__
 - `mihaitodor <https://github.com/mihaitodor>`__
 - `MRLab12 <https://github.com/MRLab12>`__
+- `myusko <https://github.com/myusko>`__
 - `nfsec <https://github.com/nfsec>`__
+- `prathik2401 <https://github.com/prathik2401>`__
 - `RioAtHome <https://github.com/RioAtHome>`__
 - `TigreModerata <https://github.com/TigreModerata>`__
 - `vgerak <https://github.com/vgerak>`__
