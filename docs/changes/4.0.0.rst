@@ -20,7 +20,7 @@ As always, you can grab the new release
 
     pip install falcon==4.0.0b1
 
-(Alternatively, continue reading these docs more
+(Alternatively, continue reading these docs for more
 :ref:`installation options <install>`.)
 
 This release would have not been possible without contributions from the
