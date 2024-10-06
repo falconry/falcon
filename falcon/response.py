@@ -456,6 +456,9 @@ class Response:
                 standardized, it is already used by Chrome.
 
                 (See also: `CHIPS`_)
+
+                .. versionadded:: 4.0
+
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -573,6 +576,8 @@ class Response:
         Keyword Args:
             samesite (str): Allows to override the default 'Lax' same_site
                     setting for the unset cookie.
+
+                    .. versionadded:: 4.0
 
             domain (str): Restricts the cookie to a specific domain and
                     any subdomains of that domain. By default, the user

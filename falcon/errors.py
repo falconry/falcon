@@ -1016,6 +1016,8 @@ class HTTPContentTooLarge(HTTPError):
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
+
+    .. versionadded:: 4.0
     """
 
     def __init__(
