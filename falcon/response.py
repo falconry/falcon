@@ -1371,7 +1371,7 @@ class ResponseOptions:
 
     secure_cookies_by_default: bool
     """Set to ``False`` in development environments to make the ``secure`` attribute
-    for all cookies. (default ``False``).
+    for all cookies. (default ``True``).
 
     This can make testing easier by not requiring HTTPS. Note, however, that this
     setting can be overridden via :meth:`~.Response.set_cookie()`'s ``secure`` kwarg.
