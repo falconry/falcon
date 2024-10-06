@@ -1404,8 +1404,8 @@ class ResponseOptions:
     and other configured media handlers.
 
     Note:
-        This option will be removed in Falcon 5.0 (with XML error
-        serialization disabled by default).
+        This option will default to ``False`` in Falcon 5.0 disabling XML error
+        serialization by default).
 
     Note:
         This option has no effect when a custom error serializer, set using
