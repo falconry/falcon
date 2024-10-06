@@ -19,7 +19,7 @@ from typing import MutableMapping, Optional, Type, TYPE_CHECKING, Union
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
-from falcon.util import deprecated
+from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util import uri
 
@@ -237,15 +237,19 @@ class HTTPError(Exception):
             error_element, encoding='utf-8'
         )
 
-    @deprecated(
-        'The internal serialization to xml is deprecated. A similar output can be '
-        'obtained by serializing to xml the output of ``.to_dict()``'
+    @deprecation.deprecated(
+        'The internal error serialization to XML is deprecated. '
+        'Please serialize the output of to_dict() to XML instead.'
     )
     def to_xml(self) -> bytes:
         """Return an XML-encoded representation of the error.
 
         Returns:
             bytes: An XML document for the error.
+
+        .. deprecated:: 4.0
+            Automatic error serialization to XML is deprecated.
+            Please serialize the output of :meth:`to_dict` to XML instead.
         """
         return self._to_xml()
 
