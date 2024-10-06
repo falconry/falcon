@@ -4,17 +4,30 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The alpha release of Falcon 4.0.0 is here!
+The first beta release of Falcon 4.0.0 is here!
 
-We would really appreciate if you could help with early testing on your code!
-You can grab this release from PyPI (``pip install falcon==4.0.0a2``),
-and :ref:`let us know how it went <chat>`!
+Falcon 4.0 is now feature-complete, and we would really be thankful if you
+could test this beta release with your apps, and
+:ref:`let us know if you run into any issues <chat>`!
+Please also check the list of **breaking changes** below.
 
-Although we are still in the process of polishing the last items from the
-`version 4.0 milestone <https://github.com/falconry/falcon/milestone/34>`__,
-we do not expect (m)any radical changes from now on until Falcon 4.0.0 final.
-The full changelog of new features, breaking changes and fixes will be rendered
-as part of the first beta release.
+If you make use of type annotations in your Falcon app, please run your type
+checker of choice without any *typeshed* extensions for Falcon, and
+:ref:`report back to us <chat>`.
+Our ambition is to support ``mypy --strict`` or equivalent out of the box!
+
+As always, you can grab the new release
+`from PyPI <https://pypi.org/project/falcon/4.0.0b1/>`__::
+
+    pip install falcon==4.0.0b1
+
+(Alternatively, continue reading these docs more
+:ref:`installation options <install>`.)
+
+This release would have not been possible without contributions from the
+fantastic group of 30 community members and maintainers.
+
+Thank You!
 
 
 Changes to Supported Platforms
