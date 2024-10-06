@@ -153,3 +153,14 @@ def test_immediate_disconnect():
 
     with pytest.raises(ConnectionError):
         client.simulate_get('/', asgi_disconnect_ttl=0)
+
+
+def test_create_scope_preserve_raw_path():
+    path_no_queries = '/cache/http%3A%2F%2Ffalconframework.org/status'
+    scope = testing.create_scope(path=path_no_queries)
+    assert scope['raw_path'] == path_no_queries.encode()
+    path_with_queries = (
+        '/cache/http%3A%2F%2Ffalconframework.org/status?param1=value1&param2=value2'
+    )
+    scope = testing.create_scope(path=path_with_queries)
+    assert scope['raw_path'] != path_with_queries.encode()

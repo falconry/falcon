@@ -977,7 +977,7 @@ def create_scope(
     """
 
     http_version = _fixup_http_version(http_version)
-
+    raw_path = path.split('?')[0]
     path = uri.decode(path, unquote_plus=False)
 
     # NOTE(kgriffs): Handles both None and ''
@@ -995,6 +995,7 @@ def create_scope(
         'http_version': http_version,
         'method': method.upper(),
         'path': path,
+        'raw_path': raw_path.encode(),
         'query_string': query_string_bytes,
     }
 
