@@ -41,7 +41,6 @@ def enable_xml(request):
     def go(app):
         if request.param is not None:
             app.resp_options.xml_error_serialization = request.param
-        # return bool(request.param)
         return request.param is not False
 
     return go
@@ -360,7 +359,8 @@ class TestHTTPError:
 
     def test_to_xml_deprecated(self):
         with pytest.warns(
-            DeprecatedWarning, match='The internal serialization to xml is deprecated.'
+            DeprecatedWarning,
+            match='The internal error serialization to XML is deprecated.',
         ):
             res = falcon.HTTPGone().to_xml()
         assert res == falcon.HTTPGone()._to_xml()
