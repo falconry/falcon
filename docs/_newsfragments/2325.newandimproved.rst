@@ -1,4 +1,4 @@
-The :class:`~CORSMiddleware` now properly handles the missing ``Allow``
+The :class:`~falcon.CORSMiddleware` now properly handles the missing ``Allow``
 header case, by denying the preflight CORS request.
 The static file route has been updated to properly support CORS preflight,
 by allowing ``GET`` requests.
