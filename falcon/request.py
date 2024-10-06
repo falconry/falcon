@@ -2426,11 +2426,11 @@ class RequestOptions:
         via :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`,
         etc.
 
-        Warning:
+        .. deprecated:: 3.0
             The `auto_parse_form_urlencoded` option is not supported for
             ASGI apps, and is considered deprecated for WSGI apps as of
             Falcon 3.0, in favor of accessing URL-encoded forms
-            through :attr:`~Request.media`.
+            through :meth:`~falcon.Request.get_media`.
 
             The attribute and the auto-parsing functionality will be removed
             entirely in Falcon 5.0.

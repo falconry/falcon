@@ -1397,19 +1397,22 @@ class ResponseOptions:
     """
     xml_error_serialization: bool
     """Set to ``False`` to disable automatic inclusion of the XML handler
-    in the default error serializer (:ref:`errors`) (default ``True``).
+    in the :ref:`default error serializer <errors>` (default ``True``).
 
-    Enabling this option does not automatically render all error response in XML,
-    but only if the client prefers (via the ``Accept`` request header) XML to JSON
-    and other configured media handlers.
+    Enabling this option does not make Falcon automatically render all error
+    responses in XML, but it is used only in the case the client prefers
+    (via the ``Accept`` request header) XML to JSON and other configured media
+    handlers.
 
     Note:
-        This option will default to ``False`` in Falcon 5.0 disabling XML error
-        serialization by default).
+        Falcon 5.0 will either change the default to ``False``, or remove the
+        automatic XML error serialization altogether.
 
     Note:
         This option has no effect when a custom error serializer, set using
         :meth:`~falcon.App.set_error_serializer`, is in use.
+
+    .. versionadded:: 4.0
     """
 
     __slots__ = (
