@@ -456,6 +456,9 @@ class Response:
                 standardized, it is already used by Chrome.
 
                 (See also: `CHIPS`_)
+
+                .. versionadded:: 4.0
+
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -573,6 +576,8 @@ class Response:
         Keyword Args:
             samesite (str): Allows to override the default 'Lax' same_site
                     setting for the unset cookie.
+
+                    .. versionadded:: 4.0
 
             domain (str): Restricts the cookie to a specific domain and
                     any subdomains of that domain. By default, the user
@@ -898,10 +903,9 @@ class Response:
                 Can take values 'anonymous' or 'use-credentials' or None.
                 (See:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
-            link_extension(iterable): Provides additional custom attributes, as
-                described in RFC 8288, Section 3.4.2. Each member of the iterable
+            link_extension: Provides additional custom attributes, as
+                described in RFC 8288, Section 3.4.2; each member of the iterable
                 must be a two-tuple in the form of (*param*, *value*).
-                (See: https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2)
 
         """
 
@@ -1371,7 +1375,7 @@ class ResponseOptions:
 
     secure_cookies_by_default: bool
     """Set to ``False`` in development environments to make the ``secure`` attribute
-    for all cookies. (default ``False``).
+    for all cookies. (default ``True``).
 
     This can make testing easier by not requiring HTTPS. Note, however, that this
     setting can be overridden via :meth:`~.Response.set_cookie()`'s ``secure`` kwarg.
@@ -1387,7 +1391,7 @@ class ResponseOptions:
     media_handlers: Handlers
     """A dict-like object for configuring the media-types to handle.
 
-    default, handlers are provided for the ``application/json``,
+    Default handlers are provided for the ``application/json``,
     ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
     """
     static_media_types: Dict[str, str]
@@ -1395,18 +1399,39 @@ class ResponseOptions:
 
     Defaults to ``mimetypes.types_map`` after calling ``mimetypes.init()``.
     """
+    xml_error_serialization: bool
+    """Set to ``False`` to disable automatic inclusion of the XML handler
+    in the :ref:`default error serializer <errors>` (default ``True``).
+
+    Enabling this option does not make Falcon automatically render all error
+    responses in XML, but it is used only in the case the client prefers
+    (via the ``Accept`` request header) XML to JSON and other configured media
+    handlers.
+
+    Note:
+        Falcon 5.0 will either change the default to ``False``, or remove the
+        automatic XML error serialization altogether.
+
+    Note:
+        This option has no effect when a custom error serializer, set using
+        :meth:`~falcon.App.set_error_serializer`, is in use.
+
+    .. versionadded:: 4.0
+    """
 
     __slots__ = (
         'secure_cookies_by_default',
         'default_media_type',
         'media_handlers',
         'static_media_types',
+        'xml_error_serialization',
     )
 
     def __init__(self) -> None:
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
+        self.xml_error_serialization = True
 
         if not mimetypes.inited:
             mimetypes.init()

@@ -12,6 +12,7 @@ from falcon.constants import MEDIA_XML
 from falcon.constants import MEDIA_YAML
 from falcon.media import BaseHandler
 import falcon.testing as testing
+from falcon.util.deprecation import DeprecatedWarning
 
 try:
     import yaml
@@ -27,6 +28,22 @@ def client(asgi, util):
     app.add_route('/fail', resource)
 
     return testing.TestClient(app)
+
+
+@pytest.fixture(
+    params=[
+        pytest.param(True, id='with_xml'),
+        pytest.param(False, id='without_xml'),
+        pytest.param(None, id='default_xml'),
+    ]
+)
+def enable_xml(request):
+    def go(app):
+        if request.param is not None:
+            app.resp_options.xml_error_serialization = request.param
+        return request.param is not False
+
+    return go
 
 
 class FaultyResource:
@@ -302,9 +319,10 @@ class TestHTTPError:
         response = client.simulate_patch('/fail')
         assert response.status == falcon.HTTP_400
         assert response.json == {'title': '400 Bad Request'}
-        assert response.headers['Content-Type'] == 'application/json'
+        assert response.content_type == 'application/json'
 
     def test_no_description_xml(self, client):
+        client.app.resp_options.xml_error_serialization = True
         response = client.simulate_patch(
             path='/fail', headers={'Accept': 'application/xml'}
         )
@@ -316,7 +334,36 @@ class TestHTTPError:
         )
 
         assert response.content == expected_xml
-        assert response.headers['Content-Type'] == 'application/xml'
+        assert response.content_type == 'application/xml'
+
+    @pytest.mark.parametrize('custom_xml', [True, False])
+    def test_xml_enable(self, client, enable_xml, custom_xml):
+        has_xml = enable_xml(client.app)
+        client.app.resp_options.default_media_type = 'app/foo'
+        accept = 'app/falcon+xml' if custom_xml else 'application/xml'
+        response = client.simulate_patch(path='/fail', headers={'Accept': accept})
+        assert response.status == falcon.HTTP_400
+
+        if has_xml:
+            expected_xml = (
+                b'<?xml version="1.0" encoding="UTF-8"?><error>'
+                b'<title>400 Bad Request</title></error>'
+            )
+            assert response.content == expected_xml
+        else:
+            assert response.content == b''
+        if has_xml or custom_xml:
+            assert response.content_type == 'application/xml'
+        else:
+            assert response.content_type == 'app/foo'
+
+    def test_to_xml_deprecated(self):
+        with pytest.warns(
+            DeprecatedWarning,
+            match='The internal error serialization to XML is deprecated.',
+        ):
+            res = falcon.HTTPGone().to_xml()
+        assert res == falcon.HTTPGone()._to_xml()
 
     def test_client_does_not_accept_json_or_xml(self, client):
         headers = {
@@ -499,6 +546,7 @@ class TestHTTPError:
         ],
     )
     def test_epic_fail_xml(self, client, media_type):
+        client.app.resp_options.xml_error_serialization = True
         headers = {'Accept': media_type}
 
         expected_body = (
@@ -547,6 +595,7 @@ class TestHTTPError:
         assert expected_body == response.json
 
     def test_unicode_xml(self, client):
+        client.app.resp_options.xml_error_serialization = True
         unicode_resource = UnicodeFaultyResource()
 
         expected_body = (
@@ -738,11 +787,12 @@ class TestHTTPError:
 
     def test_416(self, client, asgi, util):
         client.app = util.create_app(asgi)
+        client.app.resp_options.xml_error_serialization = True
         client.app.add_route('/416', RangeNotSatisfiableResource())
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 
         assert response.status == falcon.HTTP_416
-        assert response.content == falcon.HTTPRangeNotSatisfiable(123456).to_xml()
+        assert response.content == falcon.HTTPRangeNotSatisfiable(123456)._to_xml()
         exp = (
             b'<?xml version="1.0" encoding="UTF-8"?><error>'
             b'<title>416 Range Not Satisfiable</title></error>'
@@ -998,6 +1048,12 @@ class TestDefaultSerializeError:
         app.add_route('/', GoneResource())
         return testing.TestClient(app)
 
+    def test_unknown_accept(self, client):
+        res = client.simulate_get(headers={'Accept': 'foo/bar'})
+        assert res.content_type == 'application/json'
+        assert res.headers['vary'] == 'Accept'
+        assert res.content == b''
+
     @pytest.mark.parametrize('has_json_handler', [True, False])
     def test_defaults_to_json(self, client, has_json_handler):
         if not has_json_handler:
@@ -1015,6 +1071,7 @@ class TestDefaultSerializeError:
     def test_serializes_error_to_preferred_by_sender(
         self, accept, content_type, content, client, asgi
     ):
+        client.app.resp_options.xml_error_serialization = True
         client.app.resp_options.media_handlers[MEDIA_YAML] = FakeYamlMediaHandler()
         client.app.resp_options.media_handlers[ASYNC_WITH_SYNC[0]] = (
             SyncInterfaceMediaHandler()
@@ -1041,9 +1098,11 @@ class TestDefaultSerializeError:
         with pytest.raises(NotImplementedError, match='requires the sync interface'):
             client.simulate_get()
 
-    def test_add_xml_handler(self, client):
+    @pytest.mark.parametrize('accept', [MEDIA_XML, 'application/xhtml+xml'])
+    def test_add_xml_handler(self, client, enable_xml, accept):
+        enable_xml(client.app)
         client.app.resp_options.media_handlers[MEDIA_XML] = FakeYamlMediaHandler()
-        res = client.simulate_get(headers={'Accept': 'application/xhtml+xml'})
+        res = client.simulate_get(headers={'Accept': accept})
         assert res.content_type == MEDIA_XML
         assert res.content == YAML[-1]
 
@@ -1067,7 +1126,12 @@ class TestDefaultSerializeError:
             (f'text/html,{MEDIA_YAML};q=0.8,{MEDIA_JSON};q=0.8', MEDIA_JSON),
         ],
     )
-    def test_hard_content_types(self, client, accept, content_type):
+    def test_hard_content_types(self, client, accept, content_type, enable_xml):
+        has_xml = enable_xml(client.app)
+        client.app.resp_options.default_media_type = 'my_type'
         client.app.resp_options.media_handlers[MEDIA_YAML] = FakeYamlMediaHandler()
         res = client.simulate_get(headers={'Accept': accept})
-        assert res.content_type == content_type
+        if has_xml or content_type != MEDIA_XML:
+            assert res.content_type == content_type
+        else:
+            assert res.content_type == MEDIA_JSON

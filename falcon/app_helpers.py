@@ -291,9 +291,13 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-
-    predefined = [MEDIA_JSON, 'text/xml', MEDIA_XML]
-    media_handlers = [mt for mt in resp.options.media_handlers if mt not in predefined]
+    options = resp.options
+    predefined = (
+        [MEDIA_JSON, 'text/xml', MEDIA_XML]
+        if options.xml_error_serialization
+        else [MEDIA_JSON]
+    )
+    media_handlers = [mt for mt in options.media_handlers if mt not in predefined]
     # NOTE(caselit,vytas): Add the registered handlers after the predefined
     #   ones. This ensures that in the case of an equal match, the first one
     #   (JSON) is selected and that the q parameter is taken into consideration
@@ -317,24 +321,27 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         if '+json' in accept:
             preferred = MEDIA_JSON
         elif '+xml' in accept:
+            # NOTE(caselit): Ignore xml_error_serialization when
+            #   checking if the media should be XML. This gives a chance to
+            #   an XML media handler, if any, to be used.
             preferred = MEDIA_XML
 
     if preferred is not None:
-        handler, _, _ = resp.options.media_handlers._resolve(
+        handler, _, _ = options.media_handlers._resolve(
             preferred, MEDIA_JSON, raise_not_found=False
         )
         if preferred == MEDIA_JSON:
-            # NOTE(caselit): special case json to ensure that it's always possible to
-            # serialize an error in json even if no handler is set in the
-            # media_handlers.
+            # NOTE(caselit): Special case JSON to ensure that it's always
+            #   possible to serialize an error in JSON even if no JSON handler
+            #   is set in the media_handlers.
             resp.data = exception.to_json(handler)
         elif handler:
-            # NOTE(caselit): Let the app serialize the response even if it needs
-            # to re-get the handler, since async handlers may not have a sync
-            # version available.
+            # NOTE(caselit): Let the app serialize the response even if it
+            #   needs to re-get the handler, since async handlers may not have
+            #   a sync version available.
             resp.media = exception.to_dict()
-        else:
-            resp.data = exception.to_xml()
+        elif options.xml_error_serialization:
+            resp.data = exception._to_xml()
 
         # NOTE(kgriffs): No need to append the charset param, since
         #   utf-8 is the default for both JSON and XML.

@@ -886,7 +886,10 @@ class Request:
 
     @property
     def headers_lower(self) -> Mapping[str, str]:
-        """Same as :attr:`headers` except header names are normalized to lowercase."""
+        """Same as :attr:`headers` except header names are normalized to lowercase.
+
+        .. versionadded:: 4.0
+        """
         if self._cached_headers_lower is None:
             self._cached_headers_lower = {
                 key.lower(): value for key, value in self.headers.items()
@@ -1283,6 +1286,8 @@ class Request:
             HTTPBadRequest: The header was not found in the request, but
                 it was required.
             HttpInvalidHeader: The header contained a malformed/invalid value.
+
+        .. versionadded:: 4.0
         """
 
         http_int = self.get_header(header, required=required)
@@ -2426,11 +2431,11 @@ class RequestOptions:
         via :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`,
         etc.
 
-        Warning:
+        .. deprecated:: 3.0
             The `auto_parse_form_urlencoded` option is not supported for
             ASGI apps, and is considered deprecated for WSGI apps as of
             Falcon 3.0, in favor of accessing URL-encoded forms
-            through :attr:`~Request.media`.
+            through :meth:`~falcon.Request.get_media`.
 
             The attribute and the auto-parsing functionality will be removed
             entirely in Falcon 5.0.

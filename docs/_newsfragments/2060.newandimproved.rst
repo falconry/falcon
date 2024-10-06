@@ -1,1 +1,0 @@
-A new method :meth:`falcon.Request.get_header_as_int` was implemented.

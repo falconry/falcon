@@ -24,6 +24,7 @@ __all__ = (
     'DateTimeConverter',
     'FloatConverter',
     'IntConverter',
+    'PathConverter',
     'UUIDConverter',
 )
 
@@ -140,7 +141,9 @@ class FloatConverter(BaseConverter):
         max (float): Reject the value if it is greater than this number.
         finite (bool) : Determines whether or not to only match ordinary
             finite numbers (default: ``True``). Set to ``False`` to match
-            nan, inf, and -inf in addition to finite numbers.
+            ``nan``, ``inf``, and ``-inf`` in addition to finite numbers.
+
+    .. versionadded:: 4.0
     """
 
     __slots__ = '_finite', '_min', '_max'
@@ -228,6 +231,8 @@ class PathConverter(BaseConverter):
     (the default), while it will *not* match when that option is ``True``.
 
     (See also: :ref:`trailing_slash_in_path`)
+
+    .. versionadded:: 4.0
     """
 
     CONSUME_MULTIPLE_SEGMENTS = True
