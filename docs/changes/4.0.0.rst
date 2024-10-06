@@ -13,8 +13,7 @@ Please also check the list of **breaking changes** below.
 
 If you make use of type annotations in your Falcon app, please run your type
 checker of choice without any *typeshed* extensions for Falcon, and
-:ref:`report back to us <chat>`.
-Our ambition is to support ``mypy --strict`` or equivalent out of the box!
+:ref:`report back to us <chat>` how it went!
 
 As always, you can grab the new release
 `from PyPI <https://pypi.org/project/falcon/4.0.0b1/>`__::
