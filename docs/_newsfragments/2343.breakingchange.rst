@@ -1,8 +1,0 @@
-The ``is_async`` keyword argument was removed from
-:meth:`~falcon.media.validators.jsonschema.validate`, as well as the hooks
-:meth:`~falcon.before` and :meth:`~falcon.after`, since it represented a niche
-use case that is even less relevant with the recent advances in the ecosystem:
-Cython 3.0+ will now correctly mark cythonized ``async def`` functions as
-coroutines, and pure-Python factory functions that return a coroutine can now
-be marked as such using :func:`inspect.markcoroutinefunction`
-(Python 3.12+ is required).

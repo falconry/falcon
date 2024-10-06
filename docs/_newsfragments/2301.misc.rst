@@ -1,2 +1,0 @@
-The :class:`falcon.TimezoneGMT` class was deprecated. Use the UTC timezone
-(:attr:`datetime.timezone.utc`) from the standard library instead.

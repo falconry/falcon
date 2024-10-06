@@ -1,4 +1,0 @@
-Type annotations have been added to Falcon's public interface to the package
-itself in order to better support `Mypy <https://www.mypy-lang.org/>`__
-(or other type checkers) users without having to install any third-party
-typeshed packages.

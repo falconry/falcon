@@ -1,3 +1,0 @@
-Similar to the existing :class:`~falcon.routing.IntConverter`, a new
-:class:`~falcon.routing.FloatConverter` has been added, allowing to convert
-path segments to ``float``.
