@@ -78,6 +78,8 @@ def parse_header(line: str) -> Tuple[str, Dict[str, str]]:
         This function replaces an equivalent method previously available in the
         stdlib as ``cgi.parse_header()``.
         It was removed from the stdlib in Python 3.13.
+
+    .. versionadded:: 4.0
     """
     if '"' not in line and '\\' not in line:
         key, semicolon, parts = line.partition(';')
@@ -279,6 +281,8 @@ def quality(media_type: str, header: str) -> float:
     Returns:
         Quality of the most specific media range matching the provided
         `media_type`. (If none matches, 0.0 is returned.)
+
+    .. versionadded:: 4.0
     """
     parsed_media_type = _parse_media_type(media_type)
     most_specific = max(
@@ -300,6 +304,8 @@ def best_match(media_types: Iterable[str], header: str) -> str:
     Returns:
         Best match from the supported candidates, or an empty string if the
         provided header value does not match any of the given types.
+
+    .. versionadded:: 4.0
     """
     # PERF(vytas): Using the default parameter, i.e., max(..., default='', 0.0)
     #   would be much nicer than EAFP, but for some reason it is quite slow
