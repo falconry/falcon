@@ -1,3 +1,0 @@
-A new keyword argument, `samesite`, was added to
-:meth:`~falcon.Response.unset_cookie` that allows to override the default
-``Lax`` setting of `SameSite` on the unset cookie.
