@@ -1,0 +1,10 @@
+Added a new flag :attr:`~falcon.ResponseOptions.xml_error_serialization` that
+can be used to disable XML serialization of :class:`~falcon.HTTPError` when
+using the default error serializer (and the client preferred it).
+This flag currently defaults to ``True``, keeping the same behavior as the previous
+Falcon series; Falcon 5.0 will change the default to ``False``, with the objective of
+completely removing support for it in a future version.
+User that whish to retain support for XML serialization of the errors in the default
+error serializer should add an XML media handler.
+
+Deprecated the :meth:`~falcon.HTTPError.to_xml` method.
