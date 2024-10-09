@@ -112,7 +112,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.1
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
@@ -153,7 +153,7 @@ jobs:
           tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
       - name: Upload sdist to release
-        uses: AButler/upload-release-assets@v2.0
+        uses: AButler/upload-release-assets@v3.0
         if: github.event_name == 'release'
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}

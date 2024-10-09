@@ -107,7 +107,7 @@ the GIL yet.
 We load-tested the WSGI flavor of the framework via
 :class:`~wsgiref.simple_server.WSGIServer` +
 :class:`~socketserver.ThreadingMixIn` on
-`free-threaded CPython 3.13.0rc1
+`free-threaded CPython 3.13.0
 <https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
 (under ``PYTHON_GIL=0``), and observed no issues that would point toward
 Falcon's reliance on the GIL. Thus, we would like to think that Falcon is still
