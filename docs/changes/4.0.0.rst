@@ -4,7 +4,7 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The first beta release of Falcon 4.0.0 is here!
+The second beta release of Falcon 4.0.0 is here!
 
 Falcon 4.0 is now feature-complete, and we would really be thankful if you
 could test this beta release with your apps, and
@@ -16,9 +16,9 @@ checker of choice without any *typeshed* extensions for Falcon, and
 :ref:`report back to us <chat>` how it went!
 
 As always, you can grab the new release
-`from PyPI <https://pypi.org/project/falcon/4.0.0b1/>`__::
+`from PyPI <https://pypi.org/project/falcon/4.0.0b2/>`__::
 
-    pip install falcon==4.0.0b1
+    pip install falcon==4.0.0b2
 
 (Alternatively, continue reading these docs for more
 :ref:`installation options <install>`.)
@@ -41,7 +41,7 @@ Changes to Supported Platforms
 - End-of-life Python 3.5, 3.6 & 3.7 are no longer supported.
   (`#2074 <https://github.com/falconry/falcon/pull/2074>`__,
   `#2273 <https://github.com/falconry/falcon/pull/2273>`__)
-- Soon end-of-life Python 3.8 is no longer actively supported, but
+- End-of-life Python 3.8 is no longer actively supported, but
   the framework should still continue to install from source and function.
 - The Falcon 4.x series is guaranteed to support CPython 3.10 and
   PyPy3.10 (v7.3.16).
