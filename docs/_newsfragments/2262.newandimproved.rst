@@ -1,0 +1,1 @@
+:py:func:`falcon.testing.helpers.create_scope` preserves the raw_path. This is to keep consistency with `#2159 <https://github.com/falconry/falcon/pull/2159>`_
