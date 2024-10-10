@@ -14,5 +14,5 @@
 
 """Falcon version."""
 
-__version__ = '4.0.0b2'
+__version__ = '4.0.0b3'
 """Current version of Falcon."""
