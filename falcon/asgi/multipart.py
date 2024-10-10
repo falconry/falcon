@@ -222,14 +222,14 @@ class MultipartForm:
 
                 # NOTE(vytas): Interpretations of RFC 2046, Appendix A, vary
                 #   as to whether the closing `--` must be followed by CRLF.
-                #   While, the absolute majority of HTTP clients and browsers
+                #   While the absolute majority of HTTP clients and browsers
                 #   do append it as a common convention, it seems that this is
                 #   not mandated by the RFC, so we do not require it either.
                 # NOTE(vytas): Certain versions of the Undici client
                 #   (Node's fetch implementation) do not follow the convention.
                 if await stream.peek(2) == b'--':
-                    # NOTE(vytas): boundary delimiter + '--' signals the
-                    # end of a multipart form.
+                    # NOTE(vytas): boundary delimiter + '--' signals the end of
+                    #   a multipart form.
                     await stream.read(2)
                     break
 
