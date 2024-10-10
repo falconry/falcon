@@ -372,6 +372,13 @@ Fixed
   :class:`~falcon.media.multipart.MultipartParseOptions`. To that end, a proper
   :meth:`~falcon.media.Handlers.copy` method has been implemented for the media
   :class:`~falcon.media.Handlers` class. (`#2293 <https://github.com/falconry/falcon/issues/2293>`__)
+- Falcon's multipart form parser no longer requires a CRLF (:python:`'\\r\\n'`)
+  after the closing ``--`` delimiter. Although it is a common convention
+  (followed by the absolute majority of HTTP clients and web browsers) to
+  include a trailing CRLF, the popular Undici client
+  (used as Node's default ``fetch`` implementation) omits it at the time of
+  this writing. (The next version of Undici will adhere to the convention.)
+  (`#2364 <https://github.com/falconry/falcon/issues/2364>`__)
 
 
 Misc
