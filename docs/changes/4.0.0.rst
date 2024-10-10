@@ -4,7 +4,7 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The second beta release of Falcon 4.0.0 is here!
+The third beta release of Falcon 4.0.0 is here!
 
 Falcon 4.0 is now feature-complete, and we would really be thankful if you
 could test this beta release with your apps, and
@@ -16,9 +16,9 @@ checker of choice without any *typeshed* extensions for Falcon, and
 :ref:`report back to us <chat>` how it went!
 
 As always, you can grab the new release
-`from PyPI <https://pypi.org/project/falcon/4.0.0b2/>`__::
+`from PyPI <https://pypi.org/project/falcon/4.0.0b3/>`__::
 
-    pip install falcon==4.0.0b2
+    pip install falcon==4.0.0b3
 
 (Alternatively, continue reading these docs for more
 :ref:`installation options <install>`.)
