@@ -226,7 +226,13 @@ Breaking Changes
   :class:`~falcon.HTTPStatus` classes were removed. (`#2090 <https://github.com/falconry/falcon/issues/2090>`__)
 - The function :func:`falcon.http_date_to_dt` now validates HTTP dates to have
   the correct timezone set. It now also returns timezone-aware
-  :class:`~datetime.datetime` objects. (`#2182 <https://github.com/falconry/falcon/issues/2182>`__)
+  :class:`~datetime.datetime` objects. As a consequence of this change, the
+  return value of :meth:`falcon.Request.get_header_as_datetime` (including the
+  derived properties :attr:`~falcon.Request.date`,
+  :attr:`~falcon.Request.if_modified_since`,
+  :attr:`~falcon.Request.if_unmodified_since`, and
+  :attr:`falcon.testing.Cookie.expires`) has also changed to timezone-aware.
+  (`#2182 <https://github.com/falconry/falcon/issues/2182>`__)
 - ``setup.cfg`` was dropped in favor of consolidating all static project
   configuration in ``pyproject.toml`` (``setup.py`` is still needed for
   programmatic control of the build process). While this change should not impact
