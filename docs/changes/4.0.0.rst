@@ -7,7 +7,7 @@ Summary
 Falcon ``4.0.0b4`` is hopefully the final beta release before moving forward to
 a release candidate.
 
-As Falcon 4.0 is now feature-complete, and we would really be thankful if you
+As Falcon 4.0 is now feature-complete, we would really be thankful if you
 could test this beta release with your apps, and
 :ref:`let us know if you run into any issues <chat>`!
 Please also check the list of **breaking changes** below.
