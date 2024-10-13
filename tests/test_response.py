@@ -47,6 +47,17 @@ def test_add_link_removed(resp):
             resp.add_link('/things/1337', 'next')
 
 
+def test_body_removed(resp):
+    # NOTE(kgriffs): Ensure AttributeRemovedError inherits from AttributeError
+    for exc_type in (AttributeError, AttributeRemovedError):
+        with pytest.raises(exc_type):
+            resp.body = '{"message": "Hello, World!"}'
+
+    for exc_type in (AttributeError, AttributeRemovedError):
+        with pytest.raises(exc_type):
+            resp.body
+
+
 def test_response_attempt_to_set_read_only_headers(resp):
     resp.append_header('x-things1', 'thing-1')
     resp.append_header('x-things2', 'thing-2')

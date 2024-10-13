@@ -56,9 +56,9 @@ jobs:
           - env: py312_cython
             python-version: "3.12"
           - env: py313
-            python-version: "3.13.0-rc.3 - 3.13"
+            python-version: "3.13"
           - env: py313_cython
-            python-version: "3.13.0-rc.3 - 3.13"
+            python-version: "3.13"
           - env: py312_nocover
             os: macos-latest
             platform-label: ' (macos)'
@@ -77,7 +77,9 @@ jobs:
           - env: "wsgi_servers"
           # E2E tests
           - env: "e2e_chrome"
-          - env: "e2e_firefox"
+          # TODO(vytas): Something is not working correctly with the
+          #   newly released Firefox 131.0, SeleniumBase, and our tests.
+          # - env: "e2e_firefox"
 
     steps:
       - name: Checkout repo

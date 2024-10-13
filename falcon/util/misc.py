@@ -174,6 +174,10 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
     Raises:
         ValueError: http_date doesn't match any of the available time formats
         ValueError: http_date doesn't match allowed timezones
+
+    .. versionchanged:: 4.0
+        This function now returns timezone-aware :class:`~datetime.datetime`
+        objects.
     """
     if not obs_date:
         # PERF(kgriffs): This violates DRY, but we do it anyway

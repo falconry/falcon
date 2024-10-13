@@ -210,6 +210,20 @@ class Response:
         self.status = value
 
     @property
+    def body(self) -> NoReturn:
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
+
+    @body.setter
+    def body(self, value: str) -> NoReturn:
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
+
+    @property
     def data(self) -> Optional[bytes]:
         """Byte string representing response content.
 

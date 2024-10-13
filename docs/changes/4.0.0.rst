@@ -4,7 +4,7 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The first beta release of Falcon 4.0.0 is here!
+The third beta release of Falcon 4.0.0 is here!
 
 Falcon 4.0 is now feature-complete, and we would really be thankful if you
 could test this beta release with your apps, and
@@ -16,9 +16,9 @@ checker of choice without any *typeshed* extensions for Falcon, and
 :ref:`report back to us <chat>` how it went!
 
 As always, you can grab the new release
-`from PyPI <https://pypi.org/project/falcon/4.0.0b1/>`__::
+`from PyPI <https://pypi.org/project/falcon/4.0.0b3/>`__::
 
-    pip install falcon==4.0.0b1
+    pip install falcon==4.0.0b3
 
 (Alternatively, continue reading these docs for more
 :ref:`installation options <install>`.)
@@ -41,7 +41,7 @@ Changes to Supported Platforms
 - End-of-life Python 3.5, 3.6 & 3.7 are no longer supported.
   (`#2074 <https://github.com/falconry/falcon/pull/2074>`__,
   `#2273 <https://github.com/falconry/falcon/pull/2273>`__)
-- Soon end-of-life Python 3.8 is no longer actively supported, but
+- End-of-life Python 3.8 is no longer actively supported, but
   the framework should still continue to install from source and function.
 - The Falcon 4.x series is guaranteed to support CPython 3.10 and
   PyPy3.10 (v7.3.16).
@@ -226,7 +226,13 @@ Breaking Changes
   :class:`~falcon.HTTPStatus` classes were removed. (`#2090 <https://github.com/falconry/falcon/issues/2090>`__)
 - The function :func:`falcon.http_date_to_dt` now validates HTTP dates to have
   the correct timezone set. It now also returns timezone-aware
-  :class:`~datetime.datetime` objects. (`#2182 <https://github.com/falconry/falcon/issues/2182>`__)
+  :class:`~datetime.datetime` objects. As a consequence of this change, the
+  return value of :meth:`falcon.Request.get_header_as_datetime` (including the
+  derived properties :attr:`~falcon.Request.date`,
+  :attr:`~falcon.Request.if_modified_since`,
+  :attr:`~falcon.Request.if_unmodified_since`, and
+  :attr:`falcon.testing.Cookie.expires`) has also changed to timezone-aware.
+  (`#2182 <https://github.com/falconry/falcon/issues/2182>`__)
 - ``setup.cfg`` was dropped in favor of consolidating all static project
   configuration in ``pyproject.toml`` (``setup.py`` is still needed for
   programmatic control of the build process). While this change should not impact
@@ -372,6 +378,13 @@ Fixed
   :class:`~falcon.media.multipart.MultipartParseOptions`. To that end, a proper
   :meth:`~falcon.media.Handlers.copy` method has been implemented for the media
   :class:`~falcon.media.Handlers` class. (`#2293 <https://github.com/falconry/falcon/issues/2293>`__)
+- Falcon's multipart form parser no longer requires a CRLF (:python:`'\\r\\n'`)
+  after the closing ``--`` delimiter. Although it is a common convention
+  (followed by the absolute majority of HTTP clients and web browsers) to
+  include a trailing CRLF, the popular Undici client
+  (used as Node's default ``fetch`` implementation) omits it at the time of
+  this writing. (The next version of Undici will adhere to the convention.)
+  (`#2364 <https://github.com/falconry/falcon/issues/2364>`__)
 
 
 Misc

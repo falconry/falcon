@@ -472,6 +472,10 @@ class Request:
         """Value of the Date header, converted to a ``datetime`` instance.
 
         The header value is assumed to conform to RFC 1123.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('Date')
 
@@ -525,6 +529,10 @@ class Request:
         """Value of the If-Modified-Since header.
 
         Returns ``None`` if the header is missing.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('If-Modified-Since')
 
@@ -533,6 +541,10 @@ class Request:
         """Value of the If-Unmodified-Since header.
 
         Returns ``None`` if the header is missing.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('If-Unmodified-Since')
 
@@ -1331,6 +1343,10 @@ class Request:
             HTTPBadRequest: The header was not found in the request, but
                 it was required.
             HttpInvalidHeader: The header contained a malformed/invalid value.
+
+        .. versionchanged:: 4.0
+            This method now returns timezone-aware :class:`~datetime.datetime`
+            objects.
         """
 
         http_date = self.get_header(header, required=required)
