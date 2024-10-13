@@ -182,12 +182,20 @@ class DateTimeConverter(BaseConverter):
     Keyword Args:
         format_string (str): String used to parse the field value
             into a datetime. Any format recognized by strptime() is
-            supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+            supported (default ``'%Y-%m-%dT%H:%M:%S%z'``).
+
+    .. versionchanged:: 4.0
+        The default value of `format_string` was changed from
+        ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
+
+        The new format is a superset of the old one parsing-wise, however, the
+        converted :class:`~datetime.datetime` object is now timezone-aware
+        (using the :attr:`~datetime.timezone.utc` timezone).
     """
 
     __slots__ = ('_format_string',)
 
-    def __init__(self, format_string: str = '%Y-%m-%dT%H:%M:%SZ') -> None:
+    def __init__(self, format_string: str = '%Y-%m-%dT%H:%M:%S%z') -> None:
         self._format_string = format_string
 
     def convert(self, value: str) -> Optional[datetime]:

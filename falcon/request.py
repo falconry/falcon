@@ -2134,7 +2134,7 @@ class Request:
     def get_param_as_datetime(
         self,
         name: str,
-        format_string: str = '%Y-%m-%dT%H:%M:%SZ',
+        format_string: str = '%Y-%m-%dT%H:%M:%S%z',
         required: bool = False,
         store: StoreArg = None,
         default: Optional[datetime] = None,
@@ -2147,7 +2147,7 @@ class Request:
         Keyword Args:
             format_string (str): String used to parse the param value
                 into a ``datetime``. Any format recognized by strptime() is
-                supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+                supported (default ``'%Y-%m-%dT%H:%M:%S%z'``).
             required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
@@ -2165,6 +2165,14 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be converted to a ``datetime``.
+
+        .. versionchanged:: 4.0
+            The default value of `format_string` was changed from
+            ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
+
+            The new format is a superset of the old one parsing-wise, however,
+            the converted :class:`~datetime.datetime` object is now
+            timezone-aware (using the :attr:`~datetime.timezone.utc` timezone).
         """
 
         param_value = self.get_param(name, required=required)

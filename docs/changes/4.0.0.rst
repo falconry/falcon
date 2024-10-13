@@ -4,9 +4,10 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The third beta release of Falcon 4.0.0 is here!
+Falcon ``4.0.0b4`` is hopefully the final beta release before moving forward to
+a release candidate.
 
-Falcon 4.0 is now feature-complete, and we would really be thankful if you
+As Falcon 4.0 is now feature-complete, and we would really be thankful if you
 could test this beta release with your apps, and
 :ref:`let us know if you run into any issues <chat>`!
 Please also check the list of **breaking changes** below.
@@ -16,9 +17,9 @@ checker of choice without any *typeshed* extensions for Falcon, and
 :ref:`report back to us <chat>` how it went!
 
 As always, you can grab the new release
-`from PyPI <https://pypi.org/project/falcon/4.0.0b3/>`__::
+`from PyPI <https://pypi.org/project/falcon/4.0.0b4/>`__::
 
-    pip install falcon==4.0.0b3
+    pip install falcon==4.0.0b4
 
 (Alternatively, continue reading these docs for more
 :ref:`installation options <install>`.)
@@ -232,6 +233,11 @@ Breaking Changes
   :attr:`~falcon.Request.if_modified_since`,
   :attr:`~falcon.Request.if_unmodified_since`, and
   :attr:`falcon.testing.Cookie.expires`) has also changed to timezone-aware.
+
+  Furthermore, the default value of the `format_string` parameter in
+  :meth:`falcon.Request.get_param_as_datetime` and
+  :class:`falcon.routing.DateTimeConverter` has also been updated to use a
+  timezone-aware form.
   (`#2182 <https://github.com/falconry/falcon/issues/2182>`__)
 - ``setup.cfg`` was dropped in favor of consolidating all static project
   configuration in ``pyproject.toml`` (``setup.py`` is still needed for
