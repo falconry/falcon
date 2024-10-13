@@ -2172,7 +2172,7 @@ class Request:
 
             The new format is a superset of the old one parsing-wise, however,
             the converted :class:`~datetime.datetime` object is now
-            timezone-aware (using the :attr:`~datetime.timezone.utc` timezone).
+            timezone-aware.
         """
 
         param_value = self.get_param(name, required=required)

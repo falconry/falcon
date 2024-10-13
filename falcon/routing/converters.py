@@ -189,8 +189,7 @@ class DateTimeConverter(BaseConverter):
         ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
 
         The new format is a superset of the old one parsing-wise, however, the
-        converted :class:`~datetime.datetime` object is now timezone-aware
-        (using the :attr:`~datetime.timezone.utc` timezone).
+        converted :class:`~datetime.datetime` object is now timezone-aware.
     """
 
     __slots__ = ('_format_string',)
