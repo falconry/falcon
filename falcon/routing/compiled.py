@@ -570,6 +570,8 @@ class CompiledRouter:
                 # return the relevant information.
                 resource_idx = len(return_values)
                 return_values.append(node)
+            else:
+                resource_idx = None
 
             assert not (consume_multiple_segments and node.children)
 
@@ -583,7 +585,7 @@ class CompiledRouter:
                 fast_return,
             )
 
-            if node.resource is None:
+            if resource_idx is None:
                 if fast_return:
                     parent.append_child(_CxReturnNone())
             else:

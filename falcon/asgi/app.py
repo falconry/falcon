@@ -42,6 +42,8 @@ from falcon import responders
 from falcon import routing
 from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
+from falcon._typing import AsgiProcessStartupMethod
+from falcon._typing import AsgiProcessShutdownMethod
 from falcon._typing import AsgiReceive
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
@@ -53,6 +55,7 @@ from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
 from falcon.app_helpers import prepare_middleware
 from falcon.app_helpers import prepare_middleware_ws
+from falcon.app_helpers import async_close_maybe
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
@@ -787,8 +790,7 @@ class App(falcon.app.App):
                                 }
                             )
                 finally:
-                    if hasattr(stream, 'close'):
-                        await stream.close()
+                    await async_close_maybe(stream)
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -827,8 +829,7 @@ class App(falcon.app.App):
                     # NOTE(vytas): This could be DRYed with the above identical
                     #   twoliner in a one large block, but OTOH we would be
                     #   unable to reuse the current try.. except.
-                    if hasattr(stream, 'close'):
-                        await stream.close()
+                    await async_close_maybe(stream)
 
         await send(_EVT_RESP_EOF)
 
@@ -1077,9 +1078,10 @@ class App(falcon.app.App):
                     return
 
                 for handler in self._unprepared_middleware:
-                    if hasattr(handler, 'process_startup'):
+                    process_startup: AsgiProcessStartupMethod | None = getattr(handler, 'process_startup', None)
+                    if process_startup:
                         try:
-                            await handler.process_startup(scope, event)
+                            await process_startup(scope, event)
                         except Exception:
                             await send(
                                 {
@@ -1093,9 +1095,10 @@ class App(falcon.app.App):
 
             elif event['type'] == 'lifespan.shutdown':
                 for handler in reversed(self._unprepared_middleware):
-                    if hasattr(handler, 'process_shutdown'):
+                    process_shutdown = getattr(handler, 'process_shutdown', None)
+                    if process_shutdown:
                         try:
-                            await handler.process_shutdown(scope, event)
+                            await process_shutdown(scope, event)
                         except Exception:
                             await send(
                                 {
