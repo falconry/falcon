@@ -72,7 +72,7 @@ class MessagePackHandler(BaseHandler):
     ) -> Any:
         return self._deserialize(await stream.read())
 
-    def serialize(self, media: Any, content_type: Optional[str]) -> bytes:
+    def serialize(self, media: Any, content_type: Optional[str] = None) -> bytes:
         return self._pack(media)
 
     async def serialize_async(self, media: Any, content_type: Optional[str]) -> bytes:
