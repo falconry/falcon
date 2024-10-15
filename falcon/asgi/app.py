@@ -60,6 +60,7 @@ from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
 from falcon.errors import WebSocketDisconnected
+from falcon.errors import HTTPInternalServerError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
@@ -68,6 +69,7 @@ from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 from falcon.util.sync import wrap_sync_to_async
+from falcon.logger import _logger
 
 from ._asgi_helpers import _validate_asgi_scope
 from ._asgi_helpers import _wrap_asgi_coroutine_func
@@ -1185,7 +1187,7 @@ class App(falcon.app.App):
             self._compose_status_response(req, resp, status)
         elif ws:
             code = http_status_to_ws_code(status.status_code)
-            falcon._logger.error(
+            _logger.error(
                 '[FALCON] HTTPStatus %s raised while handling WebSocket. '
                 'Closing with code %s',
                 status,
@@ -1207,7 +1209,7 @@ class App(falcon.app.App):
             self._compose_error_response(req, resp, error)
         elif ws:
             code = http_status_to_ws_code(error.status_code)
-            falcon._logger.error(
+            _logger.error(
                 '[FALCON] HTTPError %s raised while handling WebSocket. '
                 'Closing with code %s',
                 error,
@@ -1225,10 +1227,10 @@ class App(falcon.app.App):
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
     ) -> None:
-        falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
+        _logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
         if resp:
-            self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
+            self._compose_error_response(req, resp, HTTPInternalServerError())
         elif ws:
             await self._ws_cleanup_on_error(ws)
         else:
@@ -1244,7 +1246,7 @@ class App(falcon.app.App):
     ) -> None:
         assert resp is None
         assert ws is not None
-        falcon._logger.debug(
+        _logger.debug(
             '[FALCON] WebSocket client disconnected with code %i', error.code
         )
         await self._ws_cleanup_on_error(ws)
@@ -1323,7 +1325,7 @@ class App(falcon.app.App):
             if 'invalid close code' in str(ex).lower():
                 await ws.close(_FALLBACK_WS_ERROR_CODE)
             else:
-                falcon._logger.warning(
+                _logger.warning(
                     (
                         '[FALCON] Attempt to close web connection cleanly '
                         'failed due to raised error.'
