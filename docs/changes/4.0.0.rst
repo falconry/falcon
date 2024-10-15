@@ -4,12 +4,11 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-Falcon ``4.0.0b4`` is hopefully the final beta release before moving forward to
-a release candidate.
+The first release candidate of Falcon 4.0 is here!
 
-As Falcon 4.0 is now feature-complete, we would really be thankful if you
-could test this beta release with your apps, and
-:ref:`let us know if you run into any issues <chat>`!
+As Falcon 4.0 is now nearing a stable release, in preparation for this
+milestone, we would really be thankful if you could test this release candidate
+with your apps, and :ref:`let us know if you run into any issues <chat>`!
 Please also check the list of **breaking changes** below.
 
 If you make use of type annotations in your Falcon app, please run your type
@@ -17,9 +16,9 @@ checker of choice without any *typeshed* extensions for Falcon, and
 :ref:`report back to us <chat>` how it went!
 
 As always, you can grab the new release
-`from PyPI <https://pypi.org/project/falcon/4.0.0b4/>`__::
+`from PyPI <https://pypi.org/project/falcon/4.0.0rc1/>`__::
 
-    pip install falcon==4.0.0b4
+    pip install falcon==4.0.0rc1
 
 (Alternatively, continue reading these docs for more
 :ref:`installation options <install>`.)
