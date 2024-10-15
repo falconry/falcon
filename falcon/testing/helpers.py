@@ -69,6 +69,7 @@ import falcon.request
 from falcon.util import code_to_http_status
 from falcon.util import uri
 from falcon.util.mediatypes import parse_header
+from falcon.app_helpers import close_maybe
 
 # NOTE(kgriffs): Changed in 3.0 from 'curl/7.24.0 (x86_64-apple-darwin12.0)'
 DEFAULT_UA = 'falcon-client/' + falcon.__version__
@@ -162,15 +163,13 @@ class ASGIRequestEventEmitter:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        body = memoryview(body)
-
         if disconnect_at is None:
             disconnect_at = time.time() + 30
 
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body: Optional[memoryview] = body
+        self._body = memoryview(body)
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
@@ -1411,8 +1410,7 @@ def closed_wsgi_iterable(iterable: Iterable[bytes]) -> Iterable[bytes]:
             for item in iterable:
                 yield item
         finally:
-            if hasattr(iterable, 'close'):
-                iterable.close()
+            close_maybe(iterable)
 
     wrapped = wrapper()
     head: Tuple[bytes, ...]
@@ -1528,7 +1526,7 @@ def _fixup_http_version(http_version: str) -> str:
 def _make_cookie_values(cookies: CookieArg) -> str:
     return '; '.join(
         [
-            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+            '{}={}'.format(key, getattr(cookie, 'value', cookie))
             for key, cookie in cookies.items()
         ]
     )

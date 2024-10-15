@@ -233,7 +233,7 @@ def _wrap_with_after(
         async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
-        async def do_after(
+        async def do_after_async(
             self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
@@ -246,7 +246,7 @@ def _wrap_with_after(
             await async_responder(self, req, resp, **kwargs)
             await async_action(req, resp, self, *action_args, **action_kwargs)
 
-        do_after_responder = cast('AsgiResponderMethod', do_after)
+        do_after_responder = cast('AsgiResponderMethod', do_after_async)
     else:
         sync_action = cast('SyncAfterFn', action)
         sync_responder = cast('ResponderMethod', responder)
@@ -294,7 +294,7 @@ def _wrap_with_before(
         async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
-        async def do_before(
+        async def do_before_async(
             self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
@@ -307,7 +307,7 @@ def _wrap_with_before(
             await async_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await async_responder(self, req, resp, **kwargs)
 
-        do_before_responder = cast('AsgiResponderMethod', do_before)
+        do_before_responder = cast('AsgiResponderMethod', do_before_async)
     else:
         sync_action = cast('SyncBeforeFn', action)
         sync_responder = cast('ResponderMethod', responder)

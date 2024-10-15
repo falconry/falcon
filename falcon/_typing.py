@@ -164,6 +164,9 @@ AsgiProcessResourceMethod = Callable[
 AsgiProcessResponseMethod = Callable[
     ['AsgiRequest', 'AsgiResponse', Resource, bool], Awaitable[None]
 ]
+AsgiProcessStartupMethod = Callable[[Dict[str, Any], 'AsgiEvent'], Awaitable[None]]
+AsgiProcessShutdownMethod = Callable[[Dict[str, Any], 'AsgiEvent'], Awaitable[None]]
+
 AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[None]]
 AsgiProcessResourceWsMethod = Callable[
     ['AsgiRequest', 'WebSocket', Resource, Dict[str, Any]], Awaitable[None]
@@ -172,7 +175,6 @@ ResponseCallbacks = Union[
     Tuple[Callable[[], None], Literal[False]],
     Tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
-
 
 # Routing
 
