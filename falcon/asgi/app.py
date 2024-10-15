@@ -773,7 +773,7 @@ class App(falcon.app.App):
             #   (c) async iterator
             #
 
-            read_meth: Callable[[int], Awaitable[bytes]] | None = getattr(stream, 'read')
+            read_meth: Callable[[int], Awaitable[bytes]] | None = getattr(stream, 'read', None)
             if read_meth:
                 try:
                     while True:
