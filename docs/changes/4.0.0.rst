@@ -114,6 +114,10 @@ checking:
 (Please also see the following GitHub issue:
 `#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
 
+.. important::
+    This is only a typing limitation that has no effect outside of type
+    checking -- the above ``app`` will run just fine!
+
 
 Breaking Changes
 ----------------
