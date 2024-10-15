@@ -104,6 +104,9 @@ class AsgiSinkCallable(Protocol):
 HeaderMapping = Mapping[str, str]
 HeaderIter = Iterable[Tuple[str, str]]
 HeaderArg = Union[HeaderMapping, HeaderIter]
+
+NarrowHeaderArg = Union[Dict[str,str], List[Tuple[str, str]]]
+
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArg = Optional[Dict[str, Any]]
 Resource = object
@@ -192,7 +195,7 @@ class FindMethod(Protocol):
 
 # Media
 class SerializeSync(Protocol):
-    def __call__(self, media: Any, content_type: Optional[str] = ...) -> bytes: ...
+    def __call__(self, media: object, content_type: Optional[str] = ...) -> bytes: ...
 
 
 DeserializeSync = Callable[[bytes], Any]

@@ -386,13 +386,13 @@ class CloseableStreamIterator:
     def close(self) -> None:
         close_maybe(self._stream)
 
-
-def close_maybe(stream: Any):
+# TODO(jkmnt): Move these to some other module, they don't belong here
+def close_maybe(stream: Any) -> None:
     close: Callable[[], None] | None = getattr(stream, 'close', None)
     if close:
         close()
 
-async def async_close_maybe(stream: Any):
+async def async_close_maybe(stream: Any) -> None:
     close: Callable[[], Awaitable[None]] | None = getattr(stream, 'close', None)
     if close:
         await close()

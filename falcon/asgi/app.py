@@ -773,10 +773,11 @@ class App(falcon.app.App):
             #   (c) async iterator
             #
 
-            if hasattr(stream, 'read'):
+            read_meth: Callable[[int], Awaitable[bytes]] | None = getattr(stream, 'read')
+            if read_meth:
                 try:
                     while True:
-                        data = await stream.read(self._STREAM_BLOCK_SIZE)
+                        data = await read_meth(self._STREAM_BLOCK_SIZE)
                         if data == b'':
                             break
                         else:
@@ -1006,6 +1007,7 @@ class App(falcon.app.App):
                 'The handler must be an awaitable coroutine function in order '
                 'to be used safely with an ASGI app.'
             )
+        assert handler
         handler_callable: AsgiErrorHandler = handler
 
         exception_tuple: Tuple[type[BaseException], ...]

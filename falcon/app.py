@@ -1237,6 +1237,13 @@ class App:
             # NOTE(kgriffs): Heuristic to quickly check if stream is
             # file-like. Not perfect, but should be good enough until
             # proven otherwise.
+            #
+            # TODO(jkmnt): The checks like these are a perfect candidates for the Python 3.13 TypeIs guard.
+            # The TypeGuard of Python 3.10+ seems to fit too, though it narrows type only for the 'if' branch.
+            # Something like:
+            # def is_readable_io(stream) -> TypeIs[ReadableStream]:
+            #       return hasattr(stream, 'read')
+            #
             if hasattr(stream, 'read'):
                 if wsgi_file_wrapper is not None:
                     # TODO(kgriffs): Make block size configurable at the
@@ -1251,7 +1258,7 @@ class App:
                         self._STREAM_BLOCK_SIZE,
                     )
             else:
-                iterable = stream
+                iterable = cast(Iterable[bytes], stream)
 
             return iterable, None
 
@@ -1259,9 +1266,9 @@ class App:
 
     def _update_sink_and_static_routes(self) -> None:
         if self._sink_before_static_route:
-            self._sink_and_static_routes = tuple(self._sinks + self._static_routes)  # type: ignore[operator]
+            self._sink_and_static_routes = (*self._sinks, *self._static_routes)
         else:
-            self._sink_and_static_routes = tuple(self._static_routes + self._sinks)  # type: ignore[operator]
+            self._sink_and_static_routes = (*self._static_routes, *self._sinks)
 
 
 # TODO(myusko): This class is a compatibility alias, and should be removed

@@ -22,6 +22,7 @@ import functools
 import mimetypes
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Dict,
     Iterable,
@@ -29,6 +30,7 @@ from typing import (
     Mapping,
     NoReturn,
     Optional,
+    cast,
     overload,
     Tuple,
     Type,
@@ -39,6 +41,7 @@ from typing import (
 from falcon._typing import _UNSET
 from falcon._typing import RangeSetHeader
 from falcon._typing import UnsetOr
+from falcon._typing import HeaderIter
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
@@ -48,6 +51,7 @@ from falcon.response_helpers import _format_etag_header
 from falcon.response_helpers import _format_header_value_list
 from falcon.response_helpers import _format_range
 from falcon.response_helpers import _header_property
+from falcon.response_helpers import _headers_to_items
 from falcon.response_helpers import _is_ascii_encodable
 from falcon.typing import Headers
 from falcon.typing import ReadableIO
@@ -826,16 +830,11 @@ class Response:
                          or ``Iterable[[str, str]]``.
         """
 
-        header_items = getattr(headers, 'items', None)
-
-        if callable(header_items):
-            headers = header_items()
-
         # NOTE(kgriffs): We can't use dict.update because we have to
         # normalize the header names.
         _headers = self._headers
 
-        for name, value in headers:  # type: ignore[misc]
+        for name, value in _headers_to_items(headers):
             # NOTE(kgriffs): uwsgi fails with a TypeError if any header
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode

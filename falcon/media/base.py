@@ -28,7 +28,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
     """Override to provide a synchronous deserialization method that
     takes a byte string."""
 
-    def serialize(self, media: object, content_type: str) -> bytes:
+    def serialize(self, media: object, content_type: Optional[str] = None) -> bytes:
         """Serialize the media object on a :any:`falcon.Response`.
 
         By default, this method raises an instance of
@@ -51,7 +51,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Returns:
             bytes: The resulting serialized bytes from the input object.
         """
-        if MEDIA_JSON in content_type:
+        if content_type is not None and MEDIA_JSON in content_type:
             raise NotImplementedError(
                 'The JSON media handler requires the sync interface to be '
                 "implemented even in ASGI applications, because it's used "

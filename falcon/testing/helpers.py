@@ -169,7 +169,7 @@ class ASGIRequestEventEmitter:
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body = memoryview(body)
+        self._body: Optional[memoryview] = memoryview(body)
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at

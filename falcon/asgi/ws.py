@@ -19,6 +19,7 @@ from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
 from falcon.util import misc
+from falcon.response_helpers import _headers_to_items
 
 __all__ = ('WebSocket',)
 
@@ -210,15 +211,9 @@ class WebSocket:
                     'does not support accept headers.'
                 )
 
-            header_items = getattr(headers, 'items', None)
-            if callable(header_items):
-                headers_iterable: Iterable[tuple[str, str]] = header_items()
-            else:
-                headers_iterable = headers  # type: ignore[assignment]
-
             event['headers'] = parsed_headers = [
                 (name.lower().encode('ascii'), value.encode('ascii'))
-                for name, value in headers_iterable
+                for name, value in _headers_to_items(headers)
             ]
 
             for name, __ in parsed_headers:
