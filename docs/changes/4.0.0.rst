@@ -80,14 +80,14 @@ runtime behavior, but may surface new or different errors with type checkers.
     Also, make sure to :ref:`let us know <chat>` which essential aliases are
     missing from the public interface!
 
-Known typing issues
-^^^^^^^^^^^^^^^^^^^
+Known typing limitations
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Falcon's emphasis on flexibility and performance has presented certain
 challenges when it comes to adding type annotations to the existing code base.
-One currently unresolved case involves using custom :class:`~falcon.Request`
-and/or :class:`~falcon.Response` types in callbacks that are passed back to the
-framework, such as when adding an
+One notable limitation involves using custom :class:`~falcon.Request` and/or
+:class:`~falcon.Response` types in callbacks that are passed back
+to the framework, such as when adding an
 :meth:`error handler <falcon.App.add_error_handler>`.
 
 For instance, the following application might unexpectedly not pass type
@@ -112,7 +112,7 @@ checking:
     app = App(request_type=MyRequest)
     app.add_error_handler(OSError, handle_os_error)
 
-(You can read more about this issue on GitHub:
+(Please also see the following GitHub issue:
 `#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
 
 
