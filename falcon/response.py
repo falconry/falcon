@@ -26,7 +26,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Mapping,
     NoReturn,
     Optional,
     overload,
@@ -37,6 +36,7 @@ from typing import (
 )
 
 from falcon._typing import _UNSET
+from falcon._typing import HeaderArg
 from falcon._typing import RangeSetHeader
 from falcon._typing import UnsetOr
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
@@ -793,9 +793,7 @@ class Response:
 
             self._headers[name] = value
 
-    def set_headers(
-        self, headers: Union[Mapping[str, str], Iterable[Tuple[str, str]]]
-    ) -> None:
+    def set_headers(self, headers: HeaderArg) -> None:
         """Set several headers at once.
 
         This method can be used to set a collection of raw header names and
