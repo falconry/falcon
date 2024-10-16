@@ -4,12 +4,11 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-Falcon ``4.0.0b4`` is hopefully the final beta release before moving forward to
-a release candidate.
+The first release candidate of Falcon 4.0 is here!
 
-As Falcon 4.0 is now feature-complete, we would really be thankful if you
-could test this beta release with your apps, and
-:ref:`let us know if you run into any issues <chat>`!
+As Falcon 4.0 is now nearing a stable release, in preparation for this
+milestone, we would really be thankful if you could test this release candidate
+with your apps, and :ref:`let us know if you run into any issues <chat>`!
 Please also check the list of **breaking changes** below.
 
 If you make use of type annotations in your Falcon app, please run your type
@@ -17,9 +16,9 @@ checker of choice without any *typeshed* extensions for Falcon, and
 :ref:`report back to us <chat>` how it went!
 
 As always, you can grab the new release
-`from PyPI <https://pypi.org/project/falcon/4.0.0b4/>`__::
+`from PyPI <https://pypi.org/project/falcon/4.0.0rc1/>`__::
 
-    pip install falcon==4.0.0b4
+    pip install falcon==4.0.0rc1
 
 (Alternatively, continue reading these docs for more
 :ref:`installation options <install>`.)
@@ -50,7 +49,8 @@ Changes to Supported Platforms
   later 4.x release, especially if we are faced with incompatible ecosystem
   changes in typing, Cython, etc.
 
-Typing support
+
+Typing Support
 --------------
 
 Type checking support was introduced in version 4.0. While most of the library is
@@ -78,6 +78,46 @@ runtime behavior, but may surface new or different errors with type checkers.
     to avoid possible runtime errors after an update.
     Also, make sure to :ref:`let us know <chat>` which essential aliases are
     missing from the public interface!
+
+Known typing limitations
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Falcon's emphasis on flexibility and performance has presented certain
+challenges when it comes to adding type annotations to the existing code base.
+One notable limitation involves using custom :class:`~falcon.Request` and/or
+:class:`~falcon.Response` types in callbacks that are passed back
+to the framework, such as when adding an
+:meth:`error handler <falcon.App.add_error_handler>`.
+
+For instance, the following application might unexpectedly not pass type
+checking:
+
+.. code-block:: python
+
+    from typing import Any
+
+    from falcon import App, HTTPInternalServerError, Request, Response
+
+
+    class MyRequest(Request):
+        ...
+
+
+    def handle_os_error(req: MyRequest, resp: Response, ex: Exception,
+                        params: dict[str, Any]) -> None:
+        raise HTTPInternalServerError(title='OS error!') from ex
+
+
+    app = App(request_type=MyRequest)
+    app.add_error_handler(OSError, handle_os_error)
+
+(Please also see the following GitHub issue:
+`#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
+
+.. important::
+    This is only a typing limitation that has no effect outside of type
+    checking -- the above ``app`` will run just fine!
+
 
 Breaking Changes
 ----------------
@@ -406,12 +446,6 @@ Misc
 
 Contributors to this Release
 ----------------------------
-
-.. note::
-    If we missed you below, don’t worry!
-
-    We will refresh the full list of contributors before the 4.0.0 final
-    release.
 
 Many thanks to all of our talented and stylish contributors for this release!
 
