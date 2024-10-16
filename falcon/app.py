@@ -1237,9 +1237,9 @@ class App:
             # NOTE(kgriffs): Heuristic to quickly check if stream is
             # file-like. Not perfect, but should be good enough until
             # proven otherwise.
-            #
-            # TODO(jkmnt): The checks like these are a perfect candidates for the Python 3.13 TypeIs guard.
-            # The TypeGuard of Python 3.10+ seems to fit too, though it narrows type only for the 'if' branch.
+            # TODO(jkmnt): The checks like these are a perfect candidates for the
+            # Python 3.13 TypeIs guard. The TypeGuard of Python 3.10+ seems to fit too,
+            # though it narrows type only for the 'if' branch.
             # Something like:
             # def is_readable_io(stream) -> TypeIs[ReadableStream]:
             #       return hasattr(stream, 'read')

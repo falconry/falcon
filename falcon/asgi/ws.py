@@ -5,7 +5,7 @@ import collections
 from enum import auto
 from enum import Enum
 import re
-from typing import Any, Deque, Dict, Iterable, Mapping, Optional, Tuple, Union
+from typing import Any, Deque, Dict, Mapping, Optional, Tuple, Union
 
 from falcon import errors
 from falcon import media
@@ -18,8 +18,8 @@ from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import WebSocketPayloadType
-from falcon.util import misc
 from falcon.response_helpers import _headers_to_items
+from falcon.util import misc
 
 __all__ = ('WebSocket',)
 

@@ -32,6 +32,7 @@ from typing import (
     Optional,
     Pattern,
     Protocol,
+    Sequence,
     Tuple,
     TYPE_CHECKING,
     TypeVar,
@@ -105,7 +106,7 @@ HeaderMapping = Mapping[str, str]
 HeaderIter = Iterable[Tuple[str, str]]
 HeaderArg = Union[HeaderMapping, HeaderIter]
 
-NarrowHeaderArg = Union[Dict[str,str], List[Tuple[str, str]]]
+NarrowHeaderArg = Union[Mapping[str, str], Sequence[Tuple[str, str]]]
 
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArg = Optional[Dict[str, Any]]

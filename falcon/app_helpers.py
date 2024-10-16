@@ -17,7 +17,18 @@
 from __future__ import annotations
 
 from inspect import iscoroutinefunction
-from typing import Any, Awaitable, Callable, Iterable, List, Literal, Optional, overload, Tuple, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    overload,
+    Tuple,
+    Union,
+)
 
 from falcon import util
 from falcon._typing import AsgiProcessRequestMethod as APRequest
@@ -386,13 +397,15 @@ class CloseableStreamIterator:
     def close(self) -> None:
         close_maybe(self._stream)
 
+
 # TODO(jkmnt): Move these to some other module, they don't belong here
 def close_maybe(stream: Any) -> None:
-    close: Callable[[], None] | None = getattr(stream, 'close', None)
+    close: Optional[Callable[[], None]] = getattr(stream, 'close', None)
     if close:
         close()
 
+
 async def async_close_maybe(stream: Any) -> None:
-    close: Callable[[], Awaitable[None]] | None = getattr(stream, 'close', None)
+    close: Optional[Callable[[], Awaitable[None]]] = getattr(stream, 'close', None)
     if close:
         await close()

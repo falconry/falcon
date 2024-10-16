@@ -18,9 +18,9 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
 
-from falcon._typing import RangeSetHeader
 from falcon._typing import HeaderArg
 from falcon._typing import HeaderIter
+from falcon._typing import RangeSetHeader
 from falcon.util import uri
 from falcon.util.misc import secure_filename
 
@@ -148,8 +148,9 @@ def _is_ascii_encodable(s: str) -> bool:
         return False
     return True
 
+
 def _headers_to_items(headers: HeaderArg) -> HeaderIter:
-    header_items: Callable[[], HeaderIter] | None = getattr(headers, 'items', None)
+    header_items: Optional[Callable[[], HeaderIter]] = getattr(headers, 'items', None)
     if callable(header_items):
         return header_items()
     return headers  # type: ignore[return-value]

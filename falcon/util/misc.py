@@ -42,7 +42,9 @@ from falcon.uri import encode_value
 from .deprecation import deprecated
 
 try:
-    from falcon.cyutil.misc import encode_items_to_latin1 as _cy_encode_items_to_latin1 # pyright: ignore[reportMissingImports]
+    from falcon.cyutil.misc import (  # pyright: ignore[reportMissingImports]
+        encode_items_to_latin1 as _cy_encode_items_to_latin1,
+    )
 except ImportError:
     _cy_encode_items_to_latin1 = None
 

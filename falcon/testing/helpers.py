@@ -59,6 +59,7 @@ from falcon import errors as falcon_errors
 from falcon._typing import CookieArg
 from falcon._typing import HeaderArg
 from falcon._typing import ResponseStatus
+from falcon.app_helpers import close_maybe
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import EventType
@@ -69,7 +70,6 @@ import falcon.request
 from falcon.util import code_to_http_status
 from falcon.util import uri
 from falcon.util.mediatypes import parse_header
-from falcon.app_helpers import close_maybe
 
 # NOTE(kgriffs): Changed in 3.0 from 'curl/7.24.0 (x86_64-apple-darwin12.0)'
 DEFAULT_UA = 'falcon-client/' + falcon.__version__

@@ -42,8 +42,8 @@ from falcon import responders
 from falcon import routing
 from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
-from falcon._typing import AsgiProcessStartupMethod
 from falcon._typing import AsgiProcessShutdownMethod
+from falcon._typing import AsgiProcessStartupMethod
 from falcon._typing import AsgiReceive
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
@@ -51,28 +51,28 @@ from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import SinkPrefix
 import falcon.app
+from falcon.app_helpers import async_close_maybe
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
 from falcon.app_helpers import prepare_middleware
 from falcon.app_helpers import prepare_middleware_ws
-from falcon.app_helpers import async_close_maybe
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
-from falcon.errors import WebSocketDisconnected
 from falcon.errors import HTTPInternalServerError
+from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
+from falcon.logger import _logger
 from falcon.media.multipart import MultipartFormHandler
 from falcon.util import get_argnames
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 from falcon.util.sync import wrap_sync_to_async
-from falcon.logger import _logger
 
 from ._asgi_helpers import _validate_asgi_scope
 from ._asgi_helpers import _wrap_asgi_coroutine_func
@@ -773,7 +773,9 @@ class App(falcon.app.App):
             #   (c) async iterator
             #
 
-            read_meth: Callable[[int], Awaitable[bytes]] | None = getattr(stream, 'read', None)
+            read_meth: Optional[Callable[[int], Awaitable[bytes]]] = getattr(
+                stream, 'read', None
+            )
             if read_meth:
                 try:
                     while True:
@@ -1080,7 +1082,9 @@ class App(falcon.app.App):
                     return
 
                 for handler in self._unprepared_middleware:
-                    process_startup: AsgiProcessStartupMethod | None = getattr(handler, 'process_startup', None)
+                    process_startup: Optional[AsgiProcessStartupMethod] = getattr(
+                        handler, 'process_startup', None
+                    )
                     if process_startup:
                         try:
                             await process_startup(scope, event)
@@ -1097,7 +1101,9 @@ class App(falcon.app.App):
 
             elif event['type'] == 'lifespan.shutdown':
                 for handler in reversed(self._unprepared_middleware):
-                    process_shutdown = getattr(handler, 'process_shutdown', None)
+                    process_shutdown: Optional[AsgiProcessShutdownMethod] = getattr(
+                        handler, 'process_shutdown', None
+                    )
                     if process_shutdown:
                         try:
                             await process_shutdown(scope, event)
@@ -1251,9 +1257,7 @@ class App(falcon.app.App):
     ) -> None:
         assert resp is None
         assert ws is not None
-        _logger.debug(
-            '[FALCON] WebSocket client disconnected with code %i', error.code
-        )
+        _logger.debug('[FALCON] WebSocket client disconnected with code %i', error.code)
         await self._ws_cleanup_on_error(ws)
 
     if TYPE_CHECKING:

@@ -435,7 +435,7 @@ class CompiledRouter:
         nodes: List[CompiledRouterNode],
         parent: _CxParent,
         return_values: List[CompiledRouterNode],
-        patterns: List[Pattern],
+        patterns: List[Pattern[str]],
         params_stack: List[_CxElement],
         level: int = 0,
         fast_return: bool = True,

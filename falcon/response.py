@@ -22,7 +22,6 @@ import functools
 import mimetypes
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Dict,
     Iterable,
@@ -30,7 +29,6 @@ from typing import (
     Mapping,
     NoReturn,
     Optional,
-    cast,
     overload,
     Tuple,
     Type,
@@ -41,7 +39,6 @@ from typing import (
 from falcon._typing import _UNSET
 from falcon._typing import RangeSetHeader
 from falcon._typing import UnsetOr
-from falcon._typing import HeaderIter
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported

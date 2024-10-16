@@ -2601,7 +2601,9 @@ class MediaMalformedError(HTTPBadRequest):
     """
 
     def __init__(
-        self, media_type: str, **kwargs: Union[NarrowHeaderArg, HTTPErrorKeywordArguments]
+        self,
+        media_type: str,
+        **kwargs: Union[NarrowHeaderArg, HTTPErrorKeywordArguments],
     ):
         super().__init__(
             title='Invalid {0}'.format(media_type),
@@ -2701,7 +2703,7 @@ class MultipartParseError(MediaMalformedError):
     """
 
     # NOTE(caselit): remove the description @property in MediaMalformedError
-    description = None # pyright: ignore[reportAssignmentType, reportGeneralTypeIssues]
+    description = None  # pyright: ignore[reportAssignmentType, reportGeneralTypeIssues]
 
     def __init__(
         self,
