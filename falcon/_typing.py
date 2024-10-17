@@ -32,6 +32,7 @@ from typing import (
     Optional,
     Pattern,
     Protocol,
+    Sequence,
     Tuple,
     TYPE_CHECKING,
     TypeVar,
@@ -104,6 +105,9 @@ class AsgiSinkCallable(Protocol):
 HeaderMapping = Mapping[str, str]
 HeaderIter = Iterable[Tuple[str, str]]
 HeaderArg = Union[HeaderMapping, HeaderIter]
+
+NarrowHeaderArg = Union[Mapping[str, str], Sequence[Tuple[str, str]]]
+
 ResponseStatus = Union[http.HTTPStatus, str, int]
 StoreArg = Optional[Dict[str, Any]]
 Resource = object
@@ -164,6 +168,9 @@ AsgiProcessResourceMethod = Callable[
 AsgiProcessResponseMethod = Callable[
     ['AsgiRequest', 'AsgiResponse', Resource, bool], Awaitable[None]
 ]
+AsgiProcessStartupMethod = Callable[[Dict[str, Any], 'AsgiEvent'], Awaitable[None]]
+AsgiProcessShutdownMethod = Callable[[Dict[str, Any], 'AsgiEvent'], Awaitable[None]]
+
 AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[None]]
 AsgiProcessResourceWsMethod = Callable[
     ['AsgiRequest', 'WebSocket', Resource, Dict[str, Any]], Awaitable[None]
@@ -172,7 +179,6 @@ ResponseCallbacks = Union[
     Tuple[Callable[[], None], Literal[False]],
     Tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
-
 
 # Routing
 
@@ -190,7 +196,7 @@ class FindMethod(Protocol):
 
 # Media
 class SerializeSync(Protocol):
-    def __call__(self, media: Any, content_type: Optional[str] = ...) -> bytes: ...
+    def __call__(self, media: object, content_type: Optional[str] = ...) -> bytes: ...
 
 
 DeserializeSync = Callable[[bytes], Any]
