@@ -4,12 +4,36 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-We are happy to present Falcon 4.0, a new major version of the framework.
+We are happy to present Falcon 4.0, a new major version of the framework that
+brings a couple of commonly requested features including support for matching
+multiple path segments (using :class:`~falcon.routing.PathConverter`), and
+a fully typed codebase. (Please read more about typing in the notes below.)
+
+The timeframe for Falcon 4.0 was challenging due to the need to balance our
+high standards with the CPython 3.13 timeline. We aimed to deliver the main
+development branch in this release, without resorting to another compatibility
+micro update (as we did with Falcon 3.1.1-3.1.3). Following community feedback,
+we also want to improve our overall release schedule by shipping smaller
+increments more often.
+To support this goal, we have made several tooling and testing improvements:
+the build process for :ref:`binary wheels <binary_wheels>` has been simplified
+using `cibuildwheel <https://cibuildwheel.pypa.io/>`__, and our test suite now
+only requires ``pytest`` as a hard dependency. Additionally, you can run
+``pytest`` against our tests from any directory. We hope that these changes
+should also benefit packaging Falcon in Linux distributions.
+
+As with every SemVer major release, we have removed a number of previously
+deprecated functions, classes, compatibility shims, as well as made other
+potentially breaking changes that we could not risk in a minor version.
+If you have been paying attention the deprecation warnings from the 3.x series,
+the impact should be minimal, but please do take a look at the list of breaking
+changes below.
 
 This release would not have been possible without the numerous contributions
 from our community. This release alone comprises a number of pull requests
-submitted by a group of 30 talented individuals. We were particularly impressed
-by the high-quality discussions and code submissions during our
+submitted by a group of 30 talented individuals. What is more, we were
+particularly impressed by the high-quality discussions and code submissions
+during our
 `EuroPython 2024 Sprint <https://ep2024.europython.eu/sprints#the-falcon-web-framework>`__.
 Some notable sprint contributions include CHIPS support, and a new
 :ref:`WebSocket Tutorial <tutorial-ws>`, among others.
