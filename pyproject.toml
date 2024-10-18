@@ -118,7 +118,7 @@ exclude = ["examples", "tests"]
         "falcon/bench",
         "falcon/cmd",
     ]
-    reportUnnecessaryTypeComment = true # doesn't seem to work. https://github.com/microsoft/pyright/issues/2839#issuecomment-2421779145
+    # reportUnnecessaryTypeIgnoreComment = true
 
 [tool.towncrier]
     package = "falcon"
