@@ -30,6 +30,7 @@ import wsgiref.validate
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
 from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_MSGPACK
 from falcon.errors import CompatibilityError
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
@@ -39,6 +40,7 @@ from falcon.util import code_to_http_status
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
 from falcon.util import to_query_str
+from falcon.media import MessagePackHandler
 
 warnings.filterwarnings(
     'error',
@@ -442,6 +444,7 @@ def simulate_request(
     content_type=None,
     body=None,
     json=None,
+    msgpack=None,
     file_wrapper=None,
     wsgierrors=None,
     params=None,
@@ -579,6 +582,7 @@ def simulate_request(
             content_type=content_type,
             body=body,
             json=json,
+            msgpack=msgpack,
             params=params,
             params_csv=params_csv,
             protocol=protocol,
@@ -602,6 +606,7 @@ def simulate_request(
         headers,
         body,
         json,
+        msgpack,
         extras,
     )
 
@@ -655,6 +660,7 @@ async def _simulate_request_asgi(
     content_type=None,
     body=None,
     json=None,
+    msgpack=None,
     params=None,
     params_csv=True,
     protocol='http',
@@ -777,6 +783,7 @@ async def _simulate_request_asgi(
         headers,
         body,
         json,
+        msgpack,
         extras,
     )
 
@@ -2144,7 +2151,7 @@ class _WSContextManager:
 
 
 def _prepare_sim_args(
-    path, query_string, params, params_csv, content_type, headers, body, json, extras
+    path, query_string, params, params_csv, content_type, headers, body, json, msgpack, extras
 ):
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
@@ -2177,6 +2184,11 @@ def _prepare_sim_args(
         body = json_module.dumps(json, ensure_ascii=False)
         headers = headers or {}
         headers['Content-Type'] = MEDIA_JSON
+
+    if msgpack is not None:
+        body = MessagePackHandler.serialize(msgpack)
+        headers = headers or {}
+        headers['Content-Type'] = MEDIA_MSGPACK
 
     return path, query_string, headers, body, extras
 
