@@ -59,7 +59,6 @@ from falcon import errors as falcon_errors
 from falcon._typing import CookieArg
 from falcon._typing import HeaderArg
 from falcon._typing import ResponseStatus
-from falcon.app_helpers import close_maybe
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import EventType
@@ -1410,7 +1409,9 @@ def closed_wsgi_iterable(iterable: Iterable[bytes]) -> Iterable[bytes]:
             for item in iterable:
                 yield item
         finally:
-            close_maybe(iterable)
+            close: Optional[Callable[[], None]] = getattr(iterable, 'close', None)
+            if close:
+                close()
 
     wrapped = wrapper()
     head: Tuple[bytes, ...]

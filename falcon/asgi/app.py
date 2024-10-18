@@ -52,7 +52,6 @@ from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import SinkPrefix
 import falcon.app
-from falcon.app_helpers import async_close_maybe
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
 from falcon.app_helpers import prepare_middleware
@@ -773,13 +772,16 @@ class App(falcon.app.App):
             #   (c) async iterator
             #
 
-            read_meth: Optional[Callable[[int], Awaitable[bytes]]] = getattr(
+            read: Optional[Callable[[int], Awaitable[bytes]]] = getattr(
                 stream, 'read', None
             )
-            if read_meth:
+            close: Optional[Callable[[], Awaitable[None]]] = getattr(
+                stream, 'close', None
+            )
+            if read:
                 try:
                     while True:
-                        data = await read_meth(self._STREAM_BLOCK_SIZE)
+                        data = await read(self._STREAM_BLOCK_SIZE)
                         if data == b'':
                             break
                         else:
@@ -793,7 +795,8 @@ class App(falcon.app.App):
                                 }
                             )
                 finally:
-                    await async_close_maybe(stream)
+                    if close:
+                        await close()
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -829,10 +832,8 @@ class App(falcon.app.App):
                         'Response.stream: ' + str(ex)
                     )
                 finally:
-                    # NOTE(vytas): This could be DRYed with the above identical
-                    #   twoliner in a one large block, but OTOH we would be
-                    #   unable to reuse the current try.. except.
-                    await async_close_maybe(stream)
+                    if close:
+                        await close()
 
         await send(_EVT_RESP_EOF)
 
