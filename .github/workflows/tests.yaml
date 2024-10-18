@@ -32,6 +32,7 @@ jobs:
           - env: towncrier
           # Typing
           - env: mypy
+          - env: pyright
           - env: mypy_tests
           # Python tests
           - env: mintest
