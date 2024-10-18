@@ -37,13 +37,12 @@ from typing import (
     Union,
 )
 
+from falcon import _logger
 from falcon import constants
 from falcon import responders
 from falcon import routing
 from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
-from falcon._typing import AsgiProcessShutdownMethod
-from falcon._typing import AsgiProcessStartupMethod
 from falcon._typing import AsgiReceive
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
@@ -51,7 +50,6 @@ from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import SinkPrefix
 import falcon.app
-from falcon.app_helpers import async_close_maybe
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
 from falcon.app_helpers import prepare_middleware
@@ -66,7 +64,6 @@ from falcon.errors import HTTPInternalServerError
 from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
-from falcon.logger import _logger
 from falcon.media.multipart import MultipartFormHandler
 from falcon.util import get_argnames
 from falcon.util.misc import is_python_func
@@ -343,10 +340,10 @@ class App(falcon.app.App):
     #   without having to import falcon.asgi.
     _ASGI: ClassVar[bool] = True
 
-    _default_responder_bad_request: ClassVar[AsgiResponderCallable] = (
+    _default_responder_bad_request: ClassVar[AsgiResponderCallable] = (  # pyright: ignore[reportIncompatibleVariableOverride]# noqa: E501
         responders.bad_request_async  # type: ignore[assignment]
     )
-    _default_responder_path_not_found: ClassVar[AsgiResponderCallable] = (
+    _default_responder_path_not_found: ClassVar[AsgiResponderCallable] = (  # pyright: ignore[reportIncompatibleVariableOverride] # noqa: E501
         responders.path_not_found_async  # type: ignore[assignment]
     )
 
@@ -359,8 +356,8 @@ class App(falcon.app.App):
     _error_handlers: Dict[Type[BaseException], AsgiErrorHandler]  # type: ignore[assignment]
     _middleware: AsyncPreparedMiddlewareResult  # type: ignore[assignment]
     _middleware_ws: AsyncPreparedMiddlewareWsResult
-    _request_type: Type[Request]
-    _response_type: Type[Response]
+    _request_type: Type[Request]  # pyright: ignore[reportIncompatibleVariableOverride]
+    _response_type: Type[Response]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     ws_options: WebSocketOptions
     """A set of behavioral options related to WebSocket connections.
@@ -526,7 +523,7 @@ class App(falcon.app.App):
                             break
 
                 if not resp.complete:
-                    await responder(req, resp, **params)
+                    await responder(req, resp, **params)  # pyright: ignore[reportPossiblyUnboundVariable]
 
                 req_succeeded = True
 
@@ -773,13 +770,10 @@ class App(falcon.app.App):
             #   (c) async iterator
             #
 
-            read_meth: Optional[Callable[[int], Awaitable[bytes]]] = getattr(
-                stream, 'read', None
-            )
-            if read_meth:
+            if hasattr(stream, 'read'):
                 try:
                     while True:
-                        data = await read_meth(self._STREAM_BLOCK_SIZE)
+                        data = await stream.read(self._STREAM_BLOCK_SIZE)  # pyright: ignore[reportAttributeAccessIssue]
                         if data == b'':
                             break
                         else:
@@ -793,7 +787,8 @@ class App(falcon.app.App):
                                 }
                             )
                 finally:
-                    await async_close_maybe(stream)
+                    if hasattr(stream, 'close'):
+                        await stream.close()  # pyright: ignore[reportAttributeAccessIssue]
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -832,7 +827,8 @@ class App(falcon.app.App):
                     # NOTE(vytas): This could be DRYed with the above identical
                     #   twoliner in a one large block, but OTOH we would be
                     #   unable to reuse the current try.. except.
-                    await async_close_maybe(stream)
+                    if hasattr(stream, 'close'):
+                        await stream.close()  # pyright: ignore
 
         await send(_EVT_RESP_EOF)
 
@@ -1009,8 +1005,7 @@ class App(falcon.app.App):
                 'The handler must be an awaitable coroutine function in order '
                 'to be used safely with an ASGI app.'
             )
-        assert handler
-        handler_callable: AsgiErrorHandler = handler
+        handler_callable: AsgiErrorHandler = handler  # pyright: ignore[reportAssignmentType]
 
         exception_tuple: Tuple[type[BaseException], ...]
         try:
@@ -1082,12 +1077,9 @@ class App(falcon.app.App):
                     return
 
                 for handler in self._unprepared_middleware:
-                    process_startup: Optional[AsgiProcessStartupMethod] = getattr(
-                        handler, 'process_startup', None
-                    )
-                    if process_startup:
+                    if hasattr(handler, 'process_startup'):
                         try:
-                            await process_startup(scope, event)
+                            await handler.process_startup(scope, event)  # pyright: ignore[reportAttributeAccessIssue]
                         except Exception:
                             await send(
                                 {
@@ -1101,12 +1093,9 @@ class App(falcon.app.App):
 
             elif event['type'] == 'lifespan.shutdown':
                 for handler in reversed(self._unprepared_middleware):
-                    process_shutdown: Optional[AsgiProcessShutdownMethod] = getattr(
-                        handler, 'process_shutdown', None
-                    )
-                    if process_shutdown:
+                    if hasattr(handler, 'process_shutdown'):
                         try:
-                            await process_shutdown(scope, event)
+                            await handler.process_shutdown(scope, event)  # pyright: ignore[reportAttributeAccessIssue]
                         except Exception:
                             await send(
                                 {

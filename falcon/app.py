@@ -437,7 +437,7 @@ class App:
                             break
 
                 if not resp.complete:
-                    responder(req, resp, **params)
+                    responder(req, resp, **params)  # pyright: ignore[reportPossiblyUnboundVariable]
 
                 req_succeeded = True
             except Exception as ex:
@@ -1071,7 +1071,7 @@ class App:
 
         if resource is not None:
             try:
-                responder = method_map[method]
+                responder = method_map[method]  # pyright: ignore[reportPossiblyUnboundVariable]
             except KeyError:
                 # NOTE(kgriffs): Dirty hack! We use __class__ here to avoid
                 #   binding self to the default responder method. We could
@@ -1094,7 +1094,7 @@ class App:
             else:
                 responder = self.__class__._default_responder_path_not_found
 
-        return (responder, params, resource, uri_template)
+        return (responder, params, resource, uri_template)  # pyright: ignore[reportPossiblyUnboundVariable]
 
     def _compose_status_response(
         self, req: Request, resp: Response, http_status: HTTPStatus
@@ -1258,17 +1258,21 @@ class App:
                         self._STREAM_BLOCK_SIZE,
                     )
             else:
-                iterable = cast(Iterable[bytes], stream)
+                iterable = stream
 
-            return iterable, None
+            return iterable, None  # pyright: ignore[reportReturnType]
 
         return [], 0
 
     def _update_sink_and_static_routes(self) -> None:
         if self._sink_before_static_route:
-            self._sink_and_static_routes = (*self._sinks, *self._static_routes)
+            self._sink_and_static_routes = tuple(self._sinks) + tuple(
+                self._static_routes
+            )
         else:
-            self._sink_and_static_routes = (*self._static_routes, *self._sinks)
+            self._sink_and_static_routes = tuple(self._static_routes) + tuple(
+                self._sinks
+            )
 
 
 # TODO(myusko): This class is a compatibility alias, and should be removed

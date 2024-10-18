@@ -549,7 +549,7 @@ class MultipartFormHandler(BaseHandler):
             stream, content_type, content_length, form_cls=self._ASGI_MULTIPART_FORM
         )
 
-    def serialize(self, media: object, content_type: Optional[str] = None) -> NoReturn:
+    def serialize(self, media: object, content_type: str) -> NoReturn:
         raise NotImplementedError('multipart form serialization unsupported')
 
 

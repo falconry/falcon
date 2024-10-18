@@ -113,6 +113,13 @@ exclude = ["examples", "tests"]
         ]
         ignore_missing_imports = true
 
+[tool.pyright]
+    exclude = [
+        "falcon/bench",
+        "falcon/cmd",
+    ]
+    reportUnnecessaryTypeComment = true # doesn't seem to work. https://github.com/microsoft/pyright/issues/2839#issuecomment-2421779145
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""

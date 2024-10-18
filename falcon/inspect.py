@@ -250,7 +250,7 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
                         method_info = RouteMethodInfo(
                             method,
                             source_info,
-                            getattr(real_func, '__name__', '?'),
+                            real_func.__name__,  # pyright: ignore[reportAttributeAccessIssue]
                             internal,
                         )
                         methods.append(method_info)

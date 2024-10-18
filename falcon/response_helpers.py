@@ -153,4 +153,5 @@ def _headers_to_items(headers: HeaderArg) -> HeaderIter:
     header_items: Optional[Callable[[], HeaderIter]] = getattr(headers, 'items', None)
     if callable(header_items):
         return header_items()
-    return headers  # type: ignore[return-value]
+    else:
+        return headers  # type: ignore[return-value]

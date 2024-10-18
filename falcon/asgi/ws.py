@@ -623,7 +623,7 @@ class WebSocketOptions:
 
     @classmethod
     def _init_default_close_reasons(cls) -> Dict[int, str]:
-        reasons: dict[int, str] = dict(cls._STANDARD_CLOSE_REASONS)
+        reasons = dict(cls._STANDARD_CLOSE_REASONS)
         for status_constant in dir(status_codes):
             if 'HTTP_100' <= status_constant < 'HTTP_599':
                 status_line = getattr(status_codes, status_constant)
