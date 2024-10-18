@@ -37,6 +37,7 @@ from typing import (
     Union,
 )
 
+from falcon import _logger
 from falcon import constants
 from falcon import responders
 from falcon import routing
@@ -66,7 +67,6 @@ from falcon.errors import HTTPInternalServerError
 from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
-from falcon.logger import _logger
 from falcon.media.multipart import MultipartFormHandler
 from falcon.util import get_argnames
 from falcon.util.misc import is_python_func

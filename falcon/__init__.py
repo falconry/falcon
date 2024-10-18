@@ -23,6 +23,8 @@ the framework's classes, functions, and variables::
     app = falcon.App()
 """
 
+import logging as _logging
+
 __all__ = (
     # API interface
     'API',
@@ -407,11 +409,6 @@ from falcon.hooks import after
 from falcon.hooks import before
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
-
-# NOTE(jkmnt): Moved logger to leaf module to avoid possible circular imports.
-# the _logging symbol is reexported too - maybe it was used by test or smth.
-from falcon.logger import _logger
-from falcon.logger import logging as _logging
 from falcon.middleware import CORSMiddleware
 from falcon.redirects import HTTPFound
 from falcon.redirects import HTTPMovedPermanently
@@ -644,3 +641,8 @@ from falcon.util import wrap_sync_to_async_unsafe
 
 # Package version
 from falcon.version import __version__  # NOQA: F401
+
+# NOTE(kgriffs): Only to be used internally on the rare occasion that we
+#   need to log something that we can't communicate any other way.
+_logger = _logging.getLogger('falcon')
+_logger.addHandler(_logging.NullHandler())
