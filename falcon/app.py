@@ -437,7 +437,7 @@ class App:
                             break
 
                 if not resp.complete:
-                    responder(req, resp, **params)
+                    responder(req, resp, **params)  # pyright: ignore[reportPossiblyUnboundVariable]
 
                 req_succeeded = True
             except Exception as ex:
@@ -1071,7 +1071,7 @@ class App:
 
         if resource is not None:
             try:
-                responder = method_map[method]
+                responder = method_map[method]  # pyright: ignore[reportPossiblyUnboundVariable]
             except KeyError:
                 # NOTE(kgriffs): Dirty hack! We use __class__ here to avoid
                 #   binding self to the default responder method. We could
@@ -1094,7 +1094,7 @@ class App:
             else:
                 responder = self.__class__._default_responder_path_not_found
 
-        return (responder, params, resource, uri_template)
+        return (responder, params, resource, uri_template)  # pyright: ignore[reportPossiblyUnboundVariable]
 
     def _compose_status_response(
         self, req: Request, resp: Response, http_status: HTTPStatus
@@ -1237,6 +1237,13 @@ class App:
             # NOTE(kgriffs): Heuristic to quickly check if stream is
             # file-like. Not perfect, but should be good enough until
             # proven otherwise.
+            # TODO(jkmnt): The checks like these are a perfect candidates for the
+            # Python 3.13 TypeIs guard. The TypeGuard of Python 3.10+ seems to fit too,
+            # though it narrows type only for the 'if' branch.
+            # Something like:
+            # def is_readable_io(stream) -> TypeIs[ReadableStream]:
+            #       return hasattr(stream, 'read')
+            #
             if hasattr(stream, 'read'):
                 if wsgi_file_wrapper is not None:
                     # TODO(kgriffs): Make block size configurable at the
@@ -1253,15 +1260,19 @@ class App:
             else:
                 iterable = stream
 
-            return iterable, None
+            return iterable, None  # pyright: ignore[reportReturnType]
 
         return [], 0
 
     def _update_sink_and_static_routes(self) -> None:
         if self._sink_before_static_route:
-            self._sink_and_static_routes = tuple(self._sinks + self._static_routes)  # type: ignore[operator]
+            self._sink_and_static_routes = tuple(self._sinks) + tuple(
+                self._static_routes
+            )
         else:
-            self._sink_and_static_routes = tuple(self._static_routes + self._sinks)  # type: ignore[operator]
+            self._sink_and_static_routes = tuple(self._static_routes) + tuple(
+                self._sinks
+            )
 
 
 # TODO(myusko): This class is a compatibility alias, and should be removed
