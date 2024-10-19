@@ -2,14 +2,15 @@ import os
 
 import falcon
 
+from .images import Collection
 from .images import ImageStore
-from .images import Resource
+from .images import Item
 
 
 def create_app(image_store):
-    image_resource = Resource(image_store)
     app = falcon.App()
-    app.add_route('/images', image_resource)
+    app.add_route('/images', Collection(image_store))
+    app.add_route('/images/{name}', Item(image_store))
     return app
 
 
