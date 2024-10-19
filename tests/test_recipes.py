@@ -132,12 +132,16 @@ class TestRawURLPath:
         result1 = falcon.testing.simulate_get(
             recipe.app, url1, extras=self.path_extras(asgi, url1)
         )
+        scope1 = falcon.testing.create_scope(url1)
         assert result1.status_code == 200
         assert result1.json == {'url': 'http://falconframework.org'}
+        assert scope1['raw_path'] == url1.encode()
 
         url2 = '/cache/http%3A%2F%2Ffalconframework.org/status'
         result2 = falcon.testing.simulate_get(
             recipe.app, url2, extras=self.path_extras(asgi, url2)
         )
+        scope2 = falcon.testing.create_scope(url2)
         assert result2.status_code == 200
         assert result2.json == {'cached': True}
+        assert scope2['raw_path'] == url2.encode()
