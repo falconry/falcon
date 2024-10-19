@@ -165,16 +165,16 @@ class JSONHandler(BaseHandler):
         #     proper serialize implementation.
         result = self._dumps({'message': 'Hello World'})
         if isinstance(result, str):
-            self.serialize = self._serialize_s  # type: ignore[method-assign]
+            self.serialize = s_s = self._serialize_s  # type: ignore[method-assign]
             self.serialize_async = self._serialize_async_s  # type: ignore[method-assign]
         else:
-            self.serialize = self._serialize_b  # type: ignore[method-assign]
+            self.serialize = s_s = self._serialize_b  # type: ignore[method-assign]
             self.serialize_async = self._serialize_async_b  # type: ignore[method-assign]
 
         # NOTE(kgriffs): To be safe, only enable the optimized protocol when
         #   not subclassed.
         if type(self) is JSONHandler:
-            self._serialize_sync = self.serialize
+            self._serialize_sync = s_s
             self._deserialize_sync = self._deserialize
 
     def _deserialize(self, data: bytes) -> Any:

@@ -113,6 +113,13 @@ exclude = ["examples", "tests"]
         ]
         ignore_missing_imports = true
 
+[tool.pyright]
+    exclude = [
+        "falcon/bench",
+        "falcon/cmd",
+    ]
+    # reportUnnecessaryTypeIgnoreComment = true
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
