@@ -18,6 +18,8 @@ from typing import (
 )
 
 from falcon import errors
+from falcon._typing import DeserializeSync
+from falcon._typing import SerializeSync
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MULTIPART
 from falcon.constants import MEDIA_URLENCODED
@@ -28,11 +30,8 @@ from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
 from falcon.media.multipart import MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
-from falcon.typing import DeserializeSync
-from falcon.typing import SerializeSync
-from falcon.util import deprecation
+from falcon.util import mediatypes
 from falcon.util import misc
-from falcon.vendor import mimeparse
 
 
 class MissingDependencyHandler(BinaryBaseHandlerWS):
@@ -180,35 +179,6 @@ class Handlers(UserDict):
         handlers_cls = type(self)
         return handlers_cls(self.data)
 
-    @deprecation.deprecated(
-        'This undocumented method is no longer supported as part of the public '
-        'interface and will be removed in a future release.'
-    )
-    def find_by_media_type(
-        self, media_type: Optional[str], default: str, raise_not_found: bool = True
-    ) -> Optional[BaseHandler]:
-        # PERF(jmvrbanac): Check via a quick methods first for performance
-        if media_type == '*/*' or not media_type:
-            media_type = default
-
-        try:
-            return self.data[media_type]
-        except KeyError:
-            pass
-
-        # PERF(jmvrbanac): Fallback to the slower method.
-        # NOTE(kgriffs): Wrap keys in a tuple to make them hashable.
-        resolved = _best_match(media_type, tuple(self.data.keys()))
-
-        if not resolved:
-            if raise_not_found:
-                raise errors.HTTPUnsupportedMediaType(
-                    description='{0} is an unsupported media type.'.format(media_type)
-                )
-            return None
-
-        return self.data[resolved]
-
 
 def _best_match(media_type: str, all_media_types: Sequence[str]) -> Optional[str]:
     result = None
@@ -216,7 +186,7 @@ def _best_match(media_type: str, all_media_types: Sequence[str]) -> Optional[str
     try:
         # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
         # parse the media type, but cannot find a suitable type.
-        result = mimeparse.best_match(all_media_types, media_type)
+        result = mediatypes.best_match(all_media_types, media_type)
     except ValueError:
         pass
 

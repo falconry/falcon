@@ -1,5 +1,6 @@
 from datetime import date
 from datetime import datetime
+from datetime import timezone
 import json
 from uuid import UUID
 
@@ -8,6 +9,7 @@ import pytest
 import falcon
 from falcon.errors import HTTPInvalidParam
 import falcon.testing as testing
+from falcon.util import deprecation
 
 
 class Resource(testing.SimpleTestResource):
@@ -46,7 +48,8 @@ def resource():
 def client(asgi, util):
     app = util.create_app(asgi)
     if not asgi:
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
     return testing.TestClient(app)
 
@@ -846,7 +849,9 @@ class TestQueryParams:
         query_string = 'thedate={}'.format(date_value)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_datetime('thedate') == datetime(2015, 4, 20, 10, 10, 10)
+        assert req.get_param_as_datetime('thedate') == datetime(
+            2015, 4, 20, 10, 10, 10, tzinfo=timezone.utc
+        )
 
     def test_get_datetime_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -855,16 +860,36 @@ class TestQueryParams:
         req = resource.captured_req
         assert req.get_param_as_datetime('thedate') is None
 
-    def test_get_datetime_valid_with_format(self, simulate_request, client, resource):
+    @pytest.mark.parametrize(
+        'format_string, date_value, expected',
+        [
+            ('%Y%m%d %H:%M:%S', '20150420 10:10:10', datetime(2015, 4, 20, 10, 10, 10)),
+            (
+                '%Y-%m-%dT%H:%M:%SZ',
+                '2015-04-20T10:10:10Z',
+                datetime(2015, 4, 20, 10, 10, 10),
+            ),
+            (
+                '%Y%m%dT%H:%M:%S.%fZ',
+                '20150420T10:10:10.133701Z',
+                datetime(2015, 4, 20, 10, 10, 10, 133701),
+            ),
+        ],
+    )
+    def test_get_datetime_valid_with_format(
+        self, simulate_request, client, resource, format_string, date_value, expected
+    ):
         client.app.add_route('/', resource)
-        date_value = '20150420 10:10:10'
         query_string = 'thedate={}'.format(date_value)
-        format_string = '%Y%m%d %H:%M:%S'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_datetime(
-            'thedate', format_string=format_string
-        ) == datetime(2015, 4, 20, 10, 10, 10)
+        assert (
+            req.get_param_as_datetime(
+                'thedate',
+                format_string=format_string,
+            )
+            == expected
+        )
 
     def test_get_datetime_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -875,7 +900,9 @@ class TestQueryParams:
         store = {}
         req.get_param_as_datetime('thedate', store=store)
         assert len(store) != 0
-        assert store.get('thedate') == datetime(2015, 4, 20, 10, 10, 10)
+        assert store.get('thedate') == datetime(
+            2015, 4, 20, 10, 10, 10, tzinfo=timezone.utc
+        )
 
     def test_get_datetime_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -1019,7 +1046,8 @@ class TestPostQueryParams:
     def test_asgi_raises_error(self, util, resource):
         app = util.create_app(asgi=True)
         app.add_route('/', resource)
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
         with pytest.raises(RuntimeError) as exc_info:
             testing.simulate_get(app, '/')

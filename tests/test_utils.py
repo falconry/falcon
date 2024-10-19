@@ -493,34 +493,6 @@ class TestFalconUtils:
         assert uri.parse_host('falcon.example.com:9876') == ('falcon.example.com', 9876)
         assert uri.parse_host('falcon.example.com:42') == ('falcon.example.com', 42)
 
-    def test_get_http_status_warns(self):
-        with pytest.warns(UserWarning, match='Please use falcon'):
-            falcon.get_http_status(400)
-
-    @pytest.mark.filterwarnings('ignore')
-    def test_get_http_status(self):
-        assert falcon.get_http_status(404) == falcon.HTTP_404
-        assert falcon.get_http_status(404.3) == falcon.HTTP_404
-        assert falcon.get_http_status('404.3') == falcon.HTTP_404
-        assert falcon.get_http_status(404.9) == falcon.HTTP_404
-        assert falcon.get_http_status('404') == falcon.HTTP_404
-        assert falcon.get_http_status(123) == '123 Unknown'
-        with pytest.raises(ValueError):
-            falcon.get_http_status('not_a_number')
-        with pytest.raises(ValueError):
-            falcon.get_http_status(0)
-        with pytest.raises(ValueError):
-            falcon.get_http_status(0)
-        with pytest.raises(ValueError):
-            falcon.get_http_status(99)
-        with pytest.raises(ValueError):
-            falcon.get_http_status(-404.3)
-        with pytest.raises(ValueError):
-            falcon.get_http_status('-404')
-        with pytest.raises(ValueError):
-            falcon.get_http_status('-404.3')
-        assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
-
     @pytest.mark.parametrize(
         'v_in,v_out',
         [
@@ -1214,7 +1186,7 @@ class TestNoApiClass(testing.TestCase):
 class TestSetupApi(testing.TestCase):
     def setUp(self):
         super(TestSetupApi, self).setUp()
-        with pytest.warns(UserWarning, match='API class may be removed in a future'):
+        with pytest.warns(UserWarning, match='API class will be removed in Falcon 5.0'):
             self.app = falcon.API()
         self.app.add_route('/', testing.SimpleTestResource(body='test'))
 
@@ -1417,14 +1389,6 @@ class TestDeprecatedArgs:
         a_function(1, b=2)
         assert len(recwarn) == 1
         assert 'a_function(...)' in str(recwarn[0].message)
-
-
-def test_json_deprecation():
-    with pytest.warns(deprecation.DeprecatedWarning, match='json'):
-        falcon.util.json
-
-    with pytest.raises(AttributeError):
-        falcon.util.some_imaginary_module
 
 
 def test_TimezoneGMT():

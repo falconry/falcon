@@ -1,4 +1,0 @@
-Previously, importing :class:`~falcon.testing.TestCase` as a top-level
-attribute in a test module could make ``pytest`` erroneously attempt to collect
-its methods as test cases. This has now been prevented by adding a ``__test__``
-attribute (set to ``False``) to the :class:`~falcon.testing.TestCase` class.

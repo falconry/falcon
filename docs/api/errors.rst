@@ -150,7 +150,7 @@ Predefined Errors
 .. autoclass:: falcon.HTTPPreconditionFailed
     :members:
 
-.. autoclass:: falcon.HTTPPayloadTooLarge
+.. autoclass:: falcon.HTTPContentTooLarge
     :members:
 
 .. autoclass:: falcon.HTTPUriTooLong

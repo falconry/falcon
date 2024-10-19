@@ -77,7 +77,6 @@ __all__ = (
     'ETag',
     'get_argnames',
     'get_bound_method',
-    'get_http_status',
     'get_running_loop',
     'http_cookies',
     'http_date_to_dt',
@@ -85,6 +84,7 @@ __all__ = (
     'http_status_to_code',
     'IS_64_BITS',
     'is_python_func',
+    'mediatypes',
     'misc',
     'parse_header',
     'reader',
@@ -124,6 +124,7 @@ __all__ = (
     'HTTPNotAcceptable',
     'HTTPNotFound',
     'HTTPNotImplemented',
+    'HTTPContentTooLarge',
     'HTTPPayloadTooLarge',
     'HTTPPreconditionFailed',
     'HTTPPreconditionRequired',
@@ -138,6 +139,8 @@ __all__ = (
     'HTTPUnsupportedMediaType',
     'HTTPUriTooLong',
     'HTTPVersionNotSupported',
+    'InvalidMediaRange',
+    'InvalidMediaType',
     'MediaMalformedError',
     'MediaNotFoundError',
     'MediaValidationError',
@@ -265,6 +268,7 @@ __all__ = (
     'HTTP_BAD_GATEWAY',
     'HTTP_BAD_REQUEST',
     'HTTP_CONFLICT',
+    'HTTP_CONTENT_TOO_LARGE',
     'HTTP_CONTINUE',
     'HTTP_CREATED',
     'HTTP_EARLY_HINTS',
@@ -304,7 +308,6 @@ __all__ = (
     'HTTP_PROCESSING',
     'HTTP_PROXY_AUTHENTICATION_REQUIRED',
     'HTTP_REQUESTED_RANGE_NOT_SATISFIABLE',
-    'HTTP_REQUEST_ENTITY_TOO_LARGE',
     'HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE',
     'HTTP_REQUEST_TIMEOUT',
     'HTTP_REQUEST_URI_TOO_LONG',
@@ -355,6 +358,7 @@ from falcon.errors import HeaderNotSupported
 from falcon.errors import HTTPBadGateway
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPConflict
+from falcon.errors import HTTPContentTooLarge
 from falcon.errors import HTTPFailedDependency
 from falcon.errors import HTTPForbidden
 from falcon.errors import HTTPGatewayTimeout
@@ -387,6 +391,8 @@ from falcon.errors import HTTPUnprocessableEntity
 from falcon.errors import HTTPUnsupportedMediaType
 from falcon.errors import HTTPUriTooLong
 from falcon.errors import HTTPVersionNotSupported
+from falcon.errors import InvalidMediaRange
+from falcon.errors import InvalidMediaType
 from falcon.errors import MediaMalformedError
 from falcon.errors import MediaNotFoundError
 from falcon.errors import MediaValidationError
@@ -530,6 +536,7 @@ from falcon.status_codes import HTTP_ALREADY_REPORTED
 from falcon.status_codes import HTTP_BAD_GATEWAY
 from falcon.status_codes import HTTP_BAD_REQUEST
 from falcon.status_codes import HTTP_CONFLICT
+from falcon.status_codes import HTTP_CONTENT_TOO_LARGE
 from falcon.status_codes import HTTP_CONTINUE
 from falcon.status_codes import HTTP_CREATED
 from falcon.status_codes import HTTP_EARLY_HINTS
@@ -568,7 +575,6 @@ from falcon.status_codes import HTTP_PRECONDITION_FAILED
 from falcon.status_codes import HTTP_PRECONDITION_REQUIRED
 from falcon.status_codes import HTTP_PROCESSING
 from falcon.status_codes import HTTP_PROXY_AUTHENTICATION_REQUIRED
-from falcon.status_codes import HTTP_REQUEST_ENTITY_TOO_LARGE
 from falcon.status_codes import HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
 from falcon.status_codes import HTTP_REQUEST_TIMEOUT
 from falcon.status_codes import HTTP_REQUEST_URI_TOO_LONG
@@ -609,7 +615,6 @@ from falcon.util import dt_to_http
 from falcon.util import ETag
 from falcon.util import get_argnames
 from falcon.util import get_bound_method
-from falcon.util import get_http_status
 from falcon.util import get_running_loop
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
@@ -617,6 +622,7 @@ from falcon.util import http_now
 from falcon.util import http_status_to_code
 from falcon.util import IS_64_BITS
 from falcon.util import is_python_func
+from falcon.util import mediatypes
 from falcon.util import misc
 from falcon.util import parse_header
 from falcon.util import reader

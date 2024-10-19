@@ -34,7 +34,6 @@ from falcon.util.misc import code_to_http_status
 from falcon.util.misc import dt_to_http
 from falcon.util.misc import get_argnames
 from falcon.util.misc import get_bound_method
-from falcon.util.misc import get_http_status
 from falcon.util.misc import http_date_to_dt
 from falcon.util.misc import http_now
 from falcon.util.misc import http_status_to_code
@@ -61,7 +60,7 @@ _reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
 if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['samesite'] = 'SameSite'
 # NOTE(m-mueller): Same for the 'partitioned' attribute that will
-#   probably be added in Python 3.13.
+#   probably be added in Python 3.13 or 3.14.
 if 'partitioned' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['partitioned'] = 'Partitioned'
 
@@ -80,18 +79,3 @@ except ImportError:
 BufferedReader = (
     (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
 )
-
-
-def __getattr__(name: str) -> ModuleType:
-    if name == 'json':
-        import json  # NOQA
-        import warnings
-
-        warnings.warn(
-            'Importing json from "falcon.util" is deprecated.', DeprecatedWarning
-        )
-        return json
-
-    # fallback to the default implementation
-    mod = sys.modules[__name__]
-    return ModuleType.__getattr__(mod, name)

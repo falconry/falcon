@@ -259,13 +259,10 @@ class ETag(str):
             resp.status = falcon.HTTP_200
 
     (See also: RFC 7232)
-
-    Attributes:
-        is_weak (bool): ``True`` if the entity-tag is weak, otherwise ``False``.
-
     """
 
-    is_weak = False
+    is_weak: bool = False
+    """``True`` if the entity-tag is weak, otherwise ``False``."""
 
     def strong_compare(self, other: ETag) -> bool:
         """Perform a strong entity-tag comparison.

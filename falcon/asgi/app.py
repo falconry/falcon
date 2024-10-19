@@ -14,6 +14,8 @@
 
 """ASGI application class."""
 
+from __future__ import annotations
+
 import asyncio
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
@@ -38,6 +40,14 @@ from typing import (
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import _UNSET
+from falcon._typing import AsgiErrorHandler
+from falcon._typing import AsgiReceive
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import AsgiResponderWsCallable
+from falcon._typing import AsgiSend
+from falcon._typing import AsgiSinkCallable
+from falcon._typing import SinkPrefix
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
@@ -53,14 +63,6 @@ from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
-from falcon.typing import AsgiErrorHandler
-from falcon.typing import AsgiReceive
-from falcon.typing import AsgiResponderCallable
-from falcon.typing import AsgiResponderWsCallable
-from falcon.typing import AsgiSend
-from falcon.typing import AsgiSinkCallable
-from falcon.typing import MISSING
-from falcon.typing import SinkPrefix
 from falcon.util import get_argnames
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
@@ -364,8 +366,8 @@ class App(falcon.app.App):
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Type[Request] = Request,
-        response_type: Type[Response] = Response,
+        request_type: Optional[Type[Request]] = None,
+        response_type: Optional[Type[Response]] = None,
         middleware: Union[object, Iterable[object]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
@@ -374,8 +376,8 @@ class App(falcon.app.App):
     ) -> None:
         super().__init__(
             media_type,
-            request_type,
-            response_type,
+            request_type or Request,
+            response_type or Response,
             middleware,
             router,
             independent_middleware,
@@ -384,7 +386,7 @@ class App(falcon.app.App):
         )
 
         self.ws_options = WebSocketOptions()
-        self._standard_response_type = response_type is Response
+        self._standard_response_type = response_type in (None, Response)
 
         self.add_error_handler(
             WebSocketDisconnected, self._ws_disconnected_error_handler
@@ -552,9 +554,9 @@ class App(falcon.app.App):
                     data = resp._data
 
                     if data is None and resp._media is not None:
-                        # NOTE(kgriffs): We use a special MISSING singleton since
+                        # NOTE(kgriffs): We use a special _UNSET singleton since
                         #   None is ambiguous (the media handler might return None).
-                        if resp._media_rendered is MISSING:
+                        if resp._media_rendered is _UNSET:
                             opt = resp.options
                             if not resp.content_type:
                                 resp.content_type = opt.default_media_type
@@ -1058,7 +1060,7 @@ class App(falcon.app.App):
                     )
                     return
 
-                if self.req_options.auto_parse_form_urlencoded:
+                if self.req_options._auto_parse_form_urlencoded:
                     await send(
                         {
                             'type': EventType.LIFESPAN_STARTUP_FAILED,
