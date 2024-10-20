@@ -42,7 +42,6 @@ from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
 from falcon.util import to_query_str
 
-
 warnings.filterwarnings(
     'error',
     ('Unknown REQUEST_METHOD: ' + "'({})'".format('|'.join(COMBINED_METHODS))),
@@ -746,11 +745,11 @@ async def _simulate_request_asgi(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-		msgpack(Msgpack serializable): A Msgpack document to serialize as the
-			body of the request (default: ``None``). If specified,
-			overrides `body` and sets the Content-Type header to 
-			``'application/msgpack'``, overriding any value specified by
-			either the `content_type` or `headers` arguments.
+                msgpack(Msgpack serializable): A Msgpack document to serialize as the
+                        body of the request (default: ``None``). If specified,
+                        overrides `body` and sets the Content-Type header to
+                        ``'application/msgpack'``, overriding any value specified by
+                        either the `content_type` or `headers` arguments.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1477,11 +1476,11 @@ def simulate_post(app, path, **kwargs) -> _ResultBase:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-		msgpack(Msgpack serializable): A Msgpack document to serialize as the
-			body of the request (default: ``None``). If specified,
-			overrides `body` and sets the Content-Type header to 
-			``'application/msgpack'``, overriding any value specified by
-			either the `content_type` or `headers` arguments.
+                msgpack(Msgpack serializable): A Msgpack document to serialize as the
+                        body of the request (default: ``None``). If specified,
+                        overrides `body` and sets the Content-Type header to
+                        ``'application/msgpack'``, overriding any value specified by
+                        either the `content_type` or `headers` arguments.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1593,11 +1592,11 @@ def simulate_put(app, path, **kwargs) -> _ResultBase:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-		msgpack(Msgpack serializable): A Msgpack document to serialize as the
-			body of the request (default: ``None``). If specified,
-			overrides `body` and sets the Content-Type header to 
-			``'application/msgpack'``, overriding any value specified by
-			either the `content_type` or `headers` arguments.
+                msgpack(Msgpack serializable): A Msgpack document to serialize as the
+                        body of the request (default: ``None``). If specified,
+                        overrides `body` and sets the Content-Type header to
+                        ``'application/msgpack'``, overriding any value specified by
+                        either the `content_type` or `headers` arguments.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1798,11 +1797,11 @@ def simulate_patch(app, path, **kwargs) -> _ResultBase:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-		msgpack(Msgpack serializable): A Msgpack document to serialize as the
-			body of the request (default: ``None``). If specified,
-			overrides `body` and sets the Content-Type header to 
-			``'application/msgpack'``, overriding any value specified by
-			either the `content_type` or `headers` arguments.
+                msgpack(Msgpack serializable): A Msgpack document to serialize as the
+                        body of the request (default: ``None``). If specified,
+                        overrides `body` and sets the Content-Type header to
+                        ``'application/msgpack'``, overriding any value specified by
+                        either the `content_type` or `headers` arguments.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1909,11 +1908,11 @@ def simulate_delete(app, path, **kwargs) -> _ResultBase:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-		msgpack(Msgpack serializable): A Msgpack document to serialize as the
-			body of the request (default: ``None``). If specified,
-			overrides `body` and sets the Content-Type header to 
-			``'application/msgpack'``, overriding any value specified by
-			either the `content_type` or `headers` arguments.
+                msgpack(Msgpack serializable): A Msgpack document to serialize as the
+                        body of the request (default: ``None``). If specified,
+                        overrides `body` and sets the Content-Type header to
+                        ``'application/msgpack'``, overriding any value specified by
+                        either the `content_type` or `headers` arguments.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2177,7 +2176,16 @@ class _WSContextManager:
 
 
 def _prepare_sim_args(
-    path, query_string, params, params_csv, content_type, headers, body, json, msgpack, extras
+    path,
+    query_string,
+    params,
+    params_csv,
+    content_type,
+    headers,
+    body,
+    json,
+    msgpack,
+    extras,
 ):
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
