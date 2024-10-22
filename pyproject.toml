@@ -116,7 +116,7 @@ exclude = ["examples", "tests"]
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "docs/changes/4.0.0.rst"
+    filename = "docs/changes/4.0.1.rst"
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
