@@ -11,7 +11,7 @@ on:
 
 jobs:
   test-dist:
-    name: test-${{build}}
+    name: test-${{ matrix.build }}
     runs-on: ubuntu-latest
     matrix:
       build:
