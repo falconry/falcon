@@ -13,10 +13,11 @@ jobs:
   test-dist:
     name: test-${{ matrix.build }}
     runs-on: ubuntu-latest
-    matrix:
-      build:
-        - sdist
-        - wheel
+    strategy:
+      matrix:
+        build:
+          - sdist
+          - wheel
 
     steps:
       - name: Checkout repository
