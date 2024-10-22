@@ -1,0 +1,46 @@
+# Test source distribution and pure-Python wheel.
+name: test-dist
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  test-dist:
+    name: test-${{ matrix.build }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build:
+          - sdist
+          - wheel
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build dist
+        env:
+          FALCON_DISABLE_CYTHON: "Y"
+        run: |
+          pip install --upgrade pip
+          pip install --upgrade build
+          python -m build --${{ matrix.build }}
+
+      - name: Test sdist
+        if: matrix.build == 'sdist'
+        run: |
+          tools/test_dist.py dist/*.tar.gz
+
+      - name: Test pure-Python wheel
+        if: matrix.build == 'wheel'
+        run: |
+          tools/test_dist.py dist/*.whl

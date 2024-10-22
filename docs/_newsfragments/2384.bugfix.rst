@@ -1,0 +1,4 @@
+Installing Falcon 4.0.0 unexpectly copies many unintended directories from the
+source tree to the venv's ``site-packages``. This issue has been rectified, and
+our CI has been extended with new tests (that verify what is actually installed
+from the distribution) to make sure this regression does not resurface.

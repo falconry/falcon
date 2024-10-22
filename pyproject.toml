@@ -78,7 +78,7 @@ zip-safe = false
 version = {attr = "falcon.version.__version__"}
 
 [tool.setuptools.packages.find]
-exclude = ["examples", "tests"]
+include = ["falcon*"]
 
 [tool.mypy]
     exclude = [
