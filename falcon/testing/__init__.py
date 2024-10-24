@@ -115,7 +115,7 @@ from falcon.testing.resource import SimpleTestResourceAsync
 from falcon.testing.srmock import StartResponseMock
 from falcon.testing.test_case import TestCase
 
-__all__ = [
+__all__ = (
     # client
     'ASGIConductor',
     'Cookie',
@@ -156,7 +156,7 @@ __all__ = [
     'StartResponseMock',
     # test_case
     'TestCase',
-]
+)
 
 
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
