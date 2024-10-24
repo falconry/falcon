@@ -9,7 +9,7 @@ on:
 
 jobs:
   run_tox:
-    name: tox (default envlist on ${{matrix.python-version}})
+    name: tox (python${{ matrix.python-version }})
     runs-on: "ubuntu-latest"
     strategy:
       fail-fast: false
