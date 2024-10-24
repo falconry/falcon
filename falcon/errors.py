@@ -88,6 +88,8 @@ __all__ = (
     'HTTPUnsupportedMediaType',
     'HTTPUriTooLong',
     'HTTPVersionNotSupported',
+    'InvalidMediaRange',
+    'InvalidMediaType',
     'MediaMalformedError',
     'MediaNotFoundError',
     'MediaValidationError',
@@ -109,6 +111,14 @@ class HeaderNotSupported(ValueError):
 
 class CompatibilityError(ValueError):
     """The given method, value, or type is not compatible."""
+
+
+class InvalidMediaType(ValueError):
+    """The provided media type cannot be parsed into type/subtype."""
+
+
+class InvalidMediaRange(InvalidMediaType):
+    """The media range contains an invalid media type and/or the q value."""
 
 
 class UnsupportedScopeError(RuntimeError):
@@ -1006,6 +1016,8 @@ class HTTPContentTooLarge(HTTPError):
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
+
+    .. versionadded:: 4.0
     """
 
     def __init__(

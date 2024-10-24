@@ -22,6 +22,8 @@ jobs:
           - build: "cp313-manylinux_s390x"
             os: ubuntu-latest
             emulation: true
+          - build: "cp38-manylinux_x86_64"
+            os: ubuntu-latest
           - build: "cp313-musllinux_x86_64"
             os: ubuntu-latest
           - build: "cp313-macosx_arm64"
@@ -42,7 +44,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.1
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.platform.build }}

@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timezone
 import math
 import string
 import uuid
@@ -153,7 +154,9 @@ def test_datetime_converter(value, format_string, expected):
 
 def test_datetime_converter_default_format():
     c = converters.DateTimeConverter()
-    assert c.convert('2017-07-03T14:30:01Z') == datetime(2017, 7, 3, 14, 30, 1)
+    assert c.convert('2017-07-03T14:30:01Z') == datetime(
+        2017, 7, 3, 14, 30, 1, tzinfo=timezone.utc
+    )
 
 
 @pytest.mark.parametrize(

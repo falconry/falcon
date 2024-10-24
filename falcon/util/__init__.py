@@ -60,7 +60,7 @@ _reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
 if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['samesite'] = 'SameSite'
 # NOTE(m-mueller): Same for the 'partitioned' attribute that will
-#   probably be added in Python 3.13.
+#   probably be added in Python 3.13 or 3.14.
 if 'partitioned' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['partitioned'] = 'Partitioned'
 

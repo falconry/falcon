@@ -1273,8 +1273,9 @@ class API(App):
     reflect the breadth of applications that :class:`App <falcon.App>`, and its
     ASGI counterpart in particular, can now be used for.
 
-    This compatibility alias is deprecated; it will be removed entirely in
-    Falcon 5.0.
+    .. deprecated:: 3.0
+        This compatibility alias is deprecated; it will be removed entirely in
+        Falcon 5.0.
     """
 
     @deprecation.deprecated(

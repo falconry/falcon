@@ -77,6 +77,7 @@ class TestErrorHandler:
     def test_uncaught_python_error(
         self, client, get_headers, resp_content_type, resp_start
     ):
+        client.app.resp_options.xml_error_serialization = True
         result = client.simulate_get(headers=get_headers)
         assert result.status_code == 500
         assert result.headers['content-type'] == resp_content_type

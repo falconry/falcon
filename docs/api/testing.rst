@@ -18,8 +18,10 @@ Main Interface
    :members:
 .. autoclass:: Result
    :members:
+   :inherited-members:
 .. autoclass:: StreamedResult
    :members:
+   :inherited-members:
 .. autoclass:: ResultBodyStream
    :members:
 .. autoclass:: ASGIWebSocketSimulator

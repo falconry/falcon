@@ -4,17 +4,45 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The alpha release of Falcon 4.0.0 is here!
+We are happy to present Falcon 4.0, a new major version of the framework that
+brings a couple of commonly requested features including support for matching
+multiple path segments (using :class:`~falcon.routing.PathConverter`), and
+a fully typed codebase. (Please read more about typing in the notes below.)
 
-We would really appreciate if you could help with early testing on your code!
-You can grab this release from PyPI (``pip install falcon==4.0.0a2``),
-and :ref:`let us know how it went <chat>`!
+The timeframe for Falcon 4.0 was challenging due to the need to balance our
+high standards with the CPython 3.13 timeline. We aimed to deliver the main
+development branch in this release, without resorting to another compatibility
+micro update (as we did with Falcon 3.1.1-3.1.3). Following community feedback,
+we also want to improve our overall release schedule by shipping smaller
+increments more often.
+To support this goal, we have made several tooling and testing improvements:
+the build process for :ref:`binary wheels <binary_wheels>` has been simplified
+using `cibuildwheel <https://cibuildwheel.pypa.io/>`__, and our test suite now
+only requires ``pytest`` as a hard dependency. Additionally, you can run
+``pytest`` against our tests from any directory. We hope that these changes
+should also benefit packaging Falcon in Linux distributions.
 
-Although we are still in the process of polishing the last items from the
-`version 4.0 milestone <https://github.com/falconry/falcon/milestone/34>`__,
-we do not expect (m)any radical changes from now on until Falcon 4.0.0 final.
-The full changelog of new features, breaking changes and fixes will be rendered
-as part of the first beta release.
+As with every SemVer major release, we have removed a number of previously
+deprecated functions, classes, compatibility shims, as well as made other
+potentially breaking changes that we could not risk in a minor version.
+If you have been paying attention the deprecation warnings from the 3.x series,
+the impact should be minimal, but please do take a look at the list of breaking
+changes below.
+
+This release would not have been possible without the numerous contributions
+from our community. This release alone comprises a number of pull requests
+submitted by a group of 30 talented individuals. What is more, we were
+particularly impressed by the high-quality discussions and code submissions
+during our
+`EuroPython 2024 Sprint <https://ep2024.europython.eu/sprints#the-falcon-web-framework>`__.
+Some notable sprint contributions include CHIPS support, and a new
+:ref:`WebSocket Tutorial <tutorial-ws>`, among others.
+In fact, according to the
+`statistics on GitHub <https://github.com/falconry/falcon/graphs/contributors>`__,
+we are thrilled to report that the total number of Falcon
+contributors has now exceeded 200. We find it fascinating that our framework
+has become a collaborative effort involving so many individuals, and would like
+to thank everyone who has made this release possible!
 
 
 Changes to Supported Platforms
@@ -29,15 +57,17 @@ Changes to Supported Platforms
 - End-of-life Python 3.5, 3.6 & 3.7 are no longer supported.
   (`#2074 <https://github.com/falconry/falcon/pull/2074>`__,
   `#2273 <https://github.com/falconry/falcon/pull/2273>`__)
-- Soon end-of-life Python 3.8 is no longer actively supported, but
-  the framework should still continue to install from source and function.
+- End-of-life Python 3.8 is no longer actively supported, but
+  the framework should still continue to install from the pure-Python wheel or
+  source distribution, and function normally.
 - The Falcon 4.x series is guaranteed to support CPython 3.10 and
   PyPy3.10 (v7.3.16).
   This means that we may drop the support for Python 3.8 & 3.9 altogether in a
   later 4.x release, especially if we are faced with incompatible ecosystem
   changes in typing, Cython, etc.
 
-Typing support
+
+Typing Support
 --------------
 
 Type checking support was introduced in version 4.0. While most of the library is
@@ -66,16 +96,373 @@ runtime behavior, but may surface new or different errors with type checkers.
     Also, make sure to :ref:`let us know <chat>` which essential aliases are
     missing from the public interface!
 
-.. towncrier release notes start
+Known typing limitations
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Falcon's emphasis on flexibility and performance has presented certain
+challenges when it comes to adding type annotations to the existing code base.
+One notable limitation involves using custom :class:`~falcon.Request` and/or
+:class:`~falcon.Response` types in callbacks that are passed back
+to the framework, such as when adding an
+:meth:`error handler <falcon.App.add_error_handler>`.
+
+For instance, the following application might unexpectedly not pass type
+checking:
+
+.. code-block:: python
+
+    from typing import Any
+
+    from falcon import App, HTTPInternalServerError, Request, Response
+
+
+    class MyRequest(Request):
+        ...
+
+
+    def handle_os_error(req: MyRequest, resp: Response, ex: Exception,
+                        params: dict[str, Any]) -> None:
+        raise HTTPInternalServerError(title='OS error!') from ex
+
+
+    app = App(request_type=MyRequest)
+    app.add_error_handler(OSError, handle_os_error)
+
+(Please also see the following GitHub issue:
+`#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
+
+.. important::
+    This is only a typing limitation that has no effect outside of type
+    checking -- the above ``app`` will run just fine!
+
+
+Breaking Changes
+----------------
+
+- Falcon is no longer vendoring the
+  `python-mimeparse <https://github.com/falconry/python-mimeparse>`__ library;
+  the relevant functionality has instead been reimplemented in the framework
+  itself, fixing a handful of long-standing bugs in the new implementation.
+
+  If you use standalone
+  `python-mimeparse <https://github.com/falconry/python-mimeparse>`__ in your
+  project, do not worry! We will continue to maintain it as a separate package
+  under the Falconry umbrella (we took over about 3 years ago).
+
+  The following new behaviors are considered breaking changes:
+
+  * Previously, the iterable passed to
+    :meth:`req.client_prefers <falcon.Request.client_prefers>` had to be sorted in
+    the order of increasing desirability.
+    :func:`~falcon.mediatypes.best_match`, and by proxy
+    :meth:`~falcon.Request.client_prefers`, now consider the provided media types
+    to be sorted in the (more intuitive, we hope) order of decreasing
+    desirability.
+
+  * Unlike ``python-mimeparse``, the new
+    :ref:`media type utilities <mediatype_util>` consider media types with
+    different values for the same parameters as non-matching.
+
+    One theoretically possible scenario where this change can affect you is only
+    installing a :ref:`media <media>` handler for a content type with parameters;
+    it then may not match media types with conflicting values (that used to match
+    before Falcon 4.0).
+    If this turns out to be the case, also
+    :ref:`install the same handler <custom_media_handlers>` for the generic
+    ``type/subtype`` without parameters.
+
+  The new functions,
+  :func:`falcon.mediatypes.quality` and :func:`falcon.mediatypes.best_match`,
+  otherwise have the same signature as the corresponding methods from
+  ``python-mimeparse``. (`#864 <https://github.com/falconry/falcon/issues/864>`__)
+- A number of undocumented internal helpers were renamed to start with an
+  underscore, indicating they are private methods intended to be used only by the
+  framework itself:
+
+  * ``falcon.request_helpers.header_property`` →
+    ``falcon.request_helpers._header_property``
+  * ``falcon.request_helpers.parse_cookie_header`` →
+    ``falcon.request_helpers._parse_cookie_header``
+  * ``falcon.response_helpers.format_content_disposition`` →
+    ``falcon.response_helpers._format_content_disposition``
+  * ``falcon.response_helpers.format_etag_header`` →
+    ``falcon.response_helpers._format_etag_header``
+  * ``falcon.response_helpers.format_header_value_list`` →
+    ``falcon.response_helpers._format_header_value_list``
+  * ``falcon.response_helpers.format_range`` →
+    ``falcon.response_helpers._format_range``
+  * ``falcon.response_helpers.header_property`` →
+    ``falcon.response_helpers._header_property``
+  * ``falcon.response_helpers.is_ascii_encodable`` →
+    ``falcon.response_helpers._is_ascii_encodable``
+
+  If you were relying on these internal helpers, you can either copy the
+  implementation into your codebase, or switch to the underscored variants.
+  (Needless to say, though, we strongly recommend against referencing private
+  methods, as we provide no SemVer guarantees for them.) (`#1457 <https://github.com/falconry/falcon/issues/1457>`__)
+- A number of previously deprecated methods, attributes and classes have now been
+  removed:
+
+  * In Falcon 3.0, the use of positional arguments was deprecated for the
+    optional initializer parameters of :class:`falcon.HTTPError` and its
+    subclasses.
+
+    We have now redefined these optional arguments as keyword-only, so passing
+    them as positional arguments will result in a :class:`TypeError`:
+
+    >>> import falcon
+    >>> falcon.HTTPForbidden('AccessDenied')
+    Traceback (most recent call last):
+      <...>
+    TypeError: HTTPForbidden.__init__() takes 1 positional argument but 2 were given
+    >>> falcon.HTTPForbidden('AccessDenied', 'No write access')
+    Traceback (most recent call last):
+      <...>
+    TypeError: HTTPForbidden.__init__() takes 1 positional argument but 3 were given
+
+    Instead, simply pass these parameters as keyword arguments:
+
+    >>> import falcon
+    >>> falcon.HTTPForbidden(title='AccessDenied')
+    <HTTPForbidden: 403 Forbidden>
+    >>> falcon.HTTPForbidden(title='AccessDenied', description='No write access')
+    <HTTPForbidden: 403 Forbidden>
+
+  * The ``falcon-print-routes`` command-line utility is no longer supported;
+    ``falcon-inspect-app`` is a direct replacement.
+
+  * :class:`falcon.stream.BoundedStream` is no longer re-imported via
+    ``falcon.request_helpers``.
+    If needed, import it directly as :class:`falcon.stream.BoundedStream`.
+
+  * A deprecated alias of :class:`falcon.stream.BoundedStream`,
+    ``falcon.stream.Body``, was removed. Use :class:`falcon.stream.BoundedStream`
+    instead.
+
+  * A deprecated utility function, ``falcon.get_http_status()``, was removed.
+    Please use :meth:`falcon.code_to_http_status` instead.
+
+  * A deprecated routing utility, ``compile_uri_template()``, was removed.
+    This function was only employed in the early versions of the framework, and
+    is expected to have been fully supplanted by the
+    :class:`~falcon.routing.CompiledRouter`. In a pinch, you can simply copy its
+    implementation from the Falcon 3.x source tree into your application.
+
+  * The deprecated ``Response.add_link()`` method was removed; please use
+    :meth:`Response.append_link <falcon.Response.append_link>` instead.
+
+  * The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError`
+    was removed, along with the ``NoRepresentation`` and
+    ``OptionalRepresentation`` classes.
+
+  * An undocumented, deprecated public method ``find_by_media_type()`` of
+    :class:`media.Handlers <falcon.media.Handlers>` was removed.
+    Apart from configuring handlers for Internet media types, the rest of
+    :class:`~falcon.media.Handlers` is only meant to be used internally by the
+    framework (unless documented otherwise).
+
+  * Previously, the ``json`` module could be imported via ``falcon.util``.
+    This deprecated alias was removed; please import ``json`` directly from the
+    :mod:`standard library <json>`, or another third-party JSON library of
+    choice.
+
+  We decided, on the other hand, to keep the deprecated :class:`falcon.API` alias
+  until Falcon 5.0. (`#1853 <https://github.com/falconry/falcon/issues/1853>`__)
+- Previously, it was possible to create an :class:`~falcon.App` with the
+  ``cors_enable`` option, and add additional :class:`~falcon.CORSMiddleware`,
+  leading to unexpected behavior and dysfunctional CORS. This combination now
+  explicitly results in a :class:`ValueError`. (`#1977 <https://github.com/falconry/falcon/issues/1977>`__)
+- The default value of the ``csv`` parameter in
+  :func:`~falcon.uri.parse_query_string` was changed to ``False``, matching the
+  default behavior of other parts of the framework (such as
+  :attr:`req.params <falcon.Request.params>`, the test client, etc).
+  If the old behavior fits your use case better, pass the ``csv=True`` keyword
+  argument explicitly. (`#1999 <https://github.com/falconry/falcon/issues/1999>`__)
+- The deprecated ``api_helpers`` was removed in favor of the ``app_helpers``
+  module. In addition, the deprecated ``body`` attributes of the
+  :class:`~falcon.Response`, :class:`asgi.Response <falcon.asgi.Response>`, and
+  :class:`~falcon.HTTPStatus` classes were removed. (`#2090 <https://github.com/falconry/falcon/issues/2090>`__)
+- The function :func:`falcon.http_date_to_dt` now validates HTTP dates to have
+  the correct timezone set. It now also returns timezone-aware
+  :class:`~datetime.datetime` objects. As a consequence of this change, the
+  return value of :meth:`falcon.Request.get_header_as_datetime` (including the
+  derived properties :attr:`~falcon.Request.date`,
+  :attr:`~falcon.Request.if_modified_since`,
+  :attr:`~falcon.Request.if_unmodified_since`, and
+  :attr:`falcon.testing.Cookie.expires`) has also changed to timezone-aware.
+
+  Furthermore, the default value of the `format_string` parameter in
+  :meth:`falcon.Request.get_param_as_datetime` and
+  :class:`falcon.routing.DateTimeConverter` has also been updated to use a
+  timezone-aware form.
+  (`#2182 <https://github.com/falconry/falcon/issues/2182>`__)
+- ``setup.cfg`` was dropped in favor of consolidating all static project
+  configuration in ``pyproject.toml`` (``setup.py`` is still needed for
+  programmatic control of the build process). While this change should not impact
+  the framework's end-users directly, some ``setuptools``\-based legacy workflows
+  (such as the obsolete ``setup.py test``) will no longer work. (`#2314 <https://github.com/falconry/falcon/issues/2314>`__)
+- The ``is_async`` keyword argument was removed from
+  :meth:`~falcon.media.validators.jsonschema.validate`, as well as the hooks
+  :meth:`~falcon.before` and :meth:`~falcon.after`, since it represented a niche
+  use case that is even less relevant with the recent advances in the ecosystem:
+  Cython 3.0+ will now correctly mark cythonized ``async def`` functions as
+  coroutines, and pure-Python factory functions that return a coroutine can now
+  be marked as such using :func:`inspect.markcoroutinefunction`
+  (Python 3.12+ is required). (`#2343 <https://github.com/falconry/falcon/issues/2343>`__)
+
+
+New & Improved
+--------------
+
+- A new keyword argument, `link_extension`, was added to
+  :meth:`falcon.Response.append_link` as specified in
+  `RFC 8288, Section 3.4.2
+  <https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2>`__. (`#228 <https://github.com/falconry/falcon/issues/228>`__)
+- A new ``path`` :class:`converter <falcon.routing.PathConverter>`
+  capable of matching segments that include ``/`` was added. (`#648 <https://github.com/falconry/falcon/issues/648>`__)
+- The new implementation of :ref:`media type utilities <mediatype_util>`
+  (Falcon was using the ``python-mimeparse`` library before) now always favors
+  the exact media type match, if one is available. (`#1367 <https://github.com/falconry/falcon/issues/1367>`__)
+- Type annotations have been added to Falcon's public interface to the package
+  itself in order to better support `Mypy <https://www.mypy-lang.org/>`__
+  (or other type checkers) users without having to install any third-party
+  typeshed packages. (`#1947 <https://github.com/falconry/falcon/issues/1947>`__)
+- Similar to the existing :class:`~falcon.routing.IntConverter`, a new
+  :class:`~falcon.routing.FloatConverter` has been added, allowing to convert
+  path segments to ``float``. (`#2022 <https://github.com/falconry/falcon/issues/2022>`__)
+- The default error serializer will now use the response media handlers
+  to better negotiate the response content type with the client.
+  The implementation still defaults to JSON if the client does not indicate any
+  preference. (`#2023 <https://github.com/falconry/falcon/issues/2023>`__)
+- :class:`~falcon.asgi.WebSocket` now supports providing a reason for closing the
+  socket, either directly via :meth:`~falcon.asgi.WebSocket.close` or by
+  configuring :attr:`~falcon.asgi.WebSocketOptions.default_close_reasons`. (`#2025 <https://github.com/falconry/falcon/issues/2025>`__)
+- An informative representation was added to :class:`testing.Result <falcon.testing.Result>`
+  for easier development and interpretation of failed tests. The form of ``__repr__`` is as follows:
+  ``Result<{status_code} {content-type header} {content}>``, where the content part will reflect
+  up to 40 bytes of the result's content. (`#2044 <https://github.com/falconry/falcon/issues/2044>`__)
+- A new method :meth:`falcon.Request.get_header_as_int` was implemented. (`#2060 <https://github.com/falconry/falcon/issues/2060>`__)
+- A new property, :attr:`~falcon.Request.headers_lower`, was added to provide a
+  unified, self-documenting way to get a copy of all request headers with
+  lowercase names to facilitate case-insensitive matching. This is especially
+  useful for middleware components that need to be compatible with both WSGI and
+  ASGI. :attr:`~falcon.Request.headers_lower` was added in lieu of introducing a
+  breaking change to the WSGI :attr:`~falcon.Request.headers` property that
+  returns uppercase header names from the WSGI ``environ`` dictionary. (`#2063 <https://github.com/falconry/falcon/issues/2063>`__)
+- In Python 3.13, the ``cgi`` module is removed entirely from the stdlib,
+  including its ``parse_header()`` method. Falcon addresses the issue by shipping
+  an own implementation; :func:`falcon.parse_header` can also be used in your projects
+  affected by the removal. (`#2066 <https://github.com/falconry/falcon/issues/2066>`__)
+- A new ``status_code`` attribute was added to the :attr:`falcon.Response <falcon.Response.status_code>`,
+  :attr:`falcon.asgi.Response <falcon.Response.status_code>`,
+  :attr:`HTTPStatus <falcon.HTTPStatus.status_code>`,
+  and :attr:`HTTPError <falcon.HTTPError.status_code>` classes. (`#2108 <https://github.com/falconry/falcon/issues/2108>`__)
+- Following the recommendation from
+  `RFC 9239 <https://www.rfc-editor.org/rfc/rfc9239>`__, the
+  :ref:`MEDIA_JS <media_type_constants>` constant has been updated to
+  ``text/javascript``. Furthermore, this and other media type constants are now
+  preferred to the stdlib's :mod:`mimetypes` for the initialization of
+  :attr:`~falcon.ResponseOptions.static_media_types`. (`#2110 <https://github.com/falconry/falcon/issues/2110>`__)
+- A new keyword argument, `samesite`, was added to
+  :meth:`~falcon.Response.unset_cookie` that allows to override the default
+  ``Lax`` setting of `SameSite` on the unset cookie. (`#2124 <https://github.com/falconry/falcon/issues/2124>`__)
+- A new keyword argument, `partitioned`, was added to
+  :meth:`~falcon.Response.set_cookie` to opt a cookie into partitioned storage,
+  with a separate cookie jar per each top-level site.
+  (See also
+  `CHIPS <https://developer.mozilla.org/en-US/docs/Web/Privacy/Privacy_sandbox/Partitioned_cookies>`__
+  for a more detailed description of this web technology.) (`#2213 <https://github.com/falconry/falcon/issues/2213>`__)
+- The class ``falcon.HTTPPayloadTooLarge`` was renamed to
+  :class:`falcon.HTTPContentTooLarge`, together with the accompanying HTTP
+  :ref:`status code <status>` update, in order to reflect the newest HTTP
+  semantics as per
+  `RFC 9110, Section 15.5.14 <https://datatracker.ietf.org/doc/html/rfc9110#status.413>`__.
+  (The old class name remains available as a deprecated compatibility alias.)
+
+  In addition, one new :ref:`status code constant <status>` was added:
+  ``falcon.HTTP_421`` (also available as ``falcon.HTTP_MISDIRECTED_REQUEST``)
+  in accordance with
+  `RFC 9110, Section 15.5.20 <https://datatracker.ietf.org/doc/html/rfc9110#status.421>`__. (`#2276 <https://github.com/falconry/falcon/issues/2276>`__)
+- The :class:`~falcon.CORSMiddleware` now properly handles the missing ``Allow``
+  header case, by denying the preflight CORS request.
+  The static file route has been updated to properly support CORS preflight,
+  by allowing ``GET`` requests. (`#2325 <https://github.com/falconry/falcon/issues/2325>`__)
+- Added :attr:`falcon.testing.Result.content_type` and
+  :attr:`falcon.testing.StreamedResult.content_type` as a utility accessor
+  for the ``Content-Type`` header. (`#2349 <https://github.com/falconry/falcon/issues/2349>`__)
+- A new flag, :attr:`~falcon.ResponseOptions.xml_error_serialization`, has been
+  added to :attr:`~falcon.ResponseOptions` that can be used to disable automatic
+  XML serialization of :class:`~falcon.HTTPError` when using the default error
+  serializer (and the client prefers it).
+
+  This new flag currently defaults to ``True``, preserving the same behavior as
+  the previous Falcon versions. Falcon 5.0 will either change the default to
+  ``False``, or remove the automatic XML error serialization altogether.
+  If you wish to retain support for XML serialization in the default error
+  serializer, you should add a
+  :ref:`response media handler for XML <custom_media_handlers>`.
+
+  In accordance with this change, the :meth:`falcon.HTTPError.to_xml` method was
+  deprecated. (`#2355 <https://github.com/falconry/falcon/issues/2355>`__)
+
+
+Fixed
+-----
+
+- The web servers used for tests are now run through :any:`sys.executable` in
+  order to ensure that they respect the virtualenv in which tests are being run. (`#2047 <https://github.com/falconry/falcon/issues/2047>`__)
+- Previously, importing :class:`~falcon.testing.TestCase` as a top-level
+  attribute in a test module could make ``pytest`` erroneously attempt to collect
+  its methods as test cases. This has now been prevented by adding a ``__test__``
+  attribute (set to ``False``) to the :class:`~falcon.testing.TestCase` class. (`#2147 <https://github.com/falconry/falcon/issues/2147>`__)
+- Falcon will now raise an instance of
+  :class:`~falcon.errors.WebSocketDisconnected` from the :class:`OSError` that
+  the ASGI server signals in the case of a disconnected client (as per
+  the `ASGI HTTP & WebSocket protocol
+  <https://asgi.readthedocs.io/en/latest/specs/www.html#id2>`__ version ``2.4``).
+  It is worth noting though that Falcon's
+  :ref:`built-in receive buffer <ws_lost_connection>` normally detects the
+  ``websocket.disconnect`` event itself prior the potentially failing attempt to
+  ``send()``.
+
+  Disabling this built-in receive buffer (by setting
+  :attr:`~falcon.asgi.WebSocketOptions.max_receive_queue` to ``0``) was also
+  found to interfere with receiving ASGI WebSocket messages in an unexpected
+  way. The issue has been fixed so that setting this option to ``0`` now properly
+  bypasses the buffer altogether, and extensive test coverage has been added for
+  validating this scenario. (`#2292 <https://github.com/falconry/falcon/issues/2292>`__)
+- Customizing
+  :attr:`MultipartParseOptions.media_handlers
+  <falcon.media.multipart.MultipartParseOptions.media_handlers>` could previously
+  lead to unintentionally modifying a shared class variable.
+  This has been fixed, and the
+  :attr:`~falcon.media.multipart.MultipartParseOptions.media_handlers` attribute
+  is now initialized to a fresh copy of handlers for every instance of
+  :class:`~falcon.media.multipart.MultipartParseOptions`. To that end, a proper
+  :meth:`~falcon.media.Handlers.copy` method has been implemented for the media
+  :class:`~falcon.media.Handlers` class. (`#2293 <https://github.com/falconry/falcon/issues/2293>`__)
+- Falcon's multipart form parser no longer requires a CRLF (:python:`'\\r\\n'`)
+  after the closing ``--`` delimiter. Although it is a common convention
+  (followed by the absolute majority of HTTP clients and web browsers) to
+  include a trailing CRLF, the popular Undici client
+  (used as Node's default ``fetch`` implementation) omits it at the time of
+  this writing. (The next version of Undici will adhere to the convention.)
+  (`#2364 <https://github.com/falconry/falcon/issues/2364>`__)
+
+
+Misc
+----
+
+- The :ref:`utility functions <util>` ``create_task()`` and
+  ``get_running_loop()`` are now deprecated in favor of their standard library
+  counterparts, :func:`asyncio.create_task` and :func:`asyncio.get_running_loop`. (`#2253 <https://github.com/falconry/falcon/issues/2253>`__)
+- The :class:`falcon.TimezoneGMT` class was deprecated. Use the UTC timezone
+  (:attr:`datetime.timezone.utc`) from the standard library instead. (`#2301 <https://github.com/falconry/falcon/issues/2301>`__)
+
+
 
 Contributors to this Release
 ----------------------------
-
-.. note::
-    If we missed you below, don’t worry!
-
-    We will refresh the full list of contributors before the 4.0.0 final
-    release.
 
 Many thanks to all of our talented and stylish contributors for this release!
 
@@ -101,7 +488,9 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `mgorny <https://github.com/mgorny>`__
 - `mihaitodor <https://github.com/mihaitodor>`__
 - `MRLab12 <https://github.com/MRLab12>`__
+- `myusko <https://github.com/myusko>`__
 - `nfsec <https://github.com/nfsec>`__
+- `prathik2401 <https://github.com/prathik2401>`__
 - `RioAtHome <https://github.com/RioAtHome>`__
 - `TigreModerata <https://github.com/TigreModerata>`__
 - `vgerak <https://github.com/vgerak>`__

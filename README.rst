@@ -4,7 +4,7 @@
    :target: https://falconframework.org/
    :width: 100 %
 
-|Build Status| |Docs| |codecov.io|
+|Build status| |Docs| |codecov.io| |PyPI package| |Python versions|
 
 The Falcon Web Framework
 ========================
@@ -278,7 +278,7 @@ available to your app without having to reinstall the package:
 .. code:: bash
 
     $ cd falcon
-    $ pip install -e .
+    $ FALCON_DISABLE_CYTHON=Y pip install -e .
 
 You can manually test changes to the Falcon framework by switching to the
 directory of the cloned repo and then running pytest:
@@ -978,13 +978,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+.. |Build status| image:: https://github.com/falconry/falcon/actions/workflows/tests.yaml/badge.svg
+    :target: https://github.com/falconry/falcon/actions/workflows/tests.yaml
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :alt: Falcon web framework docs
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
-.. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
-    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
-    :target: http://codecov.io/gh/falconry/falcon
+    :target: https://codecov.io/gh/falconry/falcon
+.. |PyPI package| image:: https://badge.fury.io/py/falcon.svg
+    :target: https://pypi.org/project/falcon/
+.. |Python versions| image:: https://img.shields.io/pypi/pyversions/falcon.svg
+    :target: https://pypi.org/project/falcon/
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px

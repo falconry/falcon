@@ -151,7 +151,12 @@ class Cookie:
 
     @property
     def expires(self) -> Optional[dt.datetime]:
-        """Expiration timestamp for the cookie, or ``None`` if not specified."""
+        """Expiration timestamp for the cookie, or ``None`` if not specified.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
+        """
         if self._expires:
             return http_date_to_dt(self._expires, obs_date=True)
 

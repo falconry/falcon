@@ -78,13 +78,12 @@ zip-safe = false
 version = {attr = "falcon.version.__version__"}
 
 [tool.setuptools.packages.find]
-exclude = ["examples", "tests"]
+include = ["falcon*"]
 
 [tool.mypy]
     exclude = [
         "falcon/bench",
         "falcon/cmd",
-        "falcon/vendor",
     ]
     disallow_untyped_defs = true
     warn_unused_ignores = true
@@ -114,16 +113,10 @@ exclude = ["examples", "tests"]
         ]
         ignore_missing_imports = true
 
-    [[tool.mypy.overrides]]
-        module = [
-            "falcon.vendor.*",
-        ]
-        disallow_untyped_defs = false
-
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "docs/changes/4.0.0.rst"
+    filename = "docs/changes/4.1.0.rst"
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
@@ -159,7 +152,6 @@ exclude = ["examples", "tests"]
     target-version = ["py38"]
     skip-string-normalization = true
     line-length = 88
-    extend-exclude = "falcon/vendor"
 
 [tool.blue]
     # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
@@ -167,13 +159,11 @@ exclude = ["examples", "tests"]
     #   only minor cosmetic changes in a handful of files.
     target-version = ["py38"]
     line-length = 88
-    extend-exclude = "falcon/vendor"
 
 [tool.ruff]
     target-version = "py38"
     format.quote-style = "single"
     line-length = 88
-    extend-exclude = ["falcon/vendor"]
     builtins = [
         "ignore",
         "attr",

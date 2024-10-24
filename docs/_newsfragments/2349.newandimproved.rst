@@ -1,3 +1,0 @@
-Added :attr:`falcon.testing.Result.content_type` and
-:attr:`falcon.testing.StreamedResult.content_type` as a utility accessor
-for the ``Content-Type`` header.

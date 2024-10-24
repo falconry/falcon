@@ -6,6 +6,7 @@ path via simulate_get(), vs. probing the router directly.
 """
 
 from datetime import datetime
+from datetime import timezone
 import math
 import uuid
 
@@ -288,7 +289,7 @@ def test_int_converter_rejections(client, uri_template):
         (
             '/{start_year:int}-to-{timestamp:dt}',
             '/1961-to-1969-07-21T02:56:00Z',
-            datetime(1969, 7, 21, 2, 56, 0),
+            datetime(1969, 7, 21, 2, 56, 0, tzinfo=timezone.utc),
         ),
         (
             '/{start_year:int}-to-{timestamp:dt("%Y-%m-%d")}',

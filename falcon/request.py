@@ -53,10 +53,10 @@ from falcon.stream import BoundedStream
 from falcon.typing import ReadableIO
 from falcon.util import deprecation
 from falcon.util import ETag
+from falcon.util import mediatypes
 from falcon.util import structures
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
-from falcon.vendor import mimeparse
 
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
@@ -472,6 +472,10 @@ class Request:
         """Value of the Date header, converted to a ``datetime`` instance.
 
         The header value is assumed to conform to RFC 1123.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('Date')
 
@@ -525,6 +529,10 @@ class Request:
         """Value of the If-Modified-Since header.
 
         Returns ``None`` if the header is missing.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('If-Modified-Since')
 
@@ -533,6 +541,10 @@ class Request:
         """Value of the If-Unmodified-Since header.
 
         Returns ``None`` if the header is missing.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('If-Unmodified-Since')
 
@@ -886,7 +898,10 @@ class Request:
 
     @property
     def headers_lower(self) -> Mapping[str, str]:
-        """Same as :attr:`headers` except header names are normalized to lowercase."""
+        """Same as :attr:`headers` except header names are normalized to lowercase.
+
+        .. versionadded:: 4.0
+        """
         if self._cached_headers_lower is None:
             self._cached_headers_lower = {
                 key.lower(): value for key, value in self.headers.items()
@@ -1167,7 +1182,7 @@ class Request:
 
         # Fall back to full-blown parsing
         try:
-            return mimeparse.quality(media_type, accept) != 0.0
+            return mediatypes.quality(media_type, accept) != 0.0
         except ValueError:
             return False
 
@@ -1187,7 +1202,7 @@ class Request:
 
         try:
             # NOTE(kgriffs): best_match will return '' if no match is found
-            preferred_type = mimeparse.best_match(media_types, self.accept)
+            preferred_type = mediatypes.best_match(media_types, self.accept)
         except ValueError:
             # Value for the accept header was not formatted correctly
             preferred_type = ''
@@ -1283,6 +1298,8 @@ class Request:
             HTTPBadRequest: The header was not found in the request, but
                 it was required.
             HttpInvalidHeader: The header contained a malformed/invalid value.
+
+        .. versionadded:: 4.0
         """
 
         http_int = self.get_header(header, required=required)
@@ -1326,6 +1343,10 @@ class Request:
             HTTPBadRequest: The header was not found in the request, but
                 it was required.
             HttpInvalidHeader: The header contained a malformed/invalid value.
+
+        .. versionchanged:: 4.0
+            This method now returns timezone-aware :class:`~datetime.datetime`
+            objects.
         """
 
         http_date = self.get_header(header, required=required)
@@ -2113,7 +2134,7 @@ class Request:
     def get_param_as_datetime(
         self,
         name: str,
-        format_string: str = '%Y-%m-%dT%H:%M:%SZ',
+        format_string: str = '%Y-%m-%dT%H:%M:%S%z',
         required: bool = False,
         store: StoreArg = None,
         default: Optional[datetime] = None,
@@ -2126,7 +2147,7 @@ class Request:
         Keyword Args:
             format_string (str): String used to parse the param value
                 into a ``datetime``. Any format recognized by strptime() is
-                supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+                supported (default ``'%Y-%m-%dT%H:%M:%S%z'``).
             required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
@@ -2144,6 +2165,14 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be converted to a ``datetime``.
+
+        .. versionchanged:: 4.0
+            The default value of `format_string` was changed from
+            ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
+
+            The new format is a superset of the old one parsing-wise, however,
+            the converted :class:`~datetime.datetime` object is now
+            timezone-aware.
         """
 
         param_value = self.get_param(name, required=required)
@@ -2426,11 +2455,11 @@ class RequestOptions:
         via :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`,
         etc.
 
-        Warning:
+        .. deprecated:: 3.0
             The `auto_parse_form_urlencoded` option is not supported for
             ASGI apps, and is considered deprecated for WSGI apps as of
             Falcon 3.0, in favor of accessing URL-encoded forms
-            through :attr:`~Request.media`.
+            through :meth:`~falcon.Request.get_media`.
 
             The attribute and the auto-parsing functionality will be removed
             entirely in Falcon 5.0.

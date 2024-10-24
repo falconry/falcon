@@ -72,6 +72,18 @@ Next, update the contributors and render towncrier fragments by running:
 $ tox -e changelog_release
 ```
 
+Note that if the previous release was made on a branch, the tool may get
+confused, and try to scan too many commits, which will unfortunately get
+rate-limited (and fail) unless you provide a GitHub auth token.
+
+The workaround is to make sure you have already aggregated the list of
+contributors in the prior commits leading to the release, and only run the
+towncrier tool:
+
+```sh
+$ tools/towncrier_draft.py
+```
+
 Examine the updated RST as well as the rendered HTML docs and make any
 adjustments as needed. On OS X it's as simple as:
 
