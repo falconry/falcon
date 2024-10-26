@@ -196,3 +196,147 @@ class SerializeSync(Protocol):
 DeserializeSync = Callable[[bytes], Any]
 
 Responder = Union[ResponderMethod, AsgiResponderMethod]
+
+
+# Middleware
+class MiddlewareWithProcessRequest(Protocol):
+    """WSGI Middleware with request handler"""
+
+    def process_request(self, req: Request, resp: Response) -> None: ...
+
+
+class MiddlewareWithProcessResource(Protocol):
+    """WSGI Middleware with resource handler"""
+
+    def process_resource(
+        self,
+        req: Request,
+        resp: Response,
+        resource: object,
+        params: Dict[str, Any],
+    ) -> None: ...
+
+
+class MiddlewareWithProcessResponse(Protocol):
+    """WSGI Middleware with response handler"""
+
+    def process_response(
+        self, req: Request, resp: Response, resource: object, req_succeeded: bool
+    ) -> None: ...
+
+
+class AsgiMiddlewareWithProcessStartup(Protocol):
+    """ASGI middleware with startup handler"""
+
+    async def process_startup(
+        self, scope: Mapping[str, Any], event: Mapping[str, Any]
+    ) -> None: ...
+
+
+class AsgiMiddlewareWithProcessShutdown(Protocol):
+    """ASGI middleware with shutdown handler"""
+
+    async def process_shutdown(
+        self, scope: Mapping[str, Any], event: Mapping[str, Any]
+    ) -> None: ...
+
+
+class AsgiMiddlewareWithProcessRequest(Protocol):
+    """ASGI middleware with request handler"""
+
+    async def process_request(self, req: AsgiRequest, resp: AsgiResponse) -> None: ...
+
+
+class AsgiMiddlewareWithProcessResource(Protocol):
+    """ASGI middleware with resource handler"""
+
+    async def process_resource(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        params: Mapping[str, Any],
+    ) -> None: ...
+
+
+class AsgiMiddlewareWithProcessResponse(Protocol):
+    """ASGI middleware with response handler"""
+
+    async def process_response(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None: ...
+
+
+class MiddlewareWithAsyncProcessRequestWs(Protocol):
+    """ASGI middleware with WebSocket request handler"""
+
+    async def process_request_ws(self, req: AsgiRequest, ws: WebSocket) -> None: ...
+
+
+class MiddlewareWithAsyncProcessResourceWs(Protocol):
+    """ASGI middleware with WebSocket resource handler"""
+
+    async def process_resource_ws(
+        self,
+        req: AsgiRequest,
+        ws: WebSocket,
+        resource: object,
+        params: Mapping[str, Any],
+    ) -> None: ...
+
+
+class UniversalMiddlewareWithProcessRequest(MiddlewareWithProcessRequest, Protocol):
+    """WSGI/ASGI middleware with request handler"""
+
+    async def process_request_async(
+        self, req: AsgiRequest, resp: AsgiResponse
+    ) -> None: ...
+
+
+class UniversalMiddlewareWithProcessResource(MiddlewareWithProcessResource, Protocol):
+    """WSGI/ASGI middleware with resource handler"""
+
+    async def process_resource_async(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        params: Mapping[str, Any],
+    ) -> None: ...
+
+
+class UniversalMiddlewareWithProcessResponse(MiddlewareWithProcessResponse, Protocol):
+    """WSGI/ASGI middleware with response handler"""
+
+    async def process_response_async(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None: ...
+
+
+# NOTE(jkmnt): This typing is far from perfect due to the Python typing limitations,
+# but better than nothing. Middleware conforming to any protocol of the union
+# will pass the type check. Other protocols violations are not checked.
+Middleware = Union[
+    MiddlewareWithProcessRequest,
+    MiddlewareWithProcessResource,
+    MiddlewareWithProcessResponse,
+]
+
+AsgiMiddleware = Union[
+    AsgiMiddlewareWithProcessRequest,
+    AsgiMiddlewareWithProcessResource,
+    AsgiMiddlewareWithProcessResponse,
+    AsgiMiddlewareWithProcessStartup,
+    AsgiMiddlewareWithProcessShutdown,
+    UniversalMiddlewareWithProcessRequest,
+    UniversalMiddlewareWithProcessResource,
+    UniversalMiddlewareWithProcessResponse,
+]
