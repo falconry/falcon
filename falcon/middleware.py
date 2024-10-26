@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional, TYPE_CHECKING, Union
 
 from ._typing import UniversalMiddlewareWithProcessResponse
-from .asgi.request import Request as AsgiRequest
-from .asgi.response import Response as AsgiResponse
-from .request import Request
-from .response import Response
+
+if TYPE_CHECKING:
+    from .asgi.request import Request as AsgiRequest
+    from .asgi.response import Response as AsgiResponse
+    from .request import Request
+    from .response import Response
 
 
 class CORSMiddleware(UniversalMiddlewareWithProcessResponse):

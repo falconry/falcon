@@ -200,13 +200,13 @@ Responder = Union[ResponderMethod, AsgiResponderMethod]
 
 # Middleware
 class MiddlewareWithProcessRequest(Protocol):
-    """WSGI Middleware with request handler"""
+    """WSGI Middleware with request handler."""
 
     def process_request(self, req: Request, resp: Response) -> None: ...
 
 
 class MiddlewareWithProcessResource(Protocol):
-    """WSGI Middleware with resource handler"""
+    """WSGI Middleware with resource handler."""
 
     def process_resource(
         self,
@@ -218,7 +218,7 @@ class MiddlewareWithProcessResource(Protocol):
 
 
 class MiddlewareWithProcessResponse(Protocol):
-    """WSGI Middleware with response handler"""
+    """WSGI Middleware with response handler."""
 
     def process_response(
         self, req: Request, resp: Response, resource: object, req_succeeded: bool
@@ -226,7 +226,7 @@ class MiddlewareWithProcessResponse(Protocol):
 
 
 class AsgiMiddlewareWithProcessStartup(Protocol):
-    """ASGI middleware with startup handler"""
+    """ASGI middleware with startup handler."""
 
     async def process_startup(
         self, scope: Mapping[str, Any], event: Mapping[str, Any]
@@ -234,7 +234,7 @@ class AsgiMiddlewareWithProcessStartup(Protocol):
 
 
 class AsgiMiddlewareWithProcessShutdown(Protocol):
-    """ASGI middleware with shutdown handler"""
+    """ASGI middleware with shutdown handler."""
 
     async def process_shutdown(
         self, scope: Mapping[str, Any], event: Mapping[str, Any]
@@ -242,13 +242,13 @@ class AsgiMiddlewareWithProcessShutdown(Protocol):
 
 
 class AsgiMiddlewareWithProcessRequest(Protocol):
-    """ASGI middleware with request handler"""
+    """ASGI middleware with request handler."""
 
     async def process_request(self, req: AsgiRequest, resp: AsgiResponse) -> None: ...
 
 
 class AsgiMiddlewareWithProcessResource(Protocol):
-    """ASGI middleware with resource handler"""
+    """ASGI middleware with resource handler."""
 
     async def process_resource(
         self,
@@ -260,7 +260,7 @@ class AsgiMiddlewareWithProcessResource(Protocol):
 
 
 class AsgiMiddlewareWithProcessResponse(Protocol):
-    """ASGI middleware with response handler"""
+    """ASGI middleware with response handler."""
 
     async def process_response(
         self,
@@ -272,13 +272,13 @@ class AsgiMiddlewareWithProcessResponse(Protocol):
 
 
 class MiddlewareWithAsyncProcessRequestWs(Protocol):
-    """ASGI middleware with WebSocket request handler"""
+    """ASGI middleware with WebSocket request handler."""
 
     async def process_request_ws(self, req: AsgiRequest, ws: WebSocket) -> None: ...
 
 
 class MiddlewareWithAsyncProcessResourceWs(Protocol):
-    """ASGI middleware with WebSocket resource handler"""
+    """ASGI middleware with WebSocket resource handler."""
 
     async def process_resource_ws(
         self,
@@ -290,7 +290,7 @@ class MiddlewareWithAsyncProcessResourceWs(Protocol):
 
 
 class UniversalMiddlewareWithProcessRequest(MiddlewareWithProcessRequest, Protocol):
-    """WSGI/ASGI middleware with request handler"""
+    """WSGI/ASGI middleware with request handler."""
 
     async def process_request_async(
         self, req: AsgiRequest, resp: AsgiResponse
@@ -298,7 +298,7 @@ class UniversalMiddlewareWithProcessRequest(MiddlewareWithProcessRequest, Protoc
 
 
 class UniversalMiddlewareWithProcessResource(MiddlewareWithProcessResource, Protocol):
-    """WSGI/ASGI middleware with resource handler"""
+    """WSGI/ASGI middleware with resource handler."""
 
     async def process_resource_async(
         self,
@@ -310,7 +310,7 @@ class UniversalMiddlewareWithProcessResource(MiddlewareWithProcessResource, Prot
 
 
 class UniversalMiddlewareWithProcessResponse(MiddlewareWithProcessResponse, Protocol):
-    """WSGI/ASGI middleware with response handler"""
+    """WSGI/ASGI middleware with response handler."""
 
     async def process_response_async(
         self,
