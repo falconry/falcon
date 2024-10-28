@@ -3,7 +3,7 @@
 Utilities
 =========
 
-.. contents:: :local:
+This page describes miscellaneous utilities provided by Falcon.
 
 URI
 ---
@@ -32,12 +32,15 @@ HTTP Status
 
 .. autofunction:: falcon.http_status_to_code
 .. autofunction:: falcon.code_to_http_status
-.. autofunction:: falcon.get_http_status
+
+.. _mediatype_util:
 
 Media types
 -----------
 
 .. autofunction:: falcon.parse_header
+.. autofunction:: falcon.mediatypes.quality
+.. autofunction:: falcon.mediatypes.best_match
 
 Async
 -----
@@ -85,4 +88,10 @@ Other
     :no-undoc-members:
 
 .. autoclass:: falcon.ETag
+    :members:
+
+Type Aliases
+------------
+
+.. automodule:: falcon.typing
     :members:

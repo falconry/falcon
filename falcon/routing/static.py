@@ -9,12 +9,12 @@ import re
 from typing import Any, ClassVar, IO, Optional, Pattern, Tuple, TYPE_CHECKING, Union
 
 import falcon
+from falcon.typing import ReadableIO
 
 if TYPE_CHECKING:
     from falcon import asgi
     from falcon import Request
     from falcon import Response
-from falcon.typing import ReadableIO
 
 
 def _open_range(
@@ -183,6 +183,12 @@ class StaticRoute:
     def __call__(self, req: Request, resp: Response, **kw: Any) -> None:
         """Resource responder for this route."""
         assert not kw
+        if req.method == 'OPTIONS':
+            # it's likely a CORS request. Set the allow header to the appropriate value.
+            resp.set_header('Allow', 'GET')
+            resp.set_header('Content-Length', '0')
+            return
+
         without_prefix = req.path[len(self._prefix) :]
 
         # NOTE(kgriffs): Check surrounding whitespace and strip trailing
@@ -247,9 +253,9 @@ class StaticRouteAsync(StaticRoute):
 
     async def __call__(self, req: asgi.Request, resp: asgi.Response, **kw: Any) -> None:  # type: ignore[override]
         super().__call__(req, resp, **kw)
-
-        # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking
-        resp.stream = _AsyncFileReader(resp.stream)
+        if resp.stream is not None:  # None when in an option request
+            # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking
+            resp.stream = _AsyncFileReader(resp.stream)  # type: ignore[assignment,arg-type]
 
 
 class _AsyncFileReader:
@@ -259,8 +265,8 @@ class _AsyncFileReader:
         self._file = file
         self._loop = asyncio.get_running_loop()
 
-    async def read(self, size=-1):
+    async def read(self, size: int = -1) -> bytes:
         return await self._loop.run_in_executor(None, partial(self._file.read, size))
 
-    async def close(self):
+    async def close(self) -> None:
         await self._loop.run_in_executor(None, self._file.close)

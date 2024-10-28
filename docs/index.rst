@@ -16,27 +16,8 @@ We like to think of Falcon as the *Dieter Rams* of web frameworks. Falcon
 encourages the REST architectural style, and tries to do as little as possible
 while remaining highly effective.
 
-.. code:: python
-
-    import falcon
-
-    class QuoteResource:
-
-        def on_get(self, req, resp):
-            """Handles GET requests"""
-            quote = {
-                'quote': (
-                    "I've always been more interested in "
-                    "the future than in the past."
-                ),
-                'author': 'Grace Hopper'
-            }
-
-            resp.media = quote
-
-
-    app = falcon.App()
-    app.add_route('/quote', QuoteResource())
+.. literalinclude:: ../examples/quote.py
+    :language: python
 
 For a fully working example, check out the :ref:`quickstart`.
 
@@ -128,7 +109,7 @@ Documentation
    :maxdepth: 3
 
    user/index
-   deploy/index
    community/index
    api/index
    changes/index
+   deploy/index

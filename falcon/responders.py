@@ -14,33 +14,47 @@
 
 """Default responder implementations."""
 
+from __future__ import annotations
+
+from typing import Any, Iterable, NoReturn, TYPE_CHECKING, Union
+
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import ResponderCallable
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPMethodNotAllowed
 from falcon.errors import HTTPRouteNotFound
 from falcon.status_codes import HTTP_200
 
+if TYPE_CHECKING:
+    from falcon import Request
+    from falcon import Response
+    from falcon.asgi import Request as AsgiRequest
+    from falcon.asgi import Response as AsgiResponse
 
-def path_not_found(req, resp, **kwargs):
+
+def path_not_found(req: Request, resp: Response, **kwargs: Any) -> NoReturn:
     """Raise 404 HTTPRouteNotFound error."""
     raise HTTPRouteNotFound()
 
 
-async def path_not_found_async(req, resp, **kwargs):
+async def path_not_found_async(req: Request, resp: Response, **kwargs: Any) -> NoReturn:
     """Raise 404 HTTPRouteNotFound error."""
     raise HTTPRouteNotFound()
 
 
-def bad_request(req, resp, **kwargs):
+def bad_request(req: Request, resp: Response, **kwargs: Any) -> NoReturn:
     """Raise 400 HTTPBadRequest error."""
     raise HTTPBadRequest(title='Bad request', description='Invalid HTTP method')
 
 
-async def bad_request_async(req, resp, **kwargs):
+async def bad_request_async(req: Request, resp: Response, **kwargs: Any) -> NoReturn:
     """Raise 400 HTTPBadRequest error."""
     raise HTTPBadRequest(title='Bad request', description='Invalid HTTP method')
 
 
-def create_method_not_allowed(allowed_methods, asgi=False):
+def create_method_not_allowed(
+    allowed_methods: Iterable[str], asgi: bool = False
+) -> Union[ResponderCallable, AsgiResponderCallable]:
     """Create a responder for "405 Method Not Allowed".
 
     Args:
@@ -52,18 +66,22 @@ def create_method_not_allowed(allowed_methods, asgi=False):
 
     if asgi:
 
-        async def method_not_allowed_responder_async(req, resp, **kwargs):
+        async def method_not_allowed_responder_async(
+            req: AsgiRequest, resp: AsgiResponse, **kwargs: Any
+        ) -> NoReturn:
             raise HTTPMethodNotAllowed(allowed_methods)
 
         return method_not_allowed_responder_async
 
-    def method_not_allowed(req, resp, **kwargs):
+    def method_not_allowed(req: Request, resp: Response, **kwargs: Any) -> NoReturn:
         raise HTTPMethodNotAllowed(allowed_methods)
 
     return method_not_allowed
 
 
-def create_default_options(allowed_methods, asgi=False):
+def create_default_options(
+    allowed_methods: Iterable[str], asgi: bool = False
+) -> Union[ResponderCallable, AsgiResponderCallable]:
     """Create a default responder for the OPTIONS method.
 
     Args:
@@ -76,14 +94,16 @@ def create_default_options(allowed_methods, asgi=False):
 
     if asgi:
 
-        async def options_responder_async(req, resp, **kwargs):
+        async def options_responder_async(
+            req: AsgiRequest, resp: AsgiResponse, **kwargs: Any
+        ) -> None:
             resp.status = HTTP_200
             resp.set_header('Allow', allowed)
             resp.set_header('Content-Length', '0')
 
         return options_responder_async
 
-    def options_responder(req, resp, **kwargs):
+    def options_responder(req: Request, resp: Response, **kwargs: Any) -> None:
         resp.status = HTTP_200
         resp.set_header('Allow', allowed)
         resp.set_header('Content-Length', '0')

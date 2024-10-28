@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import abc
 from datetime import datetime
 from math import isfinite
-from typing import Optional
+from typing import Any, ClassVar, Iterable, Optional, overload, Union
 import uuid
 
 __all__ = (
@@ -23,6 +24,7 @@ __all__ = (
     'DateTimeConverter',
     'FloatConverter',
     'IntConverter',
+    'PathConverter',
     'UUIDConverter',
 )
 
@@ -34,7 +36,7 @@ strptime = datetime.strptime
 class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
-    CONSUME_MULTIPLE_SEGMENTS = False
+    CONSUME_MULTIPLE_SEGMENTS: ClassVar[bool] = False
     """When set to ``True`` it indicates that this converter will consume
     multiple URL path segments. Currently a converter with
     ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the end of the URL template
@@ -42,8 +44,8 @@ class BaseConverter(metaclass=abc.ABCMeta):
     segments.
     """
 
-    @abc.abstractmethod  # pragma: no cover
-    def convert(self, value):
+    @abc.abstractmethod
+    def convert(self, value: str) -> Any:
         """Convert a URI template field value to another format or type.
 
         Args:
@@ -76,14 +78,19 @@ class IntConverter(BaseConverter):
 
     __slots__ = ('_num_digits', '_min', '_max')
 
-    def __init__(self, num_digits=None, min=None, max=None):
+    def __init__(
+        self,
+        num_digits: Optional[int] = None,
+        min: Optional[int] = None,
+        max: Optional[int] = None,
+    ) -> None:
         if num_digits is not None and num_digits < 1:
             raise ValueError('num_digits must be at least 1')
         self._num_digits = num_digits
         self._min = min
         self._max = max
 
-    def convert(self, value):
+    def convert(self, value: str) -> Optional[int]:
         if self._num_digits is not None and len(value) != self._num_digits:
             return None
 
@@ -96,22 +103,35 @@ class IntConverter(BaseConverter):
             return None
 
         try:
-            value = int(value)
+            converted = int(value)
         except ValueError:
             return None
 
-        return self._validate_min_max_value(value)
-
-    def _validate_min_max_value(self, value):
-        if self._min is not None and value < self._min:
-            return None
-        if self._max is not None and value > self._max:
-            return None
-
-        return value
+        return _validate_min_max_value(self, converted)
 
 
-class FloatConverter(IntConverter):
+@overload
+def _validate_min_max_value(converter: IntConverter, value: int) -> Optional[int]: ...
+
+
+@overload
+def _validate_min_max_value(
+    converter: FloatConverter, value: float
+) -> Optional[float]: ...
+
+
+def _validate_min_max_value(
+    converter: Union[IntConverter, FloatConverter], value: Union[int, float]
+) -> Optional[Union[int, float]]:
+    if converter._min is not None and value < converter._min:
+        return None
+    if converter._max is not None and value > converter._max:
+        return None
+
+    return value
+
+
+class FloatConverter(BaseConverter):
     """Converts a field value to an float.
 
     Identifier: `float`
@@ -121,22 +141,24 @@ class FloatConverter(IntConverter):
         max (float): Reject the value if it is greater than this number.
         finite (bool) : Determines whether or not to only match ordinary
             finite numbers (default: ``True``). Set to ``False`` to match
-            nan, inf, and -inf in addition to finite numbers.
+            ``nan``, ``inf``, and ``-inf`` in addition to finite numbers.
+
+    .. versionadded:: 4.0
     """
 
-    __slots__ = '_finite'
+    __slots__ = '_finite', '_min', '_max'
 
     def __init__(
         self,
         min: Optional[float] = None,
         max: Optional[float] = None,
         finite: bool = True,
-    ):
+    ) -> None:
         self._min = min
         self._max = max
         self._finite = finite if finite is not None else True
 
-    def convert(self, value: str):
+    def convert(self, value: str) -> Optional[float]:
         if value.strip() != value:
             return None
 
@@ -149,7 +171,7 @@ class FloatConverter(IntConverter):
         except ValueError:
             return None
 
-        return self._validate_min_max_value(converted)
+        return _validate_min_max_value(self, converted)
 
 
 class DateTimeConverter(BaseConverter):
@@ -160,15 +182,22 @@ class DateTimeConverter(BaseConverter):
     Keyword Args:
         format_string (str): String used to parse the field value
             into a datetime. Any format recognized by strptime() is
-            supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+            supported (default ``'%Y-%m-%dT%H:%M:%S%z'``).
+
+    .. versionchanged:: 4.0
+        The default value of `format_string` was changed from
+        ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
+
+        The new format is a superset of the old one parsing-wise, however, the
+        converted :class:`~datetime.datetime` object is now timezone-aware.
     """
 
     __slots__ = ('_format_string',)
 
-    def __init__(self, format_string='%Y-%m-%dT%H:%M:%SZ'):
+    def __init__(self, format_string: str = '%Y-%m-%dT%H:%M:%S%z') -> None:
         self._format_string = format_string
 
-    def convert(self, value):
+    def convert(self, value: str) -> Optional[datetime]:
         try:
             return strptime(value, self._format_string)
         except ValueError:
@@ -185,7 +214,7 @@ class UUIDConverter(BaseConverter):
     Note, however, that hyphens and the URN prefix are optional.
     """
 
-    def convert(self, value):
+    def convert(self, value: str) -> Optional[uuid.UUID]:
         try:
             return uuid.UUID(value)
         except ValueError:
@@ -209,11 +238,13 @@ class PathConverter(BaseConverter):
     (the default), while it will *not* match when that option is ``True``.
 
     (See also: :ref:`trailing_slash_in_path`)
+
+    .. versionadded:: 4.0
     """
 
     CONSUME_MULTIPLE_SEGMENTS = True
 
-    def convert(self, value):
+    def convert(self, value: Iterable[str]) -> str:
         return '/'.join(value)
 
 

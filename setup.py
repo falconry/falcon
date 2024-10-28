@@ -41,7 +41,6 @@ if HAS_CYTHON and IS_CPYTHON and not DISABLE_EXTENSION:
         'falcon.media',
         'falcon.routing',
         'falcon.util',
-        'falcon.vendor.mimeparse',
     ]
 
     modules_to_exclude = [
@@ -59,6 +58,7 @@ if HAS_CYTHON and IS_CPYTHON and not DISABLE_EXTENSION:
         # NOTE(vytas): It is pointless to cythonize reader.py, since cythonized
         #   Falcon is using reader.pyx instead.
         'falcon.hooks',
+        'falcon.inspect',
         'falcon.responders',
         'falcon.util.reader',
         'falcon.util.sync',

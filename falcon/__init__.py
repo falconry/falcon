@@ -77,7 +77,6 @@ __all__ = (
     'ETag',
     'get_argnames',
     'get_bound_method',
-    'get_http_status',
     'get_running_loop',
     'http_cookies',
     'http_date_to_dt',
@@ -85,6 +84,7 @@ __all__ = (
     'http_status_to_code',
     'IS_64_BITS',
     'is_python_func',
+    'mediatypes',
     'misc',
     'parse_header',
     'reader',
@@ -124,6 +124,7 @@ __all__ = (
     'HTTPNotAcceptable',
     'HTTPNotFound',
     'HTTPNotImplemented',
+    'HTTPContentTooLarge',
     'HTTPPayloadTooLarge',
     'HTTPPreconditionFailed',
     'HTTPPreconditionRequired',
@@ -138,6 +139,8 @@ __all__ = (
     'HTTPUnsupportedMediaType',
     'HTTPUriTooLong',
     'HTTPVersionNotSupported',
+    'InvalidMediaRange',
+    'InvalidMediaType',
     'MediaMalformedError',
     'MediaNotFoundError',
     'MediaValidationError',
@@ -154,6 +157,7 @@ __all__ = (
     'HTTP_100',
     'HTTP_101',
     'HTTP_102',
+    'HTTP_103',
     'HTTP_200',
     'HTTP_201',
     'HTTP_202',
@@ -191,9 +195,11 @@ __all__ = (
     'HTTP_416',
     'HTTP_417',
     'HTTP_418',
+    'HTTP_421',
     'HTTP_422',
     'HTTP_423',
     'HTTP_424',
+    'HTTP_425',
     'HTTP_426',
     'HTTP_428',
     'HTTP_429',
@@ -205,8 +211,10 @@ __all__ = (
     'HTTP_503',
     'HTTP_504',
     'HTTP_505',
+    'HTTP_506',
     'HTTP_507',
     'HTTP_508',
+    'HTTP_510',
     'HTTP_511',
     'HTTP_701',
     'HTTP_702',
@@ -260,8 +268,10 @@ __all__ = (
     'HTTP_BAD_GATEWAY',
     'HTTP_BAD_REQUEST',
     'HTTP_CONFLICT',
+    'HTTP_CONTENT_TOO_LARGE',
     'HTTP_CONTINUE',
     'HTTP_CREATED',
+    'HTTP_EARLY_HINTS',
     'HTTP_EXPECTATION_FAILED',
     'HTTP_FAILED_DEPENDENCY',
     'HTTP_FORBIDDEN',
@@ -277,12 +287,14 @@ __all__ = (
     'HTTP_LOCKED',
     'HTTP_LOOP_DETECTED',
     'HTTP_METHOD_NOT_ALLOWED',
+    'HTTP_MISDIRECTED_REQUEST',
     'HTTP_MOVED_PERMANENTLY',
     'HTTP_MULTIPLE_CHOICES',
     'HTTP_MULTI_STATUS',
     'HTTP_NETWORK_AUTHENTICATION_REQUIRED',
     'HTTP_NON_AUTHORITATIVE_INFORMATION',
     'HTTP_NOT_ACCEPTABLE',
+    'HTTP_NOT_EXTENDED',
     'HTTP_NOT_FOUND',
     'HTTP_NOT_IMPLEMENTED',
     'HTTP_NOT_MODIFIED',
@@ -296,7 +308,6 @@ __all__ = (
     'HTTP_PROCESSING',
     'HTTP_PROXY_AUTHENTICATION_REQUIRED',
     'HTTP_REQUESTED_RANGE_NOT_SATISFIABLE',
-    'HTTP_REQUEST_ENTITY_TOO_LARGE',
     'HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE',
     'HTTP_REQUEST_TIMEOUT',
     'HTTP_REQUEST_URI_TOO_LONG',
@@ -305,6 +316,7 @@ __all__ = (
     'HTTP_SERVICE_UNAVAILABLE',
     'HTTP_SWITCHING_PROTOCOLS',
     'HTTP_TEMPORARY_REDIRECT',
+    'HTTP_TOO_EARLY',
     'HTTP_TOO_MANY_REQUESTS',
     'HTTP_UNAUTHORIZED',
     'HTTP_UNAVAILABLE_FOR_LEGAL_REASONS',
@@ -312,6 +324,7 @@ __all__ = (
     'HTTP_UNSUPPORTED_MEDIA_TYPE',
     'HTTP_UPGRADE_REQUIRED',
     'HTTP_USE_PROXY',
+    'HTTP_VARIANT_ALSO_NEGOTIATES',
 )
 
 # NOTE(kgriffs,vytas): Hoist classes and functions into the falcon namespace.
@@ -345,6 +358,7 @@ from falcon.errors import HeaderNotSupported
 from falcon.errors import HTTPBadGateway
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPConflict
+from falcon.errors import HTTPContentTooLarge
 from falcon.errors import HTTPFailedDependency
 from falcon.errors import HTTPForbidden
 from falcon.errors import HTTPGatewayTimeout
@@ -377,6 +391,8 @@ from falcon.errors import HTTPUnprocessableEntity
 from falcon.errors import HTTPUnsupportedMediaType
 from falcon.errors import HTTPUriTooLong
 from falcon.errors import HTTPVersionNotSupported
+from falcon.errors import InvalidMediaRange
+from falcon.errors import InvalidMediaType
 from falcon.errors import MediaMalformedError
 from falcon.errors import MediaNotFoundError
 from falcon.errors import MediaValidationError
@@ -409,6 +425,7 @@ from falcon.response import ResponseOptions
 from falcon.status_codes import HTTP_100
 from falcon.status_codes import HTTP_101
 from falcon.status_codes import HTTP_102
+from falcon.status_codes import HTTP_103
 from falcon.status_codes import HTTP_200
 from falcon.status_codes import HTTP_201
 from falcon.status_codes import HTTP_202
@@ -446,9 +463,11 @@ from falcon.status_codes import HTTP_415
 from falcon.status_codes import HTTP_416
 from falcon.status_codes import HTTP_417
 from falcon.status_codes import HTTP_418
+from falcon.status_codes import HTTP_421
 from falcon.status_codes import HTTP_422
 from falcon.status_codes import HTTP_423
 from falcon.status_codes import HTTP_424
+from falcon.status_codes import HTTP_425
 from falcon.status_codes import HTTP_426
 from falcon.status_codes import HTTP_428
 from falcon.status_codes import HTTP_429
@@ -460,8 +479,10 @@ from falcon.status_codes import HTTP_502
 from falcon.status_codes import HTTP_503
 from falcon.status_codes import HTTP_504
 from falcon.status_codes import HTTP_505
+from falcon.status_codes import HTTP_506
 from falcon.status_codes import HTTP_507
 from falcon.status_codes import HTTP_508
+from falcon.status_codes import HTTP_510
 from falcon.status_codes import HTTP_511
 from falcon.status_codes import HTTP_701
 from falcon.status_codes import HTTP_702
@@ -515,8 +536,10 @@ from falcon.status_codes import HTTP_ALREADY_REPORTED
 from falcon.status_codes import HTTP_BAD_GATEWAY
 from falcon.status_codes import HTTP_BAD_REQUEST
 from falcon.status_codes import HTTP_CONFLICT
+from falcon.status_codes import HTTP_CONTENT_TOO_LARGE
 from falcon.status_codes import HTTP_CONTINUE
 from falcon.status_codes import HTTP_CREATED
+from falcon.status_codes import HTTP_EARLY_HINTS
 from falcon.status_codes import HTTP_EXPECTATION_FAILED
 from falcon.status_codes import HTTP_FAILED_DEPENDENCY
 from falcon.status_codes import HTTP_FORBIDDEN
@@ -532,6 +555,7 @@ from falcon.status_codes import HTTP_LENGTH_REQUIRED
 from falcon.status_codes import HTTP_LOCKED
 from falcon.status_codes import HTTP_LOOP_DETECTED
 from falcon.status_codes import HTTP_METHOD_NOT_ALLOWED
+from falcon.status_codes import HTTP_MISDIRECTED_REQUEST
 from falcon.status_codes import HTTP_MOVED_PERMANENTLY
 from falcon.status_codes import HTTP_MULTI_STATUS
 from falcon.status_codes import HTTP_MULTIPLE_CHOICES
@@ -539,6 +563,7 @@ from falcon.status_codes import HTTP_NETWORK_AUTHENTICATION_REQUIRED
 from falcon.status_codes import HTTP_NO_CONTENT
 from falcon.status_codes import HTTP_NON_AUTHORITATIVE_INFORMATION
 from falcon.status_codes import HTTP_NOT_ACCEPTABLE
+from falcon.status_codes import HTTP_NOT_EXTENDED
 from falcon.status_codes import HTTP_NOT_FOUND
 from falcon.status_codes import HTTP_NOT_IMPLEMENTED
 from falcon.status_codes import HTTP_NOT_MODIFIED
@@ -550,7 +575,6 @@ from falcon.status_codes import HTTP_PRECONDITION_FAILED
 from falcon.status_codes import HTTP_PRECONDITION_REQUIRED
 from falcon.status_codes import HTTP_PROCESSING
 from falcon.status_codes import HTTP_PROXY_AUTHENTICATION_REQUIRED
-from falcon.status_codes import HTTP_REQUEST_ENTITY_TOO_LARGE
 from falcon.status_codes import HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
 from falcon.status_codes import HTTP_REQUEST_TIMEOUT
 from falcon.status_codes import HTTP_REQUEST_URI_TOO_LONG
@@ -560,6 +584,7 @@ from falcon.status_codes import HTTP_SEE_OTHER
 from falcon.status_codes import HTTP_SERVICE_UNAVAILABLE
 from falcon.status_codes import HTTP_SWITCHING_PROTOCOLS
 from falcon.status_codes import HTTP_TEMPORARY_REDIRECT
+from falcon.status_codes import HTTP_TOO_EARLY
 from falcon.status_codes import HTTP_TOO_MANY_REQUESTS
 from falcon.status_codes import HTTP_UNAUTHORIZED
 from falcon.status_codes import HTTP_UNAVAILABLE_FOR_LEGAL_REASONS
@@ -567,6 +592,7 @@ from falcon.status_codes import HTTP_UNPROCESSABLE_ENTITY
 from falcon.status_codes import HTTP_UNSUPPORTED_MEDIA_TYPE
 from falcon.status_codes import HTTP_UPGRADE_REQUIRED
 from falcon.status_codes import HTTP_USE_PROXY
+from falcon.status_codes import HTTP_VARIANT_ALSO_NEGOTIATES
 from falcon.stream import BoundedStream
 
 # NOTE(kgriffs): Ensure that "from falcon import uri" will import
@@ -589,7 +615,6 @@ from falcon.util import dt_to_http
 from falcon.util import ETag
 from falcon.util import get_argnames
 from falcon.util import get_bound_method
-from falcon.util import get_http_status
 from falcon.util import get_running_loop
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
@@ -597,6 +622,7 @@ from falcon.util import http_now
 from falcon.util import http_status_to_code
 from falcon.util import IS_64_BITS
 from falcon.util import is_python_func
+from falcon.util import mediatypes
 from falcon.util import misc
 from falcon.util import parse_header
 from falcon.util import reader

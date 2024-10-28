@@ -56,7 +56,8 @@ class HeaderHelpersResource:
         resp.last_modified = self.last_modified
         resp.retry_after = 3601
 
-        # Relative URI's are OK per http://goo.gl/DbVqR
+        # Relative URI's are OK per
+        # https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.2
         resp.location = '/things/87'
         resp.content_location = '/things/78'
 
@@ -866,12 +867,12 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.add_link('/things/2842', 'next')
+        resource.append_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.add_link(uri, 'http://example.com/\u00e7runchy')
+        resource.append_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
+        resource.append_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 

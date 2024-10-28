@@ -141,7 +141,7 @@ def max_body(limit):
                 'exceed ' + str(limit) + ' bytes in length.'
             )
 
-            raise falcon.HTTPPayloadTooLarge(
+            raise falcon.HTTPContentTooLarge(
                 title='Request body is too large', description=msg
             )
 

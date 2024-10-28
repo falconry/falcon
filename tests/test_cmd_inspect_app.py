@@ -198,8 +198,9 @@ def test_route_main(monkeypatch):
 
     monkeypatch.setattr(inspect_app, 'main', mock)
     output = io.StringIO()
-    with redirected(stdout=output):
-        inspect_app.route_main()
+    with redirected(stderr=output):
+        with pytest.raises(SystemExit):
+            inspect_app.route_main()
 
-    assert 'deprecated' in output.getvalue()
-    assert called
+    assert 'no longer supported' in output.getvalue()
+    assert not called

@@ -3,8 +3,6 @@
 FAQ
 ===
 
-.. contents:: :local:
-
 Design Philosophy
 ~~~~~~~~~~~~~~~~~
 
@@ -109,7 +107,7 @@ the GIL yet.
 We load-tested the WSGI flavor of the framework via
 :class:`~wsgiref.simple_server.WSGIServer` +
 :class:`~socketserver.ThreadingMixIn` on
-`free-threaded CPython 3.13.0rc1
+`free-threaded CPython 3.13.0
 <https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
 (under ``PYTHON_GIL=0``), and observed no issues that would point toward
 Falcon's reliance on the GIL. Thus, we would like to think that Falcon is still
@@ -689,9 +687,10 @@ The `stream` of a body part is a file-like object implementing the ``read()``
 method, making it compatible with ``boto3``\'s
 `upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         .. code:: python
 
@@ -705,7 +704,8 @@ method, making it compatible with ``boto3``\'s
                 if part.name == 'myfile':
                     s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         .. code:: python
 

@@ -23,6 +23,8 @@ HTTP_101: Final[str] = '101 Switching Protocols'
 HTTP_SWITCHING_PROTOCOLS: Final[str] = HTTP_101
 HTTP_102: Final[str] = '102 Processing'
 HTTP_PROCESSING: Final[str] = HTTP_102
+HTTP_103: Final[str] = '103 Early Hints'
+HTTP_EARLY_HINTS: Final[str] = HTTP_103
 
 # 2xx - Success
 HTTP_200: Final[str] = '200 OK'
@@ -91,7 +93,9 @@ HTTP_411: Final[str] = '411 Length Required'
 HTTP_LENGTH_REQUIRED: Final[str] = HTTP_411
 HTTP_412: Final[str] = '412 Precondition Failed'
 HTTP_PRECONDITION_FAILED: Final[str] = HTTP_412
-HTTP_413: Final[str] = '413 Payload Too Large'
+HTTP_413: Final[str] = '413 Content Too Large'
+HTTP_CONTENT_TOO_LARGE: Final[str] = HTTP_413
+HTTP_PAYLOAD_TOO_LARGE: Final[str] = HTTP_413
 HTTP_REQUEST_ENTITY_TOO_LARGE: Final[str] = HTTP_413
 HTTP_414: Final[str] = '414 URI Too Long'
 HTTP_REQUEST_URI_TOO_LONG: Final[str] = HTTP_414
@@ -103,12 +107,16 @@ HTTP_417: Final[str] = '417 Expectation Failed'
 HTTP_EXPECTATION_FAILED: Final[str] = HTTP_417
 HTTP_418: Final[str] = "418 I'm a teapot"
 HTTP_IM_A_TEAPOT: Final[str] = HTTP_418
+HTTP_421: Final[str] = '421 Misdirected Request'
+HTTP_MISDIRECTED_REQUEST: Final[str] = HTTP_421
 HTTP_422: Final[str] = '422 Unprocessable Entity'
 HTTP_UNPROCESSABLE_ENTITY: Final[str] = HTTP_422
 HTTP_423: Final[str] = '423 Locked'
 HTTP_LOCKED: Final[str] = HTTP_423
 HTTP_424: Final[str] = '424 Failed Dependency'
 HTTP_FAILED_DEPENDENCY: Final[str] = HTTP_424
+HTTP_425: Final[str] = '425 Too Early'
+HTTP_TOO_EARLY: Final[str] = HTTP_425
 HTTP_426: Final[str] = '426 Upgrade Required'
 HTTP_UPGRADE_REQUIRED: Final[str] = HTTP_426
 HTTP_428: Final[str] = '428 Precondition Required'
@@ -133,10 +141,14 @@ HTTP_504: Final[str] = '504 Gateway Timeout'
 HTTP_GATEWAY_TIMEOUT: Final[str] = HTTP_504
 HTTP_505: Final[str] = '505 HTTP Version Not Supported'
 HTTP_HTTP_VERSION_NOT_SUPPORTED: Final[str] = HTTP_505
+HTTP_506: Final[str] = '506 Variant Also Negotiates'
+HTTP_VARIANT_ALSO_NEGOTIATES: Final[str] = HTTP_506
 HTTP_507: Final[str] = '507 Insufficient Storage'
 HTTP_INSUFFICIENT_STORAGE: Final[str] = HTTP_507
 HTTP_508: Final[str] = '508 Loop Detected'
 HTTP_LOOP_DETECTED: Final[str] = HTTP_508
+HTTP_510: Final[str] = '510 Not Extended'
+HTTP_NOT_EXTENDED: Final[str] = HTTP_510
 HTTP_511: Final[str] = '511 Network Authentication Required'
 HTTP_NETWORK_AUTHENTICATION_REQUIRED: Final[str] = HTTP_511
 
@@ -209,6 +221,7 @@ __all__ = (
     'HTTP_100',
     'HTTP_101',
     'HTTP_102',
+    'HTTP_103',
     'HTTP_200',
     'HTTP_201',
     'HTTP_202',
@@ -246,9 +259,11 @@ __all__ = (
     'HTTP_416',
     'HTTP_417',
     'HTTP_418',
+    'HTTP_421',
     'HTTP_422',
     'HTTP_423',
     'HTTP_424',
+    'HTTP_425',
     'HTTP_426',
     'HTTP_428',
     'HTTP_429',
@@ -260,8 +275,10 @@ __all__ = (
     'HTTP_503',
     'HTTP_504',
     'HTTP_505',
+    'HTTP_506',
     'HTTP_507',
     'HTTP_508',
+    'HTTP_510',
     'HTTP_511',
     'HTTP_701',
     'HTTP_702',
@@ -315,8 +332,10 @@ __all__ = (
     'HTTP_BAD_GATEWAY',
     'HTTP_BAD_REQUEST',
     'HTTP_CONFLICT',
+    'HTTP_CONTENT_TOO_LARGE',
     'HTTP_CONTINUE',
     'HTTP_CREATED',
+    'HTTP_EARLY_HINTS',
     'HTTP_EXPECTATION_FAILED',
     'HTTP_FAILED_DEPENDENCY',
     'HTTP_FORBIDDEN',
@@ -332,12 +351,14 @@ __all__ = (
     'HTTP_LOCKED',
     'HTTP_LOOP_DETECTED',
     'HTTP_METHOD_NOT_ALLOWED',
+    'HTTP_MISDIRECTED_REQUEST',
     'HTTP_MOVED_PERMANENTLY',
     'HTTP_MULTIPLE_CHOICES',
     'HTTP_MULTI_STATUS',
     'HTTP_NETWORK_AUTHENTICATION_REQUIRED',
     'HTTP_NON_AUTHORITATIVE_INFORMATION',
     'HTTP_NOT_ACCEPTABLE',
+    'HTTP_NOT_EXTENDED',
     'HTTP_NOT_FOUND',
     'HTTP_NOT_IMPLEMENTED',
     'HTTP_NOT_MODIFIED',
@@ -351,7 +372,6 @@ __all__ = (
     'HTTP_PROCESSING',
     'HTTP_PROXY_AUTHENTICATION_REQUIRED',
     'HTTP_REQUESTED_RANGE_NOT_SATISFIABLE',
-    'HTTP_REQUEST_ENTITY_TOO_LARGE',
     'HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE',
     'HTTP_REQUEST_TIMEOUT',
     'HTTP_REQUEST_URI_TOO_LONG',
@@ -360,6 +380,7 @@ __all__ = (
     'HTTP_SERVICE_UNAVAILABLE',
     'HTTP_SWITCHING_PROTOCOLS',
     'HTTP_TEMPORARY_REDIRECT',
+    'HTTP_TOO_EARLY',
     'HTTP_TOO_MANY_REQUESTS',
     'HTTP_UNAUTHORIZED',
     'HTTP_UNAVAILABLE_FOR_LEGAL_REASONS',
@@ -367,4 +388,5 @@ __all__ = (
     'HTTP_UNSUPPORTED_MEDIA_TYPE',
     'HTTP_UPGRADE_REQUIRED',
     'HTTP_USE_PROXY',
+    'HTTP_VARIANT_ALSO_NEGOTIATES',
 )

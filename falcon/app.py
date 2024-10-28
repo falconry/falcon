@@ -14,6 +14,8 @@
 
 """Falcon App class."""
 
+from __future__ import annotations
+
 from functools import wraps
 from inspect import iscoroutinefunction
 import pathlib
@@ -26,7 +28,6 @@ from typing import (
     ClassVar,
     Dict,
     FrozenSet,
-    IO,
     Iterable,
     List,
     Literal,
@@ -44,6 +45,18 @@ from falcon import app_helpers as helpers
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import AsgiResponderWsCallable
+from falcon._typing import AsgiSinkCallable
+from falcon._typing import ErrorHandler
+from falcon._typing import ErrorSerializer
+from falcon._typing import FindMethod
+from falcon._typing import ProcessResponseMethod
+from falcon._typing import ResponderCallable
+from falcon._typing import SinkCallable
+from falcon._typing import SinkPrefix
+from falcon._typing import StartResponse
+from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPInternalServerError
@@ -55,18 +68,7 @@ from falcon.request import RequestOptions
 from falcon.response import Response
 from falcon.response import ResponseOptions
 import falcon.status_codes as status
-from falcon.typing import AsgiResponderCallable
-from falcon.typing import AsgiResponderWsCallable
-from falcon.typing import AsgiSinkCallable
-from falcon.typing import ErrorHandler
-from falcon.typing import ErrorSerializer
-from falcon.typing import FindMethod
-from falcon.typing import ProcessResponseMethod
-from falcon.typing import ResponderCallable
-from falcon.typing import SinkCallable
-from falcon.typing import SinkPrefix
-from falcon.typing import StartResponse
-from falcon.typing import WSGIEnvironment
+from falcon.typing import ReadableIO
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
@@ -301,8 +303,8 @@ class App:
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Type[Request] = Request,
-        response_type: Type[Response] = Response,
+        request_type: Optional[Type[Request]] = None,
+        response_type: Optional[Type[Response]] = None,
         middleware: Union[object, Iterable[object]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
@@ -340,8 +342,8 @@ class App:
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
 
-        self._request_type = request_type
-        self._response_type = response_type
+        self._request_type = request_type or Request
+        self._response_type = response_type or Response
 
         self._error_handlers = {}
         self._serialize_error = helpers.default_serialize_error
@@ -758,6 +760,15 @@ class App:
         of routes, when creating static resources and responders would be
         impractical. For example, you might use a sink to create a smart
         proxy that forwards requests to one or more backend services.
+
+        Note:
+            To support CORS preflight requests when using the default CORS middleware,
+            either by setting ``App.cors_enable=True`` or by adding the
+            :class:`~.CORSMiddleware` to the ``App.middleware``, the sink should
+            set the ``Allow`` header in the request to the allowed
+            method values when serving an ``OPTIONS`` request. If the ``Allow`` header
+            is missing from the response, the default CORS middleware will deny the
+            preflight request.
 
         Args:
             sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
@@ -1191,7 +1202,9 @@ class App:
     def _get_body(
         self,
         resp: Response,
-        wsgi_file_wrapper: Optional[Callable[[IO[bytes], int], Iterable[bytes]]] = None,
+        wsgi_file_wrapper: Optional[
+            Callable[[ReadableIO, int], Iterable[bytes]]
+        ] = None,
     ) -> Tuple[Iterable[bytes], Optional[int]]:
         """Convert resp content into an iterable as required by PEP 333.
 
@@ -1229,11 +1242,13 @@ class App:
                     # TODO(kgriffs): Make block size configurable at the
                     # global level, pending experimentation to see how
                     # useful that would be. See also the discussion on
-                    # this GitHub PR: http://goo.gl/XGrtDz
-                    iterable = wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)
+                    # this GitHub PR:
+                    # https://github.com/falconry/falcon/pull/249#discussion_r11269730
+                    iterable = wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)  # type: ignore[arg-type]
                 else:
                     iterable = helpers.CloseableStreamIterator(
-                        stream, self._STREAM_BLOCK_SIZE
+                        stream,  # type: ignore[arg-type]
+                        self._STREAM_BLOCK_SIZE,
                     )
             else:
                 iterable = stream
@@ -1250,7 +1265,7 @@ class App:
 
 
 # TODO(myusko): This class is a compatibility alias, and should be removed
-# in the next major release (4.0).
+# in Falcon 5.0.
 class API(App):
     """Compatibility alias of :class:`falcon.App`.
 
@@ -1258,12 +1273,13 @@ class API(App):
     reflect the breadth of applications that :class:`App <falcon.App>`, and its
     ASGI counterpart in particular, can now be used for.
 
-    This compatibility alias should be considered deprecated; it will be
-    removed in a future release.
+    .. deprecated:: 3.0
+        This compatibility alias is deprecated; it will be removed entirely in
+        Falcon 5.0.
     """
 
     @deprecation.deprecated(
-        'API class may be removed in a future release, use falcon.App instead.'
+        'The API class will be removed in Falcon 5.0, use falcon.App instead.'
     )
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

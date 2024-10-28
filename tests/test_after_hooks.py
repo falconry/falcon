@@ -7,7 +7,7 @@ import pytest
 import falcon
 from falcon import app as wsgi
 from falcon import testing
-from falcon.typing import Resource
+from falcon._typing import Resource
 
 # --------------------------------------------------------------------
 # Fixtures
@@ -128,12 +128,12 @@ class WrappedRespondersResource:
 
 class WrappedRespondersResourceAsync:
     @falcon.after(serialize_body_async)
-    @falcon.after(validate_output, is_async=False)
+    @falcon.after(validate_output)
     async def on_get(self, req, resp):
         self.req = req
         self.resp = resp
 
-    @falcon.after(serialize_body_async, is_async=True)
+    @falcon.after(serialize_body_async)
     async def on_put(self, req, resp):
         self.req = req
         self.resp = resp

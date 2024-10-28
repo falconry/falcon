@@ -617,3 +617,19 @@ def test_file_closed(client, patch_open):
 
     assert patch_open.current_file is not None
     assert patch_open.current_file.closed
+
+
+def test_options_request(client, patch_open):
+    patch_open()
+
+    client.app.add_middleware(falcon.CORSMiddleware())
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_options(
+        path='/static/foo/bar.txt',
+        headers={'Origin': 'localhost', 'Access-Control-Request-Method': 'GET'},
+    )
+    assert resp.status_code == 200
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == 0
+    assert resp.headers['Access-Control-Allow-Methods'] == 'GET'

@@ -9,6 +9,8 @@ for convenience::
     tz = falcon.TimezoneGMT()
 """
 
+from __future__ import annotations
+
 import datetime
 from typing import Optional
 
@@ -18,11 +20,19 @@ __all__ = ('TimezoneGMT',)
 
 
 class TimezoneGMT(datetime.tzinfo):
-    """GMT timezone class implementing the :class:`datetime.tzinfo` interface."""
+    """GMT timezone class implementing the :class:`datetime.tzinfo` interface.
+
+    .. deprecated:: 4.0
+        :class:`TimezoneGMT` is deprecated, use :attr:`datetime.timezone.utc`
+        instead. (This class will be removed in Falcon 5.0.)
+    """
 
     GMT_ZERO = datetime.timedelta(hours=0)
 
-    @deprecated('TimezoneGMT is deprecated, use datetime.timezone.utc instead')
+    @deprecated(
+        'TimezoneGMT is deprecated, use datetime.timezone.utc instead. '
+        '(TimezoneGMT will be removed in Falcon 5.0.)'
+    )
     def __init__(self) -> None:
         super().__init__()
 

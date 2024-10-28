@@ -20,20 +20,20 @@ from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
 
 from falcon import util
+from falcon._typing import AsgiProcessRequestMethod as APRequest
+from falcon._typing import AsgiProcessRequestWsMethod
+from falcon._typing import AsgiProcessResourceMethod as APResource
+from falcon._typing import AsgiProcessResourceWsMethod
+from falcon._typing import AsgiProcessResponseMethod as APResponse
+from falcon._typing import ProcessRequestMethod as PRequest
+from falcon._typing import ProcessResourceMethod as PResource
+from falcon._typing import ProcessResponseMethod as PResponse
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPError
 from falcon.request import Request
 from falcon.response import Response
-from falcon.typing import AsgiProcessRequestMethod as APRequest
-from falcon.typing import AsgiProcessRequestWsMethod
-from falcon.typing import AsgiProcessResourceMethod as APResource
-from falcon.typing import AsgiProcessResourceWsMethod
-from falcon.typing import AsgiProcessResponseMethod as APResponse
-from falcon.typing import ProcessRequestMethod as PRequest
-from falcon.typing import ProcessResourceMethod as PResource
-from falcon.typing import ProcessResponseMethod as PResponse
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 __all__ = (
@@ -291,7 +291,18 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    preferred = req.client_prefers((MEDIA_XML, 'text/xml', MEDIA_JSON))
+    options = resp.options
+    predefined = (
+        [MEDIA_JSON, 'text/xml', MEDIA_XML]
+        if options.xml_error_serialization
+        else [MEDIA_JSON]
+    )
+    media_handlers = [mt for mt in options.media_handlers if mt not in predefined]
+    # NOTE(caselit,vytas): Add the registered handlers after the predefined
+    #   ones. This ensures that in the case of an equal match, the first one
+    #   (JSON) is selected and that the q parameter is taken into consideration
+    #   when selecting the media handler.
+    preferred = req.client_prefers(predefined + media_handlers)
 
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media
@@ -310,16 +321,27 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         if '+json' in accept:
             preferred = MEDIA_JSON
         elif '+xml' in accept:
+            # NOTE(caselit): Ignore xml_error_serialization when
+            #   checking if the media should be XML. This gives a chance to
+            #   an XML media handler, if any, to be used.
             preferred = MEDIA_XML
 
     if preferred is not None:
+        handler, _, _ = options.media_handlers._resolve(
+            preferred, MEDIA_JSON, raise_not_found=False
+        )
         if preferred == MEDIA_JSON:
-            handler, _, _ = resp.options.media_handlers._resolve(
-                MEDIA_JSON, MEDIA_JSON, raise_not_found=False
-            )
+            # NOTE(caselit): Special case JSON to ensure that it's always
+            #   possible to serialize an error in JSON even if no JSON handler
+            #   is set in the media_handlers.
             resp.data = exception.to_json(handler)
-        else:
-            resp.data = exception.to_xml()
+        elif handler:
+            # NOTE(caselit): Let the app serialize the response even if it
+            #   needs to re-get the handler, since async handlers may not have
+            #   a sync version available.
+            resp.media = exception.to_dict()
+        elif options.xml_error_serialization:
+            resp.data = exception._to_xml()
 
         # NOTE(kgriffs): No need to append the charset param, since
         #   utf-8 is the default for both JSON and XML.

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -6,7 +8,7 @@ import inspect
 import os
 from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
-from falcon.util import deprecated
+from falcon.util import deprecation
 
 __all__ = (
     'async_to_sync',
@@ -56,11 +58,13 @@ class _ActiveRunner:
 _active_runner = _ActiveRunner(getattr(asyncio, 'Runner', _DummyRunner))
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
-create_task = deprecated(
-    'This will be removed in V5. Please use `asyncio.create_task`'
+create_task = deprecation.deprecated(
+    'This alias is deprecated; it will be removed in Falcon 5.0. '
+    'Please use asyncio.create_task() directly.'
 )(asyncio.create_task)
-get_running_loop = deprecated(
-    'This will be removed in V5. Please use `asyncio.get_running_loop`'
+get_running_loop = deprecation.deprecated(
+    'This alias is deprecated; it will be removed in Falcon 5.0. '
+    'Please use asyncio.get_running_loop() directly.'
 )(asyncio.get_running_loop)
 
 

@@ -1,4 +1,0 @@
-The deprecated ``api_helpers`` was removed in favor of the ``app_helpers``
-module. In addition, the deprecated ``body``
-attributes for the :class:`~falcon.HTTPResponse`,
-:class:`~falcon.asgi.HTTPResponse`, and :class:`~falcon.HTTPStatus` classes.
