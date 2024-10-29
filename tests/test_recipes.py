@@ -1,10 +1,11 @@
-import pytest
-
-import falcon
-import falcon.testing
 import asyncio
 
+import pytest
+
 from examples.recipes.request_id_middleware import RequestIDMiddleware
+import falcon
+import falcon.testing
+
 
 class TestMultipartMixed:
     """Test parsing example from the now-obsolete RFC 1867:
@@ -143,7 +144,8 @@ class TestRawURLPath:
         )
         assert result2.status_code == 200
         assert result2.json == {'cached': True}
- 
+
+
 class TestRequestIDContext:
     @pytest.fixture
     def app(self):
@@ -162,15 +164,17 @@ class TestRequestIDContext:
             return response.json['request_id']
 
         loop = asyncio.get_event_loop()
-        request_id1, request_id2 = loop.run_until_complete(asyncio.gather(make_request(), make_request()))
+        request_id1, request_id2 = loop.run_until_complete(
+            asyncio.gather(make_request(), make_request())
+        )
         assert request_id1 != request_id2
 
     def test_request_id_persistence(self, app):
         client = falcon.testing.TestClient(app)
-        
+
         response = client.simulate_get('/test')
         request_id1 = response.json['request_id']
-        
+
         response = client.simulate_get('/test')
         request_id2 = response.json['request_id']
 
