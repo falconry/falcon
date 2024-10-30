@@ -1347,3 +1347,47 @@ Alternatively, you can set the Cookie header directly as demonstrated in this ve
 To include multiple values, simply use ``"; "`` to separate each name-value
 pair. For example, if you were to pass ``{'Cookie': 'xxx=yyy; hello=world'}``,
 you would get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
+
+.. _why-do-i-not-see-error-tracebacks-in-asgi-applications:
+
+Why do I not see error tracebacks in ASGI applications?
+-------------------------------------------------------
+
+When using Falcon with ASGI servers like Uvicorn,
+you might notice that server errors do not display a traceback by default.
+This behavior differs from WSGI applications, where errors are logged to `stderr`,
+providing detailed tracebacks.
+
+The reason for this is that ASGI does not define a standardized way to log errors back to the application server,
+unlike WSGI. Therefore, you need to configure logging manually to see these tracebacks.
+
+Here’s how to set up logging in your ASGI Falcon application to capture error tracebacks:
+
+.. code:: python
+
+    import logging
+    import falcon
+    import falcon.asgi
+
+    logging.basicConfig(
+        format="%(asctime)s [%(levelname)s] %(message)s", 
+        level=logging.INFO
+    )
+
+    class ThingsResource:
+        async def on_get(self, req, resp):
+            raise ValueError('foo')
+
+    app = falcon.asgi.App()
+    things = ThingsResource()
+    app.add_route('/things', things)
+
+By adding the above logging configuration, you will see tracebacks like this in your console:
+
+.. code-block:: none
+
+    [ERROR] [FALCON] Unhandled exception in ASGI app
+    Traceback (most recent call last):
+    File "<...>", line 12, in on_get
+        raise ValueError('foo')
+    ValueError: foo

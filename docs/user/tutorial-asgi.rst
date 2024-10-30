@@ -979,9 +979,7 @@ your ASGI Falcon application:
 .. code:: python
 
     import logging
-
     import falcon
-
 
     logging.basicConfig(level=logging.INFO)
 
@@ -991,7 +989,6 @@ your ASGI Falcon application:
 
     app = falcon.App()
     app.add_route('/error', ErrorResource())
-
 
 When the above route is accessed, Falcon will catch the unhandled exception and
 automatically log an error message. Below is an example of what the log output
@@ -1006,6 +1003,9 @@ might look like:
       File "/path/to/your/app.py", line 7, in on_get
         raise Exception("Something went wrong!")
     Exception: Something went wrong!
+
+For additional details on this topic, 
+please refer to :ref:`why-do-i-not-see-error-tracebacks-in-asgi-applications`.
 
 
 .. note::
