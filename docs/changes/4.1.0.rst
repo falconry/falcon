@@ -14,8 +14,27 @@ Changes to Supported Platforms
 
 .. NOTE(vytas): No changes to the supported platforms (yet).
 
-
 .. towncrier release notes start
+
+
+Misc
+----
+
+- Running mypy on code that uses parts of ``falcon.testing`` naively
+  would lead to errors like::
+
+    Name "falcon.testing.TestClient" is not defined
+
+  This has been fixed by explicitly exporting the names that are
+  imported in the ``falcon.testing`` namespace. (`#2387 <https://github.com/falconry/falcon/issues/2387>`__)
+- New FAQ Entry on Error Tracebacks in ASGI Applications
+  -----------------------------------------------------
+
+  Added a new FAQ entry explaining why error tracebacks do not appear 
+  in ASGI applications by default when using Falcon. The ASGI tutorial 
+  has been updated to include instructions on configuring logging to 
+  capture error tracebacks. (`#2393 <https://github.com/falconry/falcon/issues/2393>`__) (`#2393 <https://github.com/falconry/falcon/issues/2393>`__)
+
 
 Contributors to this Release
 ----------------------------
