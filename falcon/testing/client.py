@@ -814,11 +814,11 @@ async def _simulate_request_asgi(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-                msgpack(Msgpack serializable): A Msgpack document to serialize as the
-                        body of the request (default: ``None``). If specified,
-                        overrides `body` and sets the Content-Type header to
-                        ``'application/msgpack'``, overriding any value specified by
-                        either the `content_type` or `headers` arguments.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
