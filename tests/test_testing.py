@@ -103,6 +103,20 @@ def test_simulate_request_content_type():
     )
     assert result.text == falcon.MEDIA_JSON
 
+    result = testing.simulate_post(app, '/', msgpack={})
+    assert result.text == falcon.MEDIA_MSGPACK
+
+    result = testing.simulate_post(app, '/', msgpack={}, content_type=falcon.MEDIA_HTML)
+    assert result.text == falcon.MEDIA_MSGPACK
+
+    result = testing.simulate_post(app, '/', msgpack={}, headers=headers)
+    assert result.text == falcon.MEDIA_MSGPACK
+
+    result = testing.simulate_post(
+        app, '/', msgpack={}, headers=headers, content_type=falcon.MEDIA_HTML
+    )
+    assert result.text == falcon.MEDIA_MSGPACK
+
 
 @pytest.mark.parametrize('mode', ['wsgi', 'asgi', 'asgi-stream'])
 def test_content_type(util, mode):

@@ -742,7 +742,6 @@ async def _simulate_request_asgi(
     asgi_chunk_size: int = 4096,
     asgi_disconnect_ttl: int = 300,
     cookies: Optional[CookieArg] = None,
-
     # NOTE(kgriffs): These are undocumented because they are only
     #   meant to be used internally by the framework (i.e., they are
     #   not part of the public interface.) In case we ever expose
@@ -2273,7 +2272,6 @@ class _WSContextManager:
 
 
 def _prepare_sim_args(
-
     path: str,
     query_string: Optional[str],
     params: Optional[Mapping[str, Any]],
@@ -2320,7 +2318,9 @@ def _prepare_sim_args(
         headers['Content-Type'] = MEDIA_JSON
 
     if msgpack is not None:
-        body = MessagePackHandler.serialize(msgpack)
+        body = MessagePackHandler.serialize(
+            MessagePackHandler(), content_type=None, media=msgpack
+        )
         headers = headers or {}
         headers['Content-Type'] = MEDIA_MSGPACK
 

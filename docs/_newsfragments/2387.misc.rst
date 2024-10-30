@@ -1,7 +1,0 @@
-Running mypy on code that uses parts of ``falcon.testing`` naively
-would lead to errors like::
-
-  Name "falcon.testing.TestClient" is not defined
-
-This has been fixed by explicitly exporting the names that are
-imported in the ``falcon.testing`` namespace.
