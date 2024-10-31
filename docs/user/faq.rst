@@ -1348,8 +1348,6 @@ To include multiple values, simply use ``"; "`` to separate each name-value
 pair. For example, if you were to pass ``{'Cookie': 'xxx=yyy; hello=world'}``,
 you would get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
 
-.. _why-do-i-not-see-error-tracebacks-in-asgi-applications:
-
 Why do I not see error tracebacks in ASGI applications?
 -------------------------------------------------------
 
@@ -1391,3 +1389,6 @@ By adding the above logging configuration, you will see tracebacks like this in 
     File "<...>", line 12, in on_get
         raise ValueError('foo')
     ValueError: foo
+
+For additional details on this topic, 
+please refer to :ref:`debugging-asgi-applications`.

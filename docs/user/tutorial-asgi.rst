@@ -963,6 +963,8 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
 
+.. _debugging-asgi-applications:
+
 Debugging ASGI Applications
 ---------------------------
 (This section also applies to WSGI applications)
@@ -1003,10 +1005,6 @@ might look like:
       File "/path/to/your/app.py", line 7, in on_get
         raise Exception("Something went wrong!")
     Exception: Something went wrong!
-
-For additional details on this topic, 
-please refer to :ref:`why-do-i-not-see-error-tracebacks-in-asgi-applications`.
-
 
 .. note::
    While logging is helpful for development and debugging, be mindful of logging
