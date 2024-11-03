@@ -18,17 +18,24 @@ This package includes a unittest-style base class and requests-like
 utilities for simulating and validating HTTP requests.
 """
 
+import os
+import warnings
+
+import falcon
+from falcon.testing.client import Result  # NOQA
+from falcon.testing.client import TestClient
+
+USE_TESTTOOLS = os.getenv('USE_TESTTOOLS', 'false').lower() == 'true'
+
 try:
-    import testtools as unittest
+    if USE_TESTTOOLS:
+        import testtools as unittest
+    else:
+        import unittest
 except ImportError:  # pragma: nocover
     import unittest
 
-import falcon
-import falcon.request
-
-# TODO hoist for backwards compat. Remove in falcon 4.
-from falcon.testing.client import Result  # NOQA
-from falcon.testing.client import TestClient
+    USE_TESTTOOLS = False
 
 
 class TestCase(unittest.TestCase, TestClient):
@@ -46,6 +53,12 @@ class TestCase(unittest.TestCase, TestClient):
     Simply inherit from this class in your test case classes instead of
     :class:`unittest.TestCase` or :class:`testtools.TestCase`.
     """
+
+    if USE_TESTTOOLS:
+        warnings.warn(
+            'The use of "testtools.TestCase" is deprecated and will be removed '
+            'in Falcon 5.0. Please migrate to "pytest" or "unittest" '
+        )
 
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
