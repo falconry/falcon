@@ -997,3 +997,5 @@ limitations under the License.
     :alt: Sentry
     :height: 60px
     :target: https://sentry.io
+.. |Gurubase| image:: https://img.shields.io/badge/Gurubase-Ask%20Falcon%20Framework%20Guru-006BFF
+    :target: https://gurubase.io/g/falcon-framework
