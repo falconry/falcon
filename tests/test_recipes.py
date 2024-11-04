@@ -1,8 +1,5 @@
-import asyncio
-
 import pytest
 
-from examples.recipes.request_id_middleware import RequestIDMiddleware
 import falcon
 import falcon.testing
 
@@ -148,8 +145,10 @@ class TestRawURLPath:
 
 class TestRequestIDContext:
     @pytest.fixture
-    def app(self):
-        app = falcon.App(middleware=[RequestIDMiddleware()])
+    def app(self, util):
+        recipe = util.load_module('examples/recipes/request_id_middleware.py')
+
+        app = falcon.App(middleware=[recipe.RequestIDMiddleware()])
         app.add_route('/test', self.RequestIDResource())
         return app
 
@@ -157,16 +156,11 @@ class TestRequestIDContext:
         def on_get(self, req, resp):
             resp.media = {'request_id': req.context.request_id}
 
-    def test_request_id_isolated_in_async(self, app):
-        async def make_request():
-            client = falcon.testing.TestClient(app)
-            response = client.simulate_get('/test')
-            return response.json['request_id']
+    def test_request_id_isolated(self, app):
+        client = falcon.testing.TestClient(app)
+        request_id1 = client.simulate_get('/test').json['request_id']
+        request_id2 = client.simulate_get('/test').json['request_id']
 
-        loop = asyncio.get_event_loop()
-        request_id1, request_id2 = loop.run_until_complete(
-            asyncio.gather(make_request(), make_request())
-        )
         assert request_id1 != request_id2
 
     def test_request_id_persistence(self, app):
