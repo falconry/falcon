@@ -4,7 +4,7 @@
    :target: https://falconframework.org/
    :width: 100 %
 
-|Build status| |Docs| |codecov.io| |PyPI package| |Python versions|
+|Build status| |Docs| |codecov.io| |PyPI package| |Python versions| |Gurubase|
 
 The Falcon Web Framework
 ========================
@@ -998,4 +998,5 @@ limitations under the License.
     :height: 60px
     :target: https://sentry.io
 .. |Gurubase| image:: https://img.shields.io/badge/Gurubase-Ask%20Falcon%20Framework%20Guru-006BFF
+    :alt: Falcon Guru on Gurubase.io
     :target: https://gurubase.io/g/falcon-framework
