@@ -26,7 +26,7 @@ Headers = Dict[str, str]
 
 # WSGI
 class ReadableIO(Protocol):
-    """File like protocol that defines only a read method."""
+    """File-like protocol that defines only a read method."""
 
     def read(self, n: Optional[int] = ..., /) -> bytes: ...
 
