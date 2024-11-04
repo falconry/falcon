@@ -1,5 +1,5 @@
-Typing Support
-==============
+Typing
+======
 
 Type checking support was introduced in version 4.0. While most of the library is
 now typed, further type annotations may be added throughout the 4.x release cycle.
@@ -28,7 +28,7 @@ runtime behavior, but may surface new or different errors with type checkers.
     missing from the public interface!
 
 
-Known limitations
+Known Limitations
 -----------------
 
 Falcon's emphasis on flexibility and performance presents certain
@@ -68,7 +68,7 @@ checking:
     checking -- the above ``app`` will run just fine!
 
 
-Public type aliases
+Public Type Aliases
 -------------------
 
 .. automodule:: falcon.typing
