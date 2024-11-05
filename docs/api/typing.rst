@@ -60,7 +60,8 @@ checking:
     app = App(request_type=MyRequest)
     app.add_error_handler(OSError, handle_os_error)
 
-(Please also see the following GitHub issue:
+(We are working on addressing this limitation at the time of writing --
+please see the following GitHub issue for the progress, and possible solutions:
 `#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
 
 .. important::

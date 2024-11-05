@@ -4,8 +4,8 @@ Changelog for Falcon 4.0.2
 Summary
 -------
 
-This is a minor point release to fix some missed re-exports for type checkers,
-as well as to enable PDF build on Read the Docs.
+This is a minor point release to fix some missed re-exports for type checkers.
+In addition, we have also included a couple of documentation improvements.
 
 
 .. towncrier release notes start
@@ -17,5 +17,7 @@ Contributors to this Release
 Many thanks to those who contributed to this bugfix release:
 
 - `AkshayAwate <https://github.com/AkshayAwate>`__
+- `CaselIT <https://github.com/CaselIT>`__
+- `chitvs <https://github.com/chitvs>`__
 - `jap <https://github.com/jap>`__
 - `vytas7 <https://github.com/vytas7>`__
