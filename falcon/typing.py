@@ -39,8 +39,7 @@ class ReadableIO(Protocol):
 
 # ASGI
 class AsyncReadableIO(Protocol):
-    """Async file-like protocol that defines only a read method, and is
-    iterable.
+    """Async file-like protocol that defines only a read method, and is iterable.
 
     .. versionadded:: 4.0
     """
