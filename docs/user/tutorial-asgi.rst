@@ -963,6 +963,8 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
 
+.. _debugging-asgi-applications:
+
 Debugging ASGI Applications
 ---------------------------
 (This section also applies to WSGI applications)
@@ -979,9 +981,7 @@ your ASGI Falcon application:
 .. code:: python
 
     import logging
-
     import falcon
-
 
     logging.basicConfig(level=logging.INFO)
 
@@ -991,7 +991,6 @@ your ASGI Falcon application:
 
     app = falcon.App()
     app.add_route('/error', ErrorResource())
-
 
 When the above route is accessed, Falcon will catch the unhandled exception and
 automatically log an error message. Below is an example of what the log output
@@ -1006,7 +1005,6 @@ might look like:
       File "/path/to/your/app.py", line 7, in on_get
         raise Exception("Something went wrong!")
     Exception: Something went wrong!
-
 
 .. note::
    While logging is helpful for development and debugging, be mindful of logging

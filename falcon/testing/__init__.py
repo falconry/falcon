@@ -115,6 +115,50 @@ from falcon.testing.resource import SimpleTestResourceAsync
 from falcon.testing.srmock import StartResponseMock
 from falcon.testing.test_case import TestCase
 
+__all__ = (
+    # client
+    'ASGIConductor',
+    'Cookie',
+    'Result',
+    'ResultBodyStream',
+    'simulate_delete',
+    'simulate_get',
+    'simulate_head',
+    'simulate_options',
+    'simulate_patch',
+    'simulate_post',
+    'simulate_put',
+    'simulate_request',
+    'StreamedResult',
+    'TestClient',
+    # helpers
+    'ASGILifespanEventEmitter',
+    'ASGIRequestEventEmitter',
+    'ASGIResponseEventCollector',
+    'ASGIWebSocketSimulator',
+    'closed_wsgi_iterable',
+    'create_asgi_req',
+    'create_environ',
+    'create_req',
+    'create_scope',
+    'create_scofrom_headers',
+    'get_unused_port',
+    'rand_string',
+    'redirected',
+    # resource
+    'capture_responder_args',
+    'capture_responder_args_async',
+    'set_resp_defaults',
+    'set_resp_defaults_async',
+    'SimpleTestResource',
+    'SimpleTestResourceAsync',
+    # srmock
+    'StartResponseMock',
+    # test_case
+    'TestCase',
+)
+
+
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
-# TODO: remove in falcon 4
+# TODO(vytas): Remove in Falcon 5.0.
 httpnow = _util.http_now
