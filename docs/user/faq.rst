@@ -1347,3 +1347,45 @@ Alternatively, you can set the Cookie header directly as demonstrated in this ve
 To include multiple values, simply use ``"; "`` to separate each name-value
 pair. For example, if you were to pass ``{'Cookie': 'xxx=yyy; hello=world'}``,
 you would get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
+
+Why do I see no error tracebacks in my ASGI application?
+--------------------------------------------------------
+
+When using Falcon with an ASGI server like Uvicorn,
+you might notice that server errors do not include any traceback by default.
+This behavior differs from WSGI, where the PEP-3333 specification defines the
+`wsgi.errors <https://peps.python.org/pep-3333/#environ-variables>`__ stream
+(which Falcon utilizes to log unhandled
+:class:`internal server errors <falcon.HTTPInternalServerError>`).
+
+Since there is no standardized way to log errors back to the ASGI server,
+the framework simply opts to log them using the ``falcon``
+:class:`logger <logging.Logger>`.
+
+The easiest way to get started is configuring the root logger via
+:func:`logging.basicConfig`:
+
+.. code:: python
+
+    import logging
+
+    import falcon
+    import falcon.asgi
+
+    logging.basicConfig(
+        format="%(asctime)s [%(levelname)s] %(message)s", level=logging.INFO)
+
+
+    class FaultyResource:
+        async def on_get(self, req, resp):
+            raise ValueError('foo')
+
+
+    app = falcon.asgi.App()
+    app.add_route('/things', FaultyResource())
+
+By adding the above logging configuration, you should now see tracebacks logged
+to :any:`stderr <sys.stderr>` when accessing ``/things``.
+
+For additional details on this topic,
+please refer to :ref:`debugging_asgi_applications`.
