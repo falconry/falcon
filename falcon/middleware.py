@@ -17,15 +17,6 @@ class CORSMiddleware(object):
     * https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
     * https://www.w3.org/TR/cors/#resource-processing-model
 
-    Note:
-        Falcon will automatically add OPTIONS responders if they are missing from the
-        responder instances added to the routes. When providing a custom ``on_options``
-        method, the ``Allow`` headers in the response should be set to the allowed
-        method values. If the ``Allow`` header is missing from the response,
-        this middleware will deny the preflight request.
-
-        This is also valid when using a sink function.
-
     Keyword Arguments:
         allow_origins (Union[str, Iterable[str]]): List of origins to allow (case
             sensitive). The string ``'*'`` acts as a wildcard, matching every origin.
@@ -54,7 +45,9 @@ class CORSMiddleware(object):
         allow_origins: Union[str, Iterable[str]] = '*',
         expose_headers: Optional[Union[str, Iterable[str]]] = None,
         allow_credentials: Optional[Union[str, Iterable[str]]] = None,
+        allow_private_network: bool = False,
     ):
+
         if allow_origins == '*':
             self.allow_origins = allow_origins
         else:
@@ -83,6 +76,8 @@ class CORSMiddleware(object):
                     'as a string literal, not inside an iterable.'
                 )
         self.allow_credentials = allow_credentials
+
+        self.allow_private_network = allow_private_network
 
     def process_response(
         self, req: Request, resp: Response, resource: object, req_succeeded: bool
@@ -129,17 +124,13 @@ class CORSMiddleware(object):
                 'Access-Control-Request-Headers', default='*'
             )
 
-            if allow is None:
-                # there is no allow set, remove all access control headers
-                resp.delete_header('Access-Control-Allow-Methods')
-                resp.delete_header('Access-Control-Allow-Headers')
-                resp.delete_header('Access-Control-Max-Age')
-                resp.delete_header('Access-Control-Expose-Headers')
-                resp.delete_header('Access-Control-Allow-Origin')
-            else:
-                resp.set_header('Access-Control-Allow-Methods', allow)
-                resp.set_header('Access-Control-Allow-Headers', allow_headers)
-                resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
+            resp.set_header('Access-Control-Allow-Methods', allow)
+            resp.set_header('Access-Control-Allow-Headers', allow_headers)
+            resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
+
+            if self.allow_private_network and req.get_header('Access-Control-Request-Private-Network') == 'true':
+                resp.set_header('Access-Control-Allow-Private-Network', 'true')
+
 
     async def process_response_async(self, *args: Any) -> None:
         self.process_response(*args)
