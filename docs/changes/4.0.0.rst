@@ -4,29 +4,45 @@ Changelog for Falcon 4.0.0
 Summary
 -------
 
-The third beta release of Falcon 4.0.0 is here!
+We are happy to present Falcon 4.0, a new major version of the framework that
+brings a couple of commonly requested features including support for matching
+multiple path segments (using :class:`~falcon.routing.PathConverter`), and
+a fully typed codebase. (Please read more about typing in the notes below.)
 
-Falcon 4.0 is now feature-complete, and we would really be thankful if you
-could test this beta release with your apps, and
-:ref:`let us know if you run into any issues <chat>`!
-Please also check the list of **breaking changes** below.
+The timeframe for Falcon 4.0 was challenging due to the need to balance our
+high standards with the CPython 3.13 timeline. We aimed to deliver the main
+development branch in this release, without resorting to another compatibility
+micro update (as we did with Falcon 3.1.1-3.1.3). Following community feedback,
+we also want to improve our overall release schedule by shipping smaller
+increments more often.
+To support this goal, we have made several tooling and testing improvements:
+the build process for :ref:`binary wheels <binary_wheels>` has been simplified
+using `cibuildwheel <https://cibuildwheel.pypa.io/>`__, and our test suite now
+only requires ``pytest`` as a hard dependency. Additionally, you can run
+``pytest`` against our tests from any directory. We hope that these changes
+should also benefit packaging Falcon in Linux distributions.
 
-If you make use of type annotations in your Falcon app, please run your type
-checker of choice without any *typeshed* extensions for Falcon, and
-:ref:`report back to us <chat>` how it went!
+As with every SemVer major release, we have removed a number of previously
+deprecated functions, classes, compatibility shims, as well as made other
+potentially breaking changes that we could not risk in a minor version.
+If you have been paying attention the deprecation warnings from the 3.x series,
+the impact should be minimal, but please do take a look at the list of breaking
+changes below.
 
-As always, you can grab the new release
-`from PyPI <https://pypi.org/project/falcon/4.0.0b3/>`__::
-
-    pip install falcon==4.0.0b3
-
-(Alternatively, continue reading these docs for more
-:ref:`installation options <install>`.)
-
-This release would have not been possible without contributions from the
-fantastic group of 30 community members and maintainers.
-
-Thank You!
+This release would not have been possible without the numerous contributions
+from our community. This release alone comprises a number of pull requests
+submitted by a group of 30 talented individuals. What is more, we were
+particularly impressed by the high-quality discussions and code submissions
+during our
+`EuroPython 2024 Sprint <https://ep2024.europython.eu/sprints#the-falcon-web-framework>`__.
+Some notable sprint contributions include CHIPS support, and a new
+:ref:`WebSocket Tutorial <tutorial-ws>`, among others.
+In fact, according to the
+`statistics on GitHub <https://github.com/falconry/falcon/graphs/contributors>`__,
+we are thrilled to report that the total number of Falcon
+contributors has now exceeded 200. We find it fascinating that our framework
+has become a collaborative effort involving so many individuals, and would like
+to thank everyone who has made this release possible!
 
 
 Changes to Supported Platforms
@@ -42,14 +58,16 @@ Changes to Supported Platforms
   (`#2074 <https://github.com/falconry/falcon/pull/2074>`__,
   `#2273 <https://github.com/falconry/falcon/pull/2273>`__)
 - End-of-life Python 3.8 is no longer actively supported, but
-  the framework should still continue to install from source and function.
+  the framework should still continue to install from the pure-Python wheel or
+  source distribution, and function normally.
 - The Falcon 4.x series is guaranteed to support CPython 3.10 and
   PyPy3.10 (v7.3.16).
   This means that we may drop the support for Python 3.8 & 3.9 altogether in a
   later 4.x release, especially if we are faced with incompatible ecosystem
   changes in typing, Cython, etc.
 
-Typing support
+
+Typing Support
 --------------
 
 Type checking support was introduced in version 4.0. While most of the library is
@@ -77,6 +95,46 @@ runtime behavior, but may surface new or different errors with type checkers.
     to avoid possible runtime errors after an update.
     Also, make sure to :ref:`let us know <chat>` which essential aliases are
     missing from the public interface!
+
+Known typing limitations
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Falcon's emphasis on flexibility and performance has presented certain
+challenges when it comes to adding type annotations to the existing code base.
+One notable limitation involves using custom :class:`~falcon.Request` and/or
+:class:`~falcon.Response` types in callbacks that are passed back
+to the framework, such as when adding an
+:meth:`error handler <falcon.App.add_error_handler>`.
+
+For instance, the following application might unexpectedly not pass type
+checking:
+
+.. code-block:: python
+
+    from typing import Any
+
+    from falcon import App, HTTPInternalServerError, Request, Response
+
+
+    class MyRequest(Request):
+        ...
+
+
+    def handle_os_error(req: MyRequest, resp: Response, ex: Exception,
+                        params: dict[str, Any]) -> None:
+        raise HTTPInternalServerError(title='OS error!') from ex
+
+
+    app = App(request_type=MyRequest)
+    app.add_error_handler(OSError, handle_os_error)
+
+(Please also see the following GitHub issue:
+`#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
+
+.. important::
+    This is only a typing limitation that has no effect outside of type
+    checking -- the above ``app`` will run just fine!
+
 
 Breaking Changes
 ----------------
@@ -232,6 +290,11 @@ Breaking Changes
   :attr:`~falcon.Request.if_modified_since`,
   :attr:`~falcon.Request.if_unmodified_since`, and
   :attr:`falcon.testing.Cookie.expires`) has also changed to timezone-aware.
+
+  Furthermore, the default value of the `format_string` parameter in
+  :meth:`falcon.Request.get_param_as_datetime` and
+  :class:`falcon.routing.DateTimeConverter` has also been updated to use a
+  timezone-aware form.
   (`#2182 <https://github.com/falconry/falcon/issues/2182>`__)
 - ``setup.cfg`` was dropped in favor of consolidating all static project
   configuration in ``pyproject.toml`` (``setup.py`` is still needed for
@@ -400,12 +463,6 @@ Misc
 
 Contributors to this Release
 ----------------------------
-
-.. note::
-    If we missed you below, don’t worry!
-
-    We will refresh the full list of contributors before the 4.0.0 final
-    release.
 
 Many thanks to all of our talented and stylish contributors for this release!
 

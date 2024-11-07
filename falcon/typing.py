@@ -21,19 +21,28 @@ if TYPE_CHECKING:
     from falcon.asgi import SSEvent
 
 Headers = Dict[str, str]
-"""Headers dictionary returned by the framework."""
+"""Headers dictionary returned by the framework.
+
+.. versionadded:: 4.0
+"""
 
 
 # WSGI
 class ReadableIO(Protocol):
-    """File like protocol that defines only a read method."""
+    """File-like protocol that defines only a read method.
+
+    .. versionadded:: 4.0
+    """
 
     def read(self, n: Optional[int] = ..., /) -> bytes: ...
 
 
 # ASGI
 class AsyncReadableIO(Protocol):
-    """Async file-like protocol that defines only a read method, and is iterable."""
+    """Async file-like protocol that defines only a read method, and is iterable.
+
+    .. versionadded:: 4.0
+    """
 
     async def read(self, n: Optional[int] = ..., /) -> bytes: ...
     def __aiter__(self) -> AsyncIterator[bytes]: ...
@@ -42,4 +51,6 @@ class AsyncReadableIO(Protocol):
 SSEEmitter = AsyncIterator[Optional['SSEvent']]
 """Async generator or iterator over Server-Sent Events
 (instances of :class:`falcon.asgi.SSEvent`).
+
+.. versionadded:: 4.0
 """
