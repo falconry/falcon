@@ -1174,7 +1174,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
 
         _CHUNK_SIZE_BYTES = 4096
         _IMAGE_NAME_PATTERN = re.compile(
-            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
         )
 
         def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
@@ -1304,10 +1304,216 @@ Inspecting the application now returns:
         ⇒ /images/{name} - Item:
            └── GET - on_get
 
-.. Query Strings
-.. -------------
+Query Strings
+-------------
+Now that we are able to get the images from the service, we need a way to get
+a list of available images. We have already set up this route. Before testing this
+route let's change its output format back to JSON to have a more
+terminal-friendly output. The top of file ``images.py`` should look like this:
 
-.. *Coming soon...*
+.. code:: python
+
+    import io
+    import os
+    import re
+    import uuid
+    import mimetypes
+
+    import falcon
+    import json
+
+
+    class Collection:
+
+        def __init__(self, image_store):
+            self._image_store = image_store
+
+        def on_get(self, req, resp):
+            # TODO: Modify this to return a list of href's based on
+            # what images are actually available.
+            doc = {
+                'images': [
+                    {
+                        'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
+                    }
+                ]
+            }
+
+            resp.text = json.dumps(doc, ensure_ascii=False)
+            resp.status = falcon.HTTP_200
+
+    def on_post(self, req, resp):
+        name = self._image_store.save(req.stream, req.content_type)
+        resp.status = falcon.HTTP_201
+        resp.location = '/images/' + name
+
+
+Now try the following:
+
+.. code:: bash
+
+    http localhost:8000/images
+
+In response you should get the following data that we statically have put in the code.
+
+.. code::
+
+    {
+        "images": [
+            {
+                "href": "/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png"
+            }
+        ]
+    }
+
+Let's go back to the ``on_get`` method and create a dynamic response. We can
+use query strings to set maximum image size and get the list of all images
+smaller than the specified value. We will use method ``get_param_as_int`` to
+set a default value of ``-1`` in case no ``maxsize`` query string was provided
+and also to enable a minimum value validation.
+
+.. code:: python
+
+    import io
+    import os
+    import re
+    import uuid
+    import mimetypes
+
+    import falcon
+    import json
+
+
+    class Collection:
+
+        def __init__(self, image_store):
+            self._image_store = image_store
+
+        def on_get(self, req, resp):
+            max_size = req.get_param_as_int("maxsize", min_value=1, default=-1)
+            images = self._image_store.list(max_size)
+            doc = {
+                'images': [
+                    {'href': '/images/' + image} for image in images
+                ]
+            }
+
+            resp.text = json.dumps(doc, ensure_ascii=False)
+            resp.status = falcon.HTTP_200
+
+        def on_post(self, req, resp):
+            name = self._image_store.save(req.stream, req.content_type)
+            resp.status = falcon.HTTP_201
+            resp.location = '/images/' + name
+
+
+    class Item:
+
+        def __init__(self, image_store):
+            self._image_store = image_store
+
+        def on_get(self, req, resp, name):
+            resp.content_type = mimetypes.guess_type(name)[0]
+            resp.stream, resp.content_length = self._image_store.open(name)
+
+
+    class ImageStore:
+
+        _CHUNK_SIZE_BYTES = 4096
+        _IMAGE_NAME_PATTERN = re.compile(
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
+        )
+
+        def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
+            self._storage_path = storage_path
+            self._uuidgen = uuidgen
+            self._fopen = fopen
+
+        def save(self, image_stream, image_content_type):
+            ext = mimetypes.guess_extension(image_content_type)
+            name = '{uuid}{ext}'.format(uuid=self._uuidgen(), ext=ext)
+            image_path = os.path.join(self._storage_path, name)
+
+            with self._fopen(image_path, 'wb') as image_file:
+                while True:
+                    chunk = image_stream.read(self._CHUNK_SIZE_BYTES)
+                    if not chunk:
+                        break
+
+                    image_file.write(chunk)
+
+            return name
+
+        def open(self, name):
+            # Always validate untrusted input!
+            if not self._IMAGE_NAME_PATTERN.match(name):
+                raise IOError('File not found')
+
+            image_path = os.path.join(self._storage_path, name)
+            stream = self._fopen(image_path, 'rb')
+            content_length = os.path.getsize(image_path)
+
+            return stream, content_length
+
+        def list(self, max_size):
+            images = [
+                image for image in os.listdir(self._storage_path)
+                if self._IMAGE_NAME_PATTERN.match(image)
+                and (
+                    max_size == -1
+                    or os.path.getsize(os.path.join(self._storage_path, image)) <= max_size
+                )
+            ]
+            return images
+
+As you can see the method ``list`` has been added to ``ImageStore`` in order
+to return list of available images smaller than ``max_size`` unless it is not
+``-1``, in which case it will behave like there was no predicament of image size.
+Let's try to save some binary data as images in the service and then try to
+retrieve their list. Execute the following commands in order to simulate the
+creation of 3 files as images with different sizes. While these are not valid
+PNG files, they will work for this tutorial.
+
+.. code:: bash
+
+   echo "First Case" > pseudo-image-1.png
+   echo "Second Case" > pseudo-image-2.png
+   echo "3rd Case" > pseudo-image-3.png
+
+Now we need to store these files using ``POST`` request:
+
+.. code:: bash
+
+   http POST localhost:8000/images Content-Type:image/png < pseudo-image-1.png
+   http POST localhost:8000/images Content-Type:image/png < pseudo-image-2.png
+   http POST localhost:8000/images Content-Type:image/png < pseudo-image-3.png
+
+If we check the size of these files, we will see that they are 11, 12, 9 bytes
+respectively. Let's try to get the list of the images which are smaller or
+equal to 11 bytes.
+
+.. code:: bash
+
+   http localhost:8000/images?maxsize=11
+
+We expect to get a list of 2 files, which will be similar to the following:
+
+.. code::
+
+    {
+        "images": [
+            {
+                "href": "/images/7ba2ebc9-726f-46b0-9615-a69824f5089b.png"
+            },
+            {
+                "href": "/images/e4354a31-2161-4064-805c-3bc7c332e7e6.png"
+            }
+        ]
+    }
+
+You could also now validate the response with getting the image files using
+the ``href`` value in the response and compare them with the original files.
+
 
 Introducing Hooks
 -----------------
