@@ -9,8 +9,8 @@ Falcon 4.1 is in development. The progress is tracked via the
 on GitHub.
 
 
-Changes to Supported Platforms
-------------------------------
+.. Changes to Supported Platforms
+.. ------------------------------
 
 .. NOTE(vytas): No changes to the supported platforms (yet).
 

@@ -20,3 +20,4 @@ Framework Reference
    inspect
    util
    testing
+   typing
