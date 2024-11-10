@@ -89,9 +89,3 @@ Other
 
 .. autoclass:: falcon.ETag
     :members:
-
-Type Aliases
-------------
-
-.. automodule:: falcon.typing
-    :members:
