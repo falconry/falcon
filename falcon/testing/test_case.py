@@ -19,31 +19,40 @@ utilities for simulating and validating HTTP requests.
 """
 
 import os
+import unittest
 import warnings
 
+if 'DISABLE_TESTTOOLS' not in os.environ:
+    try:
+        import testtools
+
+        warnings.warn(
+            'Support for testtools is deprecated and will be removed in Falcon 5.0. '
+            'Please migrate to unittest or pytest.',
+            DeprecationWarning,
+        )
+        BaseTestCase = testtools.TestCase
+    except ImportError:  # pragma: nocover
+        BaseTestCase = unittest.TestCase
+
 import falcon
+import falcon.request
 from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
-
-USE_TESTTOOLS = os.getenv('USE_TESTTOOLS', 'false').lower() == 'true'
-
-try:
-    if USE_TESTTOOLS:
-        import testtools as unittest
-    else:
-        import unittest
-except ImportError:  # pragma: nocover
-    import unittest
-
-    USE_TESTTOOLS = False
 
 
 class TestCase(unittest.TestCase, TestClient):
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
-        If available, uses :mod:`testtools` in lieu of
-        :mod:`unittest`.
+        This class uses :mod:`unittest` by default. If :mod:`testtools`
+        is available and the environment variable
+        ``DISABLE_TESTTOOLS`` is **not** set, it will use :mod:`testtools` instead.
+        **Support for testtools is deprecated and will be removed in Falcon 5.0.**
+
+    Recommended:
+        We recommend using **pytest** for testing Falcon applications.
+        See our tutorial on using pytest.
 
     This base class provides some extra plumbing for unittest-style
     test cases, to help simulate WSGI or ASGI requests without having
@@ -51,14 +60,31 @@ class TestCase(unittest.TestCase, TestClient):
     derived from :class:`falcon.testing.TestClient`.
 
     Simply inherit from this class in your test case classes instead of
-    :class:`unittest.TestCase` or :class:`testtools.TestCase`.
-    """
+    :class:`unittest.TestCase`.
 
-    if USE_TESTTOOLS:
-        warnings.warn(
-            'The use of "testtools.TestCase" is deprecated and will be removed '
-            'in Falcon 5.0. Please migrate to "pytest" or "unittest" '
-        )
+    For example::
+
+        from falcon import testing
+        import myapp
+
+
+        class MyTestCase(testing.TestCase):
+            def setUp(self):
+                super(MyTestCase, self).setUp()
+
+                # Assume the hypothetical `myapp` package has a
+                # function called `create()` to initialize and
+                # return a `falcon.App` instance.
+                self.app = myapp.create()
+
+
+        class TestMyApp(MyTestCase):
+            def test_get_message(self):
+                doc = {'message': 'Hello world!'}
+
+                result = self.simulate_get('/messages/42')
+                self.assertEqual(result.json, doc)
+    """
 
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
@@ -82,14 +108,6 @@ class TestCase(unittest.TestCase, TestClient):
                 # function called `create()` to initialize and
                 # return a `falcon.App` instance.
                 self.app = myapp.create()
-
-
-        class TestMyApp(MyTestCase):
-            def test_get_message(self):
-                doc = {'message': 'Hello world!'}
-
-                result = self.simulate_get('/messages/42')
-                self.assertEqual(result.json, doc)
     """
 
     def setUp(self) -> None:

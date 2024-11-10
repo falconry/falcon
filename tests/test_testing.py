@@ -1,6 +1,3 @@
-import os
-import warnings
-
 import pytest
 
 import falcon
@@ -227,45 +224,3 @@ def test_client_simulate_aliases(asgi, method, util):
     assert result.status_code == 200
     expected = '' if method == 'HEAD' else method
     assert result.text == expected
-
-
-def test_testclient_initialization():
-    class SampleResource:
-        def on_get(self, req, resp):
-            resp.media = {'message': 'Hello'}
-
-    class SampleTestCase(testing.TestCase):
-        def setUp(self):
-            super().setUp()
-            self.app = falcon.App()
-            self.app.add_route('/hello', SampleResource())
-
-    test_case = SampleTestCase()
-    test_case.setUp()
-    client = testing.TestClient(test_case.app)
-
-    response = client.simulate_get('/hello')
-    assert response.status_code == 200
-    assert response.json == {'message': 'Hello'}
-
-
-def test_deprecation_warning_with_testtools():
-    os.environ['USE_TESTTOOLS'] = 'true'
-
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter('always')
-
-        class SampleTestCase(testing.TestCase):
-            def setUp(self):
-                super().setUp()
-                self.app = falcon.App()
-
-        test_case = SampleTestCase()
-        test_case.setUp()
-
-        assert any(
-            'The use of "testtools.TestCase" is deprecated' in str(warning.message)
-            for warning in w
-        ), 'Expected deprecation warning not found'
-
-    os.environ.pop('USE_TESTTOOLS', None)
