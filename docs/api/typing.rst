@@ -33,11 +33,11 @@ Known Limitations
 
 Falcon's emphasis on flexibility and performance presents certain
 challenges when it comes to adding type annotations to the existing code base.
+
 One notable limitation involves using custom :class:`~falcon.Request` and/or
 :class:`~falcon.Response` types in callbacks that are passed back
 to the framework, such as when adding an
 :meth:`error handler <falcon.App.add_error_handler>`.
-
 For instance, the following application might unexpectedly not pass type
 checking:
 
@@ -60,12 +60,20 @@ checking:
     app = App(request_type=MyRequest)
     app.add_error_handler(OSError, handle_os_error)
 
-(Please also see the following GitHub issue:
+(We are working on addressing this limitation at the time of writing --
+please see the following GitHub issue for the progress, and possible solutions:
 `#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
 
+Another known inconsistency is the typing of the
+:class:`converter interface <falcon.routing.BaseConverter>`, where certain
+subclasses (such as :class:`~falcon.routing.PathConverter`) declare a different
+input type than the base ``convert()`` method.
+(See also the discussions and possible solutions on the GitHub issue
+`#2396 <https://github.com/falconry/falcon/issues/2396>`__.)
+
 .. important::
-    This is only a typing limitation that has no effect outside of type
-    checking -- the above ``app`` will run just fine!
+    The above issues are only typing limitations that have no effect outside of
+    type checking -- applications will work just fine at runtime!
 
 
 Public Type Aliases

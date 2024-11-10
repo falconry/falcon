@@ -1348,47 +1348,44 @@ To include multiple values, simply use ``"; "`` to separate each name-value
 pair. For example, if you were to pass ``{'Cookie': 'xxx=yyy; hello=world'}``,
 you would get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
 
-Why do I not see error tracebacks in ASGI applications?
--------------------------------------------------------
+Why do I see no error tracebacks in my ASGI application?
+--------------------------------------------------------
 
-When using Falcon with ASGI servers like Uvicorn,
-you might notice that server errors do not display a traceback by default.
-This behavior differs from WSGI applications, where errors are logged to `stderr`,
-providing detailed tracebacks.
+When using Falcon with an ASGI server like Uvicorn,
+you might notice that server errors do not include any traceback by default.
+This behavior differs from WSGI, where the PEP-3333 specification defines the
+`wsgi.errors <https://peps.python.org/pep-3333/#environ-variables>`__ stream
+(which Falcon utilizes to log unhandled
+:class:`internal server errors <falcon.HTTPInternalServerError>`).
 
-The reason for this is that ASGI does not define a standardized way to log errors back to the application server,
-unlike WSGI. Therefore, you need to configure logging manually to see these tracebacks.
+Since there is no standardized way to log errors back to the ASGI server,
+the framework simply opts to log them using the ``falcon``
+:class:`logger <logging.Logger>`.
 
-Here’s how to set up logging in your ASGI Falcon application to capture error tracebacks:
+The easiest way to get started is configuring the root logger via
+:func:`logging.basicConfig`:
 
 .. code:: python
 
     import logging
+
     import falcon
     import falcon.asgi
 
     logging.basicConfig(
-        format="%(asctime)s [%(levelname)s] %(message)s", 
-        level=logging.INFO
-    )
+        format="%(asctime)s [%(levelname)s] %(message)s", level=logging.INFO)
 
-    class ThingsResource:
+
+    class FaultyResource:
         async def on_get(self, req, resp):
             raise ValueError('foo')
 
+
     app = falcon.asgi.App()
-    things = ThingsResource()
-    app.add_route('/things', things)
+    app.add_route('/things', FaultyResource())
 
-By adding the above logging configuration, you will see tracebacks like this in your console:
+By adding the above logging configuration, you should now see tracebacks logged
+to :any:`stderr <sys.stderr>` when accessing ``/things``.
 
-.. code-block:: none
-
-    [ERROR] [FALCON] Unhandled exception in ASGI app
-    Traceback (most recent call last):
-    File "<...>", line 12, in on_get
-        raise ValueError('foo')
-    ValueError: foo
-
-For additional details on this topic, 
-please refer to :ref:`debugging-asgi-applications`.
+For additional details on this topic,
+please refer to :ref:`debugging_asgi_applications`.
