@@ -18,34 +18,34 @@ This package includes a unittest-style base class and requests-like
 utilities for simulating and validating HTTP requests.
 """
 
+from importlib import import_module
 import os
-import unittest
 import warnings
+
+try:
+    import testtools as unittest
+except ImportError:  # pragma: nocover
+    import unittest
 
 import falcon
 import falcon.request
 from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
-base_case = os.environ.get('FALCON_BASE_TEST_CASE')
+# TODO hoist for backwards compat. Remove in falcon 5.
 
-if base_case and 'testtools.TestCase' in base_case:
+base_case_path = os.environ.get('FALCON_BASE_TEST_CASE')
+
+if base_case_path:
     try:
-        import testtools
-
-        BaseTestCase = testtools.TestCase
-    except ImportError:
-        BaseTestCase = unittest.TestCase
-elif base_case is None:
-    try:
-        import testtools
-
+        module_path, class_name = base_case_path.rsplit('.', 1)
+        module = import_module(module_path)
+        BaseTestCase = getattr(module, class_name)
+    except (ImportError, AttributeError):
         warnings.warn(
-            'Support for testtools is deprecated and will be removed in Falcon 5.0.',
-            DeprecationWarning,
+            f"Could not import '{base_case_path}', defaulting to testtools.TestCase.",
+            ImportWarning,
         )
-        BaseTestCase = testtools.TestCase
-    except ImportError:
         BaseTestCase = unittest.TestCase
 else:
     BaseTestCase = unittest.TestCase
@@ -91,6 +91,7 @@ class TestCase(unittest.TestCase, TestClient):
                 self.assertEqual(result.json, doc)
     """
 
+    # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
     app: falcon.App
@@ -115,6 +116,17 @@ class TestCase(unittest.TestCase, TestClient):
 
     def setUp(self) -> None:
         super(TestCase, self).setUp()
+
+        if (
+            BaseTestCase == unittest.TestCase
+            and os.environ.get('FALCON_BASE_TEST_CASE') is None
+            and 'testtools' in str(unittest)
+        ):
+            warnings.warn(
+                'Support for testtools is deprecated'
+                'and will be removed in Falcon 5.0.',
+                DeprecationWarning,
+            )
 
         app = falcon.App()
 
