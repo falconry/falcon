@@ -22,51 +22,57 @@ import os
 import unittest
 import warnings
 
-if 'DISABLE_TESTTOOLS' not in os.environ:
-    try:
-        import testtools
-
-        warnings.warn(
-            'Support for testtools is deprecated and will be removed in Falcon 5.0. '
-            'Please migrate to unittest or pytest.',
-            DeprecationWarning,
-        )
-        BaseTestCase = testtools.TestCase
-    except ImportError:  # pragma: nocover
-        BaseTestCase = unittest.TestCase
-
 import falcon
 import falcon.request
 from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
+base_case = os.environ.get('FALCON_BASE_TEST_CASE')
+
+if base_case and 'testtools.TestCase' in base_case:
+    try:
+        import testtools
+
+        BaseTestCase = testtools.TestCase
+    except ImportError:
+        BaseTestCase = unittest.TestCase
+elif base_case is None:
+    try:
+        import testtools
+
+        warnings.warn(
+            'Support for testtools is deprecated and will be removed in Falcon 5.0.',
+            DeprecationWarning,
+        )
+        BaseTestCase = testtools.TestCase
+    except ImportError:
+        BaseTestCase = unittest.TestCase
+else:
+    BaseTestCase = unittest.TestCase
+
 
 class TestCase(unittest.TestCase, TestClient):
-    """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
+    """Extends ``unittest`` to support WSGI/ASGI functional testing.
 
     Note:
-        This class uses :mod:`unittest` by default. If :mod:`testtools`
-        is available and the environment variable
-        ``DISABLE_TESTTOOLS`` is **not** set, it will use :mod:`testtools` instead.
-        **Support for testtools is deprecated and will be removed in Falcon 5.0.**
+        This class uses ``unittest`` by default, but you may use ``pytest``
+        to run ``unittest.TestCase`` instances, allowing a hybrid approach.
 
     Recommended:
-        We recommend using **pytest** for testing Falcon applications.
+        We recommend using **pytest** alongside **unittest** for testing.
         See our tutorial on using pytest.
 
-    This base class provides some extra plumbing for unittest-style
-    test cases, to help simulate WSGI or ASGI requests without having
-    to spin up an actual web server. Various simulation methods are
-    derived from :class:`falcon.testing.TestClient`.
+    This base class provides extra functionality for unittest-style test cases,
+    helping simulate WSGI or ASGI requests without spinning up a web server. Various
+    simulation methods are derived from :class:`falcon.testing.TestClient`.
 
     Simply inherit from this class in your test case classes instead of
-    :class:`unittest.TestCase`.
+    ``unittest.TestCase``.
 
     For example::
 
         from falcon import testing
         import myapp
-
 
         class MyTestCase(testing.TestCase):
             def setUp(self):
@@ -77,7 +83,6 @@ class TestCase(unittest.TestCase, TestClient):
                 # return a `falcon.App` instance.
                 self.app = myapp.create()
 
-
         class TestMyApp(MyTestCase):
             def test_get_message(self):
                 doc = {'message': 'Hello world!'}
@@ -86,7 +91,6 @@ class TestCase(unittest.TestCase, TestClient):
                 self.assertEqual(result.json, doc)
     """
 
-    # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
     app: falcon.App
@@ -98,7 +102,6 @@ class TestCase(unittest.TestCase, TestClient):
 
         from falcon import testing
         import myapp
-
 
         class MyTestCase(testing.TestCase):
             def setUp(self):

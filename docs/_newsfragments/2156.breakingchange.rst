@@ -1,0 +1,3 @@
+- **Deprecation**: Support for `testtools` in `falcon.testing` is now deprecated and will be removed in Falcon 5.0.
+  If `testtools` is selected automatically (i.e., without explicit configuration via `FALCON_BASE_TEST_CASE`), a deprecation warning will be issued.
+  Explicit configuration using `FALCON_BASE_TEST_CASE=testtools.TestCase` will not emit a warning.
