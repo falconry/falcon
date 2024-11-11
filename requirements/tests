@@ -13,7 +13,7 @@ testtools; python_version < '3.10'
 aiofiles
 httpx
 uvicorn >= 0.17.0
-websockets
+websockets >= 13.1
 
 # Handler Specific
 cbor2
