@@ -97,6 +97,21 @@ Python interpreter.
     reimplemented from scratch in Falcon 4.0.0, also fixing some long standing
     behavioral quirks and bugs on the way.
 
+Optional dependencies
+^^^^^^^^^^^^^^^^^^^^^
+Falcon has no official list of optional dependencies, but if you want to
+provide "suggested packages" or similar, various media (de-) serialization
+libraries can make good candidates, especially those that have official media
+handlers such as ``msgpack`` (:class:`~falcon.media.MessagePackHandler`).
+:class:`~falcon.media.JSONHandler` can be easily customized using faster JSON
+implementations such as ``orjson``, ``rapidjson``, etc, so you can suggest
+those that are already packaged for your distribution.
+
+Otherwise, various ASGI and WSGI application servers could also fit the bill.
+
+See also :ref:`packaging_test_deps` for the list of third party libraries that
+we test against in our Continuous Integration (CI) tests.
+
 
 Building Binaries
 -----------------
@@ -136,7 +151,7 @@ Big-endian support
 ^^^^^^^^^^^^^^^^^^
 We regularly build and test :ref:`binary wheels <binary_wheels>` on the
 IBM Z platform (aka ``s390x``) which is big-endian.
-We are not aware of endianness-related issues.
+We are not aware of any endianness-related issues.
 
 32-bit support
 ^^^^^^^^^^^^^^
@@ -146,7 +161,7 @@ in some cases such as the multipart form parser (as the smaller ``Py_ssize_t``
 would interfere with uploading of files larger than 2 GiB) if we detect a
 32-bit flavor of CPython.
 
-If you do opt to provide 32-bit binary Falcon packages, make sure that your run
+If you do opt to provide 32-bit Falcon binaries, make sure that you run
 :ref:`extensive tests <packaging_testing>` against the built package.
 
 
@@ -180,17 +195,50 @@ If you do decide to ship the offline docs too, you can build it using
 Testing Package
 ---------------
 
-WiP...
+When your Falcon package is ready, it is a common (highly recommended!)
+practice to install it into your distribution, and run tests verifying that the
+package functions as intended.
+
+As of Falcon 4.0+, the only hard test dependency is ``pytest``.
+
+You can simply run it against Falcon's test suite found in the ``tests/``
+subdirectory::
+
+  pytest tests/
+
+These tests will provide decent (98-99%), although not complete, code coverage,
+and should ensure that the basic wiring of your package is correct
+(however, see also the next chapter: :ref:`packaging_test_deps`).
 
 .. tip::
-    You can run ``pytest`` against Falcon's ``tests/`` from any directory,
-    i.e., the below should work just fine::
+    You can run ``pytest`` from any directory, i.e., the below should work just
+    fine::
 
-        /usr/local/foo-bin/pytest /bar/baz/falcon-release-dir/tests
+        /usr/local/foo-bin/pytest /bar/baz/falcon-release-dir/tests/
 
-    This pattern is regularly exercised in our Continuous Integration gates,
-    as ``cibuildwheel`` (see above) does not run tests from the project's
-    directory either.
+    This pattern is regularly exercised in our CI gates, as `cibuildwheel`_
+    (see above) does not run tests from the project's directory either.
+
+.. _packaging_test_deps:
+
+Optional test dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+As mentioned above, Falcon has no hard test dependencies except ``pytest``,
+however, our test suite includes optional integration tests against a selection
+of third-party libraries.
+
+When building :ref:`wheels <binary_wheels>` with `cibuildwheel`_, we install a
+small subset of the basic optional test dependencies, see the
+``requirements/cibwtest`` file in the repository.
+Furthermore, when running our full test suite in the CI, we exercise
+integration with a larger number of optional libraries and applications servers
+(see the ``requirements/tests`` file, as well as various ASGI/WSGI server
+integration test definitions in ``tox.ini``).
+
+Ideally, if your distribution also provides packages for any of the above
+optional test dependencies, it may be a good idea to install them into your
+test environment as well. This will help verifying that your Falcon package is
+compatible with the specific versions of these packages in your distribution.
 
 
 .. _packaging_thank_you:
