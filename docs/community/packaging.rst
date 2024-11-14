@@ -1,14 +1,19 @@
 Packaging Guide
 ===============
 
-Normally, the recommended way to :ref:`install Falcon <install>` in your
-project is using ``pip`` (or a compatible package manager, such as
+Normally, the recommended way to :ref:`install Falcon <install>` into your
+project is using ``pip`` (or a compatible package/project manager, such as
 ``poetry``, ``uv``, and many others) that fetches package archives from
 `PyPI`_.
 
-WiP -- explain why in certain scenarios it is desirable to use other packages...
+However, the `PyPI`_-based way of installation is not always applicable or
+optimal. For instance, when the system package manager of a Linux distribution
+is used to install Python-based software, it normally gets the dependencies
+from the same distribution channel, as the specific versions of the packages
+(often not without minor patches) were carefully tested to work well together
+on the operating system in question.
 
-This guide is primarily aimed at packagers that create and maintain Falcon
+This guide is primarily aimed at engineers who create and maintain Falcon
 packages for operating systems such as Linux and BSD distributions, as well as
 alternative Python distribution channels such as
 `conda-forge <https://anaconda.org/conda-forge/falcon>`__.
@@ -17,20 +22,58 @@ alternative Python distribution channels such as
     Unless noted otherwise in specific sections, this document is only
     applicable to Falcon 4.0.1 or newer.
 
+If you run into any packaging issues, questions that this guide does not cover,
+or just find a bug in Falcon, please :ref:`let us know <packaging_thank_you>`!
+
+
 Obtaining Release
 -----------------
 
 In order to package a specific Falcon release, you first need to obtain its
-source files.
+source archive.
 
 It is up to you which authoritative source to use.
 The most common alternatives are:
 
-* Source distribution (aka "*sdist*") on PyPI.
+* **Source distribution** (aka "*sdist*") on `PyPI`_.
 
-* GitHub release archive.
+  If you are unsure, the recommended way is to use our source distribution from
+  `PyPI`_ (also available on GitHub releases, see below).
 
-* Clone GitHub repository.
+  You can query PyPA Warehouse's
+  `JSON API <https://warehouse.pypa.io/api-reference/json.html>`__ in order to
+  obtain the latest stable version of Falcon, fetch the *sdist* URL, and more.
+
+  The API URL specifically for Falcon is https://pypi.org/pypi/falcon/json.
+  Here is how you can query it using the popular ``requests``:
+
+  >>> import requests
+  >>> resp = requests.get('https://pypi.org/pypi/falcon/json')
+  >>> for url in resp.json()['urls']:
+  ...     if url['packagetype'] == 'sdist':
+  ...         print(f'Latest Falcon sdist: {url["url"]}')
+  ...
+  Latest Falcon sdist: https://files.pythonhosted.org/<...>/falcon-4.0.2.tar.gz
+
+  (``4.0.2`` was the latest version at the time of this writing.)
+
+* **GitHub release archive**.
+
+  Alternatively, you can download the archive from our
+  `Releases on GitHub <https://github.com/falconry/falcon/releases>`__.
+  GitHub automatically archives the whole repository for every release, and
+  attaches the tarball to the release page. In addition, our release automation
+  also uploads the *sdist* (see above) to the release as well.
+
+* **Clone GitHub repository**.
+
+  If your packaging workflow is based on a Git repository that tracks both the
+  framework's source code, and your patches or tooling scripts, you will
+  probably want to clone our
+  `GitHGub repository <https://github.com/falconry/falcon/>`__ instead.
+
+  Every release has a corresponding annotated Git tag that shares the name
+  with the package version on PyPI, e.g., ``4.0.2``.
 
 
 Metadata and Dependencies
@@ -42,7 +85,8 @@ with recent releases on `PyPI`_.
 Falcon has **no hard runtime dependencies** except the standard Python
 library. So depending on how Python is packaged in your distribution
 (i.e., whether parts of the stdlib are potentially broken out to separate
-packages), Falcon should only depend on the basic installation of Python.
+packages), Falcon should only depend on the basic installation of the targeted
+Python interpreter.
 
 .. note::
     Falcon has no third-party dependencies since 2.0, however, we were
@@ -50,15 +94,8 @@ packages), Falcon should only depend on the basic installation of Python.
     licence, MIT versus Falcon's Apache 2.0).
 
     This is no longer a concern as the relevant functionality has been
-    reimplemented from scratch in Falcon 4.0, also fixing some long standing
+    reimplemented from scratch in Falcon 4.0.0, also fixing some long standing
     behavioral quirks and bugs on the way.
-
-
-Supported Platforms
--------------------
-
-Falcon supports a wide range of platforms -- the pure-Python version should be
-able to run anywhere a supported version of Python runs.
 
 
 Building Binaries
@@ -156,10 +193,18 @@ WiP...
     directory either.
 
 
+.. _packaging_thank_you:
+
 Thank You
 ---------
 
-WiP...
+If you are already maintaining Falcon packages, thank you!
+
+Although we do not have the bandwidth to maintain Falcon packages for any
+distribution channel beyond `PyPI`_ ourselves, we are happy to help if you run
+into any problems. File an
+`issue on GitHub <https://github.com/falconry/falcon/issues>`__,
+or just :ref:`send us a message <chat>`!
 
 
 .. _PyPI: https://pypi.org/project/falcon/
