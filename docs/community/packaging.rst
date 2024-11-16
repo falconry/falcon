@@ -76,6 +76,33 @@ The most common alternatives are:
   with the package version on PyPI, e.g., ``4.0.2``.
 
 
+Semantic Versioning
+-------------------
+
+Falcon strictly adheres to `SemVer <https://semver.org/>`__ -- incompatible API
+changes are only introduced in conjunction with a major version increment.
+
+When updating your Falcon package, you should always carefully review
+:doc:`the changelog </changes/index>` for the new release that you targeting,
+especially if you are moving up to a new SemVer major version.
+(In that case, the release notes will include a "Breaking Changes" section.)
+
+For a packager, another section worth checking is called
+"Changes to Supported Platforms", where we announce support for new Python
+interpreter versions (or even new implementations), as well as deprecate or
+remove the old ones.
+While there seems to be
+`no clear consensus <https://github.com/semver/semver/issues/716>`__ on whether
+removing platform support constitutes a SemVer breaking change, Falcon assumes
+that it does (unless we have communicated otherwise in advance, e.g., the
+:doc:`Falcon 4.x series </changes/4.0.0>` only guarantee Python 3.10+ support).
+
+.. note::
+    The SemVer guarantees primarily cover the publicly documented API from the
+    framework user's perspective, so even a minor release may contain important
+    changes to the build process, tests, and project tooling.
+
+
 Metadata and Dependencies
 -------------------------
 
@@ -96,6 +123,7 @@ Python interpreter.
     This is no longer a concern as the relevant functionality has been
     reimplemented from scratch in Falcon 4.0.0, also fixing some long standing
     behavioral quirks and bugs on the way.
+    As a result, the Falcon 4.x series currently has no vendored dependencies.
 
 Optional dependencies
 ^^^^^^^^^^^^^^^^^^^^^
@@ -119,6 +147,11 @@ Building Binaries
 The absolute minimum in terms of packaging is not building any binaries, but
 just distributing the Python modules found under ``falcon/``. This is roughly
 equivalent to our pure-Python wheel on `PyPI`_.
+
+.. tip::
+    The easiest way to skip the binaries is to set the
+    ``FALCON_DISABLE_CYTHON`` environment variable to a non-empty value in the
+    build environment.
 
 The framework would still function just fine, however, the overall performance
 would be somewhat (~30-40%) lower, and potentially much lower (an order of
