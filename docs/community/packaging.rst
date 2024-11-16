@@ -95,7 +95,7 @@ While there seems to be
 `no clear consensus <https://github.com/semver/semver/issues/716>`__ on whether
 removing platform support constitutes a SemVer breaking change, Falcon assumes
 that it does (unless we have communicated otherwise in advance, e.g., the
-:doc:`Falcon 4.x series </changes/4.0.0>` only guarantee Python 3.10+ support).
+:doc:`Falcon 4.x series </changes/4.0.0>` only guarantees Python 3.10+ support).
 
 .. note::
     The SemVer guarantees primarily cover the publicly documented API from the
