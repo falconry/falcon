@@ -10,8 +10,8 @@ However, the `PyPI`_-based way of installation is not always applicable or
 optimal. For instance, when the system package manager of a Linux distribution
 is used to install Python-based software, it normally gets the dependencies
 from the same distribution channel, as the specific versions of the packages
-(often not without minor patches) were carefully tested to work well together
-on the operating system in question.
+were carefully tested to work well together on the operating system in
+question.
 
 This guide is primarily aimed at engineers who create and maintain Falcon
 packages for operating systems such as Linux and BSD distributions, as well as
@@ -175,7 +175,15 @@ not contain the latest version of Falcon, it is possible to switch to an
 older one using Read the Docs version picker.
 
 If you do decide to ship the offline docs too, you can build it using
-``docs/Makefile`` (you can also invoke ``sphinx-build`` directly):
+``docs/Makefile`` (you can also invoke ``sphinx-build`` directly).
+
+.. note::
+    Building the HTML documentation requires the packages listed in
+    ``requirements/docs``.
+
+    Building ``man`` pages requires only Sphinx itself and the plugins
+    referenced directly in ``docs/conf.py``
+    (currently ``myst-parser``, ``sphinx-copybutton``, and ``sphinx-design``).
 
 * To build HTML docs, use ``make html``.
 
