@@ -103,6 +103,22 @@ def test_simulate_request_content_type():
     )
     assert result.text == falcon.MEDIA_JSON
 
+    result = testing.simulate_post(app, '/', json={}, msgpack={})
+    assert result.text == falcon.MEDIA_MSGPACK
+
+    result = testing.simulate_post(app, '/', json={}, msgpack={}, headers=headers)
+    assert result.text == falcon.MEDIA_MSGPACK
+
+    result = testing.simulate_post(
+        app, '/', json={}, msgpack={}, content_type=falcon.MEDIA_HTML
+    )
+    assert result.text == falcon.MEDIA_MSGPACK
+
+    result = testing.simulate_post(
+        app, '/', json={}, msgpack={}, headers=headers, content_type=falcon.MEDIA_HTML
+    )
+    assert result.text == falcon.MEDIA_MSGPACK
+
     result = testing.simulate_post(app, '/', msgpack={})
     assert result.text == falcon.MEDIA_MSGPACK
 

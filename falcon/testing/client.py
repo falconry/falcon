@@ -818,7 +818,8 @@ async def _simulate_request_asgi(
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments.
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1567,7 +1568,8 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments.
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1683,7 +1685,8 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments.
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1887,8 +1890,9 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
         msgpack(Msgpack serializable): A Msgpack document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
-            `'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments.
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1999,7 +2003,8 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments.
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2318,9 +2323,7 @@ def _prepare_sim_args(
         headers['Content-Type'] = MEDIA_JSON
 
     if msgpack is not None:
-        body = MessagePackHandler.serialize(
-            MessagePackHandler(), content_type=None, media=msgpack
-        )
+        body = MessagePackHandler().serialize(content_type=None, media=msgpack)
         headers = headers or {}
         headers['Content-Type'] = MEDIA_MSGPACK
 
