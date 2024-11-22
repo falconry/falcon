@@ -92,12 +92,14 @@ SinkPrefix = Union[str, Pattern[str]]
 
 
 class SinkCallable(Protocol):
-    def __call__(self, req: Request, resp: Response, **kwargs: str) -> None: ...
+    def __call__(
+        self, req: Request, resp: Response, **kwargs: Optional[str]
+    ) -> None: ...
 
 
 class AsgiSinkCallable(Protocol):
     async def __call__(
-        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: str
+        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: Optional[str]
     ) -> None: ...
 
 
