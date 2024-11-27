@@ -52,17 +52,23 @@ from falcon.util.sync import wrap_sync_to_async
 from falcon.util.sync import wrap_sync_to_async_unsafe
 from falcon.util.time import TimezoneGMT
 
-# NOTE(kgriffs): Backport support for the new 'SameSite' attribute
-#   for Python versions prior to 3.8. We do it this way because
-#   SimpleCookie does not give us a simple way to specify our own
-#   subclass of Morsel.
+# NOTE(kgriffs, m-mueller): Monkey-patch support for the new 'Partitioned'
+#   attribute that will probably be added in Python 3.14.
+#   We do it this way because SimpleCookie does not give us a simple way to
+#   specify our own subclass of Morsel.
 _reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
-if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
-    _reserved_cookie_attrs['samesite'] = 'SameSite'
-# NOTE(m-mueller): Same for the 'partitioned' attribute that will
-#   probably be added in Python 3.13 or 3.14.
 if 'partitioned' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['partitioned'] = 'Partitioned'
+# NOTE(vytas): Morsel._reserved_defaults is a new optimization in Python 3.14+
+#   for faster initialization of Morsel instances.
+# TODO(vytas): Remove this part of monkey-patching in the case CPython 3.14
+#   adds the Partitioned attribute to Morsel.
+_reserved_cookie_defaults = getattr(http_cookies.Morsel, '_reserved_defaults', None)
+if (
+    _reserved_cookie_defaults is not None
+    and 'partitioned' not in _reserved_cookie_defaults
+):  # pragma: no cover
+    _reserved_cookie_defaults['partitioned'] = ''
 
 
 IS_64_BITS = sys.maxsize > 2**32
