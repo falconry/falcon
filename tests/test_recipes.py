@@ -141,3 +141,42 @@ class TestRawURLPath:
         )
         assert result2.status_code == 200
         assert result2.json == {'cached': True}
+
+
+class TestRequestIDContext:
+    @pytest.fixture
+    def app(self, util):
+        recipe = util.load_module('examples/recipes/request_id_middleware.py')
+
+        app = falcon.App(middleware=[recipe.RequestIDMiddleware()])
+        app.add_route('/test', self.RequestIDResource())
+        return app
+
+    class RequestIDResource:
+        def on_get(self, req, resp):
+            resp.media = {'request_id': req.context.request_id}
+
+    def test_request_id_isolated(self, app):
+        client = falcon.testing.TestClient(app)
+        request_id1 = client.simulate_get('/test').json['request_id']
+        request_id2 = client.simulate_get('/test').json['request_id']
+
+        assert request_id1 != request_id2
+
+    def test_request_id_persistence(self, app):
+        client = falcon.testing.TestClient(app)
+
+        response = client.simulate_get('/test')
+        request_id1 = response.json['request_id']
+
+        response = client.simulate_get('/test')
+        request_id2 = response.json['request_id']
+
+        assert request_id1 != request_id2
+
+    def test_request_id_in_response_header(self, app):
+        client = falcon.testing.TestClient(app)
+
+        response = client.simulate_get('/test')
+        assert 'X-Request-ID' in response.headers
+        assert response.headers['X-Request-ID'] == response.json['request_id']
