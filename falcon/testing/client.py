@@ -56,7 +56,9 @@ from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
 from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_MSGPACK
 from falcon.errors import CompatibilityError
+from falcon.media import MessagePackHandler
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.typing import Headers
@@ -455,6 +457,7 @@ def simulate_request(
     content_type: Optional[str] = None,
     body: Optional[Union[str, bytes]] = None,
     json: Optional[Any] = None,
+    msgpack: Optional[Any] = None,
     file_wrapper: Optional[Callable[..., Any]] = None,
     wsgierrors: Optional[TextIO] = None,
     params: Optional[Mapping[str, Any]] = None,
@@ -592,6 +595,7 @@ def simulate_request(
             content_type=content_type,
             body=body,
             json=json,
+            msgpack=msgpack,
             params=params,
             params_csv=params_csv,
             protocol=protocol,
@@ -615,6 +619,7 @@ def simulate_request(
         headers,
         body,
         json,
+        msgpack,
         extras,
     )
 
@@ -724,6 +729,7 @@ async def _simulate_request_asgi(
     content_type: Optional[str] = None,
     body: Optional[Union[str, bytes]] = None,
     json: Optional[Any] = None,
+    msgpack: Optional[Any] = None,
     params: Optional[Mapping[str, Any]] = None,
     params_csv: bool = False,
     protocol: str = 'http',
@@ -808,6 +814,12 @@ async def _simulate_request_asgi(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -846,6 +858,7 @@ async def _simulate_request_asgi(
         headers,
         body,
         json,
+        msgpack,
         extras,
     )
 
@@ -1551,6 +1564,12 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1662,6 +1681,12 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1862,6 +1887,12 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1968,6 +1999,12 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2248,6 +2285,7 @@ def _prepare_sim_args(
     headers: Optional[HeaderArg],
     body: Optional[Union[str, bytes]],
     json: Optional[Any],
+    msgpack: Optional[Any],
     extras: Optional[Mapping[str, Any]],
 ) -> Tuple[
     str, str, Optional[HeaderArg], Optional[Union[str, bytes]], Mapping[str, Any]
@@ -2283,6 +2321,11 @@ def _prepare_sim_args(
         body = json_module.dumps(json, ensure_ascii=False)
         headers = dict(headers or {})
         headers['Content-Type'] = MEDIA_JSON
+
+    if msgpack is not None:
+        body = MessagePackHandler().serialize(content_type=None, media=msgpack)
+        headers = headers or {}
+        headers['Content-Type'] = MEDIA_MSGPACK
 
     return path, query_string, headers, body, extras
 
