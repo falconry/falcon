@@ -1,1 +1,5 @@
-:py:func:`falcon.testing.helpers.create_scope` preserves the raw_path. This is to keep consistency with `#2159 <https://github.com/falconry/falcon/pull/2159>`_
+Similar to :func:`~falcon.testing.create_environ`,
+the :func:`~falcon.testing.create_scope` testing helper now preserves the raw URI path,
+and propagates it to the created ASGI connection scope as the ``raw_path`` byte string
+(according to the `ASGI specification
+<https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope>`__).

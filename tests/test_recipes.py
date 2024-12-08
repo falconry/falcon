@@ -115,33 +115,23 @@ class TestPrettyJSON:
 
 
 class TestRawURLPath:
-    def path_extras(self, asgi, url):
-        if asgi:
-            return {'raw_path': url.encode()}
-        return None
-
     def test_raw_path(self, asgi, app_kind, util):
         recipe = util.load_module(
             'raw_url_path', parent_dir='examples/recipes', suffix=app_kind
         )
 
-        # TODO(vytas): Improve TestClient to automatically add ASGI raw_path
-        #   (as it does for WSGI): GH #2262.
-
         url1 = '/cache/http%3A%2F%2Ffalconframework.org'
-        result1 = falcon.testing.simulate_get(
-            recipe.app, url1, extras=self.path_extras(asgi, url1)
-        )
-        scope1 = falcon.testing.create_scope(url1)
+        result1 = falcon.testing.simulate_get(recipe.app, url1)
         assert result1.status_code == 200
         assert result1.json == {'url': 'http://falconframework.org'}
+
+        scope1 = falcon.testing.create_scope(url1)
         assert scope1['raw_path'] == url1.encode()
 
         url2 = '/cache/http%3A%2F%2Ffalconframework.org/status'
-        result2 = falcon.testing.simulate_get(
-            recipe.app, url2, extras=self.path_extras(asgi, url2)
-        )
-        scope2 = falcon.testing.create_scope(url2)
+        result2 = falcon.testing.simulate_get(recipe.app, url2)
         assert result2.status_code == 200
         assert result2.json == {'cached': True}
+
+        scope2 = falcon.testing.create_scope(url2)
         assert scope2['raw_path'] == url2.encode()
