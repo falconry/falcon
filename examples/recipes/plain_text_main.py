@@ -1,4 +1,3 @@
-import cgi
 import functools
 
 import falcon
@@ -10,7 +9,7 @@ class TextHandler(falcon.media.BaseHandler):
     @classmethod
     @functools.lru_cache
     def _get_charset(cls, content_type):
-        _, params = cgi.parse_header(content_type)
+        _, params = falcon.parse_header(content_type)
         return params.get('charset') or cls.DEFAULT_CHARSET
 
     def deserialize(self, stream, content_type, content_length):
