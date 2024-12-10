@@ -19,7 +19,7 @@ utilities for simulating and validating HTTP requests.
 """
 
 try:
-    import testtools as unittest
+    import testtools as unittest  # pyright: ignore[reportMissingImports]
 except ImportError:  # pragma: nocover
     import unittest
 
@@ -31,7 +31,7 @@ from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
 
-class TestCase(unittest.TestCase, TestClient):
+class TestCase(unittest.TestCase, TestClient):  # pyright: ignore[reportGeneralTypeIssues]
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:

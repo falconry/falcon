@@ -37,6 +37,7 @@ from typing import (
     Union,
 )
 
+from falcon import _logger
 from falcon import constants
 from falcon import responders
 from falcon import routing
@@ -59,6 +60,7 @@ from falcon.asgi_spec import WSCloseCode
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
+from falcon.errors import HTTPInternalServerError
 from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
@@ -338,10 +340,10 @@ class App(falcon.app.App):
     #   without having to import falcon.asgi.
     _ASGI: ClassVar[bool] = True
 
-    _default_responder_bad_request: ClassVar[AsgiResponderCallable] = (
+    _default_responder_bad_request: ClassVar[AsgiResponderCallable] = (  # pyright: ignore[reportIncompatibleVariableOverride]# noqa: E501
         responders.bad_request_async  # type: ignore[assignment]
     )
-    _default_responder_path_not_found: ClassVar[AsgiResponderCallable] = (
+    _default_responder_path_not_found: ClassVar[AsgiResponderCallable] = (  # pyright: ignore[reportIncompatibleVariableOverride] # noqa: E501
         responders.path_not_found_async  # type: ignore[assignment]
     )
 
@@ -354,8 +356,8 @@ class App(falcon.app.App):
     _error_handlers: Dict[Type[BaseException], AsgiErrorHandler]  # type: ignore[assignment]
     _middleware: AsyncPreparedMiddlewareResult  # type: ignore[assignment]
     _middleware_ws: AsyncPreparedMiddlewareWsResult
-    _request_type: Type[Request]
-    _response_type: Type[Response]
+    _request_type: Type[Request]  # pyright: ignore[reportIncompatibleVariableOverride]
+    _response_type: Type[Response]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     ws_options: WebSocketOptions
     """A set of behavioral options related to WebSocket connections.
@@ -521,7 +523,7 @@ class App(falcon.app.App):
                             break
 
                 if not resp.complete:
-                    await responder(req, resp, **params)
+                    await responder(req, resp, **params)  # pyright: ignore[reportPossiblyUnboundVariable]
 
                 req_succeeded = True
 
@@ -771,7 +773,7 @@ class App(falcon.app.App):
             if hasattr(stream, 'read'):
                 try:
                     while True:
-                        data = await stream.read(self._STREAM_BLOCK_SIZE)
+                        data = await stream.read(self._STREAM_BLOCK_SIZE)  # pyright: ignore[reportAttributeAccessIssue]
                         if data == b'':
                             break
                         else:
@@ -786,7 +788,7 @@ class App(falcon.app.App):
                             )
                 finally:
                     if hasattr(stream, 'close'):
-                        await stream.close()
+                        await stream.close()  # pyright: ignore[reportAttributeAccessIssue]
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -826,7 +828,7 @@ class App(falcon.app.App):
                     #   twoliner in a one large block, but OTOH we would be
                     #   unable to reuse the current try.. except.
                     if hasattr(stream, 'close'):
-                        await stream.close()
+                        await stream.close()  # pyright: ignore
 
         await send(_EVT_RESP_EOF)
 
@@ -1003,7 +1005,7 @@ class App(falcon.app.App):
                 'The handler must be an awaitable coroutine function in order '
                 'to be used safely with an ASGI app.'
             )
-        handler_callable: AsgiErrorHandler = handler
+        handler_callable: AsgiErrorHandler = handler  # pyright: ignore[reportAssignmentType]
 
         exception_tuple: Tuple[type[BaseException], ...]
         try:
@@ -1077,7 +1079,7 @@ class App(falcon.app.App):
                 for handler in self._unprepared_middleware:
                     if hasattr(handler, 'process_startup'):
                         try:
-                            await handler.process_startup(scope, event)
+                            await handler.process_startup(scope, event)  # pyright: ignore[reportAttributeAccessIssue]
                         except Exception:
                             await send(
                                 {
@@ -1093,7 +1095,7 @@ class App(falcon.app.App):
                 for handler in reversed(self._unprepared_middleware):
                     if hasattr(handler, 'process_shutdown'):
                         try:
-                            await handler.process_shutdown(scope, event)
+                            await handler.process_shutdown(scope, event)  # pyright: ignore[reportAttributeAccessIssue]
                         except Exception:
                             await send(
                                 {
@@ -1185,7 +1187,7 @@ class App(falcon.app.App):
             self._compose_status_response(req, resp, status)
         elif ws:
             code = http_status_to_ws_code(status.status_code)
-            falcon._logger.error(
+            _logger.error(
                 '[FALCON] HTTPStatus %s raised while handling WebSocket. '
                 'Closing with code %s',
                 status,
@@ -1207,7 +1209,7 @@ class App(falcon.app.App):
             self._compose_error_response(req, resp, error)
         elif ws:
             code = http_status_to_ws_code(error.status_code)
-            falcon._logger.error(
+            _logger.error(
                 '[FALCON] HTTPError %s raised while handling WebSocket. '
                 'Closing with code %s',
                 error,
@@ -1225,10 +1227,10 @@ class App(falcon.app.App):
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
     ) -> None:
-        falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
+        _logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
         if resp:
-            self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
+            self._compose_error_response(req, resp, HTTPInternalServerError())
         elif ws:
             await self._ws_cleanup_on_error(ws)
         else:
@@ -1244,9 +1246,7 @@ class App(falcon.app.App):
     ) -> None:
         assert resp is None
         assert ws is not None
-        falcon._logger.debug(
-            '[FALCON] WebSocket client disconnected with code %i', error.code
-        )
+        _logger.debug('[FALCON] WebSocket client disconnected with code %i', error.code)
         await self._ws_cleanup_on_error(ws)
 
     if TYPE_CHECKING:
@@ -1323,7 +1323,7 @@ class App(falcon.app.App):
             if 'invalid close code' in str(ex).lower():
                 await ws.close(_FALLBACK_WS_ERROR_CODE)
             else:
-                falcon._logger.warning(
+                _logger.warning(
                     (
                         '[FALCON] Attempt to close web connection cleanly '
                         'failed due to raised error.'
