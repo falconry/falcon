@@ -26,4 +26,5 @@ ujson
 python-rapidjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
 
 # wheels are missing some EoL interpreters and non-x86 platforms; build would fail unless rust is available
-orjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
+# (not available for CPython 3.14 either yet)
+orjson; python_version < '3.14' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
