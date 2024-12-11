@@ -132,9 +132,10 @@ class TestRawURLPath:
         result2 = falcon.testing.simulate_get(recipe.app, url2)
         assert result2.status_code == 200
         assert result2.json == {'cached': True}
-        
+
         scope2 = falcon.testing.create_scope(url2)
         assert scope2['raw_path'] == url2.encode()
+
 
 class TestTextPlainHandler:
     class MediaEcho:
