@@ -32,6 +32,7 @@ import inspect
 import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 import unicodedata
+import os
 
 from falcon import status_codes
 from falcon.constants import PYPY
@@ -336,7 +337,7 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-def secure_filename(filename: str) -> str:
+def secure_filename(filename: str, max_length: int = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -357,6 +358,8 @@ def secure_filename(filename: str) -> str:
     Args:
         filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
+        max_length (int, optional): Maximum length of the sanitized filename,
+            including the file extension. If None, no truncation is applied.
 
     Returns:
         str: The sanitized filename.
@@ -373,7 +376,13 @@ def secure_filename(filename: str) -> str:
     filename = unicodedata.normalize('NFKD', filename)
     if filename.startswith('.'):
         filename = filename.replace('.', '_', 1)
-    return _UNSAFE_CHARS.sub('_', filename)
+    filename = _UNSAFE_CHARS.sub('_', filename)
+
+    if max_length is not None and len(filename) > max_length:
+        name, ext = os.path.splitext(filename)
+        filename = name[:max_length - len(ext)] + ext
+
+    return filename
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
