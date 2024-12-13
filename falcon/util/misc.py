@@ -29,10 +29,10 @@ import datetime
 import functools
 import http
 import inspect
+import os
 import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 import unicodedata
-import os
 
 from falcon import status_codes
 from falcon.constants import PYPY
@@ -337,7 +337,7 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-def secure_filename(filename: str, max_length: int = None) -> str:
+def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -380,7 +380,10 @@ def secure_filename(filename: str, max_length: int = None) -> str:
 
     if max_length is not None and len(filename) > max_length:
         name, ext = os.path.splitext(filename)
-        filename = name[:max_length - len(ext)] + ext
+        if max_length < len(ext):
+            filename = ext[:max_length]
+        else:
+            filename = name[: max_length - len(ext)] + ext
 
     return filename
 
