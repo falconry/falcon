@@ -380,10 +380,10 @@ def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
 
     if max_length is not None and len(filename) > max_length:
         name, ext = os.path.splitext(filename)
-        if max_length < len(ext):
-            filename = ext[:max_length]
-        else:
+        if max_length - len(ext) >= 1:
             filename = name[: max_length - len(ext)] + ext
+        else:
+            filename = filename[:max_length]
 
     return filename
 
