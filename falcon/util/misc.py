@@ -358,7 +358,7 @@ def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
     Args:
         filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
-        max_length (int, optional): Maximum length of the sanitized filename,
+        max_length: Maximum length of the sanitized filename,
             including the file extension. If None, no truncation is applied.
 
     Returns:

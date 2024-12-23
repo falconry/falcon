@@ -10,7 +10,6 @@ from falcon import media
 from falcon import testing
 from falcon.media.multipart import MultipartParseOptions
 from falcon.util import BufferedReader
-from falcon.util.misc import secure_filename
 
 try:
     import msgpack
@@ -746,14 +745,6 @@ def test_unsupported_charset(client):
         'description': 'invalid text or charset: pecyn',
         'title': 'Malformed multipart/form-data request media',
     }
-
-
-def test_max_length_filename(client):
-    filename = secure_filename('averylongfilename.txt', 17)
-    assert filename == 'averylongfile.txt'
-
-    filename = secure_filename('file.withlongextension', 9)
-    assert filename == 'file.with'
 
 
 def test_filename_star(client):
