@@ -2,7 +2,7 @@
 
 from uuid import uuid4
 
-from .request_id_context import ctx
+from context import ctx
 
 
 class RequestIDMiddleware:

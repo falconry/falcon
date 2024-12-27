@@ -140,6 +140,11 @@ class TestRawURLPath:
 class TestRequestIDContext:
     @pytest.fixture
     def app(self, util):
+        # NOTE(vytas): Inject `context` into the importable system modules
+        #   as it is referenced from other recipes.
+        util.load_module(
+            'examples/recipes/request_id_context.py', module_name='context'
+        )
         recipe = util.load_module('examples/recipes/request_id_middleware.py')
 
         app = falcon.App(middleware=[recipe.RequestIDMiddleware()])
