@@ -1,0 +1,5 @@
+Similar to :func:`~falcon.testing.create_environ`,
+the :func:`~falcon.testing.create_scope` testing helper now preserves the raw URI path,
+and propagates it to the created ASGI connection scope as the ``raw_path`` byte string
+(according to the `ASGI specification
+<https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope>`__).
