@@ -59,6 +59,8 @@ jobs:
             python-version: "3.13"
           - env: py313_cython
             python-version: "3.13"
+          - env: py314
+            python-version: "3.14.0-alpha.2 - 3.14.0"
           - env: py312_nocover
             os: macos-latest
             platform-label: ' (macos)'
