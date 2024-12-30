@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import pathlib
+import sys
 import urllib.parse
 
 import pytest
@@ -96,7 +97,7 @@ class _SuiteUtils:
             os.environ['FALCON_ASGI_WRAP_NON_COROUTINES'] = 'Y'
 
     @staticmethod
-    def load_module(filename, parent_dir=None, suffix=None):
+    def load_module(filename, parent_dir=None, suffix=None, module_name=None):
         if parent_dir:
             filename = pathlib.Path(parent_dir) / filename
         else:
@@ -105,11 +106,14 @@ class _SuiteUtils:
         if suffix is not None:
             path = path.with_name(f'{path.stem}_{suffix}.py')
         prefix = '.'.join(filename.parent.parts)
-        module_name = f'{prefix}.{path.stem}'
+        sys_module_name = module_name
+        module_name = module_name or f'{prefix}.{path.stem}'
 
         spec = importlib.util.spec_from_file_location(module_name, path)
         assert spec is not None, f'could not load module from {path}'
         module = importlib.util.module_from_spec(spec)
+        if sys_module_name:
+            sys.modules[sys_module_name] = module
         spec.loader.exec_module(module)
         return module
 
