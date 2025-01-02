@@ -1,5 +1,3 @@
-# middleware.py
-
 from uuid import uuid4
 
 # Optional logging package (pip install structlog)
@@ -10,7 +8,7 @@ class RequestIDMiddleware:
     def process_request(self, req, resp):
         request_id = str(uuid4())
 
-        # Using Falcon 2.0 syntax
+        # Using Falcon 2.0+ context style
         req.context.request_id = request_id
 
         # Or if your logger has built-in support for contexts
