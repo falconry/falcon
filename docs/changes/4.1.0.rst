@@ -14,20 +14,8 @@ on GitHub.
 
 .. NOTE(vytas): No changes to the supported platforms (yet).
 
+
 .. towncrier release notes start
-
-
-Misc
-----
-
-- Running mypy on code that uses parts of ``falcon.testing`` naively
-  would lead to errors like::
-
-    Name "falcon.testing.TestClient" is not defined
-
-  This has been fixed by explicitly exporting the names that are
-  imported in the ``falcon.testing`` namespace. (`#2387 <https://github.com/falconry/falcon/issues/2387>`__)
-
 
 Contributors to this Release
 ----------------------------
