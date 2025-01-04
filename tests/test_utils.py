@@ -628,6 +628,17 @@ class TestFalconUtils:
         with pytest.warns(deprecation.DeprecatedWarning):
             assert misc.isascii('foobar')
 
+    @pytest.mark.parametrize(
+        'filename,max_length,expected',
+        [
+            ('averylongfilename.txt', 17, 'averylongfile.txt'),
+            ('short.txt', 10, 'short.txt'),
+            ('file.withlongextension', 9, 'file.with'),
+        ],
+    )
+    def test_secure_filename_max_length(self, filename, max_length, expected):
+        assert misc.secure_filename(filename, max_length=max_length) == expected
+
 
 @pytest.mark.parametrize(
     'protocol,method',
