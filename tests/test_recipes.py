@@ -1,3 +1,6 @@
+import types
+import unittest.mock
+
 import pytest
 
 import falcon
@@ -163,42 +166,46 @@ class TestTextPlainHandler:
 
 
 class TestRequestIDContext:
-    @pytest.fixture
-    def app(self, util):
+    @pytest.fixture(params=['middleware', 'structlog'])
+    def app(self, request, util, register_module):
+        class RequestIDResource:
+            def on_get(self, req, resp):
+                # NOTE(vytas): Reference either ContextVar or req.context
+                #   depending on the recipe being tested.
+                context = getattr(recipe, 'ctx', req.context)
+                resp.media = {'request_id': context.request_id}
+
+        context = util.load_module(
+            'examples/recipes/request_id_context.py', module_name='my_app.context'
+        )
         # NOTE(vytas): Inject `context` into the importable system modules
         #   as it is referenced from other recipes.
-        util.load_module(
-            'examples/recipes/request_id_context.py', module_name='context'
-        )
-        recipe = util.load_module('examples/recipes/request_id_middleware.py')
+        register_module('my_app.context', context)
+
+        # NOTE(vytas): Inject a fake structlog module because we do not want to
+        #   introduce a new test dependency for a single recipe.
+        fake_structlog = types.ModuleType('structlog')
+        fake_structlog.get_logger = unittest.mock.MagicMock()
+        register_module('structlog', fake_structlog)
+
+        recipe = util.load_module(f'examples/recipes/request_id_{request.param}.py')
 
         app = falcon.App(middleware=[recipe.RequestIDMiddleware()])
-        app.add_route('/test', self.RequestIDResource())
+        app.add_route('/test', RequestIDResource())
         return app
-
-    class RequestIDResource:
-        def on_get(self, req, resp):
-            resp.media = {'request_id': req.context.request_id}
-
-    def test_request_id_isolated(self, app):
-        client = falcon.testing.TestClient(app)
-        request_id1 = client.simulate_get('/test').json['request_id']
-        request_id2 = client.simulate_get('/test').json['request_id']
-
-        assert request_id1 != request_id2
 
     def test_request_id_persistence(self, app):
         client = falcon.testing.TestClient(app)
 
-        response = client.simulate_get('/test')
-        request_id1 = response.json['request_id']
+        resp1 = client.simulate_get('/test')
+        request_id1 = resp1.json['request_id']
 
-        response = client.simulate_get('/test')
-        request_id2 = response.json['request_id']
+        resp2 = client.simulate_get('/test')
+        request_id2 = resp2.json['request_id']
 
         assert request_id1 != request_id2
 
-    def test_request_id_in_response_header(self, app):
+    def test_request_id_header(self, app):
         client = falcon.testing.TestClient(app)
 
         response = client.simulate_get('/test')
