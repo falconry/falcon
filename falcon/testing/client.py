@@ -672,6 +672,7 @@ async def _simulate_request_asgi(
     content_type: Optional[str] = ...,
     body: Optional[Union[str, bytes]] = ...,
     json: Optional[Any] = ...,
+    msgpack: Optional[Any] = ...,
     params: Optional[Mapping[str, Any]] = ...,
     params_csv: bool = ...,
     protocol: str = ...,
@@ -699,6 +700,7 @@ async def _simulate_request_asgi(
     content_type: Optional[str] = ...,
     body: Optional[Union[str, bytes]] = ...,
     json: Optional[Any] = ...,
+    msgpack: Optional[Any] = ...,
     params: Optional[Mapping[str, Any]] = ...,
     params_csv: bool = ...,
     protocol: str = ...,
@@ -819,7 +821,8 @@ async def _simulate_request_asgi(
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
             either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
+            are both specified, the Content-Type header will be set as `
+            `'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1569,7 +1572,8 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
             either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1686,7 +1690,8 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
             either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1892,7 +1897,8 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
             either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2004,7 +2010,8 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
             overrides `body` and sets the Content-Type header to
             ``'application/msgpack'``, overriding any value specified by
             either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as ``'application/msgpack'``.
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2324,7 +2331,7 @@ def _prepare_sim_args(
 
     if msgpack is not None:
         body = MessagePackHandler().serialize(content_type=None, media=msgpack)
-        headers = headers or {}
+        headers = dict(headers or {})
         headers['Content-Type'] = MEDIA_MSGPACK
 
     return path, query_string, headers, body, extras

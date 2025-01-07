@@ -6,6 +6,13 @@ from falcon import status_codes
 from falcon import testing
 from falcon.util.sync import async_to_sync
 
+try:
+    import msgpack
+except ImportError:
+    msgpack = None
+
+SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
+
 
 class CustomCookies:
     def items(self):
@@ -103,35 +110,48 @@ def test_simulate_request_content_type():
     )
     assert result.text == falcon.MEDIA_JSON
 
-    result = testing.simulate_post(app, '/', json={}, msgpack={})
-    assert result.text == falcon.MEDIA_MSGPACK
 
-    result = testing.simulate_post(app, '/', json={}, msgpack={}, headers=headers)
-    assert result.text == falcon.MEDIA_MSGPACK
+@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
+@pytest.mark.parametrize(
+    'json,msgpack,response',
+    [
+        ({}, None, falcon.MEDIA_JSON),
+        (None, {}, falcon.MEDIA_MSGPACK),
+        ({}, {}, falcon.MEDIA_MSGPACK),
+    ],
+)
+def test_simulate_request_msgpack_content_type(json, msgpack, response):
+    class Foo:
+        def on_post(self, req, resp):
+            resp.text = req.content_type
 
-    result = testing.simulate_post(
-        app, '/', json={}, msgpack={}, content_type=falcon.MEDIA_HTML
-    )
-    assert result.text == falcon.MEDIA_MSGPACK
+    app = App()
+    app.add_route('/', Foo())
 
-    result = testing.simulate_post(
-        app, '/', json={}, msgpack={}, headers=headers, content_type=falcon.MEDIA_HTML
-    )
-    assert result.text == falcon.MEDIA_MSGPACK
+    headers = {'Content-Type': falcon.MEDIA_TEXT}
 
-    result = testing.simulate_post(app, '/', msgpack={})
-    assert result.text == falcon.MEDIA_MSGPACK
-
-    result = testing.simulate_post(app, '/', msgpack={}, content_type=falcon.MEDIA_HTML)
-    assert result.text == falcon.MEDIA_MSGPACK
-
-    result = testing.simulate_post(app, '/', msgpack={}, headers=headers)
-    assert result.text == falcon.MEDIA_MSGPACK
+    result = testing.simulate_post(app, '/', json=json, msgpack=msgpack)
+    assert result.text == response
 
     result = testing.simulate_post(
-        app, '/', msgpack={}, headers=headers, content_type=falcon.MEDIA_HTML
+        app, '/', json=json, msgpack=msgpack, content_type=falcon.MEDIA_HTML
     )
-    assert result.text == falcon.MEDIA_MSGPACK
+    assert result.text == response
+
+    result = testing.simulate_post(
+        app, '/', json=json, msgpack=msgpack, headers=headers
+    )
+    assert result.text == response
+
+    result = testing.simulate_post(
+        app,
+        '/',
+        json=json,
+        msgpack=msgpack,
+        headers=headers,
+        content_type=falcon.MEDIA_HTML,
+    )
+    assert result.text == response
 
 
 @pytest.mark.parametrize('mode', ['wsgi', 'asgi', 'asgi-stream'])
