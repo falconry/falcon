@@ -154,6 +154,45 @@ def test_simulate_request_msgpack_content_type(json, msgpack, response):
     assert result.text == response
 
 
+@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
+@pytest.mark.parametrize(
+    'value',
+    (
+        'd\xff\xff\x00',
+        'quick fox jumps over the lazy dog',
+        '{"hello": "WORLD!"}',
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+        '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+        '\xe9\xe8',
+    ),
+)
+def test_simulate_request_msgpack_different_bodies(value):
+    value = bytes(value, 'UTF-8')
+
+    resource = testing.SimpleTestResource(body=value)
+
+    app = App()
+    app.add_route('/', resource)
+
+    result = testing.simulate_post(app, '/', msgpack={})
+    captured_resp = resource.captured_resp
+    content = captured_resp.text
+
+    if len(value) > 40:
+        content = value[:20] + b'...' + value[-20:]
+    else:
+        content = value
+
+    args = [
+        captured_resp.status,
+        captured_resp.headers['content-type'],
+        str(content),
+    ]
+
+    expected_content = 'Result<{}>'.format(' '.join(filter(None, args)))
+    assert str(result) == expected_content
+
+
 @pytest.mark.parametrize('mode', ['wsgi', 'asgi', 'asgi-stream'])
 def test_content_type(util, mode):
     class Responder:
