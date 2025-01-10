@@ -76,7 +76,9 @@ IS_64_BITS = sys.maxsize > 2**32
 from falcon.util.reader import BufferedReader as _PyBufferedReader  # NOQA
 
 try:
-    from falcon.cyutil.reader import BufferedReader as _CyBufferedReader
+    from falcon.cyutil.reader import (  # pyright: ignore[reportMissingImports]
+        BufferedReader as _CyBufferedReader,
+    )
 except ImportError:
     _CyBufferedReader = None
 
