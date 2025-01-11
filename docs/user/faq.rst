@@ -892,6 +892,8 @@ types:
 Response Handling
 ~~~~~~~~~~~~~~~~~
 
+.. _resp_media_data_text:
+
 When would I use media, data, text, and stream?
 -----------------------------------------------
 
