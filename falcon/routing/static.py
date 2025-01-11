@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 from functools import partial
 import io
 import os
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def _open_range(
-    file_path: Union[str, Path], req_range: Optional[Tuple[int, int]]
+    fh: io.BufferedReader, st: os.stat_result, req_range: Optional[Tuple[int, int]]
 ) -> Tuple[ReadableIO, int, Optional[Tuple[int, int, int]]]:
     """Open a file for a ranged request.
 
@@ -32,8 +33,7 @@ def _open_range(
             possibly bounded, and the content-range will be a tuple of
             (start, end, size).
     """
-    fh = io.open(file_path, 'rb')
-    size = os.fstat(fh.fileno()).st_size
+    size = st.st_size
     if req_range is None:
         return fh, size, None
 
@@ -217,23 +217,32 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        req_range = req.range
-        if req.range_unit != 'bytes':
-            req_range = None
         try:
-            stream, length, content_range = _open_range(file_path, req_range)
-            resp.set_stream(stream, length)
+            fh = io.open(file_path, 'rb')
+            st = os.fstat(fh.fileno())
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                stream, length, content_range = _open_range(
-                    self._fallback_filename, req_range
-                )
-                resp.set_stream(stream, length)
-                file_path = self._fallback_filename
+                fh = io.open(self._fallback_filename, 'rb')
+                st = os.fstat(fh.fileno())
             except IOError:
                 raise falcon.HTTPNotFound()
+            else:
+                file_path = self._fallback_filename
+
+        resp.last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
+        if (req.if_modified_since is not None and
+                resp.last_modified <= req.if_modified_since):
+            resp.status = falcon.HTTP_304
+            return
+
+        req_range = req.range if req.range_unit == 'bytes' else None
+        try:
+            stream, length, content_range = _open_range(fh, st, req_range)
+            resp.set_stream(stream, length)
+        except IOError:
+            raise falcon.HTTPNotFound()
 
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
