@@ -57,8 +57,9 @@ def patch_open(monkeypatch):
                 pass
 
             class FakeStat:
-                def __init__(self, size):
+                def __init__(self, size, mtime):
                     self.st_size = size
+                    self.st_mtime = mtime
 
             if validate:
                 validate(path)
@@ -66,7 +67,7 @@ def patch_open(monkeypatch):
             data = path.encode() if content is None else content
             fake_file = io.BytesIO(data)
             fd = FakeFD(1337)
-            fd._stat = FakeStat(len(data))
+            fd._stat = FakeStat(len(data), 1736617934)
             fake_file.fileno = lambda: fd
 
             patch.current_file = fake_file
