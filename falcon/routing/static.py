@@ -24,7 +24,8 @@ def _open_range(
     """Open a file for a ranged request.
 
     Args:
-        file_path (str): Path to the file to open.
+        fh (io.BufferedReader): file handler of the file.
+        st (os.stat_result): fs stat result of the file.
         req_range (Optional[Tuple[int, int]]): Request.range value.
     Returns:
         tuple: Three-member tuple of (stream, content-length, content-range).
