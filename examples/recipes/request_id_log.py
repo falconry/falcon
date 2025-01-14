@@ -1,8 +1,7 @@
-# some_other_module.py
-
 import logging
 
-from context import ctx
+# Import the above context.py
+from my_app.context import ctx
 
 
 def create_widget_object(name: str):

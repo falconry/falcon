@@ -87,7 +87,7 @@ Now, if you do make changes to Falcon itself, please consider contributing your 
 Falcon License
 --------------
 
-Copyright 2012-2024 by Rackspace Hosting, Inc. and other contributors,
+Copyright 2012-2025 by Rackspace Hosting, Inc. and other contributors,
 as noted in the individual source code files.
 
 Licensed under the Apache License, Version 2.0 (the "License");

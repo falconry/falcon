@@ -1,5 +1,3 @@
-# context.py
-
 import contextvars
 
 
