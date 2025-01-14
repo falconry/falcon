@@ -218,16 +218,21 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
+        fh: Optional[io.BufferedReader] = None
         try:
             fh = io.open(file_path, 'rb')
             st = os.fstat(fh.fileno())
         except IOError:
             if self._fallback_filename is None:
+                if fh is not None:
+                    fh.close()
                 raise falcon.HTTPNotFound()
             try:
                 fh = io.open(self._fallback_filename, 'rb')
                 st = os.fstat(fh.fileno())
             except IOError:
+                if fh is not None:
+                    fh.close()
                 raise falcon.HTTPNotFound()
             else:
                 file_path = self._fallback_filename
@@ -243,6 +248,7 @@ class StaticRoute:
             stream, length, content_range = _open_range(fh, st, req_range)
             resp.set_stream(stream, length)
         except IOError:
+            fh.close()
             raise falcon.HTTPNotFound()
 
         suffix = os.path.splitext(file_path)[1]
