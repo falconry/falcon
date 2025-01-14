@@ -13,6 +13,9 @@ from falcon.routing.static import _BoundedFile
 import falcon.testing as testing
 
 
+MTIME = (1736617934, "Sat, 11 Jan 2025 17:52:14 GMT")
+
+
 def normalize_path(path):
     # NOTE(vytas): On CPython 3.13, ntpath.isabs() no longer returns True for
     #   Unix-like absolute paths that start with a single \.
@@ -67,7 +70,7 @@ def patch_open(monkeypatch):
             data = path.encode() if content is None else content
             fake_file = io.BytesIO(data)
             fd = FakeFD(1337)
-            fd._stat = FakeStat(len(data), 1736617934)
+            fd._stat = FakeStat(len(data), MTIME[0])
             fake_file.fileno = lambda: fd
 
             patch.current_file = fake_file
@@ -634,3 +637,33 @@ def test_options_request(client, patch_open):
     assert resp.text == ''
     assert int(resp.headers['Content-Length']) == 0
     assert resp.headers['Access-Control-Allow-Methods'] == 'GET'
+
+
+def test_last_modified(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    response = client.simulate_request(path='/assets/css/main.css')
+    assert response.status == falcon.HTTP_200
+    assert response.headers['Last-Modified'] == MTIME[1]
+
+
+def test_304_with_if_modified_since(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={"If-Modified-Since": "Sat, 11 Jan 2025 17:52:15 GMT"},
+    )
+    assert resp.status == falcon.HTTP_304
+    assert resp.text == ''
+
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={"If-Modified-Since": "Sat, 11 Jan 2025 17:52:13 GMT"},
+    )
+    assert resp.status == falcon.HTTP_200
+    assert resp.text != ''
