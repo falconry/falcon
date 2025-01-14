@@ -237,9 +237,10 @@ class StaticRoute:
             else:
                 file_path = self._fallback_filename
 
-        resp.last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
+        last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
+        resp.last_modified = last_modified
         if (req.if_modified_since is not None and
-                resp.last_modified <= req.if_modified_since):
+                last_modified <= req.if_modified_since):
             resp.status = falcon.HTTP_304
             return
 
