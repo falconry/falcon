@@ -673,7 +673,30 @@ def test_if_modified_since(client, patch_open):
     assert resp.text != ''
 
 
-def test_permission_error(client, patch_open):
+@pytest.mark.parametrize('use_fallback', [True, False])
+def test_permission_error(
+    client,
+    patch_open,
+    use_fallback,
+    monkeypatch
+):
+    def validate(path):
+        if use_fallback and not path.endswith('fallback.css'):
+            raise IOError()
+        raise PermissionError()
+
+    patch_open(validate=validate)
+    monkeypatch.setattr('os.path.isfile', lambda file: file.endswith('fallback.css'))
+
+    client.app.add_static_route(
+        '/assets/', '/opt/somesite/assets', fallback_filename='fallback.css'
+    )
+    resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_403
+
+
+def test_read_permission_error(client, patch_open):
     patch_open()
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
@@ -684,7 +707,7 @@ def test_permission_error(client, patch_open):
     assert resp.status == falcon.HTTP_403
 
 
-def test_read_error(client, patch_open):
+def test_read_ioerror(client, patch_open):
     patch_open()
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
