@@ -3,13 +3,13 @@ import io
 import os
 import pathlib
 import posixpath
+from unittest import mock
 
 import pytest
 
 import falcon
 from falcon.routing import StaticRoute
 from falcon.routing import StaticRouteAsync
-import falcon.routing.static
 from falcon.routing.static import _BoundedFile
 import falcon.testing as testing
 
@@ -709,3 +709,36 @@ def test_ioerror(client, patch_open, monkeypatch):
     resp = client.simulate_request(path='/assets/css/main.css')
 
     assert resp.status == falcon.HTTP_404
+
+
+@pytest.mark.parametrize('error_type', [PermissionError, FileNotFoundError])
+def test_fstat_error(client, patch_open, error_type):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch("os.fstat") as m:
+        m.side_effect = error_type()
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    if isinstance(error_type(), PermissionError):
+        assert resp.status == falcon.HTTP_403
+    else:
+        assert resp.status == falcon.HTTP_404
+
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
+
+
+def test_set_range_error(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch("falcon.routing.static._set_range") as m:
+        m.side_effect = IOError()
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_404
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
