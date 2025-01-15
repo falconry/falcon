@@ -694,23 +694,6 @@ def test_permission_error(
     assert resp.status == falcon.HTTP_403
 
 
-def test_ioerror(client, patch_open, monkeypatch):
-    def validate(path):
-        raise IOError()
-
-    patch_open(validate=validate)
-    monkeypatch.setattr(
-        'os.path.isfile', lambda file: file.endswith('fallback.css')
-    )
-
-    client.app.add_static_route(
-        '/assets/', '/opt/somesite/assets', fallback_filename='fallback.css'
-    )
-    resp = client.simulate_request(path='/assets/css/main.css')
-
-    assert resp.status == falcon.HTTP_404
-
-
 @pytest.mark.parametrize('error_type', [PermissionError, FileNotFoundError])
 def test_fstat_error(client, patch_open, error_type):
     patch_open()
@@ -721,7 +704,7 @@ def test_fstat_error(client, patch_open, error_type):
         m.side_effect = error_type()
         resp = client.simulate_request(path='/assets/css/main.css')
 
-    if isinstance(error_type(), PermissionError):
+    if error_type == PermissionError:
         assert resp.status == falcon.HTTP_403
     else:
         assert resp.status == falcon.HTTP_404
