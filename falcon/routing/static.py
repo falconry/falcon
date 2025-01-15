@@ -223,11 +223,15 @@ class StaticRoute:
 
         try:
             st = _stat(file_path)
+        except PermissionError:
+            raise falcon.HTTPForbidden()
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
                 st = _stat(self._fallback_filename)
+            except PermissionError:
+                raise falcon.HTTPForbidden()
             except IOError:
                 raise falcon.HTTPNotFound()
             else:
