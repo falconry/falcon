@@ -3,6 +3,7 @@ import io
 import os
 import pathlib
 import posixpath
+from unittest import mock
 
 import pytest
 
@@ -12,9 +13,6 @@ from falcon.routing import StaticRouteAsync
 from falcon.routing.static import _BoundedFile
 import falcon.routing.static
 import falcon.testing as testing
-
-
-MTIME = (1736617934, "Sat, 11 Jan 2025 17:52:14 GMT")
 
 
 def normalize_path(path):
@@ -55,7 +53,7 @@ def create_sr(asgi, prefix, directory, **kwargs):
 
 @pytest.fixture
 def patch_open(monkeypatch):
-    def patch(content=None, validate=None):
+    def patch(content=None, validate=None, mtime=1736617934):
         class FakeStat:
             def __init__(self, size, mtime):
                 self.st_size = size
@@ -73,11 +71,16 @@ def patch_open(monkeypatch):
             patch.current_file = fake_file
             return fake_file
 
-        def _stat(path, **kwargs):
-            return FakeStat(len(open(path, 'rb').getvalue()), 1736617934)
+        def stat(path, **kwargs):
+
+            if validate:
+                validate(path)
+
+            data = path.encode() if content is None else content
+            return FakeStat(len(data), mtime)
 
         monkeypatch.setattr(io, 'open', open)
-        monkeypatch.setattr(falcon.routing.static, '_stat', _stat)
+        monkeypatch.setattr(falcon.routing.static, '_stat', stat)
 
     patch.current_file = None
     return patch
@@ -640,17 +643,19 @@ def test_options_request(client, patch_open):
 
 
 def test_last_modified(client, patch_open):
-    patch_open()
+    mtime = (1736617934, "Sat, 11 Jan 2025 17:52:14 GMT")
+    patch_open(mtime=mtime[0])
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     response = client.simulate_request(path='/assets/css/main.css')
     assert response.status == falcon.HTTP_200
-    assert response.headers['Last-Modified'] == MTIME[1]
+    assert response.headers['Last-Modified'] == mtime[1]
 
 
-def test_304_with_if_modified_since(client, patch_open):
-    patch_open()
+def test_if_modified_since(client, patch_open):
+    mtime = (1736617934, "Sat, 11 Jan 2025 17:52:14 GMT")
+    patch_open(mtime=mtime[0])
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
@@ -667,3 +672,25 @@ def test_304_with_if_modified_since(client, patch_open):
     )
     assert resp.status == falcon.HTTP_200
     assert resp.text != ''
+
+
+def test_permission_error(client, patch_open):
+    patch_open()
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch("io.open", mock.mock_open()) as m:
+        m.side_effect = PermissionError()
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_403
+
+
+def test_read_error(client, patch_open):
+    patch_open()
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch("io.open", mock.mock_open()) as m:
+        m.side_effect = IOError()
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_404
