@@ -10,6 +10,7 @@ import falcon
 from falcon.routing import StaticRoute
 from falcon.routing import StaticRouteAsync
 from falcon.routing.static import _BoundedFile
+import falcon.routing.static
 import falcon.testing as testing
 
 
@@ -55,29 +56,28 @@ def create_sr(asgi, prefix, directory, **kwargs):
 @pytest.fixture
 def patch_open(monkeypatch):
     def patch(content=None, validate=None):
-        def open(path, mode):
-            class FakeFD(int):
-                pass
+        class FakeStat:
+            def __init__(self, size, mtime):
+                self.st_size = size
+                self.st_mtime = mtime
+                self.st_mode = 0o100644
 
-            class FakeStat:
-                def __init__(self, size, mtime):
-                    self.st_size = size
-                    self.st_mtime = mtime
+        def open(path, mode):
 
             if validate:
                 validate(path)
 
             data = path.encode() if content is None else content
             fake_file = io.BytesIO(data)
-            fd = FakeFD(1337)
-            fd._stat = FakeStat(len(data), MTIME[0])
-            fake_file.fileno = lambda: fd
 
             patch.current_file = fake_file
             return fake_file
 
+        def _stat(path, **kwargs):
+            return FakeStat(len(open(path, 'rb').getvalue()), 1736617934)
+
         monkeypatch.setattr(io, 'open', open)
-        monkeypatch.setattr(os, 'fstat', lambda fileno: fileno._stat)
+        monkeypatch.setattr(falcon.routing.static, '_stat', _stat)
 
     patch.current_file = None
     return patch
