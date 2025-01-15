@@ -10,8 +10,8 @@ import pytest
 import falcon
 from falcon.routing import StaticRoute
 from falcon.routing import StaticRouteAsync
-from falcon.routing.static import _BoundedFile
 import falcon.routing.static
+from falcon.routing.static import _BoundedFile
 import falcon.testing as testing
 
 
@@ -686,7 +686,9 @@ def test_permission_error(
         raise PermissionError()
 
     patch_open(validate=validate)
-    monkeypatch.setattr('os.path.isfile', lambda file: file.endswith('fallback.css'))
+    monkeypatch.setattr(
+        'os.path.isfile', lambda file: file.endswith('fallback.css')
+    )
 
     client.app.add_static_route(
         '/assets/', '/opt/somesite/assets', fallback_filename='fallback.css'

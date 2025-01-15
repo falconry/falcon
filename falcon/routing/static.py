@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 from functools import partial
 import io
 import os
@@ -21,7 +22,9 @@ _stat = os.stat
 
 
 def _open_range(
-    file_path: Union[Path, str], st: os.stat_result, req_range: Optional[Tuple[int, int]]
+    file_path: Union[Path, str],
+    st: os.stat_result,
+    req_range: Optional[Tuple[int, int]]
 ) -> Tuple[ReadableIO, int, Optional[Tuple[int, int, int]]]:
     """Open a file for a ranged request.
 
@@ -230,12 +233,11 @@ class StaticRoute:
                 raise falcon.HTTPNotFound()
             try:
                 st = _stat(self._fallback_filename)
+                file_path = self._fallback_filename
             except PermissionError:
                 raise falcon.HTTPForbidden()
             except IOError:
                 raise falcon.HTTPNotFound()
-            else:
-                file_path = self._fallback_filename
 
         last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
         resp.last_modified = last_modified
@@ -246,7 +248,9 @@ class StaticRoute:
 
         req_range = req.range if req.range_unit == 'bytes' else None
         try:
-            stream, length, content_range = _open_range(file_path, st, req_range)
+            stream, length, content_range = _open_range(
+                file_path, st, req_range
+            )
             resp.set_stream(stream, length)
         except PermissionError:
             raise falcon.HTTPForbidden()
