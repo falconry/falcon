@@ -3,7 +3,6 @@ import io
 import os
 import pathlib
 import posixpath
-from unittest import mock
 
 import pytest
 
@@ -54,32 +53,29 @@ def create_sr(asgi, prefix, directory, **kwargs):
 @pytest.fixture
 def patch_open(monkeypatch):
     def patch(content=None, validate=None, mtime=1736617934):
-        class FakeStat:
-            def __init__(self, size, mtime):
-                self.st_size = size
-                self.st_mtime = mtime
-
         def open(path, mode):
+            class FakeFD(int):
+                pass
+
+            class FakeStat:
+                def __init__(self, size):
+                    self.st_size = size
+                    self.st_mtime = mtime
 
             if validate:
                 validate(path)
 
             data = path.encode() if content is None else content
             fake_file = io.BytesIO(data)
+            fd = FakeFD(1337)
+            fd._stat = FakeStat(len(data))
+            fake_file.fileno = lambda: fd
 
             patch.current_file = fake_file
             return fake_file
 
-        def stat(path, **kwargs):
-
-            if validate:
-                validate(path)
-
-            data = path.encode() if content is None else content
-            return FakeStat(len(data), mtime)
-
         monkeypatch.setattr(io, 'open', open)
-        monkeypatch.setattr(falcon.routing.static, '_stat', stat)
+        monkeypatch.setattr(os, 'fstat', lambda fileno: fileno._stat)
 
     patch.current_file = None
     return patch
@@ -698,23 +694,18 @@ def test_permission_error(
     assert resp.status == falcon.HTTP_403
 
 
-def test_read_permission_error(client, patch_open):
-    patch_open()
-    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+def test_ioerror(client, patch_open, monkeypatch):
+    def validate(path):
+        raise IOError()
 
-    with mock.patch("io.open", mock.mock_open()) as m:
-        m.side_effect = PermissionError()
-        resp = client.simulate_request(path='/assets/css/main.css')
+    patch_open(validate=validate)
+    monkeypatch.setattr(
+        'os.path.isfile', lambda file: file.endswith('fallback.css')
+    )
 
-    assert resp.status == falcon.HTTP_403
-
-
-def test_read_ioerror(client, patch_open):
-    patch_open()
-    client.app.add_static_route('/assets/', '/opt/somesite/assets')
-
-    with mock.patch("io.open", mock.mock_open()) as m:
-        m.side_effect = IOError()
-        resp = client.simulate_request(path='/assets/css/main.css')
+    client.app.add_static_route(
+        '/assets/', '/opt/somesite/assets', fallback_filename='fallback.css'
+    )
+    resp = client.simulate_request(path='/assets/css/main.css')
 
     assert resp.status == falcon.HTTP_404
