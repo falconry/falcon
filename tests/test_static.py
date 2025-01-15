@@ -58,7 +58,6 @@ def patch_open(monkeypatch):
             def __init__(self, size, mtime):
                 self.st_size = size
                 self.st_mtime = mtime
-                self.st_mode = 0o100644
 
         def open(path, mode):
 
