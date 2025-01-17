@@ -704,7 +704,7 @@ def test_fstat_error(client, patch_open, error_type):
         m.side_effect = error_type()
         resp = client.simulate_request(path='/assets/css/main.css')
 
-    if error_type == PermissionError:
+    if error_type is PermissionError:
         assert resp.status == falcon.HTTP_403
     else:
         assert resp.status == falcon.HTTP_404
