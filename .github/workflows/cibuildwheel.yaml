@@ -113,11 +113,9 @@ jobs:
           - name: musllinux_x86_64
             os: ubuntu-latest
           - name: manylinux_aarch64
-            os: ubuntu-latest
-            emulation: true
+            os: ubuntu-24.04-arm
           - name: musllinux_aarch64
-            os: ubuntu-latest
-            emulation: true
+            os: ubuntu-24.04-arm
           - name: manylinux_s390x
             os: ubuntu-latest
             emulation: true

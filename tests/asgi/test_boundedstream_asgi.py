@@ -179,9 +179,9 @@ async def test_iterate_streaming_request():
 
     async def receive():
         event = next(events)
-        assert (
-            event['type'] != 'http.disconnect'
-        ), 'would hang until the client times out'
+        assert event['type'] != 'http.disconnect', (
+            'would hang until the client times out'
+        )
         return event
 
     s = asgi.BoundedStream(receive)
