@@ -289,10 +289,7 @@ def test_exhaust(shorter_stream):
 
 def test_readline():
     source = (
-        b'Hello, world!\n'
-        b'A line.\n'
-        b'\n'
-        b'A longer line... \n' + b'SPAM ' * 7 + b'\n' + b'\n'
+        b'Hello, world!\nA line.\n\nA longer line... \n' + b'SPAM ' * 7 + b'\n' + b'\n'
     )
 
     stream = BufferedReader(io.BytesIO(source).read, len(source))

@@ -218,10 +218,7 @@ class AppendHeaderResource:
             ' Max-Age=600; path=/'
         )
         resp.append_header('Set-Cookie', c1)
-        c2 = (
-            'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT;'
-            ' Max-Age=0'
-        )
+        c2 = 'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0'
         resp.append_header('seT-cookie', c2)
 
 
