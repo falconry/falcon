@@ -405,8 +405,7 @@ class CompiledRouter:
 
             if name in used_names:
                 msg_template = (
-                    'Field names may not be duplicated '
-                    '("{0}" was used more than once)'
+                    'Field names may not be duplicated ("{0}" was used more than once)'
                 )
                 msg = msg_template.format(name)
                 raise UnacceptableRouteError(msg)
