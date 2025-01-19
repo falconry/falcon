@@ -432,7 +432,7 @@ class StreamedResult(_ResultBase):
         return self._stream
 
     async def finalize(self) -> None:
-        """Finalize the encapsulated simulated request
+        """Finalize the encapsulated simulated request.
 
         This method causes the request event emitter to begin emitting
         ``'http.disconnect'`` events and then awaits the completion of the
