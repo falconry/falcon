@@ -17,8 +17,7 @@ jobs:
       matrix:
         platform:
           - build: "cp313-manylinux_aarch64"
-            os: ubuntu-latest
-            emulation: true
+            os: ubuntu-24.04-arm
           - build: "cp313-manylinux_s390x"
             os: ubuntu-latest
             emulation: true
