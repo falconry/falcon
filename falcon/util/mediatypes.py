@@ -146,8 +146,7 @@ class _MediaRange:
     _NOT_MATCHING = (-1, -1, -1, -1, 0.0)
 
     _Q_VALUE_ERROR_MESSAGE = (
-        'If provided, the q parameter must be a real number '
-        'in the range 0 through 1.'
+        'If provided, the q parameter must be a real number in the range 0 through 1.'
     )
 
     @classmethod

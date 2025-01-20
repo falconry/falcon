@@ -237,12 +237,12 @@ class TestRequestTimeMiddleware(TestMiddleware):
         assert 'start_time' in context
         assert 'mid_time' in context
         assert 'end_time' in context
-        assert (
-            context['mid_time'] >= context['start_time']
-        ), 'process_resource not executed after request'
-        assert (
-            context['end_time'] >= context['start_time']
-        ), 'process_response not executed after request'
+        assert context['mid_time'] >= context['start_time'], (
+            'process_resource not executed after request'
+        )
+        assert context['end_time'] >= context['start_time'], (
+            'process_response not executed after request'
+        )
 
         assert context['req_succeeded']
 
@@ -307,12 +307,12 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert 'start_time' in context
         assert 'mid_time' in context
         assert 'end_time' in context
-        assert (
-            context['mid_time'] >= context['start_time']
-        ), 'process_resource not executed after request'
-        assert (
-            context['end_time'] >= context['start_time']
-        ), 'process_response not executed after request'
+        assert context['mid_time'] >= context['start_time'], (
+            'process_resource not executed after request'
+        )
+        assert context['end_time'] >= context['start_time'], (
+            'process_response not executed after request'
+        )
 
     def test_legacy_middleware_called_with_correct_args(self, asgi, util):
         global context

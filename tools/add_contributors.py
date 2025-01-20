@@ -110,9 +110,9 @@ def _update_towncrier_template(template, contributors):
     contributors = set(contributors)
     contributors.update(matches[::2])
     for separator in matches[1::2]:
-        assert (
-            separator == ''
-        ), f'unexpected separator between contributor lines: {separator!r}'
+        assert separator == '', (
+            f'unexpected separator between contributor lines: {separator!r}'
+        )
 
     with open(template, 'w') as template_file:
         template_file.write(content)
