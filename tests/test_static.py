@@ -638,7 +638,7 @@ def test_options_request(client, patch_open):
 
 
 def test_last_modified(client, patch_open):
-    mtime = (1736617934, "Sat, 11 Jan 2025 17:52:14 GMT")
+    mtime = (1736617934, 'Sat, 11 Jan 2025 17:52:14 GMT')
     patch_open(mtime=mtime[0])
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
@@ -649,42 +649,35 @@ def test_last_modified(client, patch_open):
 
 
 def test_if_modified_since(client, patch_open):
-    mtime = (1736617934, "Sat, 11 Jan 2025 17:52:14 GMT")
+    mtime = (1736617934, 'Sat, 11 Jan 2025 17:52:14 GMT')
     patch_open(mtime=mtime[0])
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     resp = client.simulate_request(
         path='/assets/css/main.css',
-        headers={"If-Modified-Since": "Sat, 11 Jan 2025 17:52:15 GMT"},
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:15 GMT'},
     )
     assert resp.status == falcon.HTTP_304
     assert resp.text == ''
 
     resp = client.simulate_request(
         path='/assets/css/main.css',
-        headers={"If-Modified-Since": "Sat, 11 Jan 2025 17:52:13 GMT"},
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:13 GMT'},
     )
     assert resp.status == falcon.HTTP_200
     assert resp.text != ''
 
 
 @pytest.mark.parametrize('use_fallback', [True, False])
-def test_permission_error(
-    client,
-    patch_open,
-    use_fallback,
-    monkeypatch
-):
+def test_permission_error(client, patch_open, use_fallback, monkeypatch):
     def validate(path):
         if use_fallback and not path.endswith('fallback.css'):
             raise IOError()
         raise PermissionError()
 
     patch_open(validate=validate)
-    monkeypatch.setattr(
-        'os.path.isfile', lambda file: file.endswith('fallback.css')
-    )
+    monkeypatch.setattr('os.path.isfile', lambda file: file.endswith('fallback.css'))
 
     client.app.add_static_route(
         '/assets/', '/opt/somesite/assets', fallback_filename='fallback.css'
@@ -700,7 +693,7 @@ def test_fstat_error(client, patch_open, error_type):
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
-    with mock.patch("os.fstat") as m:
+    with mock.patch('os.fstat') as m:
         m.side_effect = error_type()
         resp = client.simulate_request(path='/assets/css/main.css')
 
@@ -718,7 +711,7 @@ def test_set_range_error(client, patch_open):
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
-    with mock.patch("falcon.routing.static._set_range") as m:
+    with mock.patch('falcon.routing.static._set_range') as m:
         m.side_effect = IOError()
         resp = client.simulate_request(path='/assets/css/main.css')
 

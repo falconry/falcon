@@ -19,9 +19,7 @@ if TYPE_CHECKING:
     from falcon import Response
 
 
-def _open_file(
-    file_path: Union[str, Path]
-) -> Tuple[io.BufferedReader, os.stat_result]:
+def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_result]:
     fh: Optional[io.BufferedReader] = None
     try:
         fh = io.open(file_path, 'rb')
@@ -38,9 +36,7 @@ def _open_file(
 
 
 def _set_range(
-    fh: io.BufferedReader,
-    st: os.stat_result,
-    req_range: Optional[Tuple[int, int]]
+    fh: io.BufferedReader, st: os.stat_result, req_range: Optional[Tuple[int, int]]
 ) -> Tuple[ReadableIO, int, Optional[Tuple[int, int, int]]]:
     """Process file handle for a ranged request.
 
@@ -250,8 +246,7 @@ class StaticRoute:
 
         last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
         resp.last_modified = last_modified
-        if (req.if_modified_since is not None and
-                last_modified <= req.if_modified_since):
+        if req.if_modified_since is not None and last_modified <= req.if_modified_since:
             resp.status = falcon.HTTP_304
             return
 
