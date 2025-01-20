@@ -285,12 +285,23 @@ def test_cookies_setable():
 
     resp.set_cookie('foo', 'wrong-cookie', max_age=301)
     resp.set_cookie('foo', 'bar', max_age=300)
-    morsel = resp._cookies['foo']
+    resp.set_cookie('bar', 'baz', same_site='None', partitioned=True)
 
-    assert isinstance(morsel, http_cookies.Morsel)
-    assert morsel.key == 'foo'
-    assert morsel.value == 'bar'
-    assert morsel['max-age'] == 300
+    morsel1 = resp._cookies['foo']
+    morsel2 = resp._cookies['bar']
+
+    assert isinstance(morsel1, http_cookies.Morsel)
+    assert morsel1.key == 'foo'
+    assert morsel1.value == 'bar'
+    assert morsel1['max-age'] == 300
+
+    assert isinstance(morsel2, http_cookies.Morsel)
+    assert morsel2.key == 'bar'
+    assert morsel2.value == 'baz'
+    assert morsel2['partitioned'] is True
+    assert morsel2.output() == (
+        'Set-Cookie: bar=baz; HttpOnly; Partitioned; SameSite=None; Secure'
+    )
 
 
 @pytest.mark.parametrize('cookie_name', ('foofloat', 'foostring'))
