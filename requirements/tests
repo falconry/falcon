@@ -1,19 +1,14 @@
 coverage >= 4.1
-# TODO(vytas): Our use of testtools breaks under pytest 8.2 along the lines of
-#   https://github.com/pytest-dev/pytest/issues/12263, unpin when fixed
-#   (or drop support for testtools altogether?)
-pytest >= 7.0, < 8.2
+pytest >= 7.0
 pyyaml
 requests
-# TODO(vytas): Check if testtools still brings anything to the table, and
-#   re-enable if/when unittest2 is adjusted to support CPython 3.10.
-testtools; python_version < '3.10'
+testtools
 
-# ASGI Specific (daphne is installed on a its own tox env)
+# ASGI Specific (Daphne & Hypercorn are installed in their own tox env)
 aiofiles
 httpx
 uvicorn >= 0.17.0
-websockets >= 13.1, < 14.2
+websockets >= 13.1
 
 # Handler Specific
 cbor2
