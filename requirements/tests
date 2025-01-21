@@ -1,14 +1,14 @@
 coverage >= 4.1
-pytest >= 8.3
+pytest >= 7.0
 pyyaml
 requests
 testtools
 
-# ASGI Specific (Daphne is installed in its own tox env)
+# ASGI Specific (Daphne & Hypercorn are installed in their own tox env)
 aiofiles
 httpx
 uvicorn >= 0.17.0
-websockets >= 13.1, < 14.2
+websockets >= 13.1
 
 # Handler Specific
 cbor2
