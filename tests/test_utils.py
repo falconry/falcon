@@ -184,8 +184,7 @@ class TestFalconUtils:
         assert falcon.to_query_str({'things': ['a', 'b']}) == '?things=a,b'
 
         expected = (
-            '?things=a&things=b&things=&things=None'
-            '&things=true&things=false&things=0'
+            '?things=a&things=b&things=&things=None&things=true&things=false&things=0'
         )
 
         actual = falcon.to_query_str(
