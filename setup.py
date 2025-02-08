@@ -60,12 +60,15 @@ if HAS_CYTHON and IS_CPYTHON and not DISABLE_EXTENSION:
         'falcon.hooks',
         'falcon.inspect',
         'falcon.responders',
+        'falcon.typing',
+        'falcon._typing',
         'falcon.util.reader',
         'falcon.util.sync',
+        'falcon.util.time',
     ]
 
     cython_package_names = ('falcon.cyutil',)
-    # NOTE(vytas): Now that all our codebase is Python 3.7+, specify the
+    # NOTE(vytas): Now that all our codebase is Python 3.8+, specify the
     #   Python 3 language level for Cython as well to avoid any surprises.
     cython_directives = {'language_level': '3', 'annotation_typing': False}
 

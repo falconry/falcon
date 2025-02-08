@@ -56,9 +56,11 @@ from falcon.util.time import TimezoneGMT
 #   attribute that will probably be added in Python 3.14.
 #   We do it this way because SimpleCookie does not give us a simple way to
 #   specify our own subclass of Morsel.
-_reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
+_reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore[attr-defined]
 if 'partitioned' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['partitioned'] = 'Partitioned'
+# NOTE(vytas): Partitioned is a boolean flag, similar to HttpOnly and Secure.
+http_cookies.Morsel._flags.add('partitioned')  # type: ignore[attr-defined]
 # NOTE(vytas): Morsel._reserved_defaults is a new optimization in Python 3.14+
 #   for faster initialization of Morsel instances.
 # TODO(vytas): Remove this part of monkey-patching in the case CPython 3.14
