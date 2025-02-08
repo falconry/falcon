@@ -22,6 +22,13 @@ import multiprocessing
 import os
 import sys
 
+try:
+    import falconry_pygments_theme
+except ImportError:
+    # NOTE(vytas): If one is packaging Falcon documentation, it might be
+    #   impractical to spend time and effort on our Pygments styles.
+    falconry_pygments_theme = None
+
 sys.path.insert(0, os.path.abspath('..'))
 
 import falcon  # noqa: E402
@@ -116,9 +123,15 @@ html_context = {
 # Theme options are theme-specific and customize the look and feel further.
 # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/index.html
 
+_falconry_styles = falconry_pygments_theme is not None
+
 html_theme_options = {
-    'pygments_light_style': 'falconry-light',
-    'pygments_dark_style': 'falconry-dark',
+    # NOTE(vytas): If our Pygments styles are unavailable, fall back to the
+    #   visually closest Gruvbox styles.
+    #   NB that Gruvbox does not meet the WCAG 2.1 AA requirements for contrast.
+    'pygments_light_style': 'falconry-light' if _falconry_styles else 'gruvbox-light',
+    'pygments_dark_style': 'falconry-dark' if _falconry_styles else 'gruvbox-dark',
+
     'header_links_before_dropdown': 4,
     'external_links': [
         {
@@ -148,11 +161,8 @@ html_theme_options = {
             'icon': 'fa-custom fa-falcon',
         },
     ],
-    # NOTE(vytas): Use only light theme for now.
-    #   Add `theme-switcher` below to resurrect the dark option.
     'logo': {
         'text': 'Falcon',
-        # "image_dark": "_static/img/logo.svg",
     },
     'navbar_end': ['theme-switcher', 'navbar-icon-links'],
     'footer_start': ['copyright'],
