@@ -81,6 +81,8 @@ jobs:
           - env: "e2e_chrome"
           # TODO(vytas): Something is not working correctly with the
           #   newly released Firefox 131.0, SeleniumBase, and our tests.
+          # NOTE(vytas,cycloctane): Apparently, it seems that the issue is
+          #   caused by a segfault in Uvicorn, but it happens only in Actions.
           # - env: "e2e_firefox"
 
     steps:
