@@ -330,9 +330,13 @@ class TestWebSocket:
         except websockets.exceptions.NegotiationError as ex:
             assert 'unsupported subprotocol: xmpp' in str(ex)
 
-        # Daphne, Hypercorn
+        # Daphne, Hypercorn with websockets<14.2
         except EOFError:
             pass
+
+        # Daphne, Hypercorn with websockets>=14.2
+        except websockets.exceptions.InvalidMessage as ex:
+            assert isinstance(ex.__cause__, EOFError)
 
     # NOTE(kgriffs): When executing this test under pytest with the -s
     #   argument, one should be able to see the message

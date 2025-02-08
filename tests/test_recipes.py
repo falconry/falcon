@@ -86,8 +86,7 @@ class TestPrettyJSON:
             resp.media = {
                 'author': 'Grace Hopper',
                 'quote': (
-                    "I've always been more interested in "
-                    'the future than in the past.'
+                    "I've always been more interested in the future than in the past."
                 ),
             }
 

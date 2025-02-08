@@ -170,8 +170,7 @@ class BoundedStream(io.IOBase):
     @property
     # NOTE(caselit): Deprecated long ago. Warns since 4.0.
     @deprecated(
-        'Use `eof` instead. '
-        '(This compatibility alias will be removed in Falcon 5.0.)',
+        'Use `eof` instead. (This compatibility alias will be removed in Falcon 5.0.)',
         is_property=True,
     )
     def is_exhausted(self) -> bool:
