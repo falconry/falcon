@@ -146,7 +146,7 @@ class Response(response.Response):
     def sse(self, value: Optional[SSEEmitter]) -> None:
         self._sse = value
 
-    def set_stream(
+    def set_stream(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         stream: Union[AsyncReadableIO, AsyncIterator[bytes]],  # type: ignore[override]
         content_length: int,
@@ -175,7 +175,7 @@ class Response(response.Response):
                 Content-Length header in the response.
         """
 
-        self.stream = stream
+        self.stream = stream  # pyright: ignore[reportIncompatibleVariableOverride]
 
         # PERF(kgriffs): Set directly rather than incur the overhead of
         #   the self.content_length property.
