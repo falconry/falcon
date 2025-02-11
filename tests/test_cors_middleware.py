@@ -293,3 +293,68 @@ class TestCustomCorsMiddleware:
         assert res.headers['Access-Control-Expose-Headers'] == exp
         h = dict(res.headers.lower_items()).keys()
         assert 'Access-Control-Allow-Credentials'.lower() not in h
+        
+    def test_allow_private_network(self, make_cors_client):
+        # Create a client with allow_private_network=True
+        client = make_cors_client(falcon.CORSMiddleware(allow_private_network=True))
+        client.app.add_route('/', CORSHeaderResource())
+
+        # Preflight request with Access-Control-Request-Private-Network: true
+        result = client.simulate_options(
+            '/',
+            headers={
+                'Origin': 'localhost',
+                'Access-Control-Request-Method': 'GET',
+                'Access-Control-Request-Headers': 'X-PINGOTHER, Content-Type',
+                'Access-Control-Request-Private-Network': 'true',
+            }
+        )
+        assert result.headers['Access-Control-Allow-Private-Network'] == 'true'
+
+        # Preflight request without Access-Control-Request-Private-Network
+        result = client.simulate_options(
+            '/',
+            headers={
+                'Origin': 'localhost',
+                'Access-Control-Request-Method': 'GET',
+                'Access-Control-Request-Headers': 'X-PINGOTHER, Content-Type',
+            }
+        )
+        assert 'Access-Control-Allow-Private-Network' not in result.headers
+
+        # Preflight request with Access-Control-Request-Private-Network: 'false'
+        result = client.simulate_options(
+            '/',
+            headers={
+                'Origin': 'localhost',
+                'Access-Control-Request-Method': 'GET',
+                'Access-Control-Request-Headers': 'X-PINGOTHER, Content-Type',
+                'Access-Control-Request-Private-Network': 'false',
+            }
+        )
+        assert 'Access-Control-Allow-Private-Network' not in result.headers
+
+        # Non-preflight request
+        result = client.simulate_get(
+            '/',
+            headers={
+                'Origin': 'localhost',
+            }
+        )
+        assert 'Access-Control-Allow-Private-Network' not in result.headers
+
+        # Create a client with allow_private_network=False
+        client = make_cors_client(falcon.CORSMiddleware(allow_private_network=False))
+        client.app.add_route('/', CORSHeaderResource())
+
+        # Preflight request with Access-Control-Request-Private-Network: true
+        result = client.simulate_options(
+            '/',
+            headers={
+                'Origin': 'localhost',
+                'Access-Control-Request-Method': 'GET',
+                'Access-Control-Request-Headers': 'X-PINGOTHER, Content-Type',
+                'Access-Control-Request-Private-Network': 'true',
+            }
+        )
+        assert 'Access-Control-Allow-Private-Network' not in result.headers
