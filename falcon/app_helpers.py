@@ -17,7 +17,16 @@
 from __future__ import annotations
 
 from inspect import iscoroutinefunction
-from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
+from typing import (
+    Callable,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    overload,
+    Tuple,
+    Union,
+)
 
 from falcon import util
 from falcon._typing import AsgiProcessRequestMethod as APRequest
@@ -34,6 +43,7 @@ from falcon.errors import CompatibilityError
 from falcon.errors import HTTPError
 from falcon.request import Request
 from falcon.response import Response
+from falcon.typing import ReadableIO
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 __all__ = (
@@ -367,7 +377,7 @@ class CloseableStreamIterator:
         block_size (int): Number of bytes to read per iteration.
     """
 
-    def __init__(self, stream: IO[bytes], block_size: int) -> None:
+    def __init__(self, stream: ReadableIO, block_size: int) -> None:
         self._stream = stream
         self._block_size = block_size
 
@@ -383,7 +393,6 @@ class CloseableStreamIterator:
             return data
 
     def close(self) -> None:
-        try:
-            self._stream.close()
-        except (AttributeError, TypeError):
-            pass
+        close: Optional[Callable[[], None]] = getattr(self._stream, 'close', None)
+        if close:
+            close()
