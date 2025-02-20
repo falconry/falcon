@@ -4,12 +4,7 @@ name: test-mailman
 on:
   # Trigger the workflow on master but also allow it to run manually.
   workflow_dispatch:
-  # TODO(vytas): Re-enable when the digests.rst doctest is passing again.
-  # push:
-  #   branches:
-  #     - master
-  # TODO(vytas): Remove from PRs when demonstrated to pass.
-  pull_request:
+  push:
     branches:
       - master
 
