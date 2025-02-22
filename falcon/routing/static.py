@@ -31,10 +31,6 @@ def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_
     try:
         fh = io.open(file_path, 'rb')
         st = os.fstat(fh.fileno())
-    except PermissionError:
-        if fh is not None:
-            fh.close()
-        raise falcon.HTTPForbidden()
     except IOError:
         if fh is not None:
             fh.close()
