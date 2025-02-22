@@ -1,0 +1,3 @@
+:class:`falcon.routing.StaticRoute` now supports rendering ``Last-Modified``
+header when serving static files. It also checks ``If-Modified-Since``
+and return ``304 Not Modified`` if appropriate.
