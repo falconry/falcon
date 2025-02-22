@@ -669,7 +669,7 @@ def test_if_modified_since(client, patch_open):
     assert resp.text != ''
 
 
-def test_fstat_error(client, patch_open, error_type):
+def test_fstat_error(client, patch_open):
     patch_open()
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
