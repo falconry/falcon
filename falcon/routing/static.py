@@ -20,6 +20,13 @@ if TYPE_CHECKING:
 
 
 def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_result]:
+    """Open a file for a static file request and read file stat.
+
+    Args:
+        file_path (Union[str, Path]): Path to the file to open.
+    Returns:
+        tuple: Tuple of (BufferedReader, stat_result).
+    """
     fh: Optional[io.BufferedReader] = None
     try:
         fh = io.open(file_path, 'rb')
