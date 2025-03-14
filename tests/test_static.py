@@ -649,14 +649,14 @@ def test_last_modified(client, patch_open):
 
 
 def test_if_modified_since(client, patch_open):
-    mtime = (1736617934, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    mtime = (1736617934.133701, 'Sat, 11 Jan 2025 17:52:14 GMT')
     patch_open(mtime=mtime[0])
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     resp = client.simulate_request(
         path='/assets/css/main.css',
-        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:15 GMT'},
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:14 GMT'},
     )
     assert resp.status == falcon.HTTP_304
     assert resp.text == ''

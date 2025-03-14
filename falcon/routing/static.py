@@ -248,6 +248,10 @@ class StaticRoute:
                 file_path = self._fallback_filename
 
         last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
+        # NOTE(vytas): Strip the microsecond part because that is not reflected
+        #   in HTTP date, and when the client passes a previous value via
+        #   If-Modified-Since, it will look as if our copy is ostensibly newer.
+        last_modified = last_modified.replace(microsecond=0)
         resp.last_modified = last_modified
         if req.if_modified_since is not None and last_modified <= req.if_modified_since:
             resp.status = falcon.HTTP_304
