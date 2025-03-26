@@ -1,0 +1,1 @@
+Fix the checkbox rendering in the documentation to improve the readability.
