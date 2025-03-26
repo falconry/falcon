@@ -248,7 +248,10 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
                             'info will always be a string'
                         )
                         method_info = RouteMethodInfo(
-                            method, source_info, real_func.__name__, internal
+                            method,
+                            source_info,
+                            real_func.__name__,  # pyright: ignore[reportAttributeAccessIssue]
+                            internal,
                         )
                         methods.append(method_info)
                 source_info, class_name = _get_source_info_and_name(root.resource)

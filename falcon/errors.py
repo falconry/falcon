@@ -2601,7 +2601,9 @@ class MediaMalformedError(HTTPBadRequest):
     """
 
     def __init__(
-        self, media_type: str, **kwargs: Union[HeaderArg, HTTPErrorKeywordArguments]
+        self,
+        media_type: str,
+        **kwargs: Union[HeaderArg, HTTPErrorKeywordArguments],
     ):
         super().__init__(
             title='Invalid {0}'.format(media_type),
@@ -2618,7 +2620,7 @@ class MediaMalformedError(HTTPBadRequest):
         return msg
 
     @description.setter
-    def description(self, value: str) -> None:
+    def description(self, value: str) -> None:  # pyright: ignore[reportIncompatibleVariableOverride]
         pass
 
 
@@ -2701,7 +2703,7 @@ class MultipartParseError(MediaMalformedError):
     """
 
     # NOTE(caselit): remove the description @property in MediaMalformedError
-    description = None
+    description = None  # pyright: ignore
 
     def __init__(
         self,
@@ -2727,7 +2729,7 @@ def _load_headers(headers: Optional[HeaderArg]) -> Headers:
     if headers is None:
         return {}
     if isinstance(headers, dict):
-        return headers
+        return headers  # pyright: ignore[reportReturnType]
     return dict(headers)
 
 

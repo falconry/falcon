@@ -17,7 +17,16 @@
 from __future__ import annotations
 
 from inspect import iscoroutinefunction
-from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
+from typing import (
+    IO,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    overload,
+    Tuple,
+    Union,
+)
 
 from falcon import util
 from falcon._typing import AsgiProcessRequestMethod as APRequest
