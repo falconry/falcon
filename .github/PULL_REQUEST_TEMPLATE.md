@@ -24,7 +24,7 @@ If an item doesn't apply to your pull request, **check it anyway** to make it ap
     - [ ] Updated all relevant supporting documentation files under `docs/`.
     - [ ] A copyright notice is included at the top of any new modules (using your own name or the name of your organization).
     - [ ] Changed/added classes/methods/functions have appropriate `versionadded`, `versionchanged`, or `deprecated` [directives](http://www.sphinx-doc.org/en/stable/usage/restructuredtext/directives.html?highlight=versionadded#directive-versionadded).
-- [ ] Changes (and possible deprecations) have [towncrier](https://towncrier.readthedocs.io/en/latest/quickstart.html#creating-news-fragments) news fragments under `docs/_newsfragments/`, with the file name format `{issue_number}.{fragment_type}.rst`. (Run `towncrier --draft` to ensure it renders correctly.)
+- [ ] Changes (and possible deprecations) have [towncrier](https://towncrier.readthedocs.io/en/latest/tutorial.html#creating-news-fragments) news fragments under `docs/_newsfragments/`, with the file name format `{issue_number}.{fragment_type}.rst`. (Run `towncrier --draft` to ensure it renders correctly.)
 
 If you have *any* questions to *any* of the points above, just **submit and ask**! This checklist is here to *help* you, not to deter you from contributing!
 
