@@ -1,0 +1,2 @@
+Add :data:`~falcon.constants.MEDIA_PARQUET` and :data:`~falcon.constants.MEDIA_CSV`
+media file types to the constant file.
