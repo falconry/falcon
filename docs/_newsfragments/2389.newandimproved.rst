@@ -1,1 +1,0 @@
-Deprecate function :func:`~falcon.testing.httpnow`, recommend to use :func:`~falcon.util.http_now`.
