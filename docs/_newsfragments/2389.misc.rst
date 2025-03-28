@@ -1,0 +1,2 @@
+The :func:`falcon.testing.httpnow` function is deprecated and will be removed in 
+Falcon 5.0. Use the :func:`falcon.util.http_now` function instead.
