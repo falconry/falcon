@@ -269,7 +269,7 @@ Fixed
   could raise an unexpected ``AttributeError`` when running under certain
   applications servers such as Meinheld. This has been fixed so that
   :func:`~falcon.deprecated` no longer relies on the availability of
-  interpreter-specific stack frame instrospection capabilities. (`#1882 <https://github.com/falconry/falcon/issues/1882>`__)
+  interpreter-specific stack frame introspection capabilities. (`#1882 <https://github.com/falconry/falcon/issues/1882>`__)
 
 
 Misc

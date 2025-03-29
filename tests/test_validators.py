@@ -17,7 +17,7 @@ _INVALID_MEDIA = {}  # type: typing.Dict[str, str]
 
 _TEST_SCHEMA = {
     'type': 'object',
-    'properies': {
+    'properties': {
         'message': {
             'type': 'string',
         },

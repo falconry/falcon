@@ -194,7 +194,7 @@ async def test_echo():  # noqa: C901
     # NOTE(kgriffs): The two methods are split across different middleware
     #   classes so that we can test code paths that check for the existence
     #   of one WebSocket middleware method vs the other, and also so that
-    #   we can make sure both the kwarg and the add_middlware() paths
+    #   we can make sure both the kwarg and the add_middleware() paths
     #   succeed.
     app = App(middleware=MiddlewareA())
     app.add_middleware(MiddlewareB())

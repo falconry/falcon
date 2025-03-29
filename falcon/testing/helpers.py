@@ -206,7 +206,7 @@ class ASGIRequestEventEmitter:
 
     async def emit(self) -> AsgiEvent:
         # NOTE(kgriffs): Special case: if we are immediately disconnected,
-        #   the first event should be 'http.disconnnect'
+        #   the first event should be 'http.disconnect'
         if self._disconnect_at == 0:
             return {'type': EventType.HTTP_DISCONNECT}
 

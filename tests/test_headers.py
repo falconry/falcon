@@ -336,14 +336,14 @@ class TestHeaders:
         result = client.simulate_get()
         assert result.headers['Content-Length'] == '0'
 
-    def test_declared_content_length_overriden_by_body_length(self, client):
+    def test_declared_content_length_overridden_by_body_length(self, client):
         resource = ContentLengthHeaderResource(42, body=SAMPLE_BODY)
         client.app.add_route('/', resource)
         result = client.simulate_get()
 
         assert result.headers['Content-Length'] == str(len(SAMPLE_BODY))
 
-    def test_declared_content_length_overriden_by_data_length(self, client):
+    def test_declared_content_length_overridden_by_data_length(self, client):
         data = SAMPLE_BODY.encode()
 
         resource = ContentLengthHeaderResource(42, data=data)

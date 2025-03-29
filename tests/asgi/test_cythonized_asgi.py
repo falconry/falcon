@@ -100,8 +100,8 @@ def test_scheduled_jobs(client):
 
     client.simulate_get()
     time.sleep(0.5)
-    assert resource.counter['backround:on_get:async'] == 2
-    assert resource.counter['backround:on_get:sync'] == 40
+    assert resource.counter['background:on_get:async'] == 2
+    assert resource.counter['background:on_get:sync'] == 40
 
 
 def test_scheduled_jobs_type_error(client):

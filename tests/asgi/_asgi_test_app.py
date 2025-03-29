@@ -25,15 +25,15 @@ class Things:
 
     async def on_post(self, req, resp):
         resp.data = await req.stream.read(req.content_length or 0)
-        resp.set_header('X-Counter', str(self._counter['backround:things:on_post']))
+        resp.set_header('X-Counter', str(self._counter['background:things:on_post']))
 
         async def background_job_async():
             await asyncio.sleep(0.01)
-            self._counter['backround:things:on_post'] += 1
+            self._counter['background:things:on_post'] += 1
 
         def background_job_sync():
             time.sleep(0.01)
-            self._counter['backround:things:on_post'] += 1000
+            self._counter['background:things:on_post'] += 1000
 
         resp.schedule(background_job_async)
         resp.schedule_sync(background_job_sync)
