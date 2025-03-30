@@ -55,10 +55,10 @@ class TestResourceWithScheduledJobs:
 
     async def on_get(self, req, resp):
         async def background_job_async():
-            self.counter['backround:on_get:async'] += 1
+            self.counter['background:on_get:async'] += 1
 
         def background_job_sync():
-            self.counter['backround:on_get:sync'] += 20
+            self.counter['background:on_get:sync'] += 20
 
         resp.schedule(background_job_async)
         resp.schedule_sync(background_job_sync)
