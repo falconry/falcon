@@ -50,7 +50,7 @@ def _set_range(
     Returns:
         tuple: Three-member tuple of (stream, content-length, content-range).
             If req_range is ``None`` or ignored, content-range will be
-            ``None``; otherwise, the stream will be appropriately sought and
+            ``None``; otherwise, the stream will be appropriately seeked and
             possibly bounded, and the content-range will be a tuple of
             (start, end, size).
     """
@@ -96,7 +96,7 @@ class _BoundedFile:
 
     Args:
         fh: The file object to wrap. Should be opened in binary mode,
-            and already sought to an appropriate position. The object must
+            and already seeked to an appropriate position. The object must
             expose a ``.close()`` method.
         length (int): Number of bytes that may be read.
     """
