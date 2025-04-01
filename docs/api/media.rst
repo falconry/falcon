@@ -295,6 +295,8 @@ common media type strings, including the following:
     falcon.MEDIA_MSGPACK
     falcon.MEDIA_MULTIPART
     falcon.MEDIA_URLENCODED
+    falcon.MEDIA_CSV
+    falcon.MEDIA_PARQUET
     falcon.MEDIA_YAML
     falcon.MEDIA_XML
     falcon.MEDIA_HTML
