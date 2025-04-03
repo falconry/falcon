@@ -175,7 +175,6 @@ ResponseCallbacks = Union[
     Tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
 
-
 # Routing
 
 MethodDict = Union[
@@ -192,7 +191,7 @@ class FindMethod(Protocol):
 
 # Media
 class SerializeSync(Protocol):
-    def __call__(self, media: Any, content_type: Optional[str] = ...) -> bytes: ...
+    def __call__(self, media: object, content_type: Optional[str] = ...) -> bytes: ...
 
 
 DeserializeSync = Callable[[bytes], Any]

@@ -102,10 +102,12 @@ def _validate(
     ) -> Any:
         if req_schema is not None:
             try:
-                jsonschema.validate(
-                    req.media, req_schema, format_checker=jsonschema.FormatChecker()
+                jsonschema.validate(  # pyright: ignore[reportPossiblyUnboundVariable]
+                    req.media,
+                    req_schema,
+                    format_checker=jsonschema.FormatChecker(),  # pyright: ignore[reportPossiblyUnboundVariable]
                 )
-            except jsonschema.ValidationError as ex:
+            except jsonschema.ValidationError as ex:  # pyright: ignore[reportPossiblyUnboundVariable]
                 raise falcon.MediaValidationError(
                     title='Request data failed validation', description=ex.message
                 ) from ex
@@ -114,10 +116,12 @@ def _validate(
 
         if resp_schema is not None:
             try:
-                jsonschema.validate(
-                    resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
+                jsonschema.validate(  # pyright: ignore[reportPossiblyUnboundVariable]
+                    resp.media,
+                    resp_schema,
+                    format_checker=jsonschema.FormatChecker(),  # pyright: ignore[reportPossiblyUnboundVariable]
                 )
-            except jsonschema.ValidationError as ex:
+            except jsonschema.ValidationError as ex:  # pyright: ignore[reportPossiblyUnboundVariable]
                 raise falcon.HTTPInternalServerError(
                     title='Response data failed validation'
                     # Do not return 'e.message' in the response to
@@ -141,10 +145,12 @@ def _validate_async(
             m = await req.get_media()
 
             try:
-                jsonschema.validate(
-                    m, req_schema, format_checker=jsonschema.FormatChecker()
+                jsonschema.validate(  # pyright: ignore[reportPossiblyUnboundVariable]
+                    m,
+                    req_schema,
+                    format_checker=jsonschema.FormatChecker(),  # pyright: ignore[reportPossiblyUnboundVariable]
                 )
-            except jsonschema.ValidationError as ex:
+            except jsonschema.ValidationError as ex:  # pyright: ignore[reportPossiblyUnboundVariable]
                 raise falcon.MediaValidationError(
                     title='Request data failed validation', description=ex.message
                 ) from ex
@@ -153,10 +159,12 @@ def _validate_async(
 
         if resp_schema is not None:
             try:
-                jsonschema.validate(
-                    resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
+                jsonschema.validate(  # pyright: ignore[reportPossiblyUnboundVariable]
+                    resp.media,
+                    resp_schema,
+                    format_checker=jsonschema.FormatChecker(),  # pyright: ignore[reportPossiblyUnboundVariable]
                 )
-            except jsonschema.ValidationError as ex:
+            except jsonschema.ValidationError as ex:  # pyright: ignore[reportPossiblyUnboundVariable]
                 raise falcon.HTTPInternalServerError(
                     title='Response data failed validation'
                     # Do not return 'e.message' in the response to
