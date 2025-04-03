@@ -162,15 +162,13 @@ class ASGIRequestEventEmitter:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        body = memoryview(body)
-
         if disconnect_at is None:
             disconnect_at = time.time() + 30
 
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body: Optional[memoryview] = body
+        self._body: Optional[memoryview] = memoryview(body)
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
@@ -1418,8 +1416,9 @@ def closed_wsgi_iterable(iterable: Iterable[bytes]) -> Iterable[bytes]:
             for item in iterable:
                 yield item
         finally:
-            if hasattr(iterable, 'close'):
-                iterable.close()
+            close: Optional[Callable[[], None]] = getattr(iterable, 'close', None)
+            if close:
+                close()
 
     wrapped = wrapper()
     head: Tuple[bytes, ...]
@@ -1535,7 +1534,7 @@ def _fixup_http_version(http_version: str) -> str:
 def _make_cookie_values(cookies: CookieArg) -> str:
     return '; '.join(
         [
-            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+            '{}={}'.format(key, getattr(cookie, 'value', cookie))
             for key, cookie in cookies.items()
         ]
     )
