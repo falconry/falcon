@@ -6,6 +6,11 @@ import pytest
 import falcon
 import falcon.testing
 
+try:
+    import msgspec
+except ImportError:
+    msgspec = None  # type: ignore
+
 
 class TestMultipartMixed:
     """Test parsing example from the now-obsolete RFC 1867:
@@ -210,3 +215,50 @@ class TestRequestIDContext:
         response = client.simulate_get('/test')
         assert 'X-Request-ID' in response.headers
         assert response.headers['X-Request-ID'] == response.json['request_id']
+
+
+@pytest.mark.skipif(msgspec is None, reason='this recipe requires msgspec [not found]')
+class TestMsgspec:
+    def test_basic_media_handlers(self, asgi, util):
+        class MediaResource:
+            def on_post(self, req, resp):
+                resp.content_type = falcon.MEDIA_TEXT
+                resp.text = str(req.get_media())
+
+            async def on_post_async(self, req, resp):
+                resp.content_type = falcon.MEDIA_TEXT
+                resp.text = str(await req.get_media())
+
+        json_recipe = util.load_module('examples/recipes/msgspec_json_handler.py')
+        msgpack_recipe = util.load_module('examples/recipes/msgspec_msgpack_handler.py')
+
+        app = util.create_app(asgi)
+        client = falcon.testing.TestClient(app)
+
+        msgspec_handlers = {
+            falcon.MEDIA_JSON: json_recipe.json_handler,
+            falcon.MEDIA_MSGPACK: msgpack_recipe.msgpack_handler,
+        }
+        app.req_options.media_handlers.update(msgspec_handlers)
+        app.resp_options.media_handlers.update(msgspec_handlers)
+
+        suffix = 'async' if asgi else None
+        app.add_route('/media', MediaResource(), suffix=suffix)
+
+        resp1 = client.simulate_post('/media', json=[1, 3, 3, 7])
+        assert resp1.status_code == 200
+        assert resp1.text == '[1, 3, 3, 7]'
+
+        resp2 = client.simulate_post(
+            '/media', body=b'\x94\x01\x03\x03\x07', content_type=falcon.MEDIA_MSGPACK
+        )
+        assert resp2.status_code == 200
+        assert resp2.text == '[1, 3, 3, 7]'
+
+        resp3 = client.simulate_get('/', headers={'Accept': falcon.MEDIA_JSON})
+        assert resp3.status_code == 404
+        assert resp3.json == {'title': '404 Not Found'}
+
+        resp4 = client.simulate_get('/', headers={'Accept': falcon.MEDIA_MSGPACK})
+        assert resp4.status_code == 404
+        assert resp4.content == b'\x81\xa5title\xad404 Not Found'

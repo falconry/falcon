@@ -840,8 +840,9 @@ of the box. Its awesome performance aside, you will also be able to assign
 instances of ``msgspec.Struct`` to :attr:`resp.media <falcon.Response.media>`
 without any additional configuration.
 
-It is also fairly straightforward to set up validation and error handling;
-see more in the following recipe: :ref:`msgspec integration <msgspec-recipe>`.
+It is also fairly straightforward to set up
+request media validation and error handling; see more in the following recipe:
+:ref:`msgspec integration <msgspec-recipe>`.
 
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
