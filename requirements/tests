@@ -1,5 +1,6 @@
 coverage >= 4.1
 pytest >= 7.0
+pyright
 pyyaml
 requests
 testtools
