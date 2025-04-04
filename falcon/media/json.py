@@ -31,6 +31,8 @@ class JSONHandler(BaseHandler):
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
 
+    .. _custom-media-json-library:
+
     .. rubric:: Custom JSON library
 
     You can replace the default JSON handler by using a custom JSON library
