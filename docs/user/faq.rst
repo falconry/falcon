@@ -842,7 +842,7 @@ without any additional configuration.
 
 It is also fairly straightforward to set up
 request media validation and error handling; see more in the following recipe:
-:ref:`msgspec integration <msgspec-recipe>`.
+:ref:`msgspec integration <msgspec_recipe>`.
 
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
@@ -971,7 +971,7 @@ performance of (de)serialization.
 
 If you use an alternative JSON library, you might also look whether it provides
 support for additional data types. For instance, the popular ``orjson`` and
-:ref:`msgspec <msgspec-recipe>` libraries opt to automatically serialize
+:ref:`msgspec <msgspec_recipe>` libraries opt to automatically serialize
 :mod:`dataclasses`, :mod:`enums <enum>`, :class:`~datetime.datetime` objects,
 etc.
 
