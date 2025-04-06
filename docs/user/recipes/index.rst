@@ -5,6 +5,7 @@ Recipes
    :maxdepth: 2
 
    header-name-case
+   msgspec-integration
    multipart-mixed
    output-csv
    plain-text-handler

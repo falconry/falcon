@@ -19,8 +19,8 @@ class JSONHandler(BaseHandler):
     can be easily configured to use any of a number of third-party JSON
     libraries, depending on your needs. For example, you can often
     realize a significant performance boost under CPython by using an
-    alternative library. Good options in this respect include `orjson`,
-    `python-rapidjson`, and `mujson`.
+    alternative library. Good options in this respect include
+    :ref:`msgspec <msgspec_recipe>`, `orjson`, `python-rapidjson`, and `mujson`.
 
     This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
     to parse an empty body, or a :class:`falcon.MediaMalformedError`
@@ -30,6 +30,8 @@ class JSONHandler(BaseHandler):
         If you are deploying to PyPy, we recommend sticking with the standard
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
+
+    .. _custom-media-json-library:
 
     .. rubric:: Custom JSON library
 

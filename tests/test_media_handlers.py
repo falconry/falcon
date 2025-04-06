@@ -12,10 +12,16 @@ from falcon.asgi.stream import BoundedStream
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_YAML
 
+msgspec = None
 mujson = None
 orjson = None
 rapidjson = None
 ujson = None
+
+try:
+    import msgspec  # type: ignore
+except ImportError:
+    pass
 
 try:
     import mujson  # type: ignore
@@ -67,6 +73,20 @@ ALL_JSON_IMPL = [(json.dumps, json.loads)]
 ALL_JSON_IMPL_IDS = ['stdlib']
 
 
+if msgspec:
+    SERIALIZATION_PARAM_LIST += [
+        (
+            msgspec.json.encode,
+            {'test': 'value'},
+            b'{"test":"value"}',
+        ),
+    ]
+    DESERIALIZATION_PARAM_LIST += [
+        (msgspec.json.decode, b'{"test": "value"}', {'test': 'value'}),
+    ]
+    ALL_JSON_IMPL += [(msgspec.json.encode, msgspec.json.decode)]
+    ALL_JSON_IMPL_IDS += ['msgspec']
+
 if mujson:
     SERIALIZATION_PARAM_LIST += [
         (
@@ -115,20 +135,23 @@ if ujson:
 @pytest.mark.parametrize(
     'library, name',
     [
+        (msgspec, 'msgspec'),
         (mujson, 'mujson'),
         (orjson, 'orjson'),
         (rapidjson, 'rapidjson'),
         (ujson, 'ujson'),
     ],
-    ids=['mujson', 'orjson', 'rapidjson', 'ujson'],
+    ids=['msgspec', 'mujson', 'orjson', 'rapidjson', 'ujson'],
 )
 def test_check_json_library(library, name):
     # NOTE(vytas): A synthetic test just to visualize which JSON libraries
     #   are absent and skipped.
     if library is None:
         pytest.skip(f'{name} is not installed')
-    assert hasattr(library, 'dumps')
-    assert hasattr(library, 'loads')
+
+    # NOTE(vytas): msgspec does not employ the names dumps() & loads().
+    assert hasattr(library, 'dumps') or hasattr(library, 'json')
+    assert hasattr(library, 'loads') or hasattr(library, 'json')
 
 
 @pytest.mark.parametrize('func, body, expected', SERIALIZATION_PARAM_LIST)
