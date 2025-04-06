@@ -16,13 +16,15 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Union
 
 from falcon import constants
 from falcon import responders
 
 if TYPE_CHECKING:
+    from falcon._typing import AsgiResponderCallable
     from falcon._typing import MethodDict
+    from falcon._typing import ResponderCallable
 
 
 class SuffixedMethodNotFoundError(Exception):
@@ -78,7 +80,11 @@ def map_http_methods(resource: object, suffix: Optional[str] = None) -> MethodDi
     return method_map
 
 
-def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
+def set_default_responders(
+    method_map: MethodDict,
+    asgi: bool = False,
+    default_responder: Optional[Union[ResponderCallable, AsgiResponderCallable]] = None,
+) -> None:
     """Map HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
@@ -86,6 +92,9 @@ def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
             defined in a resource.
         asgi (bool): ``True`` if using an ASGI app, ``False`` otherwise
             (default ``False``).
+        default_responder: An optional default responder for unimplmented
+            resource methods. If not provided a responder for
+            "405 Method Not Allowed" is used.
     """
 
     # Attach a resource for unsupported HTTP methods
@@ -99,8 +108,11 @@ def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
         method_map['OPTIONS'] = opt_responder  # type: ignore[assignment]
         allowed_methods.append('OPTIONS')
 
-    na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
+    if not default_responder:
+        default_responder = responders.create_method_not_allowed(
+            allowed_methods, asgi=asgi
+        )
 
     for method in constants.COMBINED_METHODS:
         if method not in method_map:
-            method_map[method] = na_responder  # type: ignore[assignment]
+            method_map[method] = default_responder  # type: ignore[assignment]

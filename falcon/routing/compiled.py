@@ -209,7 +209,14 @@ class CompiledRouter:
 
         method_map = self.map_http_methods(resource, **kwargs)
 
-        set_default_responders(method_map, asgi=asgi)
+        default_responder = None
+
+        if self._options.allow_on_request:
+            default_responder = getattr(resource, 'on_request', None)
+
+        set_default_responders(
+            method_map, asgi=asgi, default_responder=default_responder
+        )
 
         if asgi:
             self._require_coroutine_responders(method_map)
@@ -941,14 +948,34 @@ class CompiledRouterOptions:
     (See also: :ref:`Field Converters <routing_field_converters>`)
     """
 
-    __slots__ = ('converters',)
+    allow_on_request: bool
+    """Allows for providing a default responder by defining `on_request()` on
+    the resource.
 
-    def __init__(self) -> None:
+    This feature is disabled by default and can be enabled by::
+
+        app.router_options.allow_on_request = True
+
+    Note:
+        This option does not override `on_options()`.
+
+    Note:
+        In order for this option to take effect, it must be enabled before
+        calling :meth:`add_route()`.
+
+    .. versionadded:: 4.1
+    """
+
+    __slots__ = ('converters', 'allow_on_request')
+
+    def __init__(self, allow_on_request: bool = False) -> None:
         object.__setattr__(
             self,
             'converters',
             ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
+
+        self.allow_on_request = allow_on_request
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name == 'converters':

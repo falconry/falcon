@@ -103,6 +103,14 @@ class ResourceWithId:
         resp.text = self.resource_id
 
 
+class ResourceWithDefaultResponder:
+    def on_get(self, req, resp):
+        pass
+
+    def on_request(self, req, resp):
+        pass
+
+
 class SpamConverter:
     def __init__(self, times, eggs=False):
         self._times = times
@@ -693,6 +701,30 @@ def test_options_converters_invalid_name_on_update(router):
                 '7eleven': SpamConverter,
             }
         )
+
+
+def test_options_allow_on_request_disabled():
+    router = DefaultRouter()
+    router.add_route('/default', ResourceWithDefaultResponder())
+
+    resource, method_map, __, __ = router.find('/default')
+
+    for method, responder in method_map.items():
+        assert responder != resource.on_request
+
+
+def test_options_allow_on_request_enabled():
+    router = DefaultRouter()
+    router.options.allow_on_request = True
+    router.add_route('/default', ResourceWithDefaultResponder())
+
+    resource, method_map, __, __ = router.find('/default')
+
+    for method, responder in method_map.items():
+        if method not in ('GET', 'OPTIONS'):
+            assert responder == resource.on_request
+        else:
+            assert responder != resource.on_request
 
 
 @pytest.fixture
