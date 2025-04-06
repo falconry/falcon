@@ -1,3 +1,4 @@
+import sys
 import types
 import unittest.mock
 
@@ -218,6 +219,9 @@ class TestRequestIDContext:
 
 
 @pytest.mark.skipif(msgspec is None, reason='this recipe requires msgspec [not found]')
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason='this recipe requires Python 3.9+'
+)
 class TestMsgspec:
     def test_basic_media_handlers(self, asgi, util):
         class MediaResource:
@@ -262,3 +266,51 @@ class TestMsgspec:
         resp4 = client.simulate_get('/', headers={'Accept': falcon.MEDIA_MSGPACK})
         assert resp4.status_code == 404
         assert resp4.content == b'\x81\xa5title\xad404 Not Found'
+
+    def test_validation_middleware(self, util):
+        mw_recipe = util.load_module('examples/recipes/msgspec_media_validation.py')
+
+        class Metadata(msgspec.Struct):
+            name: str
+
+        class Resource:
+            POST_SCHEMA = Metadata
+
+            def on_post(self, req, resp, metadata):
+                resp.media = msgspec.to_builtins(metadata)
+
+        app = falcon.App(middleware=[mw_recipe.MsgspecMiddleware()])
+        app.add_route('/meta', Resource())
+
+        resp = falcon.testing.simulate_post(app, '/meta', json={'name': 'falcon'})
+        assert resp.json == {'name': 'falcon'}
+
+    def test_main_app(self, util):
+        main_recipe = util.load_module('examples/recipes/msgspec_main.py')
+        client = falcon.testing.TestClient(main_recipe.application)
+
+        resp1 = client.simulate_post('/notes', json={'text': 'Test note'})
+        assert resp1.status_code == 201
+        created = resp1.json
+        noteid = created['noteid']
+
+        resp2 = client.simulate_post('/notes', json={'note': 'Another'})
+        assert resp2.status_code == 422
+
+        resp3 = client.simulate_get('/notes')
+        assert resp3.status_code == 200
+        assert resp3.json == {noteid: created}
+
+        resp4 = client.simulate_get(f'/notes/{noteid}')
+        assert resp4.status_code == 200
+        assert resp4.json == created
+
+        resp5 = client.simulate_delete(f'/notes/{noteid}')
+        assert resp5.status_code == 204
+
+        resp6 = client.simulate_get(f'/notes/{noteid}')
+        assert resp6.status_code == 404
+
+        resp7 = client.simulate_get('/notes')
+        assert resp7.status_code == 200
+        assert resp7.json == {}

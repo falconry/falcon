@@ -1,7 +1,7 @@
 .. _msgspec_recipe:
 
-Basic Msgspec Integration
-=========================
+Msgspec Integration
+===================
 
 This recipe illustrates how the popular
 `msgspec <https://jcristharif.com/msgspec/>`__ data serialization and
@@ -89,9 +89,9 @@ case is represented by ``msgspec.ValidationError``. We could either create an
 exception as :class:`~falcon.MediaValidationError`, or just use a
 ``try.. except`` clause, and reraise directly inside middleware.
 
-Looking back at our customized :class:`~falcon.media.JSONHandler`, we run into
-another issue: unlike the stdlib's :mod:`json` or the majority of other JSON
-libraries, ``msgspec.DecodeError`` is not a subclass of :class:`ValueError`:
+Our customized :class:`~falcon.media.JSONHandler` has another issue: unlike the
+stdlib's :mod:`json` or the majority of other JSON libraries,
+``msgspec.DecodeError`` is not a subclass of :class:`ValueError`:
 
 >>> import msgspec
 >>> issubclass(msgspec.DecodeError, ValueError)
@@ -103,7 +103,13 @@ This discrepancy can be worked around using a wrapper around
 and received positive feedback from the maintainer, so hopefully it could get
 resolved in the near future.
 
-Complete example
-----------------
+Complete recipe
+---------------
 
-(Work in progress...)
+Finally, we combine these snippets into a note taking application:
+
+.. literalinclude:: ../../../examples/recipes/msgspec_main.py
+    :language: python
+
+We can now ``POST`` a new note, view the whole collection, or just ``GET`` an
+individual note. (MessagePack support was omitted for brevity.)

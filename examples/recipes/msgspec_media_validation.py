@@ -5,7 +5,7 @@ from falcon import Response
 
 
 class MsgspecMiddleware:
-    def process_request(
+    def process_resource(
         self, req: Request, resp: Response, resource: object, params: dict
     ) -> None:
         if schema := getattr(resource, f'{req.method}_SCHEMA', None):
