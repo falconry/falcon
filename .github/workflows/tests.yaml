@@ -141,5 +141,8 @@ jobs:
       - name: Install Pyright
         run: npm install -g pyright
 
+      - name: Install dependencies
+        run: pip install -r requirements/tests
+
       - name: Run Pyright
         run: pyright

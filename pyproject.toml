@@ -53,7 +53,7 @@ keywords = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "pyright"]
 
 [project.scripts]
 falcon-bench = "falcon.cmd.bench:main"
@@ -112,6 +112,14 @@ include = ["falcon*"]
             "falcon.cyutil.uri"
         ]
         ignore_missing_imports = true
+
+[tool.pyright]
+    include = ["falcon", "tests"]
+    exclude = [".", "dist", ".tox", ".venv", "docs"]
+    reportMissingImports = false
+    reportUnusedVariable = false
+    reportUnusedFunction = false
+    pythonVersion = "3.12"
 
 [tool.towncrier]
     package = "falcon"
