@@ -116,9 +116,9 @@ include = ["falcon*"]
 [tool.pyright]
     include = ["falcon", "tests"]
     exclude = [".", "dist", ".tox", ".venv", "docs"]
-    reportMissingImports = false
-    reportUnusedVariable = false
-    reportUnusedFunction = false
+    reportMissingImports = true
+    reportUnusedVariable = true
+    reportUnusedFunction = true
     pythonVersion = "3.12"
 
 [tool.towncrier]
