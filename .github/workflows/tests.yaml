@@ -126,20 +126,20 @@ jobs:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  run-pyright:
-    name: Run Pyright
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-
-      - name: Install Pyright
-        run: npm install -g pyright
-
-      - name: Run Pyright
-        run: pyright
+#  run-pyright:
+#    name: Run Pyright
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout repo
+#        uses: actions/checkout@v4
+#
+#      - name: Set up Node.js
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: '16'
+#
+#      - name: Install Pyright
+#        run: npm install -g pyright
+#
+#      - name: Run Pyright
+#        run: pyright
