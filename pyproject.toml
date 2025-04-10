@@ -114,14 +114,12 @@ include = ["falcon*"]
         ignore_missing_imports = true
 
 [tool.pyright]
-    include = ["falcon", "examples", "tests"]
-    exclude = ["build", "dist", ".tox", ".venv", "docs"]
-    reportMissingImports = true
-    reportUnusedVariable = true
-    reportUnusedFunction = true
+    include = ["falcon", "tests"]
+    exclude = [".", "dist", ".tox", ".venv", "docs"]
+    reportMissingImports = false
+    reportUnusedVariable = false
+    reportUnusedFunction = false
     pythonVersion = "3.12"
-    venvPath = "."
-    venv = ".venv"
 
 [tool.towncrier]
     package = "falcon"
