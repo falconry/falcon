@@ -115,7 +115,7 @@ include = ["falcon*"]
 
 [tool.pyright]
     include = ["falcon", "tests"]
-    exclude = [".", "dist", ".tox", ".venv", "docs"]
+    exclude = [".", "dist", ".tox", "docs"]
     reportMissingImports = true
     reportUnusedVariable = true
     reportUnusedFunction = true
