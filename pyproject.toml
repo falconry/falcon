@@ -53,7 +53,7 @@ keywords = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "pyright"]
 
 [project.scripts]
 falcon-bench = "falcon.cmd.bench:main"
