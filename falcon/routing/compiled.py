@@ -162,7 +162,11 @@ class CompiledRouter:
                 resource.
         """
 
-        return map_http_methods(resource, suffix=kwargs.get('suffix', None))
+        return map_http_methods(
+            resource,
+            suffix=kwargs.get('suffix', None),
+            allow_on_request=self._options.allow_on_request,
+        )
 
     def add_route(  # noqa: C901
         self, uri_template: str, resource: object, **kwargs: Any
@@ -212,8 +216,18 @@ class CompiledRouter:
         default_responder = None
 
         if self._options.allow_on_request:
-            default_responder = getattr(resource, 'on_request', None)
+            responder_name = 'on_request'
+            suffix = kwargs.get('suffix', None)
 
+            if suffix:
+                responder_name += '_' + suffix
+
+            default_responder = getattr(resource, responder_name, None)
+
+        # NOTE(gespyrop): We do not verify whether the default responder is
+        # a regular synchronous method or a coroutine since it falls under the
+        # general case that will be handled by _require_coroutine_responders()
+        # and _require_non_coroutine_responders().
         set_default_responders(
             method_map, asgi=asgi, default_responder=default_responder
         )
@@ -956,8 +970,15 @@ class CompiledRouterOptions:
 
         app.router_options.allow_on_request = True
 
-    Note:
-        This option does not override `on_options()`.
+    This option does not override `on_options()`. In case `on_options()` needs
+    to be overriden, this can be done explicitly by aliasing::
+
+        on_options = on_request
+
+    or by explicitly calling `on_request()` in `on_options()`::
+
+        def on_options(self, req, resp):
+            self.on_request(req, resp)
 
     Note:
         In order for this option to take effect, it must be enabled before
@@ -968,14 +989,14 @@ class CompiledRouterOptions:
 
     __slots__ = ('converters', 'allow_on_request')
 
-    def __init__(self, allow_on_request: bool = False) -> None:
+    def __init__(self) -> None:
         object.__setattr__(
             self,
             'converters',
             ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
 
-        self.allow_on_request = allow_on_request
+        self.allow_on_request = False
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name == 'converters':

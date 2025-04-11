@@ -33,7 +33,9 @@ class SuffixedMethodNotFoundError(Exception):
         self.message = message
 
 
-def map_http_methods(resource: object, suffix: Optional[str] = None) -> MethodDict:
+def map_http_methods(
+    resource: object, suffix: Optional[str] = None, allow_on_request: bool = False
+) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
@@ -48,6 +50,11 @@ def map_http_methods(resource: object, suffix: Optional[str] = None) -> MethodDi
             a suffix is provided, Falcon will map GET requests to
             ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
             etc.
+        allow_on_request (bool): If True, it prevents a
+            ``SuffixedMethodNotFoundError`` from being raised on resources
+            defining ``on_request_{suffix}()``.
+            (See also: :ref:`CompiledRouterOptions <compiled_router_options>`.)
+
 
     Returns:
         dict: A mapping of HTTP methods to explicitly defined resource responders.
@@ -71,8 +78,12 @@ def map_http_methods(resource: object, suffix: Optional[str] = None) -> MethodDi
             if callable(responder):
                 method_map[method] = responder
 
+    has_default_responder = allow_on_request and hasattr(
+        resource, f'on_request_{suffix}'
+    )
+
     # If suffix is specified and doesn't map to any methods, raise an error
-    if suffix and not method_map:
+    if suffix and not method_map and not has_default_responder:
         raise SuffixedMethodNotFoundError(
             'No responders found for the specified suffix'
         )
@@ -108,7 +119,7 @@ def set_default_responders(
         method_map['OPTIONS'] = opt_responder  # type: ignore[assignment]
         allowed_methods.append('OPTIONS')
 
-    if not default_responder:
+    if default_responder is None:
         default_responder = responders.create_method_not_allowed(
             allowed_methods, asgi=asgi
         )
