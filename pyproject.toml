@@ -115,10 +115,19 @@ include = ["falcon*"]
 
 [tool.pyright]
     include = ["falcon", "tests"]
-    exclude = [".", "dist", ".tox", "docs"]
-    reportMissingImports = true
-    reportUnusedVariable = true
-    reportUnusedFunction = true
+    exclude = [
+        "falcon/bench",
+        "falcon/cmd",
+        "tests/testdata"
+    ]
+    reportUnusedExpression = "none"
+    reportUnusedVariable = "none"
+    reportUnusedFunction = "none"
+    reportMissingModuleSource = "none"
+    reportOptionalMemberAccess = "error"
+    reportIncompatibleMethodOverride = "error"
+    reportMissingImports = "error"
+    reportPossiblyUnboundVariable = "error"
     pythonVersion = "3.12"
 
 [tool.towncrier]
