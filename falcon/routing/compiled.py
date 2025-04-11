@@ -162,7 +162,11 @@ class CompiledRouter:
                 resource.
         """
 
-        return map_http_methods(resource, suffix=kwargs.get('suffix', None))
+        return map_http_methods(
+            resource,
+            suffix=kwargs.get('suffix', None),
+            allow_on_request=self._options.allow_on_request,
+        )
 
     def add_route(  # noqa: C901
         self, uri_template: str, resource: object, **kwargs: Any
@@ -209,7 +213,24 @@ class CompiledRouter:
 
         method_map = self.map_http_methods(resource, **kwargs)
 
-        set_default_responders(method_map, asgi=asgi)
+        default_responder = None
+
+        if self._options.allow_on_request:
+            responder_name = 'on_request'
+            suffix = kwargs.get('suffix', None)
+
+            if suffix:
+                responder_name += '_' + suffix
+
+            default_responder = getattr(resource, responder_name, None)
+
+        # NOTE(gespyrop): We do not verify whether the default responder is
+        # a regular synchronous method or a coroutine since it falls under the
+        # general case that will be handled by _require_coroutine_responders()
+        # and _require_non_coroutine_responders().
+        set_default_responders(
+            method_map, asgi=asgi, default_responder=default_responder
+        )
 
         if asgi:
             self._require_coroutine_responders(method_map)
@@ -941,7 +962,32 @@ class CompiledRouterOptions:
     (See also: :ref:`Field Converters <routing_field_converters>`)
     """
 
-    __slots__ = ('converters',)
+    allow_on_request: bool
+    """Allows for providing a default responder by defining `on_request()` on
+    the resource.
+
+    This feature is disabled by default and can be enabled by::
+
+        app.router_options.allow_on_request = True
+
+    This option does not override `on_options()`. In case `on_options()` needs
+    to be overriden, this can be done explicitly by aliasing::
+
+        on_options = on_request
+
+    or by explicitly calling `on_request()` in `on_options()`::
+
+        def on_options(self, req, resp):
+            self.on_request(req, resp)
+
+    Note:
+        In order for this option to take effect, it must be enabled before
+        calling :meth:`add_route()`.
+
+    .. versionadded:: 4.1
+    """
+
+    __slots__ = ('converters', 'allow_on_request')
 
     def __init__(self) -> None:
         object.__setattr__(
@@ -949,6 +995,8 @@ class CompiledRouterOptions:
             'converters',
             ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
+
+        self.allow_on_request = False
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name == 'converters':
