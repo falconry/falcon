@@ -224,3 +224,11 @@ def test_client_simulate_aliases(asgi, method, util):
     assert result.status_code == 200
     expected = '' if method == 'HEAD' else method
     assert result.text == expected
+
+
+def test_deprecated_httpnow():
+    with pytest.warns(
+        falcon.util.DeprecatedWarning, match='Use `falcon.util.http_now` instead.'
+    ):
+        now = testing.httpnow()
+    assert now

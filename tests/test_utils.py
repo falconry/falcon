@@ -3,6 +3,7 @@ from datetime import timedelta
 from datetime import timezone
 import functools
 import http
+import inspect
 import itertools
 import json
 import random
@@ -712,7 +713,11 @@ class TestFalconTestingUtils:
         assert response.json == falcon.HTTPNotFound().to_dict()
 
     def test_httpnow_alias_for_backwards_compat(self):
-        assert testing.httpnow is falcon.util.http_now
+        # Ensure that both the alias and decorated alias work
+        assert (
+            testing.httpnow is falcon.util.http_now
+            or inspect.unwrap(testing.httpnow) is falcon.util.http_now
+        )
 
     def test_default_headers(self, app):
         resource = testing.SimpleTestResource()

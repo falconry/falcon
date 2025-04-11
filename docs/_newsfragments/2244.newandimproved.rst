@@ -1,0 +1,4 @@
+:class:`~falcon.routing.StaticRoute` now sets the ``Last-Modified`` header when
+serving static files. The improved implementation also checks the value of the
+``If-Modified-Since`` header, and renders an HTTP 304 response when the
+requested file has not been modified.
