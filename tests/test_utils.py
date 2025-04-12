@@ -616,6 +616,7 @@ class TestFalconUtils:
             ('. ⬅ a dot', None, '____a_dot'),
             ('C:\\Windows\\kernel32.dll', None, 'C__Windows_kernel32.dll'),
             ('Ąžuolai žaliuos.jpeg', 10, 'A_z_u.jpeg'),
+            ('. ⬅ a dot', 10, '____a_dot'),
         ],
     )
     def test_secure_filename(self, filename, max_length, expected):
