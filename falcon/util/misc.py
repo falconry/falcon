@@ -354,7 +354,7 @@ def secure_filename(filename: str,  max_length: Optional[int] = None) -> str:
         >>> secure_filename('Ångström unit physics.pdf')
         'A_ngstro_m_unit_physics.pdf'
         >>> secure_filename('Ångström unit physics.pdf', max_length=20)
-        'A_ngstro_m_unit.pd'
+        'A_ngstro_m_unit.pdf'
 
     Args:
         filename (str): Arbitrary filename input from the request, such as a
