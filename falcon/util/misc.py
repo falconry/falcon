@@ -336,7 +336,7 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-def secure_filename(filename: str) -> str:
+def secure_filename(filename: str,  max_length: Optional[int] = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -353,27 +353,42 @@ def secure_filename(filename: str) -> str:
         'Bold_Digit_1'
         >>> secure_filename('Ångström unit physics.pdf')
         'A_ngstro_m_unit_physics.pdf'
+        >>> secure_filename('Ångström unit physics.pdf', max_length=20)
+        'A_ngstro_m_unit.pd'
 
     Args:
         filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
+        max_length (Optional[int]): Maximum allowed length of the sanitized
+        filename. If exceeded, it will be truncated while preserving the extension.
 
     Returns:
-        str: The sanitized filename.
+        str: The sanitized filename, this name will be truncated if a max_length is exceeded.
 
     Raises:
         ValueError: the provided filename is an empty string.
     """
-    # TODO(vytas): max_length (int): Maximum length of the returned
-    #     filename. Should the returned filename exceed this restriction, it is
-    #     truncated while attempting to preserve the extension.
     if not filename:
         raise ValueError('filename may not be an empty string')
 
     filename = unicodedata.normalize('NFKD', filename)
     if filename.startswith('.'):
         filename = filename.replace('.', '_', 1)
-    return _UNSAFE_CHARS.sub('_', filename)
+
+    filename = _UNSAFE_CHARS.sub('_', filename)
+
+    if max_length and len(filename) > max_length:
+        if '.' in filename:
+            name, ext = filename.rsplit('.', 1)
+            ext = '.' + ext
+        else:
+            name, ext = filename, ''
+
+        # Reserve space for the extension if present
+        allowed_name_len = max_length - len(ext)
+        filename = name[:allowed_name_len] + ext
+
+    return filename
 
 
 @_lru_cache_for_simple_logic(maxsize=64)

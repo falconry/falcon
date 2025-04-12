@@ -606,19 +606,20 @@ class TestFalconUtils:
         assert not weak_67aB43.strong_compare(weak_67ab43_one)
 
     @pytest.mark.parametrize(
-        'filename,expected',
+        'filename,max_length,expected',
         [
-            ('.', '_'),
-            ('..', '_.'),
-            ('hello.txt', 'hello.txt'),
-            ('Ąžuolai žaliuos.jpeg', 'A_z_uolai_z_aliuos.jpeg'),
-            ('/etc/shadow', '_etc_shadow'),
-            ('. ⬅ a dot', '____a_dot'),
-            ('C:\\Windows\\kernel32.dll', 'C__Windows_kernel32.dll'),
+            ('.', None, '_'),
+            ('..', None, '_.'),
+            ('hello.txt', None, 'hello.txt'),
+            ('Ąžuolai žaliuos.jpeg', None, 'A_z_uolai_z_aliuos.jpeg'),
+            ('/etc/shadow', None, '_etc_shadow'),
+            ('. ⬅ a dot', None, '____a_dot'),
+            ('C:\\Windows\\kernel32.dll', None, 'C__Windows_kernel32.dll'),
+            ('Ąžuolai žaliuos.jpeg', 10, 'A_z_u.jpeg'),
         ],
     )
-    def test_secure_filename(self, filename, expected):
-        assert misc.secure_filename(filename) == expected
+    def test_secure_filename(self, filename, max_length, expected):
+        assert misc.secure_filename(filename, max_length) == expected
 
     def test_secure_filename_empty_value(self):
         with pytest.raises(ValueError):
