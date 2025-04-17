@@ -41,7 +41,7 @@ def validate(
         The ``jsonschema`` package must be installed separately in order to use
         this decorator, as Falcon does not install it by default.
 
-        See `json-schema.org <http://json-schema.org/>`_ for more
+        See `json-schema.org <https://json-schema.org>`_ for more
         information on defining a compatible dictionary.
 
     Keyword Args:

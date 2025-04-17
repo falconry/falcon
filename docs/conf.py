@@ -99,6 +99,10 @@ exclude_patterns = ['_build', '_newsfragments']
 #   so we specify a print-friendly theme here for the likes of latexpdf.
 pygments_style = 'bw'
 
+# myst configuration
+myst_enable_extensions = ["tasklist"]
+myst_enable_checkboxes = True
+
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 

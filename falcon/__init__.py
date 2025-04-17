@@ -336,6 +336,7 @@ from falcon.constants import COMBINED_METHODS
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import HTTP_METHODS
 from falcon.constants import MEDIA_BMP
+from falcon.constants import MEDIA_CSV
 from falcon.constants import MEDIA_GIF
 from falcon.constants import MEDIA_HTML
 from falcon.constants import MEDIA_JPEG
@@ -343,6 +344,7 @@ from falcon.constants import MEDIA_JS
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MSGPACK
 from falcon.constants import MEDIA_MULTIPART
+from falcon.constants import MEDIA_PARQUET
 from falcon.constants import MEDIA_PNG
 from falcon.constants import MEDIA_TEXT
 from falcon.constants import MEDIA_URLENCODED

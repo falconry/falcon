@@ -252,7 +252,7 @@ class Request(request.Request):
     # ------------------------------------------------------------------------
     # Properties
     #
-    # Much of the logic from the ASGI Request class is duplicted in these
+    # Much of the logic from the ASGI Request class is duplicated in these
     # property implementations; however, to make the code more DRY we would
     # have to factor out the common logic, which would add overhead to these
     # properties and slow them down. They are simple enough that we should
