@@ -82,8 +82,9 @@ hesitate to :ref:`get in touch <chat>`, and share your vision!
 Error handling
 --------------
 
-Schema validation can fail, and the resulting exception would bubble up as an
-HTTP 500 error. Skimming through ``msgspec``\'s docs, we find out that this
+Schema validation can fail, and the resulting exception would unexpectedly
+bubble up as a generic HTTP 500 error. We can do better!
+Skimming through ``msgspec``\'s docs, we find out that this
 case is represented by ``msgspec.ValidationError``. We could either create an
 :meth:`error hander <falcon.App.add_error_handler>` that reraises this
 exception as :class:`~falcon.MediaValidationError`, or just use a
