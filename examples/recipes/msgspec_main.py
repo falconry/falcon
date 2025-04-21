@@ -29,6 +29,7 @@ class NoteResource:
     POST_SCHEMA = Note
 
     def __init__(self) -> None:
+        # NOTE: In a real-world app, you would want to use persistent storage.
         self._store = {}
 
     def on_get_note(self, req: Request, resp: Response, noteid: uuid.UUID) -> None:
@@ -47,7 +48,7 @@ class NoteResource:
 
     def on_post(self, req: Request, resp: Response, note: Note) -> None:
         self._store[str(note.noteid)] = note
-        resp.location = f'req.path/{note.noteid}'
+        resp.location = f'{req.path}/{note.noteid}'
         resp.media = note
         resp.status = HTTPStatus.CREATED
 

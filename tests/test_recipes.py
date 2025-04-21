@@ -293,6 +293,7 @@ class TestMsgspec:
         assert resp1.status_code == 201
         created = resp1.json
         noteid = created['noteid']
+        assert resp1.headers.get('Location') == f'/notes/{noteid}'
 
         resp2 = client.simulate_post('/notes', json={'note': 'Another'})
         assert resp2.status_code == 422
