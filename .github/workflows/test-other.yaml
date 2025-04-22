@@ -6,10 +6,15 @@ on:
     branches:
       - "*"
 
+  # TODO(vytas): Remove once demonstrated to pass.
+  pull_request:
+    branches:
+      - master
+
 jobs:
   run-tox:
     name: tox -e ${{ matrix.toxenv }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
