@@ -115,6 +115,68 @@ Woohoo, it works!!!
 
 Well, sort of. Onwards to adding some real functionality!
 
+.. _debugging_asgi_applications:
+
+Debugging ASGI Applications
+---------------------------
+
+While developing and testing a Falcon ASGI application along the lines of this
+tutorial, you may encounter unexpected issues or behaviors, be it a copy-paste
+mistake, an idea that didn't work out, or unusual input where validation falls
+outside of the scope of this tutorial.
+
+Unlike WSGI, the ASGI specification has no standard mechanism for logging
+errors back to the application server, so Falcon falls back to the stdlib's
+:mod:`logging` (using the ``falcon`` :class:`logger <logging.Logger>`).
+
+As a well-behaved library, Falcon does not configure any loggers since that
+might interfere with the user's logging setup.
+Here's how you can set up basic logging in your ASGI Falcon application via
+:func:`logging.basicConfig`:
+
+.. code:: python
+
+    import logging
+
+    import falcon
+
+    logging.basicConfig(level=logging.INFO)
+
+
+    class ErrorResource:
+        def on_get(self, req, resp):
+            raise Exception('Something went wrong!')
+
+
+    app = falcon.App()
+    app.add_route('/error', ErrorResource())
+
+When the above route is accessed, Falcon will catch the unhandled exception and
+automatically log an error message. Below is an example of what the log output
+might look like:
+
+.. code-block:: none
+
+    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
+    Traceback (most recent call last):
+      File "/path/to/your/app.py", line 123, in __call__
+        resp = resource.on_get(req, resp)
+      File "/path/to/your/app.py", line 7, in on_get
+        raise Exception("Something went wrong!")
+    Exception: Something went wrong!
+
+.. note::
+    While logging is helpful for development and debugging, be mindful of
+    logging sensitive information. Ensure that log files are stored securely
+    and are not accessible to unauthorized users.
+
+.. note::
+    Unhandled errors are only logged automatically by Falcon's default error
+    handler for :class:`Exception`. If you
+    :meth:`replace this handler <falcon.asgi.App.add_error_handler>` with your
+    own generic :class:`Exception` handler, you are responsible for logging or
+    reporting these errors yourself.
+
 .. _asgi_tutorial_config:
 
 Configuration
@@ -962,56 +1024,6 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     strategies such as blending different types of tests and/or running the same
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
-
-Debugging ASGI Applications
----------------------------
-(This section also applies to WSGI applications)
-
-While developing and testing ASGI applications, understanding how to configure
-and utilize logging can be helpful, especially when you encounter unexpected
-issues or behaviors.
-
-By default, Falcon does not set up logging for you,
-but Python's built-in :mod:`logging` module provides a flexible framework for
-emitting and capturing log messages. Here's how you can set up basic logging in
-your ASGI Falcon application:
-
-.. code:: python
-
-    import logging
-
-    import falcon
-
-
-    logging.basicConfig(level=logging.INFO)
-
-    class ErrorResource:
-        def on_get(self, req, resp):
-            raise Exception('Something went wrong!')
-
-    app = falcon.App()
-    app.add_route('/error', ErrorResource())
-
-
-When the above route is accessed, Falcon will catch the unhandled exception and
-automatically log an error message. Below is an example of what the log output
-might look like:
-
-.. code-block:: none
-
-    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
-    Traceback (most recent call last):
-      File "path/to/falcon/app.py", line 123, in __call__
-        resp = resource.on_get(req, resp)
-      File "/path/to/your/app.py", line 7, in on_get
-        raise Exception("Something went wrong!")
-    Exception: Something went wrong!
-
-
-.. note::
-   While logging is helpful for development and debugging, be mindful of logging
-   sensitive information. Ensure that log files are stored securely and are not
-   accessible to unauthorized users.
 
 What Now?
 ---------
