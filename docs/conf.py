@@ -87,6 +87,7 @@ extensions = [
     'ext.autodoc_customizations',
     'ext.cibuildwheel',
     'ext.doorway',
+    'ext.falcon_releases',
     'ext.private_args',
     'ext.rfc',
 ]

@@ -6,5 +6,6 @@ Community Guide
 
    help
    contributing
+   releases
    packaging
    ../user/faq

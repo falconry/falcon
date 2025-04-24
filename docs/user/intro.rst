@@ -84,6 +84,8 @@ Now, if you do make changes to Falcon itself, please consider contributing your 
 
 .. _`Apache 2.0 License`: http://opensource.org/licenses/Apache-2.0
 
+.. _falcon_license:
+
 Falcon License
 --------------
 
