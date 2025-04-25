@@ -247,6 +247,17 @@ class StaticRoute:
                 fh, st = _open_file(self._fallback_filename)
                 file_path = self._fallback_filename
 
+        etag = falcon.ETag(f"{int(st.st_mtime):x}-{st.st_size:x}")
+        resp.etag = etag
+
+        if req.if_none_match is not None and (
+            (len(req.if_none_match) == 1 and req.if_none_match[0] == "*")
+            or any(etag == i for i in req.if_none_match)
+        ):
+            fh.close()
+            resp.status = falcon.HTTP_304
+            return
+
         last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
         # NOTE(vytas): Strip the microsecond part because that is not reflected
         #   in HTTP date, and when the client passes a previous value via
@@ -254,6 +265,7 @@ class StaticRoute:
         last_modified = last_modified.replace(microsecond=0)
         resp.last_modified = last_modified
         if req.if_modified_since is not None and last_modified <= req.if_modified_since:
+            fh.close()
             resp.status = falcon.HTTP_304
             return
 
