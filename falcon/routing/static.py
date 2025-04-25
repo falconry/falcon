@@ -247,11 +247,11 @@ class StaticRoute:
                 fh, st = _open_file(self._fallback_filename)
                 file_path = self._fallback_filename
 
-        etag = falcon.ETag(f"{int(st.st_mtime):x}-{st.st_size:x}")
+        etag = falcon.ETag(f'{int(st.st_mtime):x}-{st.st_size:x}')
         resp.etag = etag
 
         if req.if_none_match is not None and (
-            (len(req.if_none_match) == 1 and req.if_none_match[0] == "*")
+            (len(req.if_none_match) == 1 and req.if_none_match[0] == '*')
             or any(etag == i for i in req.if_none_match)
         ):
             fh.close()
