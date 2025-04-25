@@ -722,7 +722,7 @@ def test_if_none_match(client, patch_open):
 
     resp2 = client.simulate_request(
         path='/assets/css/main.css',
-        headers={'If-None-Match': f"W/{etag}"},
+        headers={'If-None-Match': f'W/{etag}'},
     )
     assert resp2.status == falcon.HTTP_304
 
