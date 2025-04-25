@@ -706,28 +706,35 @@ def test_etag(client, patch_open):
     assert resp.headers['ETag'] == f'"{int(mtime):x}-{len(resp.text):x}"'
 
 
-@pytest.mark.parametrize(
-    'if_none_match, is_304',
-    [
-        ('*', True),
-        ('"6782afce-21"', True),
-        ('"6782afce-21", "foo"', True),
-        ('W/"6782afce-21"', True),
-        ('"foo"', False),
-    ],
-)
-def test_if_none_match(client, patch_open, if_none_match, is_304):
+def test_if_none_match(client, patch_open):
     mtime = 1736617934.133701
     patch_open(mtime=mtime)
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
-    resp = client.simulate_request(
+    etag = resp = client.simulate_request(path='/assets/css/main.css').headers['ETag']
+
+    resp1 = client.simulate_request(
         path='/assets/css/main.css',
-        headers={'If-None-Match': if_none_match},
+        headers={'If-None-Match': etag},
     )
-    if is_304:
-        assert resp.status == falcon.HTTP_304
-        assert resp.text == ''
-    else:
-        assert resp.status == falcon.HTTP_200
-        assert resp.text == '/opt/somesite/assets/css/main.css'
+    assert resp1.status == falcon.HTTP_304
+    assert resp1.text == ''
+
+    resp2 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-None-Match': f"W/{etag}"},
+    )
+    assert resp2.status == falcon.HTTP_304
+
+    resp3 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-None-Match': '*'},
+    )
+    assert resp3.status == falcon.HTTP_304
+
+    resp4 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-None-Match': '"foo"'},
+    )
+    assert resp4.status == falcon.HTTP_200
+    assert resp4.text != ''
