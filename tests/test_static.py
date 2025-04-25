@@ -711,7 +711,7 @@ def test_if_none_match(client, patch_open):
     patch_open(mtime=mtime)
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
-    etag = resp = client.simulate_request(path='/assets/css/main.css').headers['ETag']
+    etag = client.simulate_request(path='/assets/css/main.css').headers['ETag']
 
     resp1 = client.simulate_request(
         path='/assets/css/main.css',
