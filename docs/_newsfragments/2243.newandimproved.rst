@@ -1,0 +1,3 @@
+:class:`~falcon.routing.StaticRoute` now renders ``Etag`` headers. It also
+checks ``If-None-Match`` in requests and returns HTTP 304 response if
+appropriate.
