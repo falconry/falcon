@@ -91,6 +91,20 @@ def _set_range(
     return _BoundedFile(fh, length), length, (start, end, size)
 
 
+def _is_not_modified(
+    req: falcon.Request, etag: falcon.ETag, last_modified: datetime
+) -> bool:
+    if req.if_none_match is not None:
+        return (len(req.if_none_match) == 1 and req.if_none_match[0] == '*') or any(
+            etag == i for i in req.if_none_match
+        )
+
+    if req.if_modified_since is not None:
+        return last_modified <= req.if_modified_since
+
+    return False
+
+
 class _BoundedFile:
     """Wrap a file to only allow part of it to be read.
 
@@ -250,21 +264,14 @@ class StaticRoute:
         etag = falcon.ETag(f'{int(st.st_mtime):x}-{st.st_size:x}')
         resp.etag = etag
 
-        if req.if_none_match is not None and (
-            (len(req.if_none_match) == 1 and req.if_none_match[0] == '*')
-            or any(etag == i for i in req.if_none_match)
-        ):
-            fh.close()
-            resp.status = falcon.HTTP_304
-            return
-
         last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
         # NOTE(vytas): Strip the microsecond part because that is not reflected
         #   in HTTP date, and when the client passes a previous value via
         #   If-Modified-Since, it will look as if our copy is ostensibly newer.
         last_modified = last_modified.replace(microsecond=0)
         resp.last_modified = last_modified
-        if req.if_modified_since is not None and last_modified <= req.if_modified_since:
+
+        if _is_not_modified(req, etag, last_modified):
             fh.close()
             resp.status = falcon.HTTP_304
             return
