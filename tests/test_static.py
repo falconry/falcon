@@ -710,15 +710,14 @@ def test_etag(client, patch_open):
     'if_none_match, is_304',
     [
         ('*', True),
-        ('"6782afce-21"', True),
-        ('"6782afce-21", "foo"', True),
-        ('W/"6782afce-21"', True),
+        ('"6782afce-9"', True),
+        ('"6782afce-9", "foo"', True),
+        ('W/"6782afce-9"', True),
         ('"foo"', False),
     ],
 )
 def test_if_none_match(client, patch_open, if_none_match, is_304):
-    mtime = 1736617934.133701
-    patch_open(mtime=mtime)
+    patch_open(content=b'test_data', mtime=1736617934.133701)
 
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
     resp = client.simulate_request(
@@ -730,4 +729,4 @@ def test_if_none_match(client, patch_open, if_none_match, is_304):
         assert resp.text == ''
     else:
         assert resp.status == falcon.HTTP_200
-        assert resp.text == '/opt/somesite/assets/css/main.css'
+        assert resp.text == 'test_data'
