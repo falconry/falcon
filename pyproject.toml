@@ -15,7 +15,7 @@ description = "The ultra-reliable, fast ASGI+WSGI framework for building data pl
 authors = [
   {name = "Kurt Griffiths", email = "mail@kgriffs.com"},
 ]
-license = "Apache 2.0"
+license = "Apache-2.0"
 license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
