@@ -730,3 +730,30 @@ def test_if_none_match(client, patch_open, if_none_match, is_304):
     else:
         assert resp.status == falcon.HTTP_200
         assert resp.text == 'test_data'
+
+
+def test_if_none_match_precedence(client, patch_open):
+    """Make sure If-None-Match always takes precedence over If-Modified-Since."""
+    mtime = (1736617934.133701, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+    resp1 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={
+            'If-None-Match': '"foo"',
+            'If-Modified-Since': mtime[1],
+        },
+    )
+    assert resp1.status == falcon.HTTP_200
+    assert resp1.text != ''
+
+    resp2 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={
+            'If-None-Match': resp1.headers['ETag'],
+            'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:13 GMT',
+        },
+    )
+    assert resp2.status == falcon.HTTP_304
+    assert resp2.text == ''
