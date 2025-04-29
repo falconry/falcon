@@ -94,6 +94,13 @@ def _set_range(
 def _is_not_modified(
     req: falcon.Request, etag: falcon.ETag, last_modified: datetime
 ) -> bool:
+    """Check whether the requested resource can be served with 304 Not Modified."""
+
+    # NOTE(Cycloctane): RFC 9110 Section 13.1.3: A recipient MUST ignore
+    #   If-Modified-Since if the request contains an If-None-Match header
+    #   field. See also:
+    #   https://www.rfc-editor.org/rfc/rfc9110#section-13.1.3-5
+    #   https://www.rfc-editor.org/rfc/rfc9110#section-13.2.2
     if req.if_none_match is not None:
         return (len(req.if_none_match) == 1 and req.if_none_match[0] == '*') or any(
             etag == i for i in req.if_none_match
