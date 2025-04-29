@@ -53,7 +53,7 @@ keywords = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "pyright"]
 
 [project.scripts]
 falcon-bench = "falcon.cmd.bench:main"
@@ -112,6 +112,23 @@ include = ["falcon*"]
             "falcon.cyutil.uri"
         ]
         ignore_missing_imports = true
+
+[tool.pyright]
+    include = ["falcon", "tests"]
+    exclude = [
+        "falcon/bench",
+        "falcon/cmd",
+        "tests/testdata"
+    ]
+    reportUnusedExpression = "none"
+    reportUnusedVariable = "none"
+    reportUnusedFunction = "none"
+    reportMissingModuleSource = "none"
+    reportOptionalMemberAccess = "error"
+    reportIncompatibleMethodOverride = "error"
+    reportMissingImports = "error"
+    reportPossiblyUnboundVariable = "error"
+    pythonVersion = "3.12"
 
 [tool.towncrier]
     package = "falcon"
