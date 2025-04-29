@@ -91,9 +91,7 @@ def _set_range(
     return _BoundedFile(fh, length), length, (start, end, size)
 
 
-def _is_not_modified(
-    req: falcon.Request, etag: falcon.ETag, last_modified: datetime
-) -> bool:
+def _is_not_modified(req: falcon.Request, etag: str, last_modified: datetime) -> bool:
     """Check whether the requested resource can be served with 304 Not Modified."""
 
     # NOTE(Cycloctane): RFC 9110 Section 13.1.3: A recipient MUST ignore
@@ -268,7 +266,7 @@ class StaticRoute:
                 fh, st = _open_file(self._fallback_filename)
                 file_path = self._fallback_filename
 
-        etag = falcon.ETag(f'{int(st.st_mtime):x}-{st.st_size:x}')
+        etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
         resp.etag = etag
 
         last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
