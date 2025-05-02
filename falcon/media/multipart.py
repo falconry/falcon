@@ -592,6 +592,15 @@ class MultipartParseOptions:
     If the body part headers size exceeds this value, an instance of
     :class:`.MultipartParseError` will be raised.
     """
+    max_filename_length: Optional[int]
+    """The maximum length of filenames in multipart forms (default ``None``).
+
+    If the filename exceeds this value, it will be truncated while preserving
+    the file extension. Defaults to ``None`` for backward compatibility.
+
+    .. note::
+        Starting from Falcon 5.0, this will default to 255 characters.
+    """
     media_handlers: Handlers
     """A dict-like object for configuring the media-types to handle.
 
