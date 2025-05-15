@@ -611,7 +611,7 @@ class TestFalconUtils:
             ('.', None, '_'),
             ('..', None, '_.'),
             ('hello.txt', None, 'hello.txt'),
-            ('hellotxt', None, 'hellotxt'),
+            ('hellotxt', 6, 'hellotxt'),
             ('Ąžuolai žaliuos.jpeg', None, 'A_z_uolai_z_aliuos.jpeg'),
             ('/etc/shadow', None, '_etc_shadow'),
             ('. ⬅ a dot', None, '____a_dot'),
