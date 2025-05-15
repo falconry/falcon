@@ -336,7 +336,7 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-def secure_filename(filename: str,  max_length: Optional[int] = None) -> str:
+def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -363,7 +363,8 @@ def secure_filename(filename: str,  max_length: Optional[int] = None) -> str:
         filename. If exceeded, it will be truncated while preserving the extension.
 
     Returns:
-        str: The sanitized filename, this name will be truncated if a max_length is exceeded.
+        str: The sanitized filename, this name will be truncated if a max_length
+            is exceeded.
 
     Raises:
         ValueError: the provided filename is an empty string.

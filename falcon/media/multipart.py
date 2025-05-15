@@ -233,7 +233,10 @@ class BodyPart:
         See also: :func:`~.secure_filename`
         """  # noqa: D205
         try:
-            return misc.secure_filename(self.filename or '')
+            return misc.secure_filename(
+                self.filename or '',
+                max_length=self._parse_options.max_secure_filename_length,
+            )
         except ValueError as ex:
             raise MultipartParseError(description=str(ex)) from ex
 
@@ -578,6 +581,13 @@ class MultipartParseOptions:
     :class:`.MultipartParseError` will be raised. If this option is set to 0,
     no limit will be imposed by the parser.
     """
+    max_secure_filename_length: Optional[int]
+    """The maximum number characters for a secure filename (default ``96``).
+
+    If the form contains more parts than this number, an instance of
+    :class:`.MultipartParseError` will be raised. If this option is set to None,
+    no limit will be imposed by the parser.
+    """
     max_body_part_buffer_size: int
     """The maximum number of bytes to buffer and return when the
     :meth:`BodyPart.get_data` method is called (default ``1 MiB``).
@@ -608,6 +618,7 @@ class MultipartParseOptions:
         'default_charset',
         'max_body_part_buffer_size',
         'max_body_part_count',
+        'max_secure_filename_length',
         'max_body_part_headers_size',
         'media_handlers',
     )
@@ -616,6 +627,7 @@ class MultipartParseOptions:
         self.default_charset = 'utf-8'
         self.max_body_part_buffer_size = 1024 * 1024
         self.max_body_part_count = 64
+        self.max_secure_filename_length = 96
         self.max_body_part_headers_size = 8192
         # NOTE(myusko,vytas): Here we create a copy of _DEFAULT_HANDLERS in
         #   order to prevent the modification of the class variable whenever
