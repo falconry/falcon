@@ -1,0 +1,3 @@
+Two new :ref:`media_type constants <media_type_constants>`,
+``falcon.MEDIA_CSV`` and ``falcon.MEDIA_PARQUET``, were added in order to
+provide better support for Python data analysis applications out of the box.

@@ -161,4 +161,7 @@ __all__ = (
 
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
 # TODO(vytas): Remove in Falcon 5.0.
-httpnow = _util.http_now
+httpnow = _util.deprecated(
+    'This method is deprecated and will be removed in Falcon 5.0. '
+    'Use `falcon.util.http_now` instead.'
+)(_util.http_now)

@@ -1,17 +1,14 @@
 coverage >= 4.1
-# TODO(vytas): Our use of testtools breaks under pytest 8.2 along the lines of
-#   https://github.com/pytest-dev/pytest/issues/12263, unpin when fixed
-#   (or drop support for testtools altogether?)
-pytest >= 7.0, < 8.2
+pytest >= 7.0
 pyyaml
 requests
-# TODO(vytas): Check if testtools still brings anything to the table, and
-#   re-enable if/when unittest2 is adjusted to support CPython 3.10.
-testtools; python_version < '3.10'
+testtools
 
-# ASGI Specific (daphne is installed on a its own tox env)
+# ASGI Specific (Daphne & Hypercorn are installed in their own tox env)
 aiofiles
-httpx
+# NOTE(vytas): httpcore (a dependency of httpx) fails to import under 3.14.0a6:
+#   https://github.com/encode/httpcore/issues/994
+httpx; python_version < '3.14'
 uvicorn >= 0.17.0
 websockets >= 13.1
 
@@ -28,3 +25,6 @@ python-rapidjson; platform_python_implementation != 'PyPy' and platform_machine 
 # wheels are missing some EoL interpreters and non-x86 platforms; build would fail unless rust is available
 # (not available for CPython 3.14 either yet)
 orjson; python_version < '3.14' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
+
+# NOTE(vytas): msgspec is not compatible with 3.14 at the time of writing yet.
+msgspec; python_version < '3.14' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'

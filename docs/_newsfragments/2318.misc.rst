@@ -1,0 +1,2 @@
+The readability of the :doc:`Contributing docs </community/contributing>` was
+improved by properly rendering GitHub Markdown-flavored checkboxes.

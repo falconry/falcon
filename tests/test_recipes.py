@@ -1,3 +1,4 @@
+import sys
 import types
 import unittest.mock
 
@@ -5,6 +6,11 @@ import pytest
 
 import falcon
 import falcon.testing
+
+try:
+    import msgspec
+except ImportError:
+    msgspec = None  # type: ignore
 
 
 class TestMultipartMixed:
@@ -86,8 +92,7 @@ class TestPrettyJSON:
             resp.media = {
                 'author': 'Grace Hopper',
                 'quote': (
-                    "I've always been more interested in "
-                    'the future than in the past.'
+                    "I've always been more interested in the future than in the past."
                 ),
             }
 
@@ -211,3 +216,102 @@ class TestRequestIDContext:
         response = client.simulate_get('/test')
         assert 'X-Request-ID' in response.headers
         assert response.headers['X-Request-ID'] == response.json['request_id']
+
+
+@pytest.mark.skipif(msgspec is None, reason='this recipe requires msgspec [not found]')
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason='this recipe requires Python 3.9+'
+)
+class TestMsgspec:
+    def test_basic_media_handlers(self, asgi, util):
+        class MediaResource:
+            def on_post(self, req, resp):
+                resp.content_type = falcon.MEDIA_TEXT
+                resp.text = str(req.get_media())
+
+            async def on_post_async(self, req, resp):
+                resp.content_type = falcon.MEDIA_TEXT
+                resp.text = str(await req.get_media())
+
+        json_recipe = util.load_module('examples/recipes/msgspec_json_handler.py')
+        msgpack_recipe = util.load_module('examples/recipes/msgspec_msgpack_handler.py')
+
+        app = util.create_app(asgi)
+        client = falcon.testing.TestClient(app)
+
+        msgspec_handlers = {
+            falcon.MEDIA_JSON: json_recipe.json_handler,
+            falcon.MEDIA_MSGPACK: msgpack_recipe.msgpack_handler,
+        }
+        app.req_options.media_handlers.update(msgspec_handlers)
+        app.resp_options.media_handlers.update(msgspec_handlers)
+
+        suffix = 'async' if asgi else None
+        app.add_route('/media', MediaResource(), suffix=suffix)
+
+        resp1 = client.simulate_post('/media', json=[1, 3, 3, 7])
+        assert resp1.status_code == 200
+        assert resp1.text == '[1, 3, 3, 7]'
+
+        resp2 = client.simulate_post(
+            '/media', body=b'\x94\x01\x03\x03\x07', content_type=falcon.MEDIA_MSGPACK
+        )
+        assert resp2.status_code == 200
+        assert resp2.text == '[1, 3, 3, 7]'
+
+        resp3 = client.simulate_get('/', headers={'Accept': falcon.MEDIA_JSON})
+        assert resp3.status_code == 404
+        assert resp3.json == {'title': '404 Not Found'}
+
+        resp4 = client.simulate_get('/', headers={'Accept': falcon.MEDIA_MSGPACK})
+        assert resp4.status_code == 404
+        assert resp4.content == b'\x81\xa5title\xad404 Not Found'
+
+    def test_validation_middleware(self, util):
+        mw_recipe = util.load_module('examples/recipes/msgspec_media_validation.py')
+
+        class Metadata(msgspec.Struct):
+            name: str
+
+        class Resource:
+            POST_SCHEMA = Metadata
+
+            def on_post(self, req, resp, metadata):
+                resp.media = msgspec.to_builtins(metadata)
+
+        app = falcon.App(middleware=[mw_recipe.MsgspecMiddleware()])
+        app.add_route('/meta', Resource())
+
+        resp = falcon.testing.simulate_post(app, '/meta', json={'name': 'falcon'})
+        assert resp.json == {'name': 'falcon'}
+
+    def test_main_app(self, util):
+        main_recipe = util.load_module('examples/recipes/msgspec_main.py')
+        client = falcon.testing.TestClient(main_recipe.application)
+
+        resp1 = client.simulate_post('/notes', json={'text': 'Test note'})
+        assert resp1.status_code == 201
+        created = resp1.json
+        noteid = created['noteid']
+        assert resp1.headers.get('Location') == f'/notes/{noteid}'
+
+        resp2 = client.simulate_post('/notes', json={'note': 'Another'})
+        assert resp2.status_code == 422
+
+        resp3 = client.simulate_get('/notes')
+        assert resp3.status_code == 200
+        assert resp3.json == {noteid: created}
+
+        resp4 = client.simulate_get(f'/notes/{noteid}')
+        assert resp4.status_code == 200
+        assert resp4.json == created
+
+        resp5 = client.simulate_delete(f'/notes/{noteid}')
+        assert resp5.status_code == 204
+
+        resp6 = client.simulate_get(f'/notes/{noteid}')
+        assert resp6.status_code == 404
+
+        resp7 = client.simulate_get('/notes')
+        assert resp7.status_code == 200
+        assert resp7.json == {}

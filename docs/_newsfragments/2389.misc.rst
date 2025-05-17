@@ -1,0 +1,3 @@
+The ``falcon.testing.httpnow`` compatibility alias is now considered
+deprecated, and will be removed in Falcon 5.0.
+Use the :func:`falcon.http_now` function instead.
