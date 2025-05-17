@@ -80,6 +80,8 @@ do the heavy lifting for you.
     will only process request media the first time it is referenced. Subsequent
     interactions will use a cached object.
 
+.. _media_validation:
+
 Validating Media
 ----------------
 

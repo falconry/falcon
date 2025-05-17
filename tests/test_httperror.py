@@ -2,7 +2,7 @@ import datetime
 import http
 import json
 import wsgiref.validate
-import xml.etree.ElementTree as et  # noqa: I202
+import xml.etree.ElementTree as et
 
 import pytest
 
