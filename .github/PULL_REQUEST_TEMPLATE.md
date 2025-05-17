@@ -8,12 +8,13 @@ Please reference here any issue #'s that are relevant to this PR, or simply ente
 
 # Pull Request Checklist
 
-This is just a reminder about the most common mistakes.  Please make sure that you tick all *appropriate* boxes.  But please read our [contribution guide](../CONTRIBUTING.md) at least once; it will save you a few review cycles!
+This is just a reminder about the most common mistakes.  Please make sure that you tick all *appropriate* boxes.  But please read our [contribution guide](https://falcon.readthedocs.io/en/stable/community/contributing.html) at least once; it will save you a few review cycles!
 
 If an item doesn't apply to your pull request, **check it anyway** to make it apparent that there's nothing to do.
 
 - [ ] Applied changes to both WSGI and ASGI code paths and interfaces (where applicable).
 - [ ] Added **tests** for changed code.
+- [ ] Performed automated tests and code quality checks by [running `tox`](https://falcon.readthedocs.io/en/stable/community/contributing.html#pull-requests).
 - [ ] Prefixed code comments with GitHub nick and an appropriate prefix.
 - [ ] Coding style is consistent with the rest of the framework.
 - [ ] Updated **documentation** for changed code.
