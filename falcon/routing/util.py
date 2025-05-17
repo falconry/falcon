@@ -103,9 +103,9 @@ def set_default_responders(
             defined in a resource.
         asgi (bool): ``True`` if using an ASGI app, ``False`` otherwise
             (default ``False``).
-        default_responder: An optional default responder for unimplmented
-            resource methods. If not provided a responder for
-            "405 Method Not Allowed" is used.
+        default_responder: An optional default responder for unimplemented
+            resource methods (default: ``None``). If not provided, a new
+            responder for "405 Method Not Allowed" is constructed.
     """
 
     # Attach a resource for unsupported HTTP methods
