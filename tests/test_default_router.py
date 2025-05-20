@@ -725,6 +725,10 @@ def test_options_allow_on_request_disabled():
     __, method_map, __, __ = router.find('/default')
 
     for responder in method_map.values():
+        # NOTE(gespyrop): Responders defined within the resource class create
+        # a new bound method wrapper every time they are accessed.
+        # We reference the underlying function for comparison.
+        # (see also: https://docs.python.org/3/reference/datamodel.html#instance-methods)
         if isinstance(responder, MethodType):
             responder = responder.__func__
 
@@ -739,6 +743,10 @@ def test_options_allow_on_request_enabled():
     __, method_map, __, __ = router.find('/default')
 
     for method, responder in method_map.items():
+        # NOTE(gespyrop): Responders defined within the resource class create
+        # a new bound method wrapper every time they are accessed.
+        # We reference the underlying function for comparison.
+        # (see also: https://docs.python.org/3/reference/datamodel.html#instance-methods)
         if isinstance(responder, MethodType):
             responder = responder.__func__
 
@@ -756,6 +764,10 @@ def test_on_request_suffix():
     __, method_map, __, __ = router.find('/default/1')
 
     for method, responder in method_map.items():
+        # NOTE(gespyrop): Responders defined within the resource class create
+        # a new bound method wrapper every time they are accessed.
+        # We reference the underlying function for comparison.
+        # (see also: https://docs.python.org/3/reference/datamodel.html#instance-methods)
         if isinstance(responder, MethodType):
             responder = responder.__func__
 
