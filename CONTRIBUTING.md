@@ -53,8 +53,6 @@ $ pip install -U tox
 $ tox --recreate
 ```
 
-You may also use a CPython 3.9 environment, although in that case ``coverage`` will likely report a false positive on missing branches, and the total coverage might fall short of 100%. These issues are caused by bugs in the interpreter itself, and are unlikely to ever get fixed.
-
 ### Reviews
 
 Falcon is used in a number of mission-critical applications and is known for its stability and reliability. Therefore, we invest a lot of time in carefully reviewing PRs and working with contributors to ensure that every patch merged into the master branch is correct, complete, performant, well-documented, and appropriate.
