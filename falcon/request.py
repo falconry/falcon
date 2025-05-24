@@ -2436,7 +2436,7 @@ class RequestOptions:
     respectively.
     """
 
-    keep_black_qs_values: bool
+    keep_blank_qs_values: bool
     """Set to ``False`` to ignore query string params that have missing or blank
     values (default ``True``).
 
