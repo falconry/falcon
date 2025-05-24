@@ -8,7 +8,7 @@ Please reference here any issue #'s that are relevant to this PR, or simply ente
 
 # Pull Request Checklist
 
-This is just a reminder about the most common mistakes.  Please make sure that you tick all *appropriate* boxes.  But please read our [contribution guide](https://falcon.readthedocs.io/en/stable/community/contributing.html) at least once; it will save you a few review cycles!
+This is just a reminder about the most common mistakes.  Please make sure that you tick all *appropriate* boxes.  Reading our [contribution guide](https://falcon.readthedocs.io/en/stable/community/contributing.html) at least once will save you a few review cycles!
 
 If an item doesn't apply to your pull request, **check it anyway** to make it apparent that there's nothing to do.
 
