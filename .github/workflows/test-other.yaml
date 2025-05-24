@@ -9,7 +9,7 @@ on:
 jobs:
   run-tox:
     name: tox -e ${{ matrix.toxenv }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
