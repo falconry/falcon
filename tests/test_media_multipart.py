@@ -786,6 +786,46 @@ def test_filename_star(client):
     }
 
 
+@pytest.mark.parametrize(
+    'max_length,expected',
+    [
+        (None, '__Arrow.txt'),
+        (0, '__Arrow.txt'),
+        (4, '__Ar'),
+        (5, '_.txt'),
+        (7, '__A.txt'),
+        (10, '__Arro.txt'),
+        (64, '__Arrow.txt'),
+    ],
+)
+def test_max_secure_filename_length(custom_client, max_length, expected):
+    client = custom_client({'max_secure_filename_length': max_length})
+
+    data = (
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'Content-Disposition: form-data; name="file"; '
+        b'filename=\xe2\xac\x85 Arrow.txt\r\n\r\n'
+        b'A unicode arrow in the filename.\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
+    )
+    content_type = 'multipart/form-data; boundary=' + 'a0d738bcdb30449eb0d13f4b72c2897e'
+
+    resp = client.simulate_post(
+        '/submit', headers={'Content-Type': content_type}, body=data
+    )
+    assert resp.status_code == 200
+    assert resp.json == [
+        {
+            'content_type': 'text/plain',
+            'data': 'A unicode arrow in the filename.',
+            'filename': '⬅ Arrow.txt',
+            'name': 'file',
+            'secure_filename': expected,
+            'text': 'A unicode arrow in the filename.',
+        }
+    ]
+
+
 @pytest.mark.parametrize('max_headers_size', [64, 140, 141, 142, 256, 1024])
 def test_headers_edge_cases(custom_client, max_headers_size):
     client = custom_client({'max_body_part_headers_size': max_headers_size})
