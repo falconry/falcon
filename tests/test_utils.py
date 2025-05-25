@@ -611,12 +611,21 @@ class TestFalconUtils:
             ('.', None, '_'),
             ('..', None, '_.'),
             ('hello.txt', None, 'hello.txt'),
-            ('hellotxt', 6, 'hellotxt'),
             ('Ąžuolai žaliuos.jpeg', None, 'A_z_uolai_z_aliuos.jpeg'),
             ('/etc/shadow', None, '_etc_shadow'),
             ('. ⬅ a dot', None, '____a_dot'),
             ('C:\\Windows\\kernel32.dll', None, 'C__Windows_kernel32.dll'),
+            ('hello.txt', 8, 'hell.txt'),
+            ('hello.txt', 5, 'h.txt'),
+            ('hello.txt', 4, 'hell'),
+            ('Ąžuolai žaliuos.jpeg', 0, 'A_z_uolai_z_aliuos.jpeg'),
             ('Ąžuolai žaliuos.jpeg', 10, 'A_z_u.jpeg'),
+            ('Ąžuolai žaliuos.jpeg', 6, 'A.jpeg'),
+            ('Ąžuolai žaliuos.jpeg', 5, 'A_z_u'),
+            ('Ąžuolai žaliuos.jpeg', 3, 'A_z'),
+            ('Ąžuolai žaliuos.jpeg', 1, 'A'),
+            ('.emacs.d/init.el', 11, '_emacs.d.el'),
+            ('~/.emacs.d/init.el', 11, '__.emacs.el'),
             ('. ⬅ a dot', 10, '____a_dot'),
         ],
     )
@@ -626,6 +635,10 @@ class TestFalconUtils:
     def test_secure_filename_empty_value(self):
         with pytest.raises(ValueError):
             misc.secure_filename('')
+
+    def test_secure_filename_invalid_max_length(self):
+        with pytest.raises(ValueError):
+            misc.secure_filename('Document.pdf', -11)
 
     def test_misc_isascii(self):
         with pytest.warns(deprecation.DeprecatedWarning):
