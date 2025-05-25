@@ -1,0 +1,7 @@
+The :func:`falcon.secure_filename()` utility function can now ensure that the
+length of the sanitized filename does not exceed the requested limit (passed
+via the ``max_length`` argument). In addition, a new option,
+``max_secure_filename_length``, was added to
+:class:`~falcon.media.multipart.MultipartParseOptions` in order to
+automatically populate this argument when referencing a body part's
+:attr:`~falcon.media.multipart.BodyPart.secure_filename`.

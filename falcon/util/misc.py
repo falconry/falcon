@@ -365,6 +365,8 @@ def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
             preserve its extension. If the provided name has no extension, or
             the extension is too long, itself, only the head is retained.
 
+            .. versionadded:: 4.1
+
     Returns:
         str: The sanitized filename (truncated to `max_length` characters).
 
