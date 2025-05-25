@@ -34,7 +34,7 @@ class SuffixedMethodNotFoundError(Exception):
 
 
 def map_http_methods(
-    resource: object, suffix: Optional[str] = None, allow_on_request: bool = False
+    resource: object, suffix: Optional[str] = None, default_to_on_request: bool = False
 ) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
@@ -50,7 +50,7 @@ def map_http_methods(
             a suffix is provided, Falcon will map GET requests to
             ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
             etc.
-        allow_on_request (bool): If True, it prevents a
+        default_to_on_request (bool): If True, it prevents a
             ``SuffixedMethodNotFoundError`` from being raised on resources
             defining ``on_request_{suffix}()``.
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`.)
@@ -78,7 +78,7 @@ def map_http_methods(
             if callable(responder):
                 method_map[method] = responder
 
-    has_default_responder = allow_on_request and hasattr(
+    has_default_responder = default_to_on_request and hasattr(
         resource, f'on_request_{suffix}'
     )
 

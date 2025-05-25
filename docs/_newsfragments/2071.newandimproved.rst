@@ -1,4 +1,4 @@
-Added the :attr:`~.CompiledRouterOptions.allow_on_request` router option that
+Added the :attr:`~.CompiledRouterOptions.default_to_on_request` router option that
 allows for providing a default responder by defining `on_request()` on the 
 resource. This option is disabled by default. If enabled, `on_request()` is
 set as the responder for every unimplemented method except for `on_options()`. 

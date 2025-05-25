@@ -718,7 +718,7 @@ def test_options_converters_invalid_name_on_update(router):
         )
 
 
-def test_options_allow_on_request_disabled():
+def test_options_default_to_on_request_disabled():
     router = DefaultRouter()
     router.add_route('/default', ResourceWithDefaultResponder())
 
@@ -735,9 +735,9 @@ def test_options_allow_on_request_disabled():
         assert responder is not ResourceWithDefaultResponder.on_request
 
 
-def test_options_allow_on_request_enabled():
+def test_options_default_to_on_request_enabled():
     router = DefaultRouter()
-    router.options.allow_on_request = True
+    router.options.default_to_on_request = True
     router.add_route('/default', ResourceWithDefaultResponder())
 
     __, method_map, __, __ = router.find('/default')
@@ -758,7 +758,7 @@ def test_options_allow_on_request_enabled():
 
 def test_on_request_suffix():
     router = DefaultRouter()
-    router.options.allow_on_request = True
+    router.options.default_to_on_request = True
     router.add_route('/default/{id}', ResourceWithDefaultResponder(), suffix='id')
 
     __, method_map, __, __ = router.find('/default/1')
@@ -779,7 +779,7 @@ def test_on_request_suffix():
 
 def test_synchronous_in_asgi(util):
     router = DefaultRouter()
-    router.options.allow_on_request = True
+    router.options.default_to_on_request = True
     kwargs = {'_asgi': True}
 
     with util.disable_asgi_non_coroutine_wrapping():
@@ -794,7 +794,7 @@ def test_synchronous_in_asgi(util):
 
 def test_coroutine_in_wsgi():
     router = DefaultRouter()
-    router.options.allow_on_request = True
+    router.options.default_to_on_request = True
 
     with pytest.raises(
         TypeError,
