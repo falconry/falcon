@@ -582,11 +582,17 @@ class MultipartParseOptions:
     no limit will be imposed by the parser.
     """
     max_secure_filename_length: Optional[int]
-    """The maximum number characters for a secure filename (default ``96``).
+    """The maximum number characters for a secure filename (default ``None``).
 
-    If the form contains more parts than this number, an instance of
-    :class:`.MultipartParseError` will be raised. If this option is set to None,
-    no limit will be imposed by the parser.
+    The value of this option is passed as the `max_length` keyword argument to
+    :func:`~.secure_filename` when evaluating the
+    :attr:`BodyPart.secure_filename` property.
+
+    Note:
+        In Falcon 5.0, the default value of this option will change to a
+        reasonable finite number (e.g., 64 or 96) of characters.
+
+    .. versionadded:: 4.1
     """
     max_body_part_buffer_size: int
     """The maximum number of bytes to buffer and return when the
@@ -618,8 +624,8 @@ class MultipartParseOptions:
         'default_charset',
         'max_body_part_buffer_size',
         'max_body_part_count',
-        'max_secure_filename_length',
         'max_body_part_headers_size',
+        'max_secure_filename_length',
         'media_handlers',
     )
 
@@ -627,8 +633,8 @@ class MultipartParseOptions:
         self.default_charset = 'utf-8'
         self.max_body_part_buffer_size = 1024 * 1024
         self.max_body_part_count = 64
-        self.max_secure_filename_length = 96
         self.max_body_part_headers_size = 8192
+        self.max_secure_filename_length = None
         # NOTE(myusko,vytas): Here we create a copy of _DEFAULT_HANDLERS in
         #   order to prevent the modification of the class variable whenever
         #   parse_options.media_handlers are customized.

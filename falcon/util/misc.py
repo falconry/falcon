@@ -29,6 +29,7 @@ import datetime
 import functools
 import http
 import inspect
+import os.path
 import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 import unicodedata
@@ -353,18 +354,19 @@ def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
         'Bold_Digit_1'
         >>> secure_filename('Ångström unit physics.pdf')
         'A_ngstro_m_unit_physics.pdf'
-        >>> secure_filename('Ångström unit physics.pdf', max_length=20)
+        >>> secure_filename('Ångström unit physics.pdf', max_length=19)
         'A_ngstro_m_unit.pdf'
 
     Args:
         filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
         max_length (Optional[int]): Maximum allowed length of the sanitized
-        filename. If exceeded, it will be truncated while preserving the extension.
+            filename. The sanitized filename is truncated while attempting to
+            preserve its extension. If the provided name has no extension, or
+            the extension is too long, itself, only the head is retained.
 
     Returns:
-        str: The sanitized filename, this name will be truncated if a max_length
-            is exceeded.
+        str: The sanitized filename (truncated to `max_length` characters).
 
     Raises:
         ValueError: the provided filename is an empty string.
@@ -379,15 +381,21 @@ def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
     filename = _UNSAFE_CHARS.sub('_', filename)
 
     if max_length and len(filename) > max_length:
-        if '.' in filename:
-            name, ext = filename.rsplit('.', 1)
-            ext = '.' + ext
-        else:
-            name, ext = filename, ''
+        root, ext = os.path.splitext(filename)
 
-        # Reserve space for the extension if present
-        allowed_name_len = max_length - len(ext)
-        filename = name[:allowed_name_len] + ext
+        # NOTE(perodriguezl): Reserve space for the extension if present.
+        allowed_root_len = max_length - len(ext)
+
+        # NOTE(vytas): The remaining root must consist of at least one char.
+        #   Simply drop the tail otherwise.
+        if allowed_root_len > 0:
+            filename = root[:allowed_root_len] + ext
+        elif max_length <= 0:
+            # PERF(vytas): We catch this unlikely programming error here
+            #   in order not to waste CPU cycles earlier.
+            raise ValueError('if provided, max_length must be a positive int')
+        else:
+            filename = filename[:max_length]
 
     return filename
 
