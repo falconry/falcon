@@ -1,6 +1,6 @@
 Added the :attr:`~.CompiledRouterOptions.default_to_on_request` router option that
 allows for providing a default responder by defining `on_request()` on the 
-resource. This option is disabled by default. If enabled, `on_request()` is
+resource. This option is disabled by default. When enabled, `on_request()` is
 set as the responder for every unimplemented method except for `on_options()`. 
-If the option is disabled or `on_request()` is not provided in the resource,
+When the option is disabled or `on_request()` is not provided in the resource,
 the default responder for "405 Method Not Allowed" is used.

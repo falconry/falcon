@@ -964,11 +964,30 @@ class CompiledRouterOptions:
 
     default_to_on_request: bool
     """Allows for providing a default responder by defining `on_request()` on
-    the resource.
+    the resource. For example::
+
+        class Resource:
+            def on_request(self, req: Request, resp: Response) -> None:
+                if req.method == "GET":
+                    ... # handle get
+                elif req.method == "POST":
+                    ... # handle post
+                else:
+                    raise HTTPMethodNotAllowed
+
+        app = falcon.App()
+        app.router_options.default_to_on_request = True
+
+        app.add_route('/resource', Resource())
 
     This feature is disabled by default and can be enabled by::
 
         app.router_options.default_to_on_request = True
+
+    The default responder will only handle methods for which a method-named
+    responder is not provided. For example, a POST request to a resource
+    that defines both `on_post` and `on_request` would only be handled by
+    `on_post`.
 
     This option does not override `on_options()`. In case `on_options()` needs
     to be overriden, this can be done explicitly by aliasing::
