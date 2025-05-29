@@ -222,6 +222,17 @@ class CompiledRouter:
             if suffix:
                 responder_name += '_' + suffix
 
+            # NOTE(gespyrop): If the resource has been decorated by a
+            # class-level hook, replace the responder with its decorated
+            # version. This is a hack to decorate default responders at runtime
+            # if default_to_on_request is enabled.
+            decorated_responder_name = '__decorated_' + responder_name + '__'
+            decorated_responder = getattr(resource, decorated_responder_name, None)
+
+            if decorated_responder:
+                setattr(resource, responder_name, decorated_responder)
+                delattr(resource.__class__, decorated_responder_name)
+
             default_responder = getattr(resource, responder_name, None)
 
         # NOTE(gespyrop): We do not verify whether the default responder is
