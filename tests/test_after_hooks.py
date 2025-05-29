@@ -170,10 +170,17 @@ class WrappedDefaultResponderResource:
     def on_request(self, req, resp):
         pass
 
+    @falcon.after(Smartness())
+    def on_request_id(self, req, resp, id):
+        pass
+
 
 @falcon.after(Smartness())
 class WrappedClassDefaultResponderResource:
     def on_request(self, req, resp):
+        pass
+
+    def on_request_id(self, req, resp, id):
         pass
 
 
@@ -182,10 +189,17 @@ class WrappedDefaultResponderResourceAsync:
     async def on_request(self, req, resp):
         pass
 
+    @falcon.after(Smartness())
+    async def on_request_id(self, req, resp, id):
+        pass
+
 
 @falcon.after(Smartness())
 class WrappedClassDefaultResponderResourceAsync:
     async def on_request(self, req, resp):
+        pass
+
+    async def on_request_id(self, req, resp, id):
         pass
 
 
@@ -457,8 +471,16 @@ def test_default_responder(util, resource, asgi):
     app.router_options.default_to_on_request = True
 
     app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
 
+    # Test that on_request is wrapped
     result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert result.text == 'smart'
+
+    # Test that on_request_id is wrapped
+    result = testing.simulate_post(app, '/1')
 
     assert result.status_code == 200
     assert result.text == 'smart'
