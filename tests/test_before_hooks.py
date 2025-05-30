@@ -485,6 +485,7 @@ class WrappedDefaultResponderResource:
     def on_request_id(self, req, res, id):
         pass
 
+
 @falcon.before(header_hook)
 class WrappedClassDefaultResponderResource:
     def on_request(self, req, resp):
