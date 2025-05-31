@@ -8,4 +8,5 @@ Community Guide
    contributing
    releases
    packaging
+   coc
    ../user/faq
