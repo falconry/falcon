@@ -54,8 +54,7 @@ Falcon + PyPy first.
 
 **Reliable.** We go to great lengths to avoid introducing
 breaking changes, and when we do they are fully documented and only
-introduced (in the spirit of
-`SemVer <https://semver.org/>`__) with a major version
+introduced (in the spirit of :ref:`SemVer <semver>`) with a major version
 increment. The code is rigorously tested with numerous inputs and we
 require 100% coverage at all times. Falcon does not depend on any
 external Python packages.
