@@ -10,7 +10,7 @@ Release Process:
 6.  Publish final version and add a release note.
 7.  Run benchmark and update falconframework.org with latest numbers.
 8.  Announce the new version in Gitter channels and on the socials.
-9.  Incorporate the tag into the current stable series branch
+9.  Incorporate the tag into the current stable series branch.
 10. Improve this document.
 
 ### Bump version
@@ -164,6 +164,12 @@ git merge 4.$YOUR_MINOR.$YOUR_PATCH
 # E.g., git merge 4.2.3
 git push
 ```
+
+At the time of writing, the repository contains these stable series branches:
+* `falcon-1.x`: https://github.com/falconry/falcon/tree/falcon-1.x
+* `falcon-2.x`: https://github.com/falconry/falcon/tree/falcon-2.x
+* `falcon-3.x`: https://github.com/falconry/falcon/tree/falcon-3.x
+* `falcon-4.x`: https://github.com/falconry/falcon/tree/falcon-4.x
 
 If you are releasing a new major version of the framework, create a new branch,
 e.g., `falcon-5.x`.
