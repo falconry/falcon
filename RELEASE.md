@@ -2,15 +2,16 @@
 
 Release Process:
 
-1. Bump version (including the suffix for pre-release, if applicable).
-2. Update changelog and render towncrier fragments.
-3. Release beta or rc.
-4. Run benchmark and check for regressions.
-5. Review and edit doc changes since the last release for clarity and consistency.
-6. Publish final version and add a release note.
-7. Run benchmark and update falconframework.org with latest numbers.
-8. Announce the new version in Gitter channels and on the socials.
-9. Improve this document.
+1.  Bump version (including the suffix for pre-release, if applicable).
+2.  Update changelog and render towncrier fragments.
+3.  Release beta or rc.
+4.  Run benchmark and check for regressions.
+5.  Review and edit doc changes since the last release for clarity and consistency.
+6.  Publish final version and add a release note.
+7.  Run benchmark and update falconframework.org with latest numbers.
+8.  Announce the new version in Gitter channels and on the socials.
+9.  Incorporate the tag into the current stable series branch
+10. Improve this document.
 
 ### Bump version
 
@@ -131,6 +132,16 @@ TODO: Replace with CI gate
 
 ### Review and edit doc changes since the last release for clarity and consistency
 
+Make sure to add a release date to the changelog file in the form of (use the
+actual date of the release):
+
+```rst
+.. falcon-release: 2025-05-05
+```
+
+These comments are used to aggregate the table of stable releases in
+`docs/community/releases.rst`.
+
 ### Publish final version and add a release note
 
 Be sure to install and test from PyPI as a sanity check afterwards.
@@ -138,6 +149,24 @@ Be sure to install and test from PyPI as a sanity check afterwards.
 ### Run benchmark and update falconframework.org with latest numbers
 
 ### Announce the new version in Gitter channels and on the socials
+
+### Incorporate the tag into the current stable series branch
+
+Merge the stable tag into the maintenance branch of the current Falcon series,
+e.g., `falcon-4.x`.
+
+Normally, the following should suffice, but please verify and address
+conflicts, if any:
+
+```sh
+git checkout falcon-4.x
+git merge 4.$YOUR_MINOR.$YOUR_PATCH
+# E.g., git merge 4.2.3
+git push
+```
+
+If you are releasing a new major version of the framework, create a new branch,
+e.g., `falcon-5.x`.
 
 ### Improve this document
 
