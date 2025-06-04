@@ -382,6 +382,8 @@ class Result(_ResultBase):
         """Return a rich markdown representation of the result.
         
         This is used when displaying the object with the Rich library.
+
+        .. versionadded:: 4.1.0
         """
         content_type = self.content_type or 'unknown'
         
