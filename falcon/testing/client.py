@@ -378,6 +378,57 @@ class Result(_ResultBase):
 
         return json_module.loads(self.text)
 
+    def __rich__(self) -> str:
+        """Return a rich markdown representation of the result.
+        
+        This is used when displaying the object with the Rich library.
+        """
+        content_type = self.content_type or 'unknown'
+        
+        # Format headers as a markdown table
+        headers_table = "| Header | Value |\n| ------ | ----- |\n"
+        for name, value in self.headers.items():
+            headers_table += f"| {name} | {value} |\n"
+        
+        # Format content according to type
+        content_display = ""
+        if not self.content:
+            content_display = "*No content*"
+        elif self.content_type and 'json' in self.content_type:
+            try:
+                # Format JSON nicely if possible
+                json_data = self.json
+                if json_data is not None:
+                    content_display = f"```json\n{json_module.dumps(json_data, indent=2)}\n```"
+                else:
+                    content_display = "*Empty JSON*"
+            except ValueError:
+                # If JSON parsing fails, show as text
+                content_display = f"```\n{self.text}\n```"
+        elif self.content_type and ('text' in self.content_type or 'xml' in self.content_type or 'html' in self.content_type):
+            content_display = f"```\n{self.text}\n```"
+        else:
+            # For binary content or unknown types, show a preview
+            if len(self.content) > 100:
+                preview = self.content[:50] + b'...' + self.content[-50:]
+                content_display = f"```\n{preview!r}\n```"
+            else:
+                content_display = f"```\n{self.content!r}\n```"
+        
+        # Create the complete markdown representation
+        result = f"""# HTTP Response
+## Status: `{self.status}`
+
+## Headers
+{headers_table}
+
+## Content-Type: `{content_type}`
+
+## Body
+{content_display}
+"""
+        return result
+
     def __repr__(self) -> str:
         content_type = self.content_type or ''
 
