@@ -35,6 +35,7 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+import warnings
 
 from falcon._typing import _UNSET
 from falcon._typing import RangeSetHeader
@@ -56,6 +57,7 @@ from falcon.util import http_cookies
 from falcon.util import http_status_to_code
 from falcon.util import structures
 from falcon.util.deprecation import AttributeRemovedError
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
@@ -563,9 +565,10 @@ class Response:
     def unset_cookie(
         self,
         name: str,
-        samesite: str = 'Lax',
         domain: Optional[str] = None,
         path: Optional[str] = None,
+        same_site: str = 'Lax',
+        samesite: Optional[str] = None,
     ) -> None:
         """Unset a cookie in the response.
 
@@ -588,11 +591,6 @@ class Response:
             name (str): Cookie name
 
         Keyword Args:
-            samesite (str): Allows to override the default 'Lax' same_site
-                    setting for the unset cookie.
-
-                    .. versionadded:: 4.0
-
             domain (str): Restricts the cookie to a specific domain and
                     any subdomains of that domain. By default, the user
                     agent will return the cookie only to the origin server.
@@ -619,6 +617,16 @@ class Response:
 
                 (See also: RFC 6265, Section 4.1.2.4)
 
+            same_site (str): Allows to override the default 'Lax' same_site
+                    setting for the unset cookie.
+
+                    .. versionadded:: 4.1
+
+            samesite (str): Deprecated. Use `same_site` instead.
+
+                    .. deprecated:: 4.1
+                       Please use the ``same_site`` parameter instead.
+
         .. _Same-Site warnings:
             https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings
         """  # noqa: E501
@@ -634,9 +642,22 @@ class Response:
         # thus removing it from future request objects.
         self._cookies[name]['expires'] = -1
 
+        # Handle deprecated samesite parameter
+        if samesite is not None:
+            warnings.warn(
+                'The "samesite" parameter is deprecated. '
+                'Please use "same_site" instead.',
+                DeprecatedWarning,
+                stacklevel=2,
+            )
+            # Use the deprecated parameter value if same_site was not explicitly set
+            same_site_value = samesite
+        else:
+            same_site_value = same_site
+
         # NOTE(CaselIT): Set SameSite to Lax to avoid setting invalid cookies.
         # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings  # noqa: E501
-        self._cookies[name]['samesite'] = samesite
+        self._cookies[name]['samesite'] = same_site_value
 
         if domain:
             self._cookies[name]['domain'] = domain
