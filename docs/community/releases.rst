@@ -19,22 +19,44 @@ Falcon strictly adheres to `SemVer <https://semver.org/>`__ -- incompatible API
 changes are only introduced in conjunction with a major version increment.
 
 
+Supported Releases
+------------------
+
+.. _stable_release_current:
+
+.. rubric:: Current Release
+
+As Falcon is a relatively small project with limited resources and funding, we
+only actively support the current SemVer major/minor release.
+
+Although older minor releases from the current Falcon series are formally
+considered :ref:`stable_release_eol`, the upgrade path to the current release
+ought to be effortless thanks to Falcon's strict :ref:`SemVer <semver>`
+guarantees.
+
+.. _stable_release_security:
+
+.. rubric:: Security Maintenance
+
+We also provide limited security maintenance for the latest release of the old
+stable SemVer major series, until *(1)* it falls back two major releases
+behind, or *(2)* 730 days (two years bar the possibility of a leap year) pass
+from the first release of the current stable series
+(whichever comes first).
+
+.. _stable_release_eol:
+
+.. rubric:: EOL
+
+Other Falcon versions are considered End of Life (**EOL**).
+
 Stable Release Status
 ---------------------
 
-As Falcon is a relatively small project with limited resources and funding, ...
-(**Current Release**).
-
-We also provide limited security support for the latest release of the old
-stable SemVer major series until it either falls back two major releases
-behind, or two years pass from the first release of the current stable series,
-whichever comes first (**Security Maintenance**).
-
-Other versions are considered End of Life (**EOL**).
-
-The table below summarizes the history of Falcon stable (1.0+) releases
-alongside their maintenance status. (You can find even older release history in
-our repository's commit tree, or PyPI.)
+The below table summarizes the history of Falcon stable (1.0+) releases
+alongside their maintenance status.
+(You can find even older (0.x) release history in our repository's commit tree,
+or PyPI.)
 
 .. falcon-releases:: changes/
 
