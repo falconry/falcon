@@ -1,0 +1,1 @@
+Added ``__rich__`` method to the ``Result`` class for better integration with the Rich library. 
