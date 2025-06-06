@@ -2618,7 +2618,7 @@ class MediaMalformedError(HTTPBadRequest):
         return msg
 
     @description.setter
-    def description(self, value: str) -> None:
+    def description(self, value: Optional[str]) -> None:
         pass
 
 
