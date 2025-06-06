@@ -24,9 +24,13 @@ Many thanks to all of our talented and stylish contributors for this release!
 
 - `aarcex3 <https://github.com/aarcex3>`__
 - `bssyousefi <https://github.com/bssyousefi>`__
+- `CaselIT <https://github.com/CaselIT>`__
 - `Cycloctane <https://github.com/Cycloctane>`__
 - `diegomirandap <https://github.com/diegomirandap>`__
 - `EricGoulart <https://github.com/EricGoulart>`__
 - `jap <https://github.com/jap>`__
 - `kemingy <https://github.com/kemingy>`__
+- `Krishn1412 <https://github.com/Krishn1412>`__
+- `perodriguezl <https://github.com/perodriguezl>`__
+- `Shreshth3 <https://github.com/Shreshth3>`__
 - `vytas7 <https://github.com/vytas7>`__
