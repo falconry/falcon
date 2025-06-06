@@ -1038,7 +1038,7 @@ class SyncInterfaceMediaHandler(AsyncOnlyMediaHandler):
         assert media == {'title': '410 Gone'}
         return b'this is sync instead'
 
-    _serialize_sync = serialize  # type: ignore[assignment]
+    _serialize_sync = serialize
 
 
 class TestDefaultSerializeError:

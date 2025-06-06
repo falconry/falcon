@@ -3,12 +3,14 @@ from datetime import timedelta
 from datetime import timezone
 from http import cookies as http_cookies
 import re
+import warnings
 
 import pytest
 
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _utcnow
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
@@ -76,20 +78,20 @@ class CookieUnset:
         resp.unset_cookie('baz', domain='www.example.com')
         resp.unset_cookie('foobar', path='/foo', domain='www.example.com')
         resp.unset_cookie(
-            'barfoo', samesite='none', path='/foo', domain='www.example.com'
+            'barfoo', same_site='none', path='/foo', domain='www.example.com'
         )
 
 
 class CookieUnsetSameSite:
     def on_get(self, req, resp):
         # change lax to strict
-        resp.unset_cookie('foo', samesite='Strict')
+        resp.unset_cookie('foo', same_site='Strict')
         # change strict to lax
         resp.unset_cookie('bar')
         # change none to ''
-        resp.unset_cookie('baz', samesite='')
+        resp.unset_cookie('baz', same_site='')
         # change '' to none
-        resp.unset_cookie('barz', samesite='None')
+        resp.unset_cookie('barz', same_site='None')
 
 
 @pytest.fixture
@@ -190,11 +192,11 @@ def test_unset_cookies(client):
     result = client.simulate_get('/unset-cookie')
     assert len(result.cookies) == 5
 
-    def test(cookie, path, domain, samesite='Lax'):
+    def test(cookie, path, domain, same_site='Lax'):
         assert cookie.value == ''  # An unset cookie has an empty value
         assert cookie.domain == domain
         assert cookie.path == path
-        assert cookie.same_site == samesite
+        assert cookie.same_site == same_site
         assert cookie.expires < _utcnow()
 
     test(result.cookies['foo'], path=None, domain=None)
@@ -202,7 +204,10 @@ def test_unset_cookies(client):
     test(result.cookies['baz'], path=None, domain='www.example.com')
     test(result.cookies['foobar'], path='/foo', domain='www.example.com')
     test(
-        result.cookies['barfoo'], path='/foo', domain='www.example.com', samesite='none'
+        result.cookies['barfoo'],
+        path='/foo',
+        domain='www.example.com',
+        same_site='none',
     )
 
 
@@ -230,20 +235,20 @@ def test_unset_cookies_samesite(client):
     result_unset = client.simulate_get('/unset-cookie-same-site')
     assert len(result_unset.cookies) == 4
 
-    def test_unset(cookie, samesite='Lax'):
+    def test_unset(cookie, same_site='Lax'):
         assert cookie.value == ''  # An unset cookie has an empty value
-        assert cookie.same_site == samesite
+        assert cookie.same_site == same_site
         assert cookie.expires < _utcnow()
 
-    test_unset(result_unset.cookies['foo'], samesite='Strict')
-    # default: bar is unset with no samesite param, so should go to Lax
-    test_unset(result_unset.cookies['bar'], samesite='Lax')
+    test_unset(result_unset.cookies['foo'], same_site='Strict')
+    # default: bar is unset with no same_site param, so should go to Lax
+    test_unset(result_unset.cookies['bar'], same_site='Lax')
     test_unset(result_unset.cookies['bar'])  # default in test_unset
 
     test_unset(
-        result_unset.cookies['baz'], samesite=None
-    )  # baz gets unset to samesite = ''
-    test_unset(result_unset.cookies['barz'], samesite='None')
+        result_unset.cookies['baz'], same_site=None
+    )  # baz gets unset to same_site = ''
+    test_unset(result_unset.cookies['barz'], same_site='None')
     # test for false
     assert result_unset.cookies['baz'].same_site != 'Strict'
     assert result_unset.cookies['foo'].same_site != 'Lax'
@@ -530,3 +535,36 @@ def test_partitioned_value(client):
 
     cookie = result.cookies['baz']
     assert not cookie.partitioned
+
+
+def test_unset_cookie_deprecation_warning():
+    resp = falcon.Response()
+
+    # Test that using the deprecated 'samesite' parameter raises a warning
+    with pytest.warns(
+        DeprecatedWarning, match='The "samesite" parameter is deprecated'
+    ):
+        resp.unset_cookie('test', samesite='Strict')
+
+    # Verify the cookie was still set correctly with the deprecated parameter
+    morsel = resp._cookies['test']
+    assert morsel['samesite'] == 'Strict'
+
+    # Test that using the new 'same_site' parameter doesn't raise a warning
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        resp.unset_cookie('test2', same_site='Lax')
+
+    # Verify the cookie was set correctly with the new parameter
+    morsel2 = resp._cookies['test2']
+    assert morsel2['samesite'] == 'Lax'
+
+    # Test that when both parameters are provided, deprecated one is used with warning
+    with pytest.warns(
+        DeprecatedWarning, match='The "samesite" parameter is deprecated'
+    ):
+        resp.unset_cookie('test3', samesite='None', same_site='Strict')
+
+    # Verify the deprecated parameter value was used
+    morsel3 = resp._cookies['test3']
+    assert morsel3['samesite'] == 'None'
