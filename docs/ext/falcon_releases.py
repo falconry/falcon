@@ -146,8 +146,6 @@ class FalconReleasesDirective(sphinx.util.docutils.SphinxDirective):
             assert release.date is not None, (
                 f'{release} has no release date metadata (and is not latest)'
             )
-
-        releases[-1].date = datetime.date(2025, 6, 6)
         if releases[-1].date is None:
             releases.pop()
 
