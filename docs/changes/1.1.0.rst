@@ -106,3 +106,4 @@ Fixed
 - When running under Python 3, :meth:`inspect.signature()` is used
   instead of :meth:`inspect.getargspec()` to provide compatibility with
   annotated functions.
+
