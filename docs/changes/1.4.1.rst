@@ -1,6 +1,8 @@
 Changelog for Falcon 1.4.1
 ==========================
 
+.. falcon-release: 2018-01-16
+
 Breaking Changes
 ----------------
 

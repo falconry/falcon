@@ -29,8 +29,7 @@ In addition to Gitter, we are also evaluating the popular GitHub
 `Discussions <https://github.com/falconry/falcon/discussions>`_ for less
 "realtime" communication such as usage questions or open-ended design ideas.
 
-Per our
-`Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_,
+Per our :ref:`coc`,
 we expect everyone who participates in community discussions to act
 professionally, and lead by example in encouraging constructive
 discussions. Each individual in the community is responsible for
@@ -62,6 +61,4 @@ We'd love to have your help!
 
 Code of Conduct
 ---------------
-All contributors and maintainers of this project are subject to our `Code
-of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
-
+All contributors and maintainers of this project are subject to our :ref:`coc`.

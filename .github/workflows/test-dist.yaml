@@ -38,9 +38,11 @@ jobs:
       - name: Test sdist
         if: matrix.build == 'sdist'
         run: |
+          tools/check_dist.py
           tools/test_dist.py dist/*.tar.gz
 
       - name: Test pure-Python wheel
         if: matrix.build == 'wheel'
         run: |
+          tools/check_dist.py
           tools/test_dist.py dist/*.whl

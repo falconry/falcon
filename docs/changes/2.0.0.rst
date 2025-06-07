@@ -1,6 +1,8 @@
 Changelog for Falcon 2.0.0
 ==========================
 
+.. falcon-release: 2019-04-26
+
 Summary
 -------
 
