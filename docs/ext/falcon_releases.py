@@ -170,8 +170,8 @@ class FalconReleasesDirective(sphinx.util.docutils.SphinxDirective):
         rows = [
             (
                 'Major/Minor Version',
-                'First Point Release',
-                'Latest Point Release',
+                'First Release',
+                'Latest Patch Release',
                 'Release Status',
             )
         ]
@@ -199,7 +199,7 @@ class FalconReleasesDirective(sphinx.util.docutils.SphinxDirective):
                 (
                     first.doc_link_major_minor,
                     first.rst_repr,
-                    latest.rst_repr,
+                    latest.version_str if latest == first else latest.rst_repr,
                     f'{status.ref} {eol_label}',
                 )
             )
