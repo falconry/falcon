@@ -57,9 +57,9 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
     @classmethod
     def _emit_table(cls, data):
         columns = len(data[0])
-        assert all(
-            len(row) == columns for row in data
-        ), 'All rows must have the same number of columns'
+        assert all(len(row) == columns for row in data), (
+            'All rows must have the same number of columns'
+        )
         # NOTE(vytas): +2 is padding inside cell borders.
         width = max(len(cell) for cell in itertools.chain(*data)) + 2
         hline = ('+' + '-' * width) * columns + '+\n'

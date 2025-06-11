@@ -1,0 +1,4 @@
+The :meth:`~falcon.Response.unset_cookie` method now accepts a ``same_site``
+parameter (with underscore) for consistency with :meth:`~falcon.Response.set_cookie`.
+The previous ``samesite`` parameter (without underscore) is now deprecated
+(referencing it will emit a deprecation warning).
