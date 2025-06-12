@@ -74,7 +74,7 @@ def prepare_middleware(
 def prepare_middleware(
     middleware: Iterable[AsgiMiddleware],
     independent_middleware: bool = ...,
-    asgi: Literal[True],
+    asgi: Literal[True] = ...,
 ) -> AsyncPreparedMiddlewareResult: ...
 
 
