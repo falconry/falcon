@@ -68,7 +68,7 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: Iterable, independent_middleware: bool = ..., *, asgi: Literal[True]
+    middleware: Iterable, independent_middleware: bool = ..., asgi: Literal[True] = ...
 ) -> AsyncPreparedMiddlewareResult: ...
 
 
