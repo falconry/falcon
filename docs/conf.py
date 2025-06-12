@@ -90,7 +90,6 @@ extensions = [
     'ext.falcon_releases',
     'ext.private_args',
     'ext.rfc',
-    'ext.workarounds',
 ]
 
 templates_path = ['_templates']
@@ -108,17 +107,25 @@ myst_enable_checkboxes = True
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
-# Autodoc workarounds
-# List types aliases here that we want to prevent Sphinx from evaluating into
-# overly verbose definitions.
-_type_aliases = ('PreparedMiddlewareResult',)
-
-# NOTE(vytas): This mapping doesn't really work as advertised...
-#   Quite often the translated types end up as TypeAliasForwardRef(...)
-#   instead, which we monkey patch to render as strings in ext.workarounds.
+# NOTE(vytas): The autodoc_type_aliases mapping below doesn't really work as
+#   advertised...
+#   Sphinx is looking for the mapped types defined as classes, however, typing
+#   aliases constructed with the help of the | operator (or Union meta type),
+#   etc, are recognized as module data/attributes, not types.
+# TODO(vytas): When defining a class alias manually, it seems to work as
+#   expected, e.g.,
+#
+#   .. class:: PreparedMiddlewareResult
+#
+#       An alias for the return type of prepare_middleware().
+#
 #   See also https://github.com/sphinx-doc/sphinx/issues/10785 & related issues
 #   for discussion and potentially better workarounds.
-autodoc_type_aliases = dict(zip(_type_aliases, _type_aliases))
+# TODO(vytas): If we enable the "nitpicky" mode, we will have to add exceptions
+#   for all unresolved aliases.
+autodoc_type_aliases = {
+    'PreparedMiddlewareResult': 'PreparedMiddlewareResult',
+}
 
 # -- Options for HTML output --------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
