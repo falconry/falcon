@@ -90,6 +90,7 @@ extensions = [
     'ext.falcon_releases',
     'ext.private_args',
     'ext.rfc',
+    'ext.workarounds',
 ]
 
 templates_path = ['_templates']
@@ -101,11 +102,23 @@ exclude_patterns = ['_build', '_newsfragments']
 pygments_style = 'bw'
 
 # myst configuration
-myst_enable_extensions = ["tasklist"]
+myst_enable_extensions = ['tasklist']
 myst_enable_checkboxes = True
 
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+
+# Autodoc workarounds
+# List types aliases here that we want to prevent Sphinx from evaluating into
+# overly verbose definitions.
+_type_aliases = ('PreparedMiddlewareResult',)
+
+# NOTE(vytas): This mapping doesn't really work as advertised...
+#   Quite often the translated types end up as TypeAliasForwardRef(...)
+#   instead, which we monkey patch to render as strings in ext.workarounds.
+#   See also https://github.com/sphinx-doc/sphinx/issues/10785 & related issues
+#   for discussion and potentially better workarounds.
+autodoc_type_aliases = dict(zip(_type_aliases, _type_aliases))
 
 # -- Options for HTML output --------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -136,7 +149,6 @@ html_theme_options = {
     #   NB that Gruvbox does not meet the WCAG 2.1 AA requirements for contrast.
     'pygments_light_style': 'falconry-light' if _falconry_styles else 'gruvbox-light',
     'pygments_dark_style': 'falconry-dark' if _falconry_styles else 'gruvbox-dark',
-
     'header_links_before_dropdown': 4,
     'external_links': [
         {
