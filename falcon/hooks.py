@@ -155,6 +155,24 @@ def before(action: BeforeFn, *args: Any, **kwargs: Any) -> Callable[[_R], _R]:
 
                     setattr(responder_or_resource, responder_name, do_before_all)
 
+                # NOTE(gespyrop): We store a reference to the decorated
+                # responder and only apply it at runtime if
+                # falcon.routing.CompiledRouterOptions.default_to_on_request
+                # is enabled.
+                if re.compile(r'^on_request(_\w+)?$').match(responder_name):
+                    decorated_responder_name = '__decorated_' + responder_name + '__'
+
+                    responder = getattr(
+                        responder_or_resource, decorated_responder_name, responder
+                    )
+
+                    responder = cast('Responder', responder)
+                    do_before_all = _wrap_with_before(responder, action, args, kwargs)
+
+                    setattr(
+                        responder_or_resource, decorated_responder_name, do_before_all
+                    )
+
             return cast(_R, responder_or_resource)
 
         else:
@@ -194,6 +212,25 @@ def after(action: AfterFn, *args: Any, **kwargs: Any) -> Callable[[_R], _R]:
                     do_after_all = _wrap_with_after(responder, action, args, kwargs)
 
                     setattr(responder_or_resource, responder_name, do_after_all)
+
+                # NOTE(gespyrop): We store a reference to the decorated
+                # responder and only apply it at runtime if
+                # falcon.routing.CompiledRouterOptions.default_to_on_request
+                # is enabled.
+                if re.compile(r'^on_request(_\w+)?$').match(responder_name):
+                    decorated_responder_name = '__decorated_' + responder_name + '__'
+
+                    responder = getattr(
+                        responder_or_resource, decorated_responder_name, responder
+                    )
+
+                    responder = cast('Responder', responder)
+                    do_after_all = _wrap_with_after(responder, action, args, kwargs)
+
+                    # Keep reference to decorated
+                    setattr(
+                        responder_or_resource, decorated_responder_name, do_after_all
+                    )
 
             return cast(_R, responder_or_resource)
 
