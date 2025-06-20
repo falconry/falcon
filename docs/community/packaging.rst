@@ -32,6 +32,10 @@ Obtaining Release
 In order to package a specific Falcon release, you first need to obtain its
 source archive.
 
+.. tip::
+    Maintaining older versions of Falcon packages?
+    See what we support on our side: :ref:`supported_releases`.
+
 It is up to you which authoritative source to use.
 The most common alternatives are:
 
@@ -79,25 +83,21 @@ The most common alternatives are:
 Semantic Versioning
 -------------------
 
-Falcon strictly adheres to `SemVer <https://semver.org/>`__ -- incompatible API
-changes are only introduced in conjunction with a major version increment.
+Falcon strictly adheres to :ref:`SemVer <semver>` -- incompatible API changes
+are only introduced in conjunction with a major version increment.
 
 When updating your Falcon package, you should always carefully review
 :doc:`the changelog </changes/index>` for the new release that you targeting,
 especially if you are moving up to a new SemVer major version.
-(In that case, the release notes will include a "Breaking Changes" section.)
+(In that case, the release notes will include a **"Breaking Changes"**
+section.)
 
 For a packager, another section worth checking is called
-"Changes to Supported Platforms", where we announce support for new Python
+**"Changes to Supported Platforms"**, where we announce support for new Python
 interpreter versions (or even new implementations), as well as deprecate or
 remove the old ones.
-While there seems to be
-`no clear consensus <https://github.com/semver/semver/issues/716>`__ on whether
-removing platform support constitutes a SemVer breaking change, Falcon assumes
-that it does (unless we have communicated otherwise in advance, e.g., the
-:doc:`Falcon 4.x series </changes/4.0.0>` only guarantees Python 3.10+ support).
 
-.. note::
+.. attention::
     The SemVer guarantees primarily cover the publicly documented API from the
     framework user's perspective, so even a minor release may contain important
     changes to the build process, tests, and project tooling.
