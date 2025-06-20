@@ -1,6 +1,7 @@
 Changelog for Falcon 3.0.0
 ==========================
 
+.. falcon-release: 2021-04-05
 
 Summary
 -------

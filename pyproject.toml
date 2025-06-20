@@ -177,7 +177,6 @@ include = ["falcon*"]
         ".venv",
         "build",
         "dist",
-        "docs",
         "falcon/bench/nuts",
     ]
 

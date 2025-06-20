@@ -626,7 +626,7 @@ How can I access POSTed form params?
 By default, Falcon does not consume request bodies. However, a :ref:`media
 handler <media>` for the ``application/x-www-form-urlencoded`` content type is
 installed by default, thus making the POSTed form available as
-:attr:`Request.media <falcon.Request.media>` with zero configuration:
+:meth:`Request.media <falcon.Request.get_media>` with zero configuration:
 
 .. code:: python
 
@@ -636,7 +636,7 @@ installed by default, thus making the POSTed form available as
     class MyResource:
         def on_post(self, req, resp):
             # TODO: Handle the submitted URL-encoded form
-            form = req.media
+            form = req.get_media()
 
             # NOTE: Falcon chooses the right media handler automatically, but
             #   if we wanted to differentiate from, for instance, JSON, we
@@ -647,10 +647,11 @@ installed by default, thus making the POSTed form available as
    In prior versions of Falcon, a POSTed URL-encoded form could be automatically
    consumed and merged into :attr:`~falcon.Request.params` by setting the
    :attr:`~falcon.RequestOptions.auto_parse_form_urlencoded` option to ``True``. This
-   behavior is still supported in the Falcon 3.x series. However, it has been
+   behavior is still supported in the Falcon 4.x series. However, it has been
    deprecated in favor of :class:`~.media.URLEncodedFormHandler`, and the
    option to merge URL-encoded form data into
-   :attr:`~falcon.Request.params` may be removed in a future release.
+   :attr:`~falcon.Request.params` will be removed in the next major release
+   (Falcon 5.0).
 
 POSTed form parameters may also be read directly from
 :attr:`~falcon.Request.stream` and parsed via
@@ -669,7 +670,7 @@ be used to efficiently parse the submitted ``multipart/form-data``
 
 .. code:: python
 
-    for part in req.media:
+    for part in req.get_media():
         # TODO: Do something with the body part
         pass
 
@@ -700,7 +701,7 @@ method, making it compatible with ``boto3``\'s
 
             s3 = boto3.client('s3')
 
-            for part in req.media:
+            for part in req.get_media():
                 if part.name == 'myfile':
                     s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
 
@@ -847,7 +848,7 @@ request media validation and error handling; see more in the following recipe:
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
 
-Falcon 4 shipped initial support for
+Falcon 4.0 shipped initial support for
 `field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_
 that can match multiple segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
 is capable of consuming multiple path segments when placed at the end of the URL template.
