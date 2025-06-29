@@ -90,6 +90,7 @@ extensions = [
     'ext.falcon_releases',
     'ext.private_args',
     'ext.rfc',
+    'ext.workarounds',
 ]
 
 templates_path = ['_templates']
