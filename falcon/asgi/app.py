@@ -42,6 +42,7 @@ from falcon import responders
 from falcon import routing
 from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
+from falcon._typing import AsgiMiddleware
 from falcon._typing import AsgiReceive
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
@@ -356,6 +357,7 @@ class App(falcon.app.App):
     _middleware_ws: AsyncPreparedMiddlewareWsResult
     _request_type: Type[Request]
     _response_type: Type[Response]
+    _unprepared_middleware: List[AsgiMiddleware]  # type: ignore[assignment]
 
     ws_options: WebSocketOptions
     """A set of behavioral options related to WebSocket connections.
@@ -368,7 +370,7 @@ class App(falcon.app.App):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[Request]] = None,
         response_type: Optional[Type[Response]] = None,
-        middleware: Union[object, Iterable[object]] = None,
+        middleware: Optional[Union[AsgiMiddleware, Iterable[AsgiMiddleware]]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -378,7 +380,7 @@ class App(falcon.app.App):
             media_type,
             request_type or Request,
             response_type or Response,
-            middleware,
+            middleware,  # type: ignore[arg-type]
             router,
             independent_middleware,
             cors_enable,
@@ -1163,7 +1165,7 @@ class App(falcon.app.App):
                 raise
 
     def _prepare_middleware(  # type: ignore[override]
-        self, middleware: List[object], independent_middleware: bool = False
+        self, middleware: List[AsgiMiddleware], independent_middleware: bool = False
     ) -> AsyncPreparedMiddlewareResult:
         self._middleware_ws = prepare_middleware_ws(middleware)
 
