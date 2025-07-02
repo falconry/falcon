@@ -36,11 +36,14 @@ if HAS_CYTHON and IS_CPYTHON and not DISABLE_EXTENSION:
         return module_names
 
     package_names = [
-        'falcon',
         'falcon.cyutil',
-        'falcon.media',
-        'falcon.routing',
-        'falcon.util',
+        # PERF(vytas): It seems that on recent (at the time of writing, 2025)
+        #   CPython versions (especially 3.12+), cythonizing pure Python code
+        #   is actually a de-optimization.
+        # 'falcon',
+        # 'falcon.media',
+        # 'falcon.routing',
+        # 'falcon.util',
     ]
 
     modules_to_exclude = [

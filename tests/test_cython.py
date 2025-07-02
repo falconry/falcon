@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-import falcon
+import falcon.uri
 import falcon.util
 
 
@@ -11,7 +11,7 @@ class TestCythonized:
         if not util.HAS_CYTHON:
             pytest.skip(reason='Cython not installed')
 
-        assert 'falcon/app.py' not in str(falcon.app)
+        assert 'cyfunction' in str(falcon.uri.parse_query_string)
 
     def test_stream_has_private_read(self, util):
         stream = falcon.util.BufferedReader(io.BytesIO().read, 8)
