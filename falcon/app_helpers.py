@@ -20,16 +20,16 @@ from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
 
 from falcon import util
-from falcon._typing import AsgiMiddleware
 from falcon._typing import AsgiProcessRequestMethod as APRequest
 from falcon._typing import AsgiProcessRequestWsMethod
 from falcon._typing import AsgiProcessResourceMethod as APResource
 from falcon._typing import AsgiProcessResourceWsMethod
 from falcon._typing import AsgiProcessResponseMethod as APResponse
-from falcon._typing import Middleware
+from falcon._typing import AsyncMiddleware
 from falcon._typing import ProcessRequestMethod as PRequest
 from falcon._typing import ProcessResourceMethod as PResource
 from falcon._typing import ProcessResponseMethod as PResponse
+from falcon._typing import SyncMiddleware
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError
@@ -64,7 +64,7 @@ AsyncPreparedMiddlewareResult = Tuple[
 
 @overload
 def prepare_middleware(
-    middleware: Iterable[Middleware],
+    middleware: Iterable[SyncMiddleware],
     independent_middleware: bool = ...,
     asgi: Literal[False] = ...,
 ) -> PreparedMiddlewareResult: ...
@@ -72,7 +72,7 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: Iterable[AsgiMiddleware],
+    middleware: Iterable[AsyncMiddleware],
     independent_middleware: bool = ...,
     *,
     asgi: Literal[True],
@@ -81,14 +81,14 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: Union[Iterable[Middleware], Iterable[AsgiMiddleware]],
+    middleware: Union[Iterable[SyncMiddleware], Iterable[AsyncMiddleware]],
     independent_middleware: bool = ...,
     asgi: bool = ...,
 ) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]: ...
 
 
 def prepare_middleware(
-    middleware: Union[Iterable[Middleware], Iterable[AsgiMiddleware]],
+    middleware: Union[Iterable[SyncMiddleware], Iterable[AsyncMiddleware]],
     independent_middleware: bool = False,
     asgi: bool = False,
 ) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]:
@@ -223,7 +223,7 @@ AsyncPreparedMiddlewareWsResult = Tuple[
 
 
 def prepare_middleware_ws(
-    middleware: Iterable[AsgiMiddleware],
+    middleware: Iterable[AsyncMiddleware],
 ) -> AsyncPreparedMiddlewareWsResult:
     """Check middleware interfaces and prepare WebSocket methods for request handling.
 

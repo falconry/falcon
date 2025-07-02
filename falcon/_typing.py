@@ -200,14 +200,14 @@ DeserializeSync = Callable[[bytes], Any]
 Responder = Union[ResponderMethod, AsgiResponderMethod]
 
 
-# Middleware
-class MiddlewareWithProcessRequest(Protocol):
+# WSGI middleware interface
+class WsgiMiddlewareWithProcessRequest(Protocol):
     """WSGI Middleware with request handler."""
 
     def process_request(self, req: Request, resp: Response) -> None: ...
 
 
-class MiddlewareWithProcessResource(Protocol):
+class WsgiMiddlewareWithProcessResource(Protocol):
     """WSGI Middleware with resource handler."""
 
     def process_resource(
@@ -219,7 +219,7 @@ class MiddlewareWithProcessResource(Protocol):
     ) -> None: ...
 
 
-class MiddlewareWithProcessResponse(Protocol):
+class WsgiMiddlewareWithProcessResponse(Protocol):
     """WSGI Middleware with response handler."""
 
     def process_response(
@@ -227,6 +227,7 @@ class MiddlewareWithProcessResponse(Protocol):
     ) -> None: ...
 
 
+# ASGI lifespan middleware interface
 class AsgiMiddlewareWithProcessStartup(Protocol):
     """ASGI middleware with startup handler."""
 
@@ -243,6 +244,7 @@ class AsgiMiddlewareWithProcessShutdown(Protocol):
     ) -> None: ...
 
 
+# ASGI middleware interface
 class AsgiMiddlewareWithProcessRequest(Protocol):
     """ASGI middleware with request handler."""
 
@@ -273,13 +275,14 @@ class AsgiMiddlewareWithProcessResponse(Protocol):
     ) -> None: ...
 
 
-class MiddlewareWithAsyncProcessRequestWs(Protocol):
+# ASGI WebSocket middleware
+class AsgiMiddlewareWithProcessRequestWs(Protocol):
     """ASGI middleware with WebSocket request handler."""
 
     async def process_request_ws(self, req: AsgiRequest, ws: WebSocket) -> None: ...
 
 
-class MiddlewareWithAsyncProcessResourceWs(Protocol):
+class AsgiMiddlewareWithProcessResourceWs(Protocol):
     """ASGI middleware with WebSocket resource handler."""
 
     async def process_resource_ws(
@@ -291,7 +294,8 @@ class MiddlewareWithAsyncProcessResourceWs(Protocol):
     ) -> None: ...
 
 
-class UniversalMiddlewareWithProcessRequest(MiddlewareWithProcessRequest, Protocol):
+# Universal middleware that provides async versions via the _async postfix
+class UniversalMiddlewareWithProcessRequest(WsgiMiddlewareWithProcessRequest, Protocol):
     """WSGI/ASGI middleware with request handler."""
 
     async def process_request_async(
@@ -299,7 +303,9 @@ class UniversalMiddlewareWithProcessRequest(MiddlewareWithProcessRequest, Protoc
     ) -> None: ...
 
 
-class UniversalMiddlewareWithProcessResource(MiddlewareWithProcessResource, Protocol):
+class UniversalMiddlewareWithProcessResource(
+    WsgiMiddlewareWithProcessResource, Protocol
+):
     """WSGI/ASGI middleware with resource handler."""
 
     async def process_resource_async(
@@ -311,7 +317,9 @@ class UniversalMiddlewareWithProcessResource(MiddlewareWithProcessResource, Prot
     ) -> None: ...
 
 
-class UniversalMiddlewareWithProcessResponse(MiddlewareWithProcessResponse, Protocol):
+class UniversalMiddlewareWithProcessResponse(
+    WsgiMiddlewareWithProcessResponse, Protocol
+):
     """WSGI/ASGI middleware with response handler."""
 
     async def process_response_async(
@@ -326,19 +334,34 @@ class UniversalMiddlewareWithProcessResponse(MiddlewareWithProcessResponse, Prot
 # NOTE(jkmnt): This typing is far from perfect due to the Python typing limitations,
 # but better than nothing. Middleware conforming to any protocol of the union
 # will pass the type check. Other protocols violations are not checked.
-Middleware = Union[
-    MiddlewareWithProcessRequest,
-    MiddlewareWithProcessResource,
-    MiddlewareWithProcessResponse,
+SyncMiddleware = Union[
+    WsgiMiddlewareWithProcessRequest,
+    WsgiMiddlewareWithProcessResource,
+    WsgiMiddlewareWithProcessResponse,
 ]
+"""Synchronous (WSGI) application middleware.
 
-AsgiMiddleware = Union[
+This type alias reflects the middleware interface for
+components that can be used with a WSGI app.
+"""
+
+AsyncMiddleware = Union[
     AsgiMiddlewareWithProcessRequest,
     AsgiMiddlewareWithProcessResource,
     AsgiMiddlewareWithProcessResponse,
+    # Lifespan middleware
     AsgiMiddlewareWithProcessStartup,
     AsgiMiddlewareWithProcessShutdown,
+    # WebSocket middleware
+    AsgiMiddlewareWithProcessRequestWs,
+    AsgiMiddlewareWithProcessResourceWs,
+    # Universal middleware with process_*_async methods
     UniversalMiddlewareWithProcessRequest,
     UniversalMiddlewareWithProcessResource,
     UniversalMiddlewareWithProcessResponse,
 ]
+"""Asynchronous (ASGI) application middleware.
+
+This type alias reflects the middleware interface for components that can be
+used with an ASGI app.
+"""

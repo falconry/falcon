@@ -51,12 +51,12 @@ from falcon._typing import AsgiSinkCallable
 from falcon._typing import ErrorHandler
 from falcon._typing import ErrorSerializer
 from falcon._typing import FindMethod
-from falcon._typing import Middleware
 from falcon._typing import ProcessResponseMethod
 from falcon._typing import ResponderCallable
 from falcon._typing import SinkCallable
 from falcon._typing import SinkPrefix
 from falcon._typing import StartResponse
+from falcon._typing import SyncMiddleware
 from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
@@ -287,7 +287,7 @@ class App:
     _static_routes: List[
         Tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
-    _unprepared_middleware: List[Middleware]
+    _unprepared_middleware: List[SyncMiddleware]
 
     # Attributes
     req_options: RequestOptions
@@ -306,7 +306,7 @@ class App:
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[Request]] = None,
         response_type: Optional[Type[Response]] = None,
-        middleware: Optional[Union[Middleware, Iterable[Middleware]]] = None,
+        middleware: Optional[Union[SyncMiddleware, Iterable[SyncMiddleware]]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -328,12 +328,12 @@ class App:
                     # NOTE(kgriffs): Check to see if middleware is an
                     #   iterable, and if so, append the CORSMiddleware
                     #   instance.
-                    middleware = list(cast(Iterable[Middleware], middleware))
+                    middleware = list(cast(Iterable[SyncMiddleware], middleware))
                     middleware.append(cm)
                 except TypeError:
                     # NOTE(kgriffs): Assume the middleware kwarg references
                     #   a single middleware component.
-                    middleware = [cast(Middleware, middleware), cm]
+                    middleware = [cast(SyncMiddleware, middleware), cm]
 
         # set middleware
         self._unprepared_middleware = []
@@ -526,7 +526,7 @@ class App:
         return self._router.options
 
     def add_middleware(
-        self, middleware: Union[Middleware, Iterable[Middleware]]
+        self, middleware: Union[SyncMiddleware, Iterable[SyncMiddleware]]
     ) -> None:
         """Add one or more additional middleware components.
 
@@ -541,10 +541,10 @@ class App:
         #   the chance that middleware may be empty.
         if middleware:
             try:
-                middleware = list(cast(Iterable[Middleware], middleware))
+                middleware = list(cast(Iterable[SyncMiddleware], middleware))
             except TypeError:
                 # middleware is not iterable; assume it is just one bare component
-                middleware = [cast(Middleware, middleware)]
+                middleware = [cast(SyncMiddleware, middleware)]
 
             if (
                 self._cors_enable
@@ -1015,7 +1015,7 @@ class App:
     # ------------------------------------------------------------------------
 
     def _prepare_middleware(
-        self, middleware: List[Middleware], independent_middleware: bool = False
+        self, middleware: List[SyncMiddleware], independent_middleware: bool = False
     ) -> helpers.PreparedMiddlewareResult:
         return helpers.prepare_middleware(
             middleware=middleware, independent_middleware=independent_middleware
