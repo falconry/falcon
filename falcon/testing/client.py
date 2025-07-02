@@ -392,15 +392,15 @@ class Result(_ResultBase):
         for prefix, color in (
             ('1', 'blue'),
             ('2', 'green'),
-            ('3', 'yellow'),
-            ('4', 'magenta'),
+            ('3', 'magenta'),
+            ('4', 'red'),
             ('5', 'red'),
         ):
             if status.startswith(prefix):
                 status_color = color
 
         result_template = (
-            '[bold]Result[/]<[bold {}]{}[/] [italic dark_cyan]{}[/] [grey50]{}[/]>'
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
         )
 
         return result_template.format(status_color, status, content_type, content)
