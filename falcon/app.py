@@ -51,6 +51,7 @@ from falcon._typing import AsgiSinkCallable
 from falcon._typing import ErrorHandler
 from falcon._typing import ErrorSerializer
 from falcon._typing import FindMethod
+from falcon._typing import Middleware
 from falcon._typing import ProcessResponseMethod
 from falcon._typing import ResponderCallable
 from falcon._typing import SinkCallable
@@ -286,7 +287,7 @@ class App:
     _static_routes: List[
         Tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
-    _unprepared_middleware: List[object]
+    _unprepared_middleware: List[Middleware]
 
     # Attributes
     req_options: RequestOptions
@@ -305,7 +306,7 @@ class App:
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[Request]] = None,
         response_type: Optional[Type[Response]] = None,
-        middleware: Union[object, Iterable[object]] = None,
+        middleware: Optional[Union[Middleware, Iterable[Middleware]]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -327,17 +328,17 @@ class App:
                     # NOTE(kgriffs): Check to see if middleware is an
                     #   iterable, and if so, append the CORSMiddleware
                     #   instance.
-                    middleware = list(middleware)  # type: ignore[arg-type]
-                    middleware.append(cm)  # type: ignore[arg-type]
+                    middleware = list(cast(Iterable[Middleware], middleware))
+                    middleware.append(cm)
                 except TypeError:
                     # NOTE(kgriffs): Assume the middleware kwarg references
                     #   a single middleware component.
-                    middleware = [middleware, cm]
+                    middleware = [cast(Middleware, middleware), cm]
 
         # set middleware
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
-        self.add_middleware(middleware)
+        self.add_middleware(middleware or [])
 
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
@@ -524,7 +525,9 @@ class App:
         """
         return self._router.options
 
-    def add_middleware(self, middleware: Union[object, Iterable[object]]) -> None:
+    def add_middleware(
+        self, middleware: Union[Middleware, Iterable[Middleware]]
+    ) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -535,20 +538,20 @@ class App:
         """
 
         # NOTE(kgriffs): Since this is called by the initializer, there is
-        #   the chance that middleware may be None.
+        #   the chance that middleware may be empty.
         if middleware:
             try:
-                middleware = list(middleware)  # type: ignore[call-overload]
+                middleware = list(cast(Iterable[Middleware], middleware))
             except TypeError:
                 # middleware is not iterable; assume it is just one bare component
-                middleware = [middleware]
+                middleware = [cast(Middleware, middleware)]
 
             if (
                 self._cors_enable
                 and len(
                     [
                         mc
-                        for mc in self._unprepared_middleware + middleware  # type: ignore[operator]
+                        for mc in self._unprepared_middleware + middleware
                         if isinstance(mc, CORSMiddleware)
                     ]
                 )
@@ -559,7 +562,7 @@ class App:
                     'cors_enable (which already constructs one instance)'
                 )
 
-            self._unprepared_middleware += middleware  # type: ignore[arg-type]
+            self._unprepared_middleware += middleware
 
         # NOTE(kgriffs): Even if middleware is None or an empty list, we still
         #   need to make sure self._middleware is initialized if this is the
@@ -1012,7 +1015,7 @@ class App:
     # ------------------------------------------------------------------------
 
     def _prepare_middleware(
-        self, middleware: List[object], independent_middleware: bool = False
+        self, middleware: List[Middleware], independent_middleware: bool = False
     ) -> helpers.PreparedMiddlewareResult:
         return helpers.prepare_middleware(
             middleware=middleware, independent_middleware=independent_middleware
