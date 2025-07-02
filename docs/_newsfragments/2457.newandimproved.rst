@@ -1,0 +1,16 @@
+A new method, ``__rich__``, has been added to :class:`falcon.testing.Result`
+for facilitating a rich-text representation when used together with the popular
+`rich <https://rich.readthedocs.io/>`__ library.
+
+Provided you have installed both ``falcon`` and ``rich`` into your environment,
+you should be able to see a prettier rendition of the below 404-result:
+
+>>> import falcon
+>>> import falcon.testing
+>>> import rich.pretty
+>>> rich.pretty.install()
+>>> client = falcon.testing.TestClient(falcon.App())
+>>> client.get('/endpoint')
+Result<404 Not Found application/json b'{"title": "404 Not Found"}'>
+
+(The actual appearance may depend on your terminal and/or REPL settings.)
