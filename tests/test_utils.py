@@ -888,15 +888,15 @@ class TestFalconTestingUtils:
         for prefix, color in (
             ('1', 'blue'),
             ('2', 'green'),
-            ('3', 'yellow'),
-            ('4', 'magenta'),
+            ('3', 'magenta'),
+            ('4', 'red'),
             ('5', 'red'),
         ):
             if captured_resp.status.startswith(prefix):
                 status_color = color
 
         result_template = (
-            '[bold]Result[/]<[bold {}]{}[/] [italic dark_cyan]{}[/] [grey50]{}[/]>'
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
         )
         expected_result = result_template.format(status_color, *args)
 
@@ -918,8 +918,8 @@ class TestFalconTestingUtils:
         (
             (falcon.HTTP_101, 'blue'),
             (falcon.HTTP_200, 'green'),
-            (falcon.HTTP_301, 'yellow'),
-            (falcon.HTTP_404, 'magenta'),
+            (falcon.HTTP_301, 'magenta'),
+            (falcon.HTTP_404, 'red'),
             (falcon.HTTP_500, 'red'),
         ),
     )
@@ -939,7 +939,7 @@ class TestFalconTestingUtils:
             content = value
 
         expected_result_template = (
-            '[bold]Result[/]<[bold {}]{}[/] [italic dark_cyan]{}[/] [grey50]{}[/]>'
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
         )
 
         expected_result = expected_result_template.format(
