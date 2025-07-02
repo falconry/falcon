@@ -1,0 +1,4 @@
+The :ref:`cythonization <cythonize>` process was revised in the light of the
+performance improvements in newer CPython versions (especially 3.12+), and the
+compilation is now largely confined to hand-crafted C/Cython code.
+As a result, the framework should run even faster on modern CPython.
