@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Iterable, Optional, TYPE_CHECKING, Union
 
 from ._typing import UniversalMiddlewareWithProcessResponse
@@ -9,6 +10,10 @@ if TYPE_CHECKING:
     from .asgi.response import Response as AsgiResponse
     from .request import Request
     from .response import Response
+
+_PNA_NAME_UTF_8_MAX_LENGTH = 248
+_PNA_NAME_PATTERN = re.compile(r'^[a-z0-9_.-]+$')
+_PNA_ID_PATTERN = re.compile(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$')
 
 
 class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
@@ -43,15 +48,48 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
             (default ``None``).
 
             See also:
-            https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
+                * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
         allow_credentials (Optional[Union[str, Iterable[str]]]): List of origins
             (case sensitive) for which to allow credentials via the
             ``Access-Control-Allow-Credentials`` header.
             The string ``'*'`` acts as a wildcard, matching every allowed origin,
             while ``None`` disallows all origins. This parameter takes effect only
             if the origin is allowed by the ``allow_origins`` argument.
-            (Default ``None``).
+            (default ``None``).
+        allow_private_network (bool):
+            If ``True``, the server includes the
+            ``Access-Control-Allow-Private-Network`` header in responses to
+            CORS preflight (OPTIONS) requests. This indicates that the resource is
+            willing to respond to requests from less-public IP address spaces
+            (e.g., public site -> private device).
+            (default ``False``).
 
+            See also:
+                * https://wicg.github.io/private-network-access/#private-network-request-heading
+        private_network_access_name (Optional[str]):
+            A human-readable identifier for the private network resource, used in
+            browser permission prompts. For example, without this field, the browser
+            may prompt: ``"192.168.1.1 wants access"``. If set to ``"my_smart_watch"``,
+            it prompts: ``"my_smart_watch wants access"``.
+
+            Must match the regex ``^[a-z0-9_.-]+$`` and be at most 248 UTF-8 bytes.
+            (default ``None``).
+
+            See also:
+                * https://wicg.github.io/private-network-access/#permission-prompt
+                * https://wicg.github.io/private-network-access/#headers
+
+        private_network_access_id (Optional[str]):
+            A stable machine-readable identifier for the private network resource, used
+            by he browser to persist access permissions across IP address changes.
+            This avoids repeated prompts when the same device is encountered again.
+
+            Must be in MAC address format: 6 colon-separated hexadecimal byte pairs.
+            (default ``None``).
+
+            See also:
+                * https://wicg.github.io/private-network-access/#permission-prompt
+                * https://wicg.github.io/private-network-access/#headers
     """
 
     def __init__(
@@ -59,6 +97,9 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
         allow_origins: Union[str, Iterable[str]] = '*',
         expose_headers: Optional[Union[str, Iterable[str]]] = None,
         allow_credentials: Optional[Union[str, Iterable[str]]] = None,
+        allow_private_network: bool = False,
+        private_network_access_name: Optional[str] = None,
+        private_network_access_id: Optional[str] = None,
     ):
         if allow_origins == '*':
             self.allow_origins = allow_origins
@@ -89,6 +130,34 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
                 )
         self.allow_credentials = allow_credentials
 
+        self.allow_private_network = allow_private_network
+        self.private_network_access_name = private_network_access_name
+        self.private_network_access_id = private_network_access_id
+
+        if allow_private_network:
+            if private_network_access_name is not None:
+                if (
+                    len(private_network_access_name.encode('utf-8'))
+                    > _PNA_NAME_UTF_8_MAX_LENGTH
+                ):
+                    raise ValueError(
+                        'Private network access name must be at most '
+                        '{} UTF-8 bytes long.'.format(_PNA_NAME_UTF_8_MAX_LENGTH)
+                    )
+
+                if not _PNA_NAME_PATTERN.match(private_network_access_name):
+                    raise ValueError(
+                        'Private network access name must consists only from lowercase',
+                        'letters, digits, underscores, hyphens, and dots only.',
+                    )
+
+            if private_network_access_id is not None:
+                if not _PNA_ID_PATTERN.match(private_network_access_id):
+                    raise ValueError(
+                        'Invalid private network access ID format. '
+                        'It must be 48-bit colon-separated hexadecimal string.'
+                    )
+
     def process_response(
         self, req: Request, resp: Response, resource: object, req_succeeded: bool
     ) -> None:
@@ -103,6 +172,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
         """
 
         origin = req.get_header('Origin')
+
         if origin is None:
             return
 
@@ -125,7 +195,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
             and req.get_header('Access-Control-Request-Method')
         ):
             # NOTE(kgriffs): This is a CORS preflight request. Patch the
-            #   response accordingly.
+            # response accordingly.
 
             allow = resp.get_header('Allow')
             resp.delete_header('Allow')
@@ -145,6 +215,23 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
                 resp.set_header('Access-Control-Allow-Methods', allow)
                 resp.set_header('Access-Control-Allow-Headers', allow_headers)
                 resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
+
+            has_request_private_network = (
+                req.get_header('Access-Control-Request-Private-Network') == 'true'
+            )
+
+            if has_request_private_network and self.allow_private_network:
+                resp.set_header('Access-Control-Allow-Private-Network', 'true')
+
+                if self.private_network_access_name:
+                    resp.set_header(
+                        'Private-Network-Access-Name', self.private_network_access_name
+                    )
+
+                if self.private_network_access_id:
+                    resp.set_header(
+                        'Private-Network-Access-ID', self.private_network_access_id
+                    )
 
     async def process_response_async(
         self,
