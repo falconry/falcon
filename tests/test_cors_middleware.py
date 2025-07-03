@@ -161,6 +161,36 @@ class TestCorsMiddleware:
             assert 'Access-Control-Expose-Headers' not in result.headers
             assert 'Access-Control-Allow-Origin' not in result.headers
 
+    @pytest.mark.parametrize('include_request_private_network', (True, False))
+    def test_disabled_cors_private_network(
+        self, cors_client, include_request_private_network
+    ):
+        # default scenario for cors middleware, where
+        # allow private network is disabled by default
+
+        cors_client.app.add_route('/', CORSHeaderResource())
+
+        default_headers = (
+            ('Origin', 'localhost'),
+            ('Access-Control-Request-Method', 'GET'),
+        )
+
+        if include_request_private_network:
+            headers = (
+                *default_headers,
+                ('Access-Control-Request-Private-Network', 'true'),
+            )
+        else:
+            headers = default_headers
+
+        result = cors_client.simulate_options('/', headers=headers)
+
+        h = result.headers
+
+        assert 'Access-Control-Allow-Private-Network' not in h
+        assert 'Private-Network-Access-Name' not in h
+        assert 'Private-Network-Access-ID' not in h
+
 
 @pytest.fixture(scope='function')
 def make_cors_client(asgi, util):
@@ -293,3 +323,130 @@ class TestCustomCorsMiddleware:
         assert res.headers['Access-Control-Expose-Headers'] == exp
         h = dict(res.headers.lower_items()).keys()
         assert 'Access-Control-Allow-Credentials'.lower() not in h
+
+    @pytest.mark.parametrize(
+        'network_access_name',
+        ('smart_watch', 'local_printer', 'device', None),
+    )
+    @pytest.mark.parametrize(
+        'network_access_id',
+        ('41:0e:0c:5a:c2:0d', '71:fd:71:66:67:db', '7c:c2:19:c0:db:ec', None),
+    )
+    def test_enabled_cors_private_network_headers(
+        self, make_cors_client, network_access_name, network_access_id
+    ):
+        client = make_cors_client(
+            falcon.CORSMiddleware(
+                allow_private_network=True,
+                private_network_access_name=network_access_name,
+                private_network_access_id=network_access_id,
+            )
+        )
+
+        client.app.add_route('/', CORSHeaderResource())
+
+        res = client.simulate_options(
+            '/',
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+                ('Access-Control-Request-Private-Network', 'true'),
+            ),
+        )
+
+        h = res.headers
+
+        assert h['Access-Control-Allow-Private-Network'] == 'true'
+
+        if network_access_name is None:
+            'Private-Network-Access-Name' not in h
+        else:
+            assert h.get('Private-Network-Access-Name') == network_access_name
+
+        if network_access_id is None:
+            'Private-Network-Access-ID' not in h
+        else:
+            assert h.get('Private-Network-Access-ID') == network_access_id
+
+    @pytest.mark.parametrize(
+        'private_network_access_id, is_valid',
+        (
+            # valid
+            (None, True),
+            ('01:23:45:67:89:0A', True),
+            ('ab:cd:ef:00:11:22', True),
+            ('FF:FF:FF:FF:FF:FF', True),
+            ('00:00:00:00:00:00', True),
+            ('aB:cD:Ef:12:34:56', True),
+            # invalid
+            ('', False),
+            ('0123456789AB', False),
+            ('01:23:45:67:89:0A:BC', False),
+            ('01:23:45:67:89:ZZ', False),
+            ('01-23-45-67-89-0A', False),
+            ('01:23:45:67:89:', False),
+        ),
+    )
+    def test_cors_enabled_private_network_access_id_validation(
+        self, private_network_access_id, is_valid
+    ):
+        if is_valid:
+            try:
+                falcon.CORSMiddleware(
+                    allow_private_network=True,
+                    private_network_access_id=private_network_access_id,
+                    private_network_access_name='valid-name',
+                )
+            except ValueError:
+                pytest.fail(
+                    'Expected ID to be valid but raised ValueError: {}'.format(
+                        private_network_access_id
+                    )
+                )
+        else:
+            with pytest.raises(ValueError, match='(?i)private.*network.*id'):
+                falcon.CORSMiddleware(
+                    allow_private_network=True,
+                    private_network_access_id=private_network_access_id,
+                    private_network_access_name='valid-name',
+                )
+
+    @pytest.mark.parametrize(
+        'private_network_access_name, is_valid',
+        (
+            # valid
+            (None, True),
+            ('device-1', True),
+            ('device.name_123', True),
+            ('a' * 248, True),
+            ('a_b.c-d.e_f', True),
+            # invalid
+            ('', False),
+            ('MyDevice', False),
+            ('smart device', False),
+            ('abc\nxyz', False),
+            ('a' * 249, False),
+        ),
+    )
+    def test_cors_enabled_private_network_access_name_validation(
+        self, private_network_access_name, is_valid
+    ):
+        if is_valid:
+            try:
+                falcon.CORSMiddleware(
+                    allow_private_network=True,
+                    private_network_access_name=private_network_access_name,
+                    private_network_access_id='01:23:45:67:89:0A',
+                )
+            except ValueError:
+                pytest.fail(
+                    'Expected name to be valid but raised ValueError: '
+                    f'{private_network_access_name!r}'
+                )
+        else:
+            with pytest.raises(ValueError, match='(?i)private.*network.*name'):
+                falcon.CORSMiddleware(
+                    allow_private_network=True,
+                    private_network_access_name=private_network_access_name,
+                    private_network_access_id='01:23:45:67:89:0A',
+                )
