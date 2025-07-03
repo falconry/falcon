@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module that defines public Falcon type definitions."""
+"""Public Falcon type alias definitions."""
 
 from __future__ import annotations
 
@@ -19,6 +19,13 @@ from typing import AsyncIterator, Dict, Optional, Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from falcon.asgi import SSEvent
+
+__all__ = (
+    'Headers',
+    'ReadableIO',
+    'AsyncReadableIO',
+    'SSEEmitter',
+)
 
 Headers = Dict[str, str]
 """Headers dictionary returned by the framework.
