@@ -291,6 +291,42 @@ def test_deserialization_raises(asgi, util, handler_mt):
         testing.simulate_post(app, '/', json={})
 
 
+def test_nonstandard_deserialization_error(asgi, util):
+    # NOTE(vytas): At the time of writing, this is also tested by msgspec.
+    #   However, we add an additional generic test here if msgspec restructures
+    #   its class hierarchy to inherit from ValueError, or if it is unavailable
+    #   in the environment in question.
+
+    class SuchException(RuntimeError):
+        def __init__(self):
+            super().__init__('wow such exception')
+
+    def fancy_loads(data):
+        try:
+            return json.loads(data)
+        except ValueError:
+            raise SuchException()
+
+    class DevNull:
+        def on_post(self, req, resp):
+            req.get_media()
+
+        async def on_post_async(self, req, resp):
+            await req.get_media()
+
+    app = util.create_app(asgi)
+    app.add_route('/dev/null', DevNull(), suffix=('async' if asgi else None))
+    app.req_options.media_handlers[falcon.MEDIA_JSON] = media.JSONHandler(
+        loads=fancy_loads
+    )
+
+    resp = testing.simulate_post(
+        app, '/dev/null', body=b'Hello: world', content_type=falcon.MEDIA_JSON
+    )
+    assert resp.status_code == 400
+    assert resp.json.get('title') == 'Invalid JSON'
+
+
 def test_sync_methods_not_overridden(asgi, util):
     app = util.create_app(asgi)
 
