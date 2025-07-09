@@ -249,6 +249,11 @@ class TestMsgspec:
         suffix = 'async' if asgi else None
         app.add_route('/media', MediaResource(), suffix=suffix)
 
+        resp0 = client.simulate_post(
+            '/media', body=b'Hello: world', content_type=falcon.MEDIA_JSON
+        )
+        assert resp0.status_code == 400
+
         resp1 = client.simulate_post('/media', json=[1, 3, 3, 7])
         assert resp1.status_code == 200
         assert resp1.text == '[1, 3, 3, 7]'

@@ -30,7 +30,7 @@ class NoteResource:
 
     def __init__(self) -> None:
         # NOTE: In a real-world app, you would want to use persistent storage.
-        self._store = {}
+        self._store: dict[str, Note] = {}
 
     def on_get_note(self, req: Request, resp: Response, noteid: uuid.UUID) -> None:
         resp.media = self._store.get(str(noteid))
@@ -62,13 +62,6 @@ class MsgspecMiddleware:
             params[param] = msgspec.convert(req.get_media(), schema)
 
 
-def _msgspec_loads(content: str) -> Any:
-    try:
-        return msgspec.json.decode(content)
-    except msgspec.DecodeError as ex:
-        raise falcon.MediaMalformedError(falcon.MEDIA_JSON) from ex
-
-
 def _handle_validation_error(
     req: Request, resp: Response, ex: msgspec.ValidationError, params: dict[str, Any]
 ) -> None:
@@ -81,7 +74,7 @@ def create_app() -> falcon.App:
 
     json_handler = JSONHandler(
         dumps=msgspec.json.encode,
-        loads=_msgspec_loads,
+        loads=msgspec.json.decode,
     )
     app.req_options.media_handlers[falcon.MEDIA_JSON] = json_handler
     app.resp_options.media_handlers[falcon.MEDIA_JSON] = json_handler
