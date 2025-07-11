@@ -58,6 +58,10 @@ jobs:
       - build-sdist
     runs-on: ubuntu-latest
 
+    permissions:
+      # NOTE(vytas): This permission is mandatory for trusted publishing.
+      id-token: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -172,6 +176,10 @@ jobs:
       - build-wheels
       - publish-sdist
     runs-on: ubuntu-latest
+
+    permissions:
+      # NOTE(vytas): This permission is mandatory for trusted publishing.
+      id-token: write
 
     steps:
       - name: Checkout repository
