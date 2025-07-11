@@ -26,7 +26,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Mapping,
     NoReturn,
     Optional,
     overload,
@@ -38,6 +37,7 @@ from typing import (
 import warnings
 
 from falcon._typing import _UNSET
+from falcon._typing import HeaderArg
 from falcon._typing import RangeSetHeader
 from falcon._typing import UnsetOr
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
@@ -49,6 +49,7 @@ from falcon.response_helpers import _format_etag_header
 from falcon.response_helpers import _format_header_value_list
 from falcon.response_helpers import _format_range
 from falcon.response_helpers import _header_property
+from falcon.response_helpers import _headers_to_items
 from falcon.response_helpers import _is_ascii_encodable
 from falcon.typing import Headers
 from falcon.typing import ReadableIO
@@ -813,9 +814,7 @@ class Response:
 
             self._headers[name] = value
 
-    def set_headers(
-        self, headers: Union[Mapping[str, str], Iterable[Tuple[str, str]]]
-    ) -> None:
+    def set_headers(self, headers: HeaderArg) -> None:
         """Set several headers at once.
 
         This method can be used to set a collection of raw header names and
@@ -847,16 +846,11 @@ class Response:
                          or ``Iterable[[str, str]]``.
         """
 
-        header_items = getattr(headers, 'items', None)
-
-        if callable(header_items):
-            headers = header_items()
-
         # NOTE(kgriffs): We can't use dict.update because we have to
         # normalize the header names.
         _headers = self._headers
 
-        for name, value in headers:  # type: ignore[misc]
+        for name, value in _headers_to_items(headers):
             # NOTE(kgriffs): uwsgi fails with a TypeError if any header
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode
