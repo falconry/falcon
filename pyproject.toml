@@ -91,7 +91,6 @@ include = ["falcon*"]
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
-            "cheroot",
             "cython",
             "daphne",
             "gunicorn",
