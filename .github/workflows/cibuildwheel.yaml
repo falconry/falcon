@@ -91,14 +91,11 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish sdist and pure-Python wheel to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'release'
-        with:
-          password: ${{ secrets.PYPI_TOKEN }}
 
   build-wheels:
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
@@ -202,11 +199,8 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish binary wheels to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'release'
-        with:
-          password: ${{ secrets.PYPI_TOKEN }}
