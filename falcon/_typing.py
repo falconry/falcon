@@ -69,7 +69,7 @@ UnsetOr = Union[Literal[_Unset.UNSET], _T]
 Link = Dict[str, str]
 CookieArg = Mapping[str, Union[str, Cookie]]
 # Error handlers
-ErrorHandler = Callable[['Request', 'Response', BaseException, Dict[str, Any]], None]
+ErrorHandler = Callable[['Request', 'Response', Exception, Dict[str, Any]], None]
 
 
 class AsgiErrorHandler(Protocol):
@@ -77,7 +77,7 @@ class AsgiErrorHandler(Protocol):
         self,
         req: AsgiRequest,
         resp: Optional[AsgiResponse],
-        error: BaseException,
+        error: Exception,
         params: Dict[str, Any],
         *,
         ws: Optional[WebSocket] = ...,

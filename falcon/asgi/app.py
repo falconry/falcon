@@ -94,7 +94,7 @@ _BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 _TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
-_BE = TypeVar('_BE', bound=BaseException)
+_BE = TypeVar('_BE', bound=Exception)
 
 
 class App(falcon.app.App):
@@ -352,7 +352,7 @@ class App(falcon.app.App):
         'ws_options',
     )
 
-    _error_handlers: Dict[Type[BaseException], AsgiErrorHandler]  # type: ignore[assignment]
+    _error_handlers: Dict[Type[Exception], AsgiErrorHandler]  # type: ignore[assignment]
     _middleware: AsyncPreparedMiddlewareResult  # type: ignore[assignment]
     _middleware_ws: AsyncPreparedMiddlewareWsResult
     _request_type: Type[Request]
@@ -870,13 +870,13 @@ class App(falcon.app.App):
     @overload
     def add_error_handler(
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[AsgiErrorHandler] = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[AsgiErrorHandler] = None,
     ) -> None:
         """Register a handler for one or more exception types.
@@ -1007,14 +1007,14 @@ class App(falcon.app.App):
             )
         handler_callable: AsgiErrorHandler = handler
 
-        exception_tuple: Tuple[type[BaseException], ...]
+        exception_tuple: Tuple[type[Exception], ...]
         try:
             exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
             exception_tuple = (exception,)  # type: ignore[assignment]
 
         for exc in exception_tuple:
-            if not issubclass(exc, BaseException):
+            if not issubclass(exc, Exception):
                 raise TypeError('"exception" must be an exception type.')
 
             self._error_handlers[exc] = handler_callable
@@ -1223,7 +1223,7 @@ class App(falcon.app.App):
         self,
         req: Request,
         resp: Optional[Response],
-        error: BaseException,
+        error: Exception,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
     ) -> None:
@@ -1254,14 +1254,14 @@ class App(falcon.app.App):
     if TYPE_CHECKING:
 
         def _find_error_handler(  # type: ignore[override]
-            self, ex: BaseException
+            self, ex: Exception
         ) -> Optional[AsgiErrorHandler]: ...
 
     async def _handle_exception(  # type: ignore[override]
         self,
         req: Request,
         resp: Optional[Response],
-        ex: BaseException,
+        ex: Exception,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
     ) -> bool:
