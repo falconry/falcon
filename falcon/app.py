@@ -91,7 +91,7 @@ _TYPELESS_STATUS_CODES = frozenset(
         status.HTTP_304,
     ]
 )
-_BE = TypeVar('_BE', bound=BaseException)
+_BE = TypeVar('_BE', bound=Exception)
 
 
 class App:
@@ -262,7 +262,7 @@ class App:
     )
 
     _cors_enable: bool
-    _error_handlers: Dict[Type[BaseException], ErrorHandler]
+    _error_handlers: Dict[Type[Exception], ErrorHandler]
     _independent_middleware: bool
     _middleware: helpers.PreparedMiddlewareResult
     _request_type: Type[Request]
@@ -826,13 +826,13 @@ class App:
     @overload
     def add_error_handler(
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[ErrorHandler] = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[ErrorHandler] = None,
     ) -> None:
         """Register a handler for one or more exception types.
@@ -916,7 +916,7 @@ class App:
         def wrap_old_handler(old_handler: Callable[..., Any]) -> ErrorHandler:
             @wraps(old_handler)
             def handler(
-                req: Request, resp: Response, ex: BaseException, params: Dict[str, Any]
+                req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
             ) -> None:
                 old_handler(ex, req, resp, params)
 
@@ -948,14 +948,14 @@ class App:
             )
             handler = wrap_old_handler(handler)
 
-        exception_tuple: Tuple[type[BaseException], ...]
+        exception_tuple: Tuple[type[Exception], ...]
         try:
             exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
             exception_tuple = (exception,)  # type: ignore[assignment]
 
         for exc in exception_tuple:
-            if not issubclass(exc, BaseException):
+            if not issubclass(exc, Exception):
                 raise TypeError('"exception" must be an exception type.')
 
             self._error_handlers[exc] = handler
@@ -1139,12 +1139,12 @@ class App:
         self._compose_error_response(req, resp, error)
 
     def _python_error_handler(
-        self, req: Request, resp: Response, error: BaseException, params: Dict[str, Any]
+        self, req: Request, resp: Response, error: Exception, params: Dict[str, Any]
     ) -> None:
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
 
-    def _find_error_handler(self, ex: BaseException) -> Optional[ErrorHandler]:
+    def _find_error_handler(self, ex: Exception) -> Optional[ErrorHandler]:
         # NOTE(csojinb): The `__mro__` class attribute returns the method
         # resolution order tuple, i.e. the complete linear inheritance chain
         # ``(type(ex), ..., object)``. For a valid exception class, the last
@@ -1162,7 +1162,7 @@ class App:
         return None
 
     def _handle_exception(
-        self, req: Request, resp: Response, ex: BaseException, params: Dict[str, Any]
+        self, req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
     ) -> bool:
         """Handle an exception raised from mw or a responder.
 
