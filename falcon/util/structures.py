@@ -141,6 +141,14 @@ class Context:
     'lru'
     >>> 'cache_strategy' in context
     True
+
+    Although we have decided to maintain the mapping interface in the
+    foreseeable future, new code should prefer the attribute-based approach, as
+    it is more performant.
+
+    What is more, if you continue to use the mapping interface
+    (or mix-and-match), care needs to be taken not to overwrite :class:`dict`
+    methods such as :meth:`~dict.items`, :meth:`~dict.values`, etc.
     """
 
     # NOTE(vytas): Define synthetic attr access methods (under TYPE_CHECKING)

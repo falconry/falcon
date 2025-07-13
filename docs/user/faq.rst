@@ -876,21 +876,21 @@ set attributes on the object:
    # Falcon 2.0
    req.context.cache_backend = MyUltraFastCache.connect()
 
-The new default context type emulates a dict-like mapping interface in a way
-that context attributes are linked to dict items, i.e. setting an object
-attribute also sets the corresponding dict item, and vice versa. As a result,
-existing code will largely work unmodified with Falcon 2.0. Nevertheless, it is
-recommended to migrate to the new interface as outlined above since the
-dict-like mapping interface may be removed from the context type in a future
-release.
+The new :class:`default context type <falcon.Context>` emulates a dict-like
+mapping interface in a way that context attributes are linked to dict items,
+i.e. setting an object attribute also sets the corresponding dict item, and
+vice versa.
+As a result, existing code will largely work unmodified with Falcon 2.0+.
+Nevertheless, it is recommended to migrate to the new interface as setting
+attributes is more performant than inserting keys via the emulated mapping.
 
 .. warning::
-   If you need to mix-and-match both approaches under migration, beware that
-   setting attributes such as *items* or *values* would obviously shadow the
-   corresponding mapping interface functions.
+   If you need to mix-and-match both approaches, beware that setting attributes
+   such as *items* or *values* would obviously shadow the corresponding mapping
+   interface functions.
 
-If an existing project is making extensive use of dictionary contexts, the type
-can be explicitly overridden back to dict by employing custom request/response
+If an existing project makes extensive use of dictionary contexts, the type can
+be explicitly overridden back to ``dict`` by employing custom request/response
 types:
 
 .. code:: python
@@ -905,6 +905,10 @@ types:
 
     app = falcon.App(request_type=RequestWithDictContext,
                      response_type=ResponseWithDictContext)
+
+.. attention::
+    Note that third-party middleware might expect to be able to set attributes
+    on ``req.context`` (or ``resp.context``), following the new style.
 
 Response Handling
 ~~~~~~~~~~~~~~~~~

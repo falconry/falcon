@@ -838,6 +838,116 @@ class TestFalconTestingUtils:
         expected_result = 'Result<200 OK {}>'.format(value)
         assert str(result) == expected_result
 
+    @pytest.mark.parametrize(
+        'simulate',
+        [
+            testing.simulate_get,
+            testing.simulate_post,
+        ],
+    )
+    @pytest.mark.parametrize(
+        'value',
+        (
+            'd\xff\xff\x00',
+            'quick fox jumps over the lazy dog',
+            '{"hello": "WORLD!"}',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+            '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+            '\xe9\xe8',
+        ),
+    )
+    def test_rich_repr_result_when_body_varies(self, asgi, util, value, simulate):
+        if isinstance(value, str):
+            value = bytes(value, 'UTF-8')
+
+        if asgi:
+            resource = testing.SimpleTestResourceAsync(body=value)
+        else:
+            resource = testing.SimpleTestResource(body=value)
+
+        app = util.create_app(asgi)
+        app.add_route('/hello', resource)
+
+        result: falcon.testing.Result = simulate(app, '/hello')
+        captured_resp = resource.captured_resp
+        content = captured_resp.text
+
+        if len(value) > 40:
+            content = value[:20] + b'...' + value[-20:]
+        else:
+            content = value
+
+        args = [
+            captured_resp.status,
+            captured_resp.headers['content-type'],
+            str(content),
+        ]
+
+        status_color: str
+
+        for prefix, color in (
+            ('1', 'blue'),
+            ('2', 'green'),
+            ('3', 'magenta'),
+            ('4', 'red'),
+            ('5', 'red'),
+        ):
+            if captured_resp.status.startswith(prefix):
+                status_color = color
+
+        result_template = (
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
+        )
+        expected_result = result_template.format(status_color, *args)
+
+        assert result.__rich__() == expected_result
+
+    @pytest.mark.parametrize(
+        'value',
+        (
+            'd\xff\xff\x00',
+            'quick fox jumps over the lazy dog',
+            '{"hello": "WORLD!"}',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+            '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+            '\xe9\xe8',
+        ),
+    )
+    @pytest.mark.parametrize(
+        'status_color_pair',
+        (
+            (falcon.HTTP_101, 'blue'),
+            (falcon.HTTP_200, 'green'),
+            (falcon.HTTP_301, 'magenta'),
+            (falcon.HTTP_404, 'red'),
+            (falcon.HTTP_500, 'red'),
+        ),
+    )
+    def test_rich_repr_with_different_statuses(self, asgi, status_color_pair, value):
+        expected_status, expected_color = status_color_pair
+
+        if isinstance(value, str):
+            value = bytes(value, 'UTF-8')
+
+        result = falcon.testing.Result(
+            [value], expected_status, [('content-type', 'dummy')]
+        )
+
+        if len(value) > 40:
+            content = value[:20] + b'...' + value[-20:]
+        else:
+            content = value
+
+        expected_result_template = (
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
+        )
+
+        expected_result = expected_result_template.format(
+            expected_color, expected_status, 'dummy', content
+        )
+
+        assert result.__rich__() == expected_result
+
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
         assert not result.content

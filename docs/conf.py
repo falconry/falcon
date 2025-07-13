@@ -90,6 +90,7 @@ extensions = [
     'ext.falcon_releases',
     'ext.private_args',
     'ext.rfc',
+    'ext.workarounds',
 ]
 
 templates_path = ['_templates']
@@ -124,6 +125,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 # TODO(vytas): If we enable the "nitpicky" mode, we will have to add exceptions
 #   for all unresolved aliases.
 autodoc_type_aliases = {
+    'SyncMiddleware': 'SyncMiddleware',
+    'AsyncMiddleware': 'AsyncMiddleware',
     'PreparedMiddlewareResult': 'PreparedMiddlewareResult',
 }
 

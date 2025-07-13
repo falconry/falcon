@@ -1,0 +1,8 @@
+:class:`~falcon.media.JSONHandler` can now detect a non-standard
+(not a subclass of :class:`ValueError`) deserialization error type for a custom
+`loads` function.
+
+(Normally, :func:`json.loads` and third party alternatives do raise a subclass
+of :class:`ValueError` on invalid input data, however, this is not the case
+for, e.g., the popular :ref:`msgspec <msgspec_recipe>` library
+at the time of writing.)

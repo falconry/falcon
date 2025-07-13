@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Optional, Union
+from typing import Iterable, Optional, TYPE_CHECKING, Union
 
-from .request import Request
-from .response import Response
+from ._typing import UniversalMiddlewareWithProcessResponse
+
+if TYPE_CHECKING:
+    from .asgi.request import Request as AsgiRequest
+    from .asgi.response import Response as AsgiResponse
+    from .request import Request
+    from .response import Response
 
 
-class CORSMiddleware(object):
+class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
     """CORS Middleware.
 
     This middleware provides a simple out-of-the box CORS policy, including handling
@@ -141,5 +146,11 @@ class CORSMiddleware(object):
                 resp.set_header('Access-Control-Allow-Headers', allow_headers)
                 resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
-    async def process_response_async(self, *args: Any) -> None:
-        self.process_response(*args)
+    async def process_response_async(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None:
+        self.process_response(req, resp, resource, req_succeeded)

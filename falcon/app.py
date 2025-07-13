@@ -56,6 +56,7 @@ from falcon._typing import ResponderCallable
 from falcon._typing import SinkCallable
 from falcon._typing import SinkPrefix
 from falcon._typing import StartResponse
+from falcon._typing import SyncMiddleware
 from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
@@ -90,7 +91,7 @@ _TYPELESS_STATUS_CODES = frozenset(
         status.HTTP_304,
     ]
 )
-_BE = TypeVar('_BE', bound=BaseException)
+_BE = TypeVar('_BE', bound=Exception)
 
 
 class App:
@@ -261,7 +262,7 @@ class App:
     )
 
     _cors_enable: bool
-    _error_handlers: Dict[Type[BaseException], ErrorHandler]
+    _error_handlers: Dict[Type[Exception], ErrorHandler]
     _independent_middleware: bool
     _middleware: helpers.PreparedMiddlewareResult
     _request_type: Type[Request]
@@ -286,7 +287,7 @@ class App:
     _static_routes: List[
         Tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
-    _unprepared_middleware: List[object]
+    _unprepared_middleware: List[SyncMiddleware]
 
     # Attributes
     req_options: RequestOptions
@@ -305,7 +306,7 @@ class App:
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[Request]] = None,
         response_type: Optional[Type[Response]] = None,
-        middleware: Union[object, Iterable[object]] = None,
+        middleware: Optional[Union[SyncMiddleware, Iterable[SyncMiddleware]]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -327,17 +328,17 @@ class App:
                     # NOTE(kgriffs): Check to see if middleware is an
                     #   iterable, and if so, append the CORSMiddleware
                     #   instance.
-                    middleware = list(middleware)  # type: ignore[arg-type]
-                    middleware.append(cm)  # type: ignore[arg-type]
+                    middleware = list(cast(Iterable[SyncMiddleware], middleware))
+                    middleware.append(cm)
                 except TypeError:
                     # NOTE(kgriffs): Assume the middleware kwarg references
                     #   a single middleware component.
-                    middleware = [middleware, cm]
+                    middleware = [cast(SyncMiddleware, middleware), cm]
 
         # set middleware
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
-        self.add_middleware(middleware)
+        self.add_middleware(middleware or [])
 
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
@@ -524,7 +525,9 @@ class App:
         """
         return self._router.options
 
-    def add_middleware(self, middleware: Union[object, Iterable[object]]) -> None:
+    def add_middleware(
+        self, middleware: Union[SyncMiddleware, Iterable[SyncMiddleware]]
+    ) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -535,20 +538,20 @@ class App:
         """
 
         # NOTE(kgriffs): Since this is called by the initializer, there is
-        #   the chance that middleware may be None.
+        #   the chance that middleware may be empty.
         if middleware:
             try:
-                middleware = list(middleware)  # type: ignore[call-overload]
+                middleware = list(cast(Iterable[SyncMiddleware], middleware))
             except TypeError:
                 # middleware is not iterable; assume it is just one bare component
-                middleware = [middleware]
+                middleware = [cast(SyncMiddleware, middleware)]
 
             if (
                 self._cors_enable
                 and len(
                     [
                         mc
-                        for mc in self._unprepared_middleware + middleware  # type: ignore[operator]
+                        for mc in self._unprepared_middleware + middleware
                         if isinstance(mc, CORSMiddleware)
                     ]
                 )
@@ -559,7 +562,7 @@ class App:
                     'cors_enable (which already constructs one instance)'
                 )
 
-            self._unprepared_middleware += middleware  # type: ignore[arg-type]
+            self._unprepared_middleware += middleware
 
         # NOTE(kgriffs): Even if middleware is None or an empty list, we still
         #   need to make sure self._middleware is initialized if this is the
@@ -823,13 +826,13 @@ class App:
     @overload
     def add_error_handler(
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[ErrorHandler] = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[ErrorHandler] = None,
     ) -> None:
         """Register a handler for one or more exception types.
@@ -913,7 +916,7 @@ class App:
         def wrap_old_handler(old_handler: Callable[..., Any]) -> ErrorHandler:
             @wraps(old_handler)
             def handler(
-                req: Request, resp: Response, ex: BaseException, params: Dict[str, Any]
+                req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
             ) -> None:
                 old_handler(ex, req, resp, params)
 
@@ -945,14 +948,14 @@ class App:
             )
             handler = wrap_old_handler(handler)
 
-        exception_tuple: Tuple[type[BaseException], ...]
+        exception_tuple: Tuple[type[Exception], ...]
         try:
             exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
             exception_tuple = (exception,)  # type: ignore[assignment]
 
         for exc in exception_tuple:
-            if not issubclass(exc, BaseException):
+            if not issubclass(exc, Exception):
                 raise TypeError('"exception" must be an exception type.')
 
             self._error_handlers[exc] = handler
@@ -1012,7 +1015,7 @@ class App:
     # ------------------------------------------------------------------------
 
     def _prepare_middleware(
-        self, middleware: List[object], independent_middleware: bool = False
+        self, middleware: List[SyncMiddleware], independent_middleware: bool = False
     ) -> helpers.PreparedMiddlewareResult:
         return helpers.prepare_middleware(
             middleware=middleware, independent_middleware=independent_middleware
@@ -1136,12 +1139,12 @@ class App:
         self._compose_error_response(req, resp, error)
 
     def _python_error_handler(
-        self, req: Request, resp: Response, error: BaseException, params: Dict[str, Any]
+        self, req: Request, resp: Response, error: Exception, params: Dict[str, Any]
     ) -> None:
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
 
-    def _find_error_handler(self, ex: BaseException) -> Optional[ErrorHandler]:
+    def _find_error_handler(self, ex: Exception) -> Optional[ErrorHandler]:
         # NOTE(csojinb): The `__mro__` class attribute returns the method
         # resolution order tuple, i.e. the complete linear inheritance chain
         # ``(type(ex), ..., object)``. For a valid exception class, the last
@@ -1159,7 +1162,7 @@ class App:
         return None
 
     def _handle_exception(
-        self, req: Request, resp: Response, ex: BaseException, params: Dict[str, Any]
+        self, req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
     ) -> bool:
         """Handle an exception raised from mw or a responder.
 
