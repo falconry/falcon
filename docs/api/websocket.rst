@@ -90,7 +90,7 @@ framework would expect an ``on_websocket()`` responder similar to this:
 
 .. code:: python
 
-    async def on_websocket(self, req: Request, ws: WebSocket, account_id: str):
+    async def on_websocket(self, req: Request, ws: WebSocket, account_id: str) -> None:
         pass
 
 If no route matches the path requested in the WebSocket handshake, control then
