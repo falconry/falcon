@@ -43,7 +43,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
             (default ``None``).
 
             See also:
-                * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
+            https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
         allow_credentials (Optional[Union[str, Iterable[str]]]): List of origins
             (case sensitive) for which to allow credentials via the
             ``Access-Control-Allow-Credentials`` header.
@@ -60,7 +60,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
             (default ``False``).
 
             See also:
-                * https://wicg.github.io/private-network-access/#private-network-request-heading
+            https://wicg.github.io/private-network-access/#private-network-request-heading
     """
 
     def __init__(
@@ -157,11 +157,9 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
                 resp.set_header('Access-Control-Allow-Headers', allow_headers)
                 resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
-            has_request_private_network = (
+            if self.allow_private_network and (
                 req.get_header('Access-Control-Request-Private-Network') == 'true'
-            )
-
-            if has_request_private_network and self.allow_private_network:
+            ):
                 resp.set_header('Access-Control-Allow-Private-Network', 'true')
 
     async def process_response_async(
