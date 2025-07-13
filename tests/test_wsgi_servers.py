@@ -24,6 +24,27 @@ _STARTUP_TIMEOUT = 10
 _SHUTDOWN_TIMEOUT = 20
 
 
+def _cheroot_args(host, port):
+    """CherryPy's Cheroot"""
+    try:
+        import cheroot  # noqa: F401
+    except ImportError:
+        pytest.skip('cheroot not installed')
+
+    args = (
+        sys.executable,
+        '-m',
+        'cheroot',
+        '--bind',
+        '{}:{}'.format(host, port),
+        # NOTE(vytas): In case a worker hangs for an unexpectedly long time
+        #   while reading or processing request (the default value is 30).
+        '--timeout',
+        str(_REQUEST_TIMEOUT),
+    )
+    return args + ('_wsgi_test_app:app',)
+
+
 def _gunicorn_args(host, port, extra_opts=()):
     """Gunicorn"""
     try:
@@ -119,7 +140,9 @@ def _waitress_args(host, port):
     )
 
 
-@pytest.fixture(params=['gunicorn', 'meinheld', 'uvicorn', 'uwsgi', 'waitress'])
+@pytest.fixture(
+    params=['cheroot', 'gunicorn', 'meinheld', 'uvicorn', 'uwsgi', 'waitress']
+)
 def wsgi_server(request):
     return request.param
 
@@ -127,6 +150,7 @@ def wsgi_server(request):
 @pytest.fixture
 def server_args(wsgi_server):
     servers = {
+        'cheroot': _cheroot_args,
         'gunicorn': _gunicorn_args,
         'meinheld': _meinheld_args,
         'uvicorn': _uvicorn_args,

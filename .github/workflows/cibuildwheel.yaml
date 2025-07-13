@@ -58,6 +58,10 @@ jobs:
       - build-sdist
     runs-on: ubuntu-latest
 
+    permissions:
+      # NOTE(vytas): This permission is mandatory for trusted publishing.
+      id-token: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,14 +95,11 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish sdist and pure-Python wheel to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'release'
-        with:
-          password: ${{ secrets.PYPI_TOKEN }}
 
   build-wheels:
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
@@ -176,6 +177,10 @@ jobs:
       - publish-sdist
     runs-on: ubuntu-latest
 
+    permissions:
+      # NOTE(vytas): This permission is mandatory for trusted publishing.
+      id-token: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -202,11 +207,8 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish binary wheels to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'release'
-        with:
-          password: ${{ secrets.PYPI_TOKEN }}
