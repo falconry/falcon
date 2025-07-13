@@ -1,8 +1,4 @@
-Added support for private network requests in :class:`falcon.middleware.CORSMiddleware`.
-
-This feature is disabled by default and can be enabled by passing the ``allow_private_network=True`` keyword argument to :class:`falcon.middleware.CORSMiddleware`.
-
-Two optional parameters were also added:
-
-- ``private_network_access_name``: A human-readable name for the private network resource. This can be displayed in the browser prompt instead of an IP address.
-- ``private_network_access_id``: A unique and stable machine-readable identifier, such as a MAC address.
+Added support for private network requests in CORS middleware.
+This is off by default and can be enabled by passing the keyword argument 
+``allow_private_network=True`` to :class:`falcon.middleware.CORSMiddleware` 
+during initialization.
