@@ -37,11 +37,14 @@ from typing import (
     Union,
 )
 
+from falcon import _logger
 from falcon import constants
 from falcon import responders
 from falcon import routing
 from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
+from falcon._typing import AsgiProcessShutdownMethod
+from falcon._typing import AsgiProcessStartupMethod
 from falcon._typing import AsgiReceive
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
@@ -60,6 +63,7 @@ from falcon.asgi_spec import WSCloseCode
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
+from falcon.errors import HTTPInternalServerError
 from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
@@ -770,10 +774,16 @@ class App(falcon.app.App):
             #   (c) async iterator
             #
 
-            if hasattr(stream, 'read'):
+            read: Optional[Callable[[int], Awaitable[bytes]]] = getattr(
+                stream, 'read', None
+            )
+            close: Optional[Callable[[], Awaitable[None]]] = getattr(
+                stream, 'close', None
+            )
+            if read:
                 try:
                     while True:
-                        data = await stream.read(self._STREAM_BLOCK_SIZE)
+                        data = await read(self._STREAM_BLOCK_SIZE)
                         if data == b'':
                             break
                         else:
@@ -787,8 +797,8 @@ class App(falcon.app.App):
                                 }
                             )
                 finally:
-                    if hasattr(stream, 'close'):
-                        await stream.close()
+                    if close:
+                        await close()
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -824,11 +834,8 @@ class App(falcon.app.App):
                         'Response.stream: ' + str(ex)
                     )
                 finally:
-                    # NOTE(vytas): This could be DRYed with the above identical
-                    #   twoliner in a one large block, but OTOH we would be
-                    #   unable to reuse the current try.. except.
-                    if hasattr(stream, 'close'):
-                        await stream.close()
+                    if close:
+                        await close()
 
         await send(_EVT_RESP_EOF)
 
@@ -1005,6 +1012,7 @@ class App(falcon.app.App):
                 'The handler must be an awaitable coroutine function in order '
                 'to be used safely with an ASGI app.'
             )
+        assert handler
         handler_callable: AsgiErrorHandler = handler
 
         exception_tuple: Tuple[type[Exception], ...]
@@ -1077,9 +1085,12 @@ class App(falcon.app.App):
                     return
 
                 for handler in self._unprepared_middleware:
-                    if hasattr(handler, 'process_startup'):
+                    process_startup: Optional[AsgiProcessStartupMethod] = getattr(
+                        handler, 'process_startup', None
+                    )
+                    if process_startup:
                         try:
-                            await handler.process_startup(scope, event)
+                            await process_startup(scope, event)
                         except Exception:
                             await send(
                                 {
@@ -1093,9 +1104,12 @@ class App(falcon.app.App):
 
             elif event['type'] == 'lifespan.shutdown':
                 for handler in reversed(self._unprepared_middleware):
-                    if hasattr(handler, 'process_shutdown'):
+                    process_shutdown: Optional[AsgiProcessShutdownMethod] = getattr(
+                        handler, 'process_shutdown', None
+                    )
+                    if process_shutdown:
                         try:
-                            await handler.process_shutdown(scope, event)
+                            await process_shutdown(scope, event)
                         except Exception:
                             await send(
                                 {
@@ -1187,7 +1201,7 @@ class App(falcon.app.App):
             self._compose_status_response(req, resp, status)
         elif ws:
             code = http_status_to_ws_code(status.status_code)
-            falcon._logger.error(
+            _logger.error(
                 '[FALCON] HTTPStatus %s raised while handling WebSocket. '
                 'Closing with code %s',
                 status,
@@ -1209,7 +1223,7 @@ class App(falcon.app.App):
             self._compose_error_response(req, resp, error)
         elif ws:
             code = http_status_to_ws_code(error.status_code)
-            falcon._logger.error(
+            _logger.error(
                 '[FALCON] HTTPError %s raised while handling WebSocket. '
                 'Closing with code %s',
                 error,
@@ -1227,10 +1241,10 @@ class App(falcon.app.App):
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
     ) -> None:
-        falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
+        _logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
         if resp:
-            self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
+            self._compose_error_response(req, resp, HTTPInternalServerError())
         elif ws:
             await self._ws_cleanup_on_error(ws)
         else:
@@ -1246,9 +1260,7 @@ class App(falcon.app.App):
     ) -> None:
         assert resp is None
         assert ws is not None
-        falcon._logger.debug(
-            '[FALCON] WebSocket client disconnected with code %i', error.code
-        )
+        _logger.debug('[FALCON] WebSocket client disconnected with code %i', error.code)
         await self._ws_cleanup_on_error(ws)
 
     if TYPE_CHECKING:
@@ -1325,7 +1337,7 @@ class App(falcon.app.App):
             if 'invalid close code' in str(ex).lower():
                 await ws.close(_FALLBACK_WS_ERROR_CODE)
             else:
-                falcon._logger.warning(
+                _logger.warning(
                     (
                         '[FALCON] Attempt to close web connection cleanly '
                         'failed due to raised error.'
