@@ -161,6 +161,32 @@ class TestCorsMiddleware:
             assert 'Access-Control-Expose-Headers' not in result.headers
             assert 'Access-Control-Allow-Origin' not in result.headers
 
+    @pytest.mark.parametrize('include_request_private_network', (True, False))
+    def test_disabled_cors_private_network(
+        self, cors_client, include_request_private_network
+    ):
+        # default scenario for cors middleware, where
+        # allow private network is off by default
+
+        cors_client.app.add_route('/', CORSHeaderResource())
+
+        headers = (
+            ('Origin', 'localhost'),
+            ('Access-Control-Request-Method', 'GET'),
+        )
+
+        if include_request_private_network:
+            headers = (
+                *headers,
+                ('Access-Control-Request-Private-Network', 'true'),
+            )
+
+        result = cors_client.simulate_options('/', headers=headers)
+
+        h = result.headers
+
+        assert 'Access-Control-Allow-Private-Network' not in h
+
 
 @pytest.fixture(scope='function')
 def make_cors_client(asgi, util):
@@ -293,3 +319,19 @@ class TestCustomCorsMiddleware:
         assert res.headers['Access-Control-Expose-Headers'] == exp
         h = dict(res.headers.lower_items()).keys()
         assert 'Access-Control-Allow-Credentials'.lower() not in h
+
+    def test_enabled_cors_private_network_headers(self, make_cors_client):
+        client = make_cors_client(falcon.CORSMiddleware(allow_private_network=True))
+
+        client.app.add_route('/', CORSHeaderResource())
+
+        res = client.simulate_options(
+            '/',
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+                ('Access-Control-Request-Private-Network', 'true'),
+            ),
+        )
+
+        assert res.headers['Access-Control-Allow-Private-Network'] == 'true'

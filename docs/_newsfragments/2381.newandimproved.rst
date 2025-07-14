@@ -1,0 +1,4 @@
+Added support for private network requests in CORS middleware.
+This is off by default and can be enabled by passing the keyword argument 
+``allow_private_network=True`` to :class:`falcon.middleware.CORSMiddleware` 
+during initialization.
