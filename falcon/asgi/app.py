@@ -704,7 +704,10 @@ class App(falcon.app.App):
                 if watcher.done():  # pragma: no py39,py310 cover
                     break
 
-            watcher.cancel()
+            # TODO(vytas): Remove these py314 pragmas here and in reader.py if
+            #   https://github.com/nedbat/coveragepy/issues/1999 gets resolved
+            #   before CPython 3.14.0 stable is out.
+            watcher.cancel()  # pragma: no py314 cover
             try:
                 await watcher
             except asyncio.CancelledError:
@@ -827,7 +830,7 @@ class App(falcon.app.App):
                     # NOTE(vytas): This could be DRYed with the above identical
                     #   twoliner in a one large block, but OTOH we would be
                     #   unable to reuse the current try.. except.
-                    if hasattr(stream, 'close'):
+                    if hasattr(stream, 'close'):  # pragma: no py314 cover
                         await stream.close()
 
         await send(_EVT_RESP_EOF)

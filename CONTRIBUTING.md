@@ -46,7 +46,7 @@ $ tox -e reformat
 ```
 
 You can check all this by running ``tox`` from within the Falcon project directory.
-Your environment must be based on CPython 3.10, 3.11, 3.12 or 3.13:
+Your environment must be based on CPython 3.10, 3.11, 3.12, 3.13, or 3.14:
 
 ```bash
 $ pip install -U tox

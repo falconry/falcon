@@ -8,6 +8,7 @@ import pytest
 import falcon
 from falcon import media
 from falcon import testing
+import falcon.asgi
 from falcon.asgi.stream import BoundedStream
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_YAML
@@ -325,6 +326,47 @@ def test_nonstandard_deserialization_error(asgi, util):
     )
     assert resp.status_code == 400
     assert resp.json.get('title') == 'Invalid JSON'
+
+
+@pytest.mark.parametrize(
+    'custom_json_handler', [True, False], ids=('CustomJSONHandler', 'JSONHandler')
+)
+@pytest.mark.parametrize(
+    'custom_resp_type', [True, False], ids=('CustomResponse', 'Response')
+)
+def test_dumps_bytes_output(asgi, util, custom_json_handler, custom_resp_type):
+    # NOTE(vytas): This scenario is already exercised by certain third party
+    #   serialization libraries (orjson,  msgspec).
+    #   However, they might be unavailable on a new version of CPython, or when
+    #   running minimal tests, so we cover the relevant code paths with this
+    #   test case without any external dependencies.
+
+    def dumpb(obj, **kwargs):
+        return json.dumps(obj, **kwargs).encode()
+
+    class Resource:
+        def on_get(self, req, resp):
+            resp.media = {'msg': 'Hello'}
+
+        async def on_get_async(self, req, resp):
+            resp.media = {'msg': 'Hello'}
+
+    json_handler_type = media.JSONHandler
+    if custom_json_handler:
+        json_handler_type = type('CustomJSONHandler', (media.JSONHandler,), {})
+
+    response_type = None
+    standard_response_type = falcon.asgi.Response if asgi else falcon.Response
+    if custom_resp_type:
+        response_type = type('CustomResponse', (standard_response_type,), {})
+
+    app = util.create_app(asgi, response_type=response_type)
+    app.add_route('/msg', Resource(), suffix=('async' if asgi else None))
+    app.resp_options.media_handlers[falcon.MEDIA_JSON] = json_handler_type(dumps=dumpb)
+
+    resp = testing.simulate_get(app, '/msg')
+    assert resp.status_code == 200
+    assert resp.json == {'msg': 'Hello'}
 
 
 def test_sync_methods_not_overridden(asgi, util):
