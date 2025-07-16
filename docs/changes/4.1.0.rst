@@ -9,10 +9,16 @@ Falcon 4.1 is in development. The progress is tracked via the
 on GitHub.
 
 
-.. Changes to Supported Platforms
-.. ------------------------------
+Changes to Supported Platforms
+------------------------------
 
-.. NOTE(vytas): No changes to the supported platforms (yet).
+- CPython 3.14 is now fully supported.
+  (`#2413 <https://github.com/falconry/falcon/issues/2413>`__)
+- Although the Falcon 4.x series is only guaranteed to support Python 3.10+,
+  this release still supports 3.8 & 3.9 at runtime using the pure Python wheel.
+
+  Falcon 4.2 is expected to drop the end-of-life Python 3.8 completely
+  (but runtime support will continue for 3.9 on a best effort basis).
 
 
 .. towncrier release notes start

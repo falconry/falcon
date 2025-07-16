@@ -6,6 +6,10 @@ on:
   push:
     branches:
       - master
+  # TODO(vytas): PR PoC
+  pull_request:
+    branches:
+      - master
 
 jobs:
   run_tox:
@@ -19,6 +23,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
 
     steps:
       - name: Checkout repo
@@ -27,7 +32,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version != '3.14' && matrix.python-version || '3.14.0-beta.4 - 3.14.0'}}
 
       - name: Install dependencies
         run: |
