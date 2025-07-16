@@ -127,20 +127,11 @@ jobs:
           - name: win_amd64
             os: windows-latest
         python:
-          - cp39
           - cp310
           - cp311
           - cp312
           - cp313
-        include:
-          - platform:
-              name: manylinux_x86_64
-              os: ubuntu-latest
-            python: cp38
-          - platform:
-              name: musllinux_x86_64
-              os: ubuntu-latest
-            python: cp38
+          - cp314
 
     defaults:
       run:
@@ -159,8 +150,11 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.0.0
+        uses: pypa/cibuildwheel@v3.0.1
         env:
+          # TODO(vytas): Remove cpython-prerelease when 3.14.0rc1 is out.
+          CIBW_ENABLE: cpython-prerelease
+
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
 
