@@ -1,0 +1,6 @@
+Support for allowing :ref:`cross-origin <cors>`
+`private network access <https://wicg.github.io/private-network-access/>`__ was
+added to the built-in :class:`~falcon.middleware.CORSMiddleware`.
+The new feature is off by default, and can be enabled by passing the keyword
+argument ``allow_private_network=True`` to
+:class:`~falcon.middleware.CORSMiddleware` during initialization.

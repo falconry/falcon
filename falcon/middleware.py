@@ -50,8 +50,17 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
             The string ``'*'`` acts as a wildcard, matching every allowed origin,
             while ``None`` disallows all origins. This parameter takes effect only
             if the origin is allowed by the ``allow_origins`` argument.
-            (Default ``None``).
+            (default ``None``).
+        allow_private_network (bool):
+            If ``True``, the server includes the
+            ``Access-Control-Allow-Private-Network`` header in responses to
+            CORS preflight (OPTIONS) requests. This indicates that the resource is
+            willing to respond to requests from less-public IP address spaces
+            (e.g., from public site to private device).
+            (default ``False``).
 
+            See also:
+            https://wicg.github.io/private-network-access/#private-network-request-heading
     """
 
     def __init__(
@@ -59,6 +68,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
         allow_origins: Union[str, Iterable[str]] = '*',
         expose_headers: Optional[Union[str, Iterable[str]]] = None,
         allow_credentials: Optional[Union[str, Iterable[str]]] = None,
+        allow_private_network: bool = False,
     ):
         if allow_origins == '*':
             self.allow_origins = allow_origins
@@ -88,6 +98,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
                     'as a string literal, not inside an iterable.'
                 )
         self.allow_credentials = allow_credentials
+        self.allow_private_network = allow_private_network
 
     def process_response(
         self, req: Request, resp: Response, resource: object, req_succeeded: bool
@@ -145,6 +156,11 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
                 resp.set_header('Access-Control-Allow-Methods', allow)
                 resp.set_header('Access-Control-Allow-Headers', allow_headers)
                 resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
+
+            if self.allow_private_network and (
+                req.get_header('Access-Control-Request-Private-Network') == 'true'
+            ):
+                resp.set_header('Access-Control-Allow-Private-Network', 'true')
 
     async def process_response_async(
         self,

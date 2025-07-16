@@ -318,27 +318,11 @@ class App:
         self._static_routes = []
         self._sink_and_static_routes = ()
 
-        if cors_enable:
-            cm = CORSMiddleware()
-
-            if middleware is None:
-                middleware = [cm]
-            else:
-                try:
-                    # NOTE(kgriffs): Check to see if middleware is an
-                    #   iterable, and if so, append the CORSMiddleware
-                    #   instance.
-                    middleware = list(cast(Iterable[SyncMiddleware], middleware))
-                    middleware.append(cm)
-                except TypeError:
-                    # NOTE(kgriffs): Assume the middleware kwarg references
-                    #   a single middleware component.
-                    middleware = [cast(SyncMiddleware, middleware), cm]
-
-        # set middleware
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
         self.add_middleware(middleware or [])
+        if cors_enable:
+            self.add_middleware([CORSMiddleware()])
 
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
@@ -541,9 +525,11 @@ class App:
         #   the chance that middleware may be empty.
         if middleware:
             try:
+                # NOTE(kgriffs): Check to see if middleware is an iterable.
                 middleware = list(cast(Iterable[SyncMiddleware], middleware))
             except TypeError:
-                # middleware is not iterable; assume it is just one bare component
+                # NOTE(kgriffs): Middleware is not iterable; assume it is just
+                #   one bare component.
                 middleware = [cast(SyncMiddleware, middleware)]
 
             if (
