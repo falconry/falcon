@@ -27,7 +27,7 @@ _SHUTDOWN_TIMEOUT = 20
 def _cheroot_args(host, port):
     """CherryPy's Cheroot"""
 
-    cheroot = pytest.importorskip('cheroot')
+    pytest.importorskip('cheroot')
 
     args = (
         sys.executable,
@@ -45,7 +45,7 @@ def _cheroot_args(host, port):
 
 def _gunicorn_args(host, port, extra_opts=()):
     """Gunicorn"""
-    gunicorn = pytest.importorskip('gunicorn')
+    pytest.importorskip('gunicorn')
 
     args = (
         sys.executable,
@@ -70,7 +70,7 @@ def _gunicorn_args(host, port, extra_opts=()):
 def _meinheld_args(host, port):
     """Gunicorn + Meinheld"""
 
-    meinheld = pytest.importorskip('meinheld')
+    pytest.importorskip('meinheld')
 
     return _gunicorn_args(
         host,
@@ -87,7 +87,7 @@ def _meinheld_args(host, port):
 def _uvicorn_args(host, port):
     """Uvicorn (WSGI interface)"""
 
-    uvicorn = pytest.importorskip('uvicorn')
+    pytest.importorskip('uvicorn')
 
     return (
         sys.executable,
@@ -116,8 +116,8 @@ def _uwsgi_args(host, port):
 
 def _waitress_args(host, port):
     """Waitress"""
-    
-    waitress = pytest.importorskip('waitress')
+
+    pytest.importorskip('waitress')
 
     return (
         sys.executable,
