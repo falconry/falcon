@@ -26,10 +26,8 @@ _SHUTDOWN_TIMEOUT = 20
 
 def _cheroot_args(host, port):
     """CherryPy's Cheroot"""
-    try:
-        import cheroot  # noqa: F401
-    except ImportError:
-        pytest.skip('cheroot not installed')
+
+    cheroot = pytest.importorskip('cheroot')
 
     args = (
         sys.executable,
@@ -47,10 +45,7 @@ def _cheroot_args(host, port):
 
 def _gunicorn_args(host, port, extra_opts=()):
     """Gunicorn"""
-    try:
-        import gunicorn  # noqa: F401
-    except ImportError:
-        pytest.skip('gunicorn not installed')
+    gunicorn = pytest.importorskip('gunicorn')
 
     args = (
         sys.executable,
@@ -74,10 +69,8 @@ def _gunicorn_args(host, port, extra_opts=()):
 
 def _meinheld_args(host, port):
     """Gunicorn + Meinheld"""
-    try:
-        import meinheld  # noqa: F401
-    except ImportError:
-        pytest.skip('meinheld not installed')
+
+    meinheld = pytest.importorskip('meinheld')
 
     return _gunicorn_args(
         host,
@@ -93,10 +86,8 @@ def _meinheld_args(host, port):
 
 def _uvicorn_args(host, port):
     """Uvicorn (WSGI interface)"""
-    try:
-        import uvicorn  # noqa: F401
-    except ImportError:
-        pytest.skip('uvicorn not installed')
+
+    uvicorn = pytest.importorskip('uvicorn')
 
     return (
         sys.executable,
@@ -125,10 +116,8 @@ def _uwsgi_args(host, port):
 
 def _waitress_args(host, port):
     """Waitress"""
-    try:
-        import waitress  # noqa: F401
-    except ImportError:
-        pytest.skip('waitress not installed')
+    
+    waitress = pytest.importorskip('waitress')
 
     return (
         sys.executable,
