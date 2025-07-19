@@ -231,6 +231,9 @@ class StaticRoute:
             resp.set_header('Content-Length', '0')
             return
 
+        if req.method not in ('GET', 'HEAD'):
+            raise falcon.HTTPMethodNotAllowed(('GET', 'HEAD'))
+
         without_prefix = req.path[len(self._prefix) :]
 
         # NOTE(kgriffs): Check surrounding whitespace and strip trailing
@@ -259,38 +262,41 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        if self._fallback_filename is None:
-            fh, st = _open_file(file_path)
-        else:
-            try:
+        if req.method == 'GET':
+            # for HEAD requests, we won't do operations like open/stat
+            if self._fallback_filename is None:
                 fh, st = _open_file(file_path)
-            except falcon.HTTPNotFound:
-                fh, st = _open_file(self._fallback_filename)
-                file_path = self._fallback_filename
+            else:
+                try:
+                    fh, st = _open_file(file_path)
+                except falcon.HTTPNotFound:
+                    fh, st = _open_file(self._fallback_filename)
+                    file_path = self._fallback_filename
 
-        etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
-        resp.etag = etag
+            etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
+            resp.etag = etag
 
-        last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
-        # NOTE(vytas): Strip the microsecond part because that is not reflected
-        #   in HTTP date, and when the client passes a previous value via
-        #   If-Modified-Since, it will look as if our copy is ostensibly newer.
-        last_modified = last_modified.replace(microsecond=0)
-        resp.last_modified = last_modified
+            last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
+            # NOTE(vytas): Strip the microsecond part because that is not reflected
+            #   in HTTP date, and when the client passes a previous value via
+            #   If-Modified-Since, it will look as if our copy is ostensibly newer.
+            last_modified = last_modified.replace(microsecond=0)
+            resp.last_modified = last_modified
 
-        if _is_not_modified(req, etag, last_modified):
-            fh.close()
-            resp.status = falcon.HTTP_304
-            return
+            if _is_not_modified(req, etag, last_modified):
+                fh.close()
+                resp.status = falcon.HTTP_304
+                return
 
-        req_range = req.range if req.range_unit == 'bytes' else None
-        try:
-            stream, length, content_range = _set_range(fh, st, req_range)
-        except IOError:
-            fh.close()
-            raise falcon.HTTPNotFound()
+            req_range = req.range if req.range_unit == 'bytes' else None
+            try:
+                stream, length, content_range = _set_range(fh, st, req_range)
+            except IOError:
+                fh.close()
+                raise falcon.HTTPNotFound()
 
-        resp.set_stream(stream, length)
+            resp.set_stream(stream, length)
+
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
             suffix, 'application/octet-stream'
