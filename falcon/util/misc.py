@@ -337,6 +337,20 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
+@functools.lru_cache
+def _has_arg_name_cached(func: Callable[..., Any], name: str) -> bool:
+    return name in get_argnames(func)
+
+
+def _has_arg_name(func: Callable[..., Any], name: str) -> bool:
+    try:
+        return _has_arg_name_cached(func, name)
+    except TypeError:
+        # NOTE(vytas): Most probably the exception was thrown by the LRU cache
+        #   indicating that the func object was unhashable.
+        return name in get_argnames(func)
+
+
 def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 

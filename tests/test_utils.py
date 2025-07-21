@@ -1342,6 +1342,33 @@ def test_get_argnames():
     assert misc.get_argnames(functools.partial(foo, 42)) == ['b', 'c']
 
 
+def test_has_arg_name():
+    def foo(a, b, c):
+        pass
+
+    class Bar:
+        def __call__(self, a, b):
+            pass
+
+    class Baz(list):
+        def __call__(self, a, b):
+            pass
+
+    assert misc._has_arg_name(foo, 'a')
+    assert misc._has_arg_name(foo, 'b')
+    assert misc._has_arg_name(foo, 'c')
+
+    bar = Bar()
+    assert misc._has_arg_name(bar, 'a')
+    assert misc._has_arg_name(bar, 'b')
+    assert not misc._has_arg_name(bar, 'c')
+
+    baz = Baz()
+    assert misc._has_arg_name(baz, 'a')
+    assert misc._has_arg_name(baz, 'b')
+    assert not misc._has_arg_name(baz, 'c')
+
+
 class TestContextType:
     class CustomContextType(structures.Context):
         def __init__(self):
