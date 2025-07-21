@@ -2349,10 +2349,7 @@ class Request:
 
         """
 
-        if name in self._params:
-            return True
-        else:
-            return False
+        return name in self._params
 
     def log_error(self, message: str) -> None:
         """Write an error message to the server's log.
