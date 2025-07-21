@@ -59,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      # NOTE(vytas): The 'contents' permission is needed for writing release assets.
+      contents: write
       # NOTE(vytas): This permission is mandatory for trusted publishing.
       id-token: write
 
