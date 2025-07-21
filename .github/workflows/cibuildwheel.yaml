@@ -103,6 +103,9 @@ jobs:
       # NOTE(vytas): This permission is mandatory for Trusted Publishing.
       id-token: write
 
+    # APPSEC(vytas): By using as few third-party actions as possible,
+    #   this job reduces its attack vector, and minimizes the risk of
+    #   unauthorized access to the GitHub-backed trusted identity.
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -111,6 +114,9 @@ jobs:
           path: dist
           merge-multiple: true
 
+      # NOTE(vytas): Normally, invoking pypi-publish more than once in the
+      #   same job is not considered supported, however, the two steps below
+      #   are made mutually exclusive by the github.event_name condition.
       - name: Publish sdist and pure-Python wheel to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
@@ -224,6 +230,9 @@ jobs:
       # NOTE(vytas): This permission is mandatory for Trusted Publishing.
       id-token: write
 
+    # APPSEC(vytas): By using as few third-party actions as possible,
+    #   this job reduces its attack vector, and minimizes the risk of
+    #   unauthorized access to the GitHub-backed trusted identity.
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -232,6 +241,9 @@ jobs:
           path: dist
           merge-multiple: true
 
+      # NOTE(vytas): Normally, invoking pypi-publish more than once in the
+      #   same job is not considered supported, however, the two steps below
+      #   are made mutually exclusive by the github.event_name condition.
       - name: Publish binary wheels to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
