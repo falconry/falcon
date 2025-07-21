@@ -1160,7 +1160,22 @@ class App(falcon.app.App):
                 for process_resource_ws in resource_mw:
                     await process_resource_ws(req, web_socket, resource, params)
 
-            await on_websocket(req, web_socket, **params)
+                await on_websocket(req, web_socket, **params)
+
+            else:
+                # NOTE(vytas): The request did not match any route;
+                #   on_websocket is either a sink or a default responder.
+                #   Check whether it has a ws argument, and we are not
+                #   shadowing a sink parameter from regex; otherwise pass ws
+                #   instead of resp for backwards compatibility.
+                # TODO(vytas): Always pass resp=None in Falcon 5.0
+                #   (breaking change).
+                if _has_arg_name(on_websocket, 'ws') and 'ws' not in params:
+                    params['ws'] = web_socket
+                    await on_websocket(req, None, **params)  # type: ignore[arg-type]
+                else:
+                    await on_websocket(req, web_socket, **params)
+
             await web_socket.close()
 
         except Exception as ex:
