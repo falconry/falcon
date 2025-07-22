@@ -43,4 +43,5 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `perodriguezl <https://github.com/perodriguezl>`__
 - `Shreshth3 <https://github.com/Shreshth3>`__
 - `vytas7 <https://github.com/vytas7>`__
+- `webknjaz <https://github.com/webknjaz>`__
 - `x612skm <https://github.com/x612skm>`__
