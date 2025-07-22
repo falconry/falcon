@@ -1466,6 +1466,8 @@ async def test_sinks(conductor, sink):
         if req.is_websocket:
             await resp_or_ws.accept()
             await resp_or_ws.send_text(greeting)
+
+            await resp_or_ws.receive_text()  # Receive /bye
         else:
             resp_or_ws.content_type = falcon.MEDIA_TEXT
             resp_or_ws.text = greeting
@@ -1500,3 +1502,4 @@ async def test_sinks(conductor, sink):
 
         async with c.simulate_ws('/ws/World') as ws:
             assert await ws.receive_text() == 'Hello, World!'
+            await ws.send_text('/bye')
