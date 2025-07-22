@@ -95,7 +95,6 @@ jobs:
   publish-sdist:
     name: publish-sdist
     needs:
-      - build-sdist
       - upload-sdist
     runs-on: ubuntu-latest
 
@@ -221,7 +220,6 @@ jobs:
   publish-wheels:
     name: publish-wheels
     needs:
-      - build-wheels
       - check-wheels
       - publish-sdist
     runs-on: ubuntu-latest
