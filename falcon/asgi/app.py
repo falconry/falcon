@@ -64,7 +64,7 @@ from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
-from falcon.util import get_argnames
+from falcon.util.misc import _has_arg_name
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -1160,7 +1160,22 @@ class App(falcon.app.App):
                 for process_resource_ws in resource_mw:
                     await process_resource_ws(req, web_socket, resource, params)
 
-            await on_websocket(req, web_socket, **params)
+                await on_websocket(req, web_socket, **params)
+
+            else:
+                # NOTE(vytas): The request did not match any route;
+                #   on_websocket is either a sink or a default responder.
+                #   Check whether it has a ws argument, and we are not
+                #   shadowing a sink parameter from regex; otherwise pass ws
+                #   instead of resp for backwards compatibility.
+                # TODO(vytas): Always pass resp=None in Falcon 5.0
+                #   (breaking change).
+                if _has_arg_name(on_websocket, 'ws') and 'ws' not in params:
+                    params['ws'] = web_socket
+                    await on_websocket(req, None, **params)  # type: ignore[arg-type]
+                else:
+                    await on_websocket(req, web_socket, **params)
+
             await web_socket.close()
 
         except Exception as ex:
@@ -1298,7 +1313,10 @@ class App(falcon.app.App):
             try:
                 kwargs = {}
 
-                if ws and 'ws' in get_argnames(err_handler):
+                # PERF(vytas): Using the LRU-cache backed misc._has_arg_name
+                #   here as inspect.signature (and by proxy misc.get_argnames)
+                #   can be very slow (on the order of magnitude of 10 µs).
+                if ws and _has_arg_name(err_handler, 'ws'):
                     kwargs['ws'] = ws
 
                 await err_handler(req, resp, ex, params, **kwargs)
