@@ -43,10 +43,11 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.0.1
+        uses: pypa/cibuildwheel@v3.1.0
         env:
-          # TODO(vytas): Remove cpython-prerelease when 3.14.0rc1 is out.
-          CIBW_ENABLE: cpython-prerelease
+          # NOTE(vytas): Uncomment to test against alpha/beta CPython
+          #   (usually May-July until rc1).
+          # CIBW_ENABLE: cpython-prerelease
 
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.platform.build }}
