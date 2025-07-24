@@ -7,10 +7,6 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): Remove, prototyping on a PR.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   test-emulated:
