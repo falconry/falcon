@@ -1316,7 +1316,7 @@ class App(falcon.app.App):
                 # PERF(vytas): Using the LRU-cache backed misc._has_arg_name
                 #   here as inspect.signature (and by proxy misc.get_argnames)
                 #   can be very slow (on the order of magnitude of 10 µs).
-                if ws and _has_arg_name(err_handler, 'ws'):
+                if ws is not None and _has_arg_name(err_handler, 'ws'):
                     kwargs['ws'] = ws
 
                 await err_handler(req, resp, ex, params, **kwargs)
