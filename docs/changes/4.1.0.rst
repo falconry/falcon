@@ -6,8 +6,8 @@ Summary
 
 This is the first beta release of Falcon 4.1.
 
-As Falcon 4.1 is now feature-complete, and we would really be thankful if you
-could take it for a spin with your apps, and
+As Falcon 4.1 is now feature-complete, we would really be thankful if you could
+take it for a spin with your apps, and
 :ref:`let us know if you run into any issues <chat>`!
 
 As always, you can grab this pre-release
