@@ -36,6 +36,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import warnings
 
 from falcon import constants
 from falcon import responders
@@ -64,6 +65,7 @@ from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import _has_arg_name
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
@@ -1174,6 +1176,25 @@ class App(falcon.app.App):
                     params['ws'] = web_socket
                     await on_websocket(req, None, **params)  # type: ignore[arg-type]
                 else:
+                    cls = type(self)
+                    # NOTE(vytas): We could add the ws=None parameter to the
+                    #   default responders, but let's keep it simple for now,
+                    #   and skip the warning part.
+                    if on_websocket not in (
+                        cls._default_responder_bad_request,
+                        cls._default_responder_path_not_found,
+                    ):
+                        warnings.warn(
+                            f'Please define the sink coroutine function '
+                            f'{on_websocket.__qualname__} as '  # type: ignore[attr-defined]
+                            f'{on_websocket.__name__}'  # type: ignore[attr-defined]
+                            f'(req, resp, ws=None, **kwargs) if '
+                            f'it is intended to handle WebSocket requests; receiving '
+                            f'ws in place of resp is deprecated, and in Falcon 5.0+, '
+                            f'resp will be set to None when invoking WebSocket sinks.',
+                            category=DeprecatedWarning,
+                        )
+
                     await on_websocket(req, web_socket, **params)
 
             await web_socket.close()
