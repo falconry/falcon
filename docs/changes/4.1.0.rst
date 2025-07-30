@@ -4,9 +4,18 @@ Changelog for Falcon 4.1.0
 Summary
 -------
 
-Falcon 4.1 is in development. The progress is tracked via the
-`Version 4.1 milestone <https://github.com/falconry/falcon/milestone/41>`__
-on GitHub.
+This is the first beta release of Falcon 4.1.
+
+As Falcon 4.1 is now feature-complete, and we would really be thankful if you
+could take it for a spin with your apps, and
+:ref:`let us know if you run into any issues <chat>`!
+
+As always, you can grab this pre-release
+`from PyPI <https://pypi.org/project/falcon/4.1.0b1/>`__::
+
+    pip install falcon==4.1.0b1
+
+Thank You!
 
 
 Changes to Supported Platforms
