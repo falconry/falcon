@@ -33,3 +33,18 @@ from falcon.routing.util import map_http_methods
 from falcon.routing.util import set_default_responders
 
 DefaultRouter = CompiledRouter
+
+__all__ = (
+    'BaseConverter',
+    'CompiledRouter',
+    'CompiledRouterOptions',
+    'DateTimeConverter',
+    'FloatConverter',
+    'IntConverter',
+    'map_http_methods',
+    'PathConverter',
+    'set_default_responders',
+    'StaticRoute',
+    'StaticRouteAsync',
+    'UUIDConverter',
+)
