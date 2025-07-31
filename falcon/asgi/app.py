@@ -1187,7 +1187,8 @@ class App(falcon.app.App):
                         warnings.warn(
                             f'Please define the sink coroutine function '
                             f'{on_websocket.__qualname__} as '  # type: ignore[attr-defined]
-                            f'{on_websocket.__name__}'  # type: ignore[attr-defined]
+                            # NOTE(vytas): __name__ only triggers on 3.12+...
+                            f'{on_websocket.__name__}'  # type: ignore[attr-defined,unused-ignore]
                             f'(req, resp, ws=None, **kwargs) if '
                             f'it is intended to handle WebSocket requests; receiving '
                             f'ws in place of resp is deprecated, and in Falcon 5.0+, '
