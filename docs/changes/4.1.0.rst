@@ -4,9 +4,18 @@ Changelog for Falcon 4.1.0
 Summary
 -------
 
-Falcon 4.1 is in development. The progress is tracked via the
-`Version 4.1 milestone <https://github.com/falconry/falcon/milestone/41>`__
-on GitHub.
+This is the first beta release of Falcon 4.1.
+
+As Falcon 4.1 is now feature-complete, we would really be thankful if you could
+take it for a spin with your apps, and
+:ref:`let us know if you run into any issues <chat>`!
+
+As always, you can grab this pre-release
+`from PyPI <https://pypi.org/project/falcon/4.1.0b1/>`__::
+
+    pip install falcon==4.1.0b1
+
+Thank You!
 
 
 Changes to Supported Platforms
@@ -21,7 +30,103 @@ Changes to Supported Platforms
   (but runtime support will continue for 3.9 on a best effort basis).
 
 
-.. towncrier release notes start
+New & Improved
+--------------
+
+- :class:`~falcon.routing.StaticRoute` now renders ``Etag`` headers. It also
+  checks ``If-None-Match`` in requests and returns HTTP 304 response if
+  appropriate. (`#2243 <https://github.com/falconry/falcon/issues/2243>`__)
+- :class:`~falcon.routing.StaticRoute` now sets the ``Last-Modified`` header when
+  serving static files. The improved implementation also checks the value of the
+  ``If-Modified-Since`` header, and renders an HTTP 304 response when the
+  requested file has not been modified. (`#2244 <https://github.com/falconry/falcon/issues/2244>`__)
+- Similar to :func:`~falcon.testing.create_environ`,
+  the :func:`~falcon.testing.create_scope` testing helper now preserves the raw URI path,
+  and propagates it to the created ASGI connection scope as the ``raw_path`` byte string
+  (according to the `ASGI specification
+  <https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope>`__). (`#2262 <https://github.com/falconry/falcon/issues/2262>`__)
+- Two new :ref:`media_type constants <media_type_constants>`,
+  ``falcon.MEDIA_CSV`` and ``falcon.MEDIA_PARQUET``, were added in order to
+  provide better support for Python data analysis applications out of the box. (`#2335 <https://github.com/falconry/falcon/issues/2335>`__)
+- Support for allowing :ref:`cross-origin <cors>`
+  `private network access <https://wicg.github.io/private-network-access/>`__ was
+  added to the built-in :class:`~falcon.middleware.CORSMiddleware`.
+  The new feature is off by default, and can be enabled by passing the keyword
+  argument ``allow_private_network=True`` to
+  :class:`~falcon.middleware.CORSMiddleware` during initialization. (`#2381 <https://github.com/falconry/falcon/issues/2381>`__)
+- The :func:`falcon.secure_filename()` utility function can now ensure that the
+  length of the sanitized filename does not exceed the requested limit (passed
+  via the ``max_length`` argument). In addition, a new option,
+  ``max_secure_filename_length``, was added to
+  :class:`~falcon.media.multipart.MultipartParseOptions` in order to
+  automatically populate this argument when referencing a body part's
+  :attr:`~falcon.media.multipart.BodyPart.secure_filename`. (`#2420 <https://github.com/falconry/falcon/issues/2420>`__)
+- The :meth:`~falcon.Response.unset_cookie` method now accepts a ``same_site``
+  parameter (with underscore) for consistency with :meth:`~falcon.Response.set_cookie`.
+  The previous ``samesite`` parameter (without underscore) is now deprecated
+  (referencing it will emit a deprecation warning). (`#2453 <https://github.com/falconry/falcon/issues/2453>`__)
+- A new method, ``__rich__``, has been added to :class:`falcon.testing.Result`
+  for facilitating a rich-text representation when used together with the popular
+  `rich <https://rich.readthedocs.io/>`__ library.
+
+  Provided you have installed both ``falcon`` and ``rich`` into your environment,
+  you should be able to see a prettier rendition of the below 404-result:
+
+  >>> import falcon
+  >>> import falcon.testing
+  >>> import rich.pretty
+  >>> rich.pretty.install()
+  >>> client = falcon.testing.TestClient(falcon.App())
+  >>> client.get('/endpoint')
+  Result<404 Not Found application/json b'{"title": "404 Not Found"}'>
+
+  (The actual appearance may depend on your terminal and/or REPL settings.) (`#2457 <https://github.com/falconry/falcon/issues/2457>`__)
+- The :ref:`cythonization <cythonize>` process was revised in the light of the
+  performance improvements in newer CPython versions (especially 3.12+), and the
+  compilation is now largely confined to hand-crafted C/Cython code.
+  As a result, the framework should run even faster on modern CPython. (`#2470 <https://github.com/falconry/falcon/issues/2470>`__)
+- :class:`~falcon.media.JSONHandler` can now detect a non-standard
+  (not a subclass of :class:`ValueError`) deserialization error type for a custom
+  `loads` function.
+
+  (Normally, :func:`json.loads` and third party alternatives do raise a subclass
+  of :class:`ValueError` on invalid input data, however, this is not the case
+  for, e.g., the popular :ref:`msgspec <msgspec_recipe>` library
+  at the time of writing.) (`#2476 <https://github.com/falconry/falcon/issues/2476>`__)
+
+
+Fixed
+-----
+
+- Previously, Falcon's :ref:`WebSocket implementation <ws>` was not documented to
+  route the request to any :meth:`sink <falcon.asgi.App.add_sink>`. However, in
+  the case of a missing route, a matching sink was actually invoked, passing
+  :class:`ws <falcon.asgi.WebSocket>` in place of the incompatible
+  :class:`resp <falcon.asgi.Response>`.
+
+  This mismatch has been addressed by introducing a `ws` keyword argument
+  (similar to ASGI :meth:`error handlers <falcon.asgi.App.add_error_handler>`)
+  for sink functions meant to accept WebSocket connections.
+
+  For backwards-compatibility, when `ws` is absent from the sink's signature, the
+  :class:`~falcon.asgi.WebSocket` object is still passed in place of the
+  incompatible `resp`.
+  This behavior will change in Falcon 5.0: when draining a WebSocket connection,
+  `resp` will always be set to ``None``. (`#2414 <https://github.com/falconry/falcon/issues/2414>`__)
+
+
+Misc
+----
+
+- The readability of the :doc:`Contributing docs </community/contributing>` was
+  improved by properly rendering GitHub Markdown-flavored checkboxes. (`#2318 <https://github.com/falconry/falcon/issues/2318>`__)
+- The ``falcon.testing.httpnow`` compatibility alias is now considered
+  deprecated, and will be removed in Falcon 5.0.
+  Use the :func:`falcon.http_now` function instead. (`#2389 <https://github.com/falconry/falcon/issues/2389>`__)
+
+
+
+
 
 Contributors to this Release
 ----------------------------
