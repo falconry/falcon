@@ -21,7 +21,6 @@ Conversely, the `uri` module must be imported explicitly::
 
 from http import cookies as http_cookies
 import sys
-from types import ModuleType
 
 # Hoist misc. utils
 from falcon.constants import PYTHON_VERSION
@@ -51,6 +50,36 @@ from falcon.util.sync import sync_to_async
 from falcon.util.sync import wrap_sync_to_async
 from falcon.util.sync import wrap_sync_to_async_unsafe
 from falcon.util.time import TimezoneGMT
+
+__all__ = (
+    'async_to_sync',
+    'AttributeRemovedError',
+    'CaseInsensitiveDict',
+    'code_to_http_status',
+    'Context',
+    'create_task',
+    'deprecated',
+    'deprecated_args',
+    'DeprecatedWarning',
+    'dt_to_http',
+    'ETag',
+    'get_argnames',
+    'get_bound_method',
+    'get_running_loop',
+    'http_date_to_dt',
+    'http_now',
+    'http_status_to_code',
+    'is_python_func',
+    'parse_header',
+    'PYTHON_VERSION',
+    'runs_sync',
+    'secure_filename',
+    'sync_to_async',
+    'TimezoneGMT',
+    'to_query_str',
+    'wrap_sync_to_async',
+    'wrap_sync_to_async_unsafe',
+)
 
 # NOTE(kgriffs, m-mueller): Monkey-patch support for the new 'Partitioned'
 #   attribute that was added in Python 3.14 (alpha 5).
