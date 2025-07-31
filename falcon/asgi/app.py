@@ -1189,9 +1189,8 @@ class App(falcon.app.App):
                             f'{on_websocket.__qualname__} as '  # type: ignore[attr-defined]
                             # NOTE(vytas): __name__ only triggers on 3.12+...
                             f'{on_websocket.__name__}'  # type: ignore[attr-defined,unused-ignore]
-                            f'(req, resp, ws=None, **kwargs) if '
-                            f'it is intended to handle WebSocket requests; receiving '
-                            f'ws in place of resp is deprecated, and in Falcon 5.0+, '
+                            f'(req, resp, ws=None, **kwargs); receiving ws in '
+                            f'place of resp is deprecated, and in Falcon 5.0+, '
                             f'resp will be set to None when invoking WebSocket sinks.',
                             category=DeprecatedWarning,
                         )
