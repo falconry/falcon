@@ -307,7 +307,16 @@ class StaticRoute:
 class StaticRouteAsync(StaticRoute):
     """Subclass of StaticRoute with modifications to support ASGI apps."""
 
-    async def __call__(self, req: asgi.Request, resp: asgi.Response, **kw: Any) -> None:  # type: ignore[override]
+    async def __call__(  # type: ignore[override]
+        self,
+        req: asgi.Request,
+        resp: asgi.Response,
+        ws: Optional[asgi.WebSocket] = None,
+        **kw: Any,
+    ) -> None:
+        if ws is not None:
+            raise falcon.HTTPBadRequest()
+
         super().__call__(req, resp, **kw)
         if resp.stream is not None:  # None when in an option request
             # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking

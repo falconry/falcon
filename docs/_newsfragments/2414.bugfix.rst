@@ -1,0 +1,15 @@
+Previously, Falcon's :ref:`WebSocket implementation <ws>` was not documented to
+route the request to any :meth:`sink <falcon.asgi.App.add_sink>`. However, in
+the case of a missing route, a matching sink was actually invoked, passing
+:class:`ws <falcon.asgi.WebSocket>` in place of the incompatible
+:class:`resp <falcon.asgi.Response>`.
+
+This mismatch has been addressed by introducing a `ws` keyword argument
+(similar to ASGI :meth:`error handlers <falcon.asgi.App.add_error_handler>`)
+for sink functions meant to accept WebSocket connections.
+
+For backwards-compatibility, when `ws` is absent from the sink's signature, the
+:class:`~falcon.asgi.WebSocket` object is still passed in place of the
+incompatible `resp`.
+This behavior will change in Falcon 5.0: when draining a WebSocket connection,
+`resp` will always be set to ``None``.

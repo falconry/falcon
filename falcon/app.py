@@ -764,7 +764,30 @@ class App:
 
                 Note:
                     When using an async version of the ``App``, this must be a
-                    coroutine.
+                    coroutine function taking the form
+                    ``func(req, resp, ws=None, **kwargs)``.
+
+                    Similar to
+                    :meth:`error handlers <falcon.asgi.App.add_error_handler>`,
+                    in the case of a WebSocket connection, the
+                    :class:`resp <falcon.asgi.Response>` argument will be
+                    ``None``, whereas the `ws` keyword argument will receive
+                    the :class:`~falcon.asgi.WebSocket` connection object.
+
+                    For backwards-compatibility, when `ws` is absent from the
+                    sink's signature, or a regex match (see **prefix** below)
+                    contains a group named 'ws', the
+                    :class:`~falcon.asgi.WebSocket` object is passed in place
+                    of the incompatible `resp`.
+
+                    This behavior will change in Falcon 5.0: when draining a
+                    WebSocket connection, `resp` will always be set to ``None``
+                    regardless of the sink's signature.
+
+                .. versionadded:: 4.1
+                    If an asynchronous sink callable explicitly defines a `ws`
+                    argument, it is used to pass the
+                    :class:`~falcon.asgi.WebSocket` connection object.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the
