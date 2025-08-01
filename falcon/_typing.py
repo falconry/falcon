@@ -99,7 +99,7 @@ class SinkCallable(Protocol):
 
 class AsgiSinkCallable(Protocol):
     async def __call__(
-        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: Optional[str]
+        self, req: AsgiRequest, resp: Optional[AsgiResponse], **kwargs: Optional[str]
     ) -> None: ...
 
 

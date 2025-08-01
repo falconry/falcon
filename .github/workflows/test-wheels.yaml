@@ -16,14 +16,14 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - build: "cp313-manylinux_aarch64"
+          - build: "cp314-manylinux_aarch64"
             os: ubuntu-24.04-arm
-          - build: "cp313-manylinux_s390x"
+          - build: "cp314-manylinux_s390x"
             os: ubuntu-latest
             emulation: true
           - build: "cp38-manylinux_x86_64"
             os: ubuntu-latest
-          - build: "cp313-musllinux_x86_64"
+          - build: "cp314-musllinux_x86_64"
             os: ubuntu-latest
           - build: "cp313-macosx_arm64"
             os: macos-14
@@ -43,7 +43,11 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.0.0
+        uses: pypa/cibuildwheel@v3.1.0
         env:
+          # NOTE(vytas): Uncomment to test against alpha/beta CPython
+          #   (usually May-July until rc1).
+          # CIBW_ENABLE: cpython-prerelease
+
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.platform.build }}

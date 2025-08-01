@@ -52,15 +52,16 @@ jobs:
           name: cibw-sdist
           path: dist/falcon-*
 
-  publish-sdist:
-    name: publish-sdist
+  upload-sdist:
+    name: upload-sdist
     needs:
       - build-sdist
     runs-on: ubuntu-latest
 
     permissions:
-      # NOTE(vytas): This permission is mandatory for trusted publishing.
-      id-token: write
+      # NOTE(vytas): The 'contents' permission is needed for writing release assets.
+      #   The default permissions seem to suffice, but we specify for clarity.
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -91,6 +92,30 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           files: 'dist/*.tar.gz'
 
+  publish-sdist:
+    name: publish-sdist
+    needs:
+      - upload-sdist
+    runs-on: ubuntu-latest
+
+    permissions:
+      # NOTE(vytas): This permission is mandatory for Trusted Publishing.
+      id-token: write
+
+    # APPSEC(vytas): By using as few third-party actions as possible,
+    #   this job reduces its attack vector, and minimizes the risk of
+    #   unauthorized access to the GitHub-backed trusted identity.
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-sdist
+          path: dist
+          merge-multiple: true
+
+      # NOTE(vytas): Normally, invoking pypi-publish more than once in the
+      #   same job is not considered supported, however, the two steps below
+      #   are made mutually exclusive by the github.event_name condition.
       - name: Publish sdist and pure-Python wheel to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'
@@ -127,20 +152,11 @@ jobs:
           - name: win_amd64
             os: windows-latest
         python:
-          - cp39
           - cp310
           - cp311
           - cp312
           - cp313
-        include:
-          - platform:
-              name: manylinux_x86_64
-              os: ubuntu-latest
-            python: cp38
-          - platform:
-              name: musllinux_x86_64
-              os: ubuntu-latest
-            python: cp38
+          - cp314
 
     defaults:
       run:
@@ -159,8 +175,12 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.0.0
+        uses: pypa/cibuildwheel@v3.1.0
         env:
+          # NOTE(vytas): Uncomment to test against alpha/beta CPython
+          #   (usually May-July until rc1).
+          # CIBW_ENABLE: cpython-prerelease
+
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
 
@@ -170,16 +190,11 @@ jobs:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/falcon-*.whl
 
-  publish-wheels:
-    name: publish-wheels
+  check-wheels:
+    name: check-wheels
     needs:
       - build-wheels
-      - publish-sdist
     runs-on: ubuntu-latest
-
-    permissions:
-      # NOTE(vytas): This permission is mandatory for trusted publishing.
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -203,6 +218,31 @@ jobs:
         run: |
           tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
+  publish-wheels:
+    name: publish-wheels
+    needs:
+      - check-wheels
+      - publish-sdist
+    runs-on: ubuntu-latest
+
+    permissions:
+      # NOTE(vytas): This permission is mandatory for Trusted Publishing.
+      id-token: write
+
+    # APPSEC(vytas): By using as few third-party actions as possible,
+    #   this job reduces its attack vector, and minimizes the risk of
+    #   unauthorized access to the GitHub-backed trusted identity.
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-wheel-*
+          path: dist
+          merge-multiple: true
+
+      # NOTE(vytas): Normally, invoking pypi-publish more than once in the
+      #   same job is not considered supported, however, the two steps below
+      #   are made mutually exclusive by the github.event_name condition.
       - name: Publish binary wheels to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'workflow_dispatch'

@@ -318,27 +318,11 @@ class App:
         self._static_routes = []
         self._sink_and_static_routes = ()
 
-        if cors_enable:
-            cm = CORSMiddleware()
-
-            if middleware is None:
-                middleware = [cm]
-            else:
-                try:
-                    # NOTE(kgriffs): Check to see if middleware is an
-                    #   iterable, and if so, append the CORSMiddleware
-                    #   instance.
-                    middleware = list(cast(Iterable[SyncMiddleware], middleware))
-                    middleware.append(cm)
-                except TypeError:
-                    # NOTE(kgriffs): Assume the middleware kwarg references
-                    #   a single middleware component.
-                    middleware = [cast(SyncMiddleware, middleware), cm]
-
-        # set middleware
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
         self.add_middleware(middleware or [])
+        if cors_enable:
+            self.add_middleware([CORSMiddleware()])
 
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
@@ -541,9 +525,11 @@ class App:
         #   the chance that middleware may be empty.
         if middleware:
             try:
+                # NOTE(kgriffs): Check to see if middleware is an iterable.
                 middleware = list(cast(Iterable[SyncMiddleware], middleware))
             except TypeError:
-                # middleware is not iterable; assume it is just one bare component
+                # NOTE(kgriffs): Middleware is not iterable; assume it is just
+                #   one bare component.
                 middleware = [cast(SyncMiddleware, middleware)]
 
             if (
@@ -778,7 +764,30 @@ class App:
 
                 Note:
                     When using an async version of the ``App``, this must be a
-                    coroutine.
+                    coroutine function taking the form
+                    ``func(req, resp, ws=None, **kwargs)``.
+
+                    Similar to
+                    :meth:`error handlers <falcon.asgi.App.add_error_handler>`,
+                    in the case of a WebSocket connection, the
+                    :class:`resp <falcon.asgi.Response>` argument will be
+                    ``None``, whereas the `ws` keyword argument will receive
+                    the :class:`~falcon.asgi.WebSocket` connection object.
+
+                    For backwards-compatibility, when `ws` is absent from the
+                    sink's signature, or a regex match (see **prefix** below)
+                    contains a group named 'ws', the
+                    :class:`~falcon.asgi.WebSocket` object is passed in place
+                    of the incompatible `resp`.
+
+                    This behavior will change in Falcon 5.0: when draining a
+                    WebSocket connection, `resp` will always be set to ``None``
+                    regardless of the sink's signature.
+
+                .. versionadded:: 4.1
+                    If an asynchronous sink callable explicitly defines a `ws`
+                    argument, it is used to pass the
+                    :class:`~falcon.asgi.WebSocket` connection object.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the

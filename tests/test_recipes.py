@@ -7,11 +7,6 @@ import pytest
 import falcon
 import falcon.testing
 
-try:
-    import msgspec
-except ImportError:
-    msgspec = None  # type: ignore
-
 
 class TestMultipartMixed:
     """Test parsing example from the now-obsolete RFC 1867:
@@ -218,11 +213,16 @@ class TestRequestIDContext:
         assert response.headers['X-Request-ID'] == response.json['request_id']
 
 
-@pytest.mark.skipif(msgspec is None, reason='this recipe requires msgspec [not found]')
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason='this recipe requires Python 3.9+'
 )
 class TestMsgspec:
+    @pytest.fixture(scope='class', autouse=True)
+    def msgspec(self):
+        return pytest.importorskip(
+            'msgspec', reason='this recipe requires msgspec [not found]'
+        )
+
     def test_basic_media_handlers(self, asgi, util):
         class MediaResource:
             def on_post(self, req, resp):
@@ -272,7 +272,7 @@ class TestMsgspec:
         assert resp4.status_code == 404
         assert resp4.content == b'\x81\xa5title\xad404 Not Found'
 
-    def test_validation_middleware(self, util):
+    def test_validation_middleware(self, util, msgspec):
         mw_recipe = util.load_module('examples/recipes/msgspec_media_validation.py')
 
         class Metadata(msgspec.Struct):
