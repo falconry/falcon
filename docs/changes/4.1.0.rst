@@ -4,16 +4,15 @@ Changelog for Falcon 4.1.0
 Summary
 -------
 
-This is the first beta release of Falcon 4.1.
+This is the first release candidate of Falcon 4.1.0.
 
-As Falcon 4.1 is now feature-complete, we would really be thankful if you could
-take it for a spin with your apps, and
-:ref:`let us know if you run into any issues <chat>`!
+We would greatly appreciate it if you could help us with the final round of
+testing on your apps, and :ref:`let us know <chat>` if you run into any issues!
 
 As always, you can grab this pre-release
-`from PyPI <https://pypi.org/project/falcon/4.1.0b1/>`__::
+`from PyPI <https://pypi.org/project/falcon/4.1.0rc1/>`__::
 
-    pip install falcon==4.1.0b1
+    pip install falcon==4.1.0rc1
 
 Thank You!
 
