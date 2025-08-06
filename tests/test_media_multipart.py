@@ -11,11 +11,7 @@ from falcon import testing
 from falcon.media.multipart import MultipartParseOptions
 from falcon.util import BufferedReader
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
+msgpack = pytest.importorskip("msgpack")
 
 EXAMPLE1 = (
     b'--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'

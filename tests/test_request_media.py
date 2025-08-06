@@ -9,11 +9,7 @@ from falcon import testing
 from falcon import util
 import falcon.asgi
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
+msgpack = pytest.importorskip("msgpack")
 
 def create_client(asgi, handlers=None, resource=None):
     if not resource:

@@ -7,11 +7,7 @@ from falcon import errors
 from falcon import media
 from falcon import testing
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
+msgpack = pytest.importorskip("msgpack")
 
 @pytest.fixture
 def client():
