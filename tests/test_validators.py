@@ -6,7 +6,7 @@ import falcon
 from falcon import testing
 from falcon.media import validators
 
-jsonschema = pytest.importorskip("jsonschema")
+jsonschema = pytest.importorskip('jsonschema')
 
 _VALID_MEDIA = {'message': 'something'}
 _INVALID_MEDIA = {}  # type: typing.Dict[str, str]
