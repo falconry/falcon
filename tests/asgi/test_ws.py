@@ -16,11 +16,11 @@ from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 from falcon.util.deprecation import DeprecatedWarning
 
-cbor2 = pytest.importorskip("cbor2")
+cbor2 = pytest.importorskip('cbor2')
 
-msgpack = pytest.importorskip("msgpack")
+msgpack = pytest.importorskip('msgpack')
 
-rapidjson = pytest.importorskip("rapidjson")
+rapidjson = pytest.importorskip('rapidjson')
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we

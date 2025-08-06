@@ -8,7 +8,7 @@ from falcon import testing
 import falcon.asgi
 from falcon.util import is_python_func
 
-pyximport = pytest.importorskip("pyximport")
+pyximport = pytest.importorskip('pyximport')
 pyximport.install()
 
 # NOTE(kgriffs): We do this here rather than inside the try block above,
