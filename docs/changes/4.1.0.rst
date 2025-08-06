@@ -1,20 +1,29 @@
 Changelog for Falcon 4.1.0
 ==========================
 
+.. falcon-release: 2025-08-06
+
 Summary
 -------
 
-This is the first release candidate of Falcon 4.1.0.
+This release contains enhancements to media handling, serving static files, and
+a fix for the WebSockets-sink interaction, alongside performance optimizations
+and full support for CPython 3.14.
 
-We would greatly appreciate it if you could help us with the final round of
-testing on your apps, and :ref:`let us know <chat>` if you run into any issues!
+During this release cycle, we have migrated to publishing to PyPI with a
+`Trusted Publisher <https://docs.pypi.org/trusted-publishers/>`__ (thanks to
+`@webknjaz <https://github.com/webknjaz>`__ for helping to iron out the
+workflow details).
 
-As always, you can grab this pre-release
-`from PyPI <https://pypi.org/project/falcon/4.1.0rc1/>`__::
+For those relying on other package distribution channels than PyPI, we have
+prepared a brand new :doc:`/community/packaging` for Falcon.
+Please check it out and let us know what you think!
+Additionally, we have formalized our security maintenance policy as well as the
+status of stable releases: :doc:`/community/releases`.
 
-    pip install falcon==4.1.0rc1
-
-Thank You!
+This release also incorporates many pull requests submitted by our
+community. We would like to extend our heartfelt thanks to all 17 contributors
+who made this release possible!
 
 
 Changes to Supported Platforms
