@@ -1,5 +1,7 @@
 import asyncio
 from contextlib import contextmanager
+from falcon import testing
+from . import _asgi_test_app
 import hashlib
 import os
 import platform
@@ -11,28 +13,12 @@ import time
 
 import pytest
 
-try:
-    import httpx
-except ImportError:
-    httpx = None  # type: ignore
+httpx = pytest.importorskip("httpx")
 
-try:
-    import requests
-    import requests.exceptions
-except ImportError:
-    requests = None  # type: ignore
-
-try:
-    import websockets
-    import websockets.asyncio.client
-    import websockets.exceptions
-except ImportError:
-    websockets = None  # type: ignore
-
-
-from falcon import testing
-
-from . import _asgi_test_app
+requests = pytest.importorskip("requests")
+websockets = pytest.importorskip("websockets")
+websockets.exceptions = pytest.importorskip("websockets.exceptions")
+websockets.asyncio.client = pytest.importorskip("websockets.asyncio.client")
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 

@@ -8,10 +8,7 @@ import falcon
 from falcon import testing
 import falcon.asgi
 
-try:
-    import aiofiles
-except ImportError:
-    aiofiles = None  # type: ignore[assignment]
+aiofiles = pytest.importorskip("aiofiles")
 
 SIZE_1_KB = 1024
 

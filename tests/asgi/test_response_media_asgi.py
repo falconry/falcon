@@ -8,11 +8,7 @@ from falcon import media
 from falcon import testing
 import falcon.asgi
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
+msgpack = pytest.importorskip("msgpack")
 
 def create_client(resource, handlers=None):
     app = falcon.asgi.App()
