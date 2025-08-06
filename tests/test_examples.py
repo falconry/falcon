@@ -1,17 +1,8 @@
 import pytest
-
-try:
-    import httpx
-except ImportError:
-    httpx = None  # type: ignore
-
-try:
-    import requests
-except ImportError:
-    requests = None  # type: ignore
-
 import falcon.testing as testing
 
+httpx = pytest.importorskip("httpx")
+requests = pytest.importorskip("requests")
 
 def test_quote(util):
     quote = util.load_module('examples/quote.py')
