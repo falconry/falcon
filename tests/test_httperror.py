@@ -14,7 +14,8 @@ from falcon.media import BaseHandler
 import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
 
-yaml = pytest.importorskip("yaml")
+yaml = pytest.importorskip('yaml')
+
 
 @pytest.fixture
 def client(asgi, util):

@@ -26,7 +26,8 @@ from falcon.util import structures
 from falcon.util import uri
 from falcon.util.time import TimezoneGMT
 
-msgpack = pytest.importorskip("msgpack")
+msgpack = pytest.importorskip('msgpack')
+
 
 @pytest.fixture
 def app(asgi, util):

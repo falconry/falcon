@@ -6,9 +6,10 @@ import sys
 import time
 
 import pytest
+
 from falcon import testing
 
-requests = pytest.importorskip("requests")
+requests = pytest.importorskip('requests')
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = '127.0.0.1'

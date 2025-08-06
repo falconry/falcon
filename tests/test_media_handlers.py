@@ -19,16 +19,16 @@ orjson = None
 rapidjson = None
 ujson = None
 
-pytest.importorskip("msgspec")
+pytest.importorskip('msgspec')
 
-pytest.importorskip("mujson")
+pytest.importorskip('mujson')
 
-pytest.importorskip("rapidjson")
+pytest.importorskip('rapidjson')
 
-pytest.importorskip("ujson")
+pytest.importorskip('ujson')
 
 if platform.python_implementation() == 'CPython':
-    pytest.importorskip("orjson")
+    pytest.importorskip('orjson')
 
 YEN = b'\xc2\xa5'
 
