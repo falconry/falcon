@@ -2,7 +2,7 @@ import datetime
 import http
 import json
 import wsgiref.validate
-import xml.etree.ElementTree as et  # noqa: I202
+import xml.etree.ElementTree as et
 
 import pytest
 
@@ -1038,7 +1038,7 @@ class SyncInterfaceMediaHandler(AsyncOnlyMediaHandler):
         assert media == {'title': '410 Gone'}
         return b'this is sync instead'
 
-    _serialize_sync = serialize  # type: ignore[assignment]
+    _serialize_sync = serialize
 
 
 class TestDefaultSerializeError:

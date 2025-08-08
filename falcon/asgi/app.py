@@ -36,6 +36,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import warnings
 
 from falcon import constants
 from falcon import responders
@@ -47,6 +48,7 @@ from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
 from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
+from falcon._typing import AsyncMiddleware
 from falcon._typing import SinkPrefix
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
@@ -63,7 +65,8 @@ from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
-from falcon.util import get_argnames
+from falcon.util.deprecation import DeprecatedWarning
+from falcon.util.misc import _has_arg_name
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -93,7 +96,7 @@ _BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 _TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
-_BE = TypeVar('_BE', bound=BaseException)
+_BE = TypeVar('_BE', bound=Exception)
 
 
 class App(falcon.app.App):
@@ -351,11 +354,12 @@ class App(falcon.app.App):
         'ws_options',
     )
 
-    _error_handlers: Dict[Type[BaseException], AsgiErrorHandler]  # type: ignore[assignment]
+    _error_handlers: Dict[Type[Exception], AsgiErrorHandler]  # type: ignore[assignment]
     _middleware: AsyncPreparedMiddlewareResult  # type: ignore[assignment]
     _middleware_ws: AsyncPreparedMiddlewareWsResult
     _request_type: Type[Request]
     _response_type: Type[Response]
+    _unprepared_middleware: List[AsyncMiddleware]  # type: ignore[assignment]
 
     ws_options: WebSocketOptions
     """A set of behavioral options related to WebSocket connections.
@@ -368,7 +372,7 @@ class App(falcon.app.App):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[Request]] = None,
         response_type: Optional[Type[Response]] = None,
-        middleware: Union[object, Iterable[object]] = None,
+        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -378,7 +382,7 @@ class App(falcon.app.App):
             media_type,
             request_type or Request,
             response_type or Response,
-            middleware,
+            middleware,  # type: ignore[arg-type]
             router,
             independent_middleware,
             cors_enable,
@@ -702,7 +706,10 @@ class App(falcon.app.App):
                 if watcher.done():  # pragma: no py39,py310 cover
                     break
 
-            watcher.cancel()
+            # TODO(vytas): Remove these py314 pragmas here and in reader.py if
+            #   https://github.com/nedbat/coveragepy/issues/1999 gets resolved
+            #   before CPython 3.14.0 stable is out.
+            watcher.cancel()  # pragma: no py314 cover
             try:
                 await watcher
             except asyncio.CancelledError:
@@ -825,7 +832,7 @@ class App(falcon.app.App):
                     # NOTE(vytas): This could be DRYed with the above identical
                     #   twoliner in a one large block, but OTOH we would be
                     #   unable to reuse the current try.. except.
-                    if hasattr(stream, 'close'):
+                    if hasattr(stream, 'close'):  # pragma: no py314 cover
                         await stream.close()
 
         await send(_EVT_RESP_EOF)
@@ -868,13 +875,13 @@ class App(falcon.app.App):
     @overload
     def add_error_handler(
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[AsgiErrorHandler] = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[AsgiErrorHandler] = None,
     ) -> None:
         """Register a handler for one or more exception types.
@@ -1005,14 +1012,14 @@ class App(falcon.app.App):
             )
         handler_callable: AsgiErrorHandler = handler
 
-        exception_tuple: Tuple[type[BaseException], ...]
+        exception_tuple: Tuple[type[Exception], ...]
         try:
             exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
             exception_tuple = (exception,)  # type: ignore[assignment]
 
         for exc in exception_tuple:
-            if not issubclass(exc, BaseException):
+            if not issubclass(exc, Exception):
                 raise TypeError('"exception" must be an exception type.')
 
             self._error_handlers[exc] = handler_callable
@@ -1155,7 +1162,41 @@ class App(falcon.app.App):
                 for process_resource_ws in resource_mw:
                     await process_resource_ws(req, web_socket, resource, params)
 
-            await on_websocket(req, web_socket, **params)
+                await on_websocket(req, web_socket, **params)
+
+            else:
+                # NOTE(vytas): The request did not match any route;
+                #   on_websocket is either a sink or a default responder.
+                #   Check whether it has a ws argument, and we are not
+                #   shadowing a sink parameter from regex; otherwise pass ws
+                #   instead of resp for backwards compatibility.
+                # TODO(vytas): Always pass resp=None in Falcon 5.0
+                #   (breaking change).
+                if _has_arg_name(on_websocket, 'ws') and 'ws' not in params:
+                    params['ws'] = web_socket
+                    await on_websocket(req, None, **params)  # type: ignore[arg-type]
+                else:
+                    cls = type(self)
+                    # NOTE(vytas): We could add the ws=None parameter to the
+                    #   default responders, but let's keep it simple for now,
+                    #   and skip the warning part.
+                    if on_websocket not in (
+                        cls._default_responder_bad_request,
+                        cls._default_responder_path_not_found,
+                    ):
+                        warnings.warn(
+                            f'Please define the sink coroutine function '
+                            f'{on_websocket.__qualname__} as '  # type: ignore[attr-defined]
+                            # NOTE(vytas): __name__ only triggers on 3.12+...
+                            f'{on_websocket.__name__}'  # type: ignore[attr-defined,unused-ignore]
+                            f'(req, resp, ws=None, **kwargs); receiving ws in '
+                            f'place of resp is deprecated, and in Falcon 5.0+, '
+                            f'resp will be set to None when invoking WebSocket sinks.',
+                            category=DeprecatedWarning,
+                        )
+
+                    await on_websocket(req, web_socket, **params)
+
             await web_socket.close()
 
         except Exception as ex:
@@ -1163,7 +1204,7 @@ class App(falcon.app.App):
                 raise
 
     def _prepare_middleware(  # type: ignore[override]
-        self, middleware: List[object], independent_middleware: bool = False
+        self, middleware: List[AsyncMiddleware], independent_middleware: bool = False
     ) -> AsyncPreparedMiddlewareResult:
         self._middleware_ws = prepare_middleware_ws(middleware)
 
@@ -1221,7 +1262,7 @@ class App(falcon.app.App):
         self,
         req: Request,
         resp: Optional[Response],
-        error: BaseException,
+        error: Exception,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
     ) -> None:
@@ -1252,14 +1293,14 @@ class App(falcon.app.App):
     if TYPE_CHECKING:
 
         def _find_error_handler(  # type: ignore[override]
-            self, ex: BaseException
+            self, ex: Exception
         ) -> Optional[AsgiErrorHandler]: ...
 
     async def _handle_exception(  # type: ignore[override]
         self,
         req: Request,
         resp: Optional[Response],
-        ex: BaseException,
+        ex: Exception,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
     ) -> bool:
@@ -1293,7 +1334,10 @@ class App(falcon.app.App):
             try:
                 kwargs = {}
 
-                if ws and 'ws' in get_argnames(err_handler):
+                # PERF(vytas): Using the LRU-cache backed misc._has_arg_name
+                #   here as inspect.signature (and by proxy misc.get_argnames)
+                #   can be very slow (on the order of magnitude of 10 µs).
+                if ws is not None and _has_arg_name(err_handler, 'ws'):
                     kwargs['ws'] = ws
 
                 await err_handler(req, resp, ex, params, **kwargs)

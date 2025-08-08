@@ -80,6 +80,8 @@ do the heavy lifting for you.
     will only process request media the first time it is referenced. Subsequent
     interactions will use a cached object.
 
+.. _media_validation:
+
 Validating Media
 ----------------
 
@@ -92,7 +94,7 @@ media type that JSON also supports (i.e. dicts, lists, etc).
 If JSON Schema does not meet your needs, a custom validator may be
 implemented in a similar manner to the one above.
 
-.. _content-type-negotiaton:
+.. _content-type-negotiation:
 
 Content-Type Negotiation
 ------------------------
@@ -295,6 +297,8 @@ common media type strings, including the following:
     falcon.MEDIA_MSGPACK
     falcon.MEDIA_MULTIPART
     falcon.MEDIA_URLENCODED
+    falcon.MEDIA_CSV
+    falcon.MEDIA_PARQUET
     falcon.MEDIA_YAML
     falcon.MEDIA_XML
     falcon.MEDIA_HTML

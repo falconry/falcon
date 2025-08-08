@@ -1,4 +1,4 @@
-# Copyright 2023-2024 by Vytautas Liuolia.
+# Copyright 2023-2025 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -146,8 +146,7 @@ class _MediaRange:
     _NOT_MATCHING = (-1, -1, -1, -1, 0.0)
 
     _Q_VALUE_ERROR_MESSAGE = (
-        'If provided, the q parameter must be a real number '
-        'in the range 0 through 1.'
+        'If provided, the q parameter must be a real number in the range 0 through 1.'
     )
 
     @classmethod

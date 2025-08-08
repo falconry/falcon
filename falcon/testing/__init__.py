@@ -141,7 +141,10 @@ __all__ = (
     'create_environ',
     'create_req',
     'create_scope',
-    'create_scofrom_headers',
+    'create_scope_ws',
+    'DEFAULT_HOST',
+    'DEFAULT_UA',
+    'get_encoding_from_headers',
     'get_unused_port',
     'rand_string',
     'redirected',
@@ -161,4 +164,7 @@ __all__ = (
 
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
 # TODO(vytas): Remove in Falcon 5.0.
-httpnow = _util.http_now
+httpnow = _util.deprecated(
+    'This method is deprecated and will be removed in Falcon 5.0. '
+    'Use `falcon.util.http_now` instead.'
+)(_util.http_now)

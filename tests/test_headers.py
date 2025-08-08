@@ -218,10 +218,7 @@ class AppendHeaderResource:
             ' Max-Age=600; path=/'
         )
         resp.append_header('Set-Cookie', c1)
-        c2 = (
-            'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT;'
-            ' Max-Age=0'
-        )
+        c2 = 'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0'
         resp.append_header('seT-cookie', c2)
 
 
@@ -339,14 +336,14 @@ class TestHeaders:
         result = client.simulate_get()
         assert result.headers['Content-Length'] == '0'
 
-    def test_declared_content_length_overriden_by_body_length(self, client):
+    def test_declared_content_length_overridden_by_body_length(self, client):
         resource = ContentLengthHeaderResource(42, body=SAMPLE_BODY)
         client.app.add_route('/', resource)
         result = client.simulate_get()
 
         assert result.headers['Content-Length'] == str(len(SAMPLE_BODY))
 
-    def test_declared_content_length_overriden_by_data_length(self, client):
+    def test_declared_content_length_overridden_by_data_length(self, client):
         data = SAMPLE_BODY.encode()
 
         resource = ContentLengthHeaderResource(42, data=data)

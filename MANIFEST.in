@@ -5,6 +5,7 @@ recursive-include falcon *.pyx
 recursive-include tests *.py *.pyx
 include .coveragerc
 include tox.ini
+include CODEOFCONDUCT.md
 include CONTRIBUTING.md
 include README.rst
 include AUTHORS

@@ -59,6 +59,10 @@ jobs:
             python-version: "3.13"
           - env: py313_cython
             python-version: "3.13"
+          - env: py314
+            python-version: "3.14.0-rc.1 - 3.14.0"
+          - env: py314_cython
+            python-version: "3.14.0-rc.1 - 3.14.0"
           - env: py312_nocover
             os: macos-latest
             platform-label: ' (macos)'
@@ -79,6 +83,8 @@ jobs:
           - env: "e2e_chrome"
           # TODO(vytas): Something is not working correctly with the
           #   newly released Firefox 131.0, SeleniumBase, and our tests.
+          # NOTE(vytas,cycloctane): Apparently, it seems that the issue is
+          #   caused by a segfault in Uvicorn, but it happens only in Actions.
           # - env: "e2e_firefox"
 
     steps:

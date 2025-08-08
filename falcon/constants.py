@@ -104,6 +104,8 @@ MEDIA_JSON = 'application/json'
 # but the use of the 'x-' prefix is discouraged by RFC 6838.
 MEDIA_MSGPACK = 'application/msgpack'
 
+MEDIA_PARQUET = 'application/vnd.apache.parquet'
+
 MEDIA_MULTIPART = 'multipart/form-data'
 
 MEDIA_URLENCODED = 'application/x-www-form-urlencoded'
@@ -137,6 +139,11 @@ MEDIA_JS = 'text/javascript'
 MEDIA_HTML = 'text/html; charset=utf-8'
 MEDIA_TEXT = 'text/plain; charset=utf-8'
 
+# NOTE(kemingy): According to RFC 4180, common usage of CSV is US-ASCII,
+# but other charsets can also be used. We use UTF-8 to make it compatible
+# with most modern systems.
+MEDIA_CSV = 'text/csv; charset=utf-8'
+
 MEDIA_JPEG = 'image/jpeg'
 MEDIA_PNG = 'image/png'
 MEDIA_GIF = 'image/gif'
@@ -167,6 +174,7 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
     (ext, media_type.split(';', 1)[0])
     for ext, media_type in (
         ('.bmp', MEDIA_BMP),
+        ('.csv', MEDIA_CSV),
         ('.gif', MEDIA_GIF),
         ('.htm', MEDIA_HTML),
         ('.html', MEDIA_HTML),
@@ -175,6 +183,7 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
         ('.js', MEDIA_JS),
         ('.json', MEDIA_JSON),
         ('.mjs', MEDIA_JS),
+        ('.parquet', MEDIA_PARQUET),
         ('.png', MEDIA_PNG),
         ('.txt', MEDIA_TEXT),
         ('.xml', MEDIA_XML),

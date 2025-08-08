@@ -3,6 +3,7 @@ import io
 import os
 import pathlib
 import posixpath
+from unittest import mock
 
 import pytest
 
@@ -51,7 +52,7 @@ def create_sr(asgi, prefix, directory, **kwargs):
 
 @pytest.fixture
 def patch_open(monkeypatch):
-    def patch(content=None, validate=None):
+    def patch(content=None, validate=None, mtime=1736617934):
         def open(path, mode):
             class FakeFD(int):
                 pass
@@ -59,6 +60,7 @@ def patch_open(monkeypatch):
             class FakeStat:
                 def __init__(self, size):
                     self.st_size = size
+                    self.st_mtime = mtime
 
             if validate:
                 validate(path)
@@ -633,3 +635,125 @@ def test_options_request(client, patch_open):
     assert resp.text == ''
     assert int(resp.headers['Content-Length']) == 0
     assert resp.headers['Access-Control-Allow-Methods'] == 'GET'
+
+
+def test_last_modified(client, patch_open):
+    mtime = (1736617934, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    response = client.simulate_request(path='/assets/css/main.css')
+    assert response.status == falcon.HTTP_200
+    assert response.headers['Last-Modified'] == mtime[1]
+
+
+def test_if_modified_since(client, patch_open):
+    mtime = (1736617934.133701, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:14 GMT'},
+    )
+    assert resp.status == falcon.HTTP_304
+    assert resp.text == ''
+
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:13 GMT'},
+    )
+    assert resp.status == falcon.HTTP_200
+    assert resp.text != ''
+
+
+def test_fstat_error(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch('os.fstat') as m:
+        m.side_effect = IOError
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_404
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
+
+
+def test_set_range_error(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch('falcon.routing.static._set_range') as m:
+        m.side_effect = IOError()
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_404
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
+
+
+def test_etag(client, patch_open):
+    mtime = 1736617934.133701
+    patch_open(mtime=mtime)
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+    resp = client.simulate_request(path='/assets/css/main.css')
+    assert resp.headers['ETag'] == f'"{int(mtime):x}-{len(resp.text):x}"'
+
+
+@pytest.mark.parametrize(
+    'if_none_match, is_304',
+    [
+        ('*', True),
+        ('"6782afce-9"', True),
+        ('"6782afce-9", "foo"', True),
+        ('W/"6782afce-9"', True),
+        ('"foo"', False),
+    ],
+)
+def test_if_none_match(client, patch_open, if_none_match, is_304):
+    patch_open(content=b'test_data', mtime=1736617934.133701)
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-None-Match': if_none_match},
+    )
+    if is_304:
+        assert resp.status == falcon.HTTP_304
+        assert resp.text == ''
+    else:
+        assert resp.status == falcon.HTTP_200
+        assert resp.text == 'test_data'
+
+
+def test_if_none_match_precedence(client, patch_open):
+    """Make sure If-None-Match always takes precedence over If-Modified-Since."""
+    mtime = (1736617934.133701, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+    resp1 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={
+            'If-None-Match': '"foo"',
+            'If-Modified-Since': mtime[1],
+        },
+    )
+    assert resp1.status == falcon.HTTP_200
+    assert resp1.text != ''
+
+    resp2 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={
+            'If-None-Match': resp1.headers['ETag'],
+            'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:13 GMT',
+        },
+    )
+    assert resp2.status == falcon.HTTP_304
+    assert resp2.text == ''

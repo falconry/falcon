@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 import json
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from falcon import errors
 from falcon import http_error
@@ -19,8 +19,8 @@ class JSONHandler(BaseHandler):
     can be easily configured to use any of a number of third-party JSON
     libraries, depending on your needs. For example, you can often
     realize a significant performance boost under CPython by using an
-    alternative library. Good options in this respect include `orjson`,
-    `python-rapidjson`, and `mujson`.
+    alternative library. Good options in this respect include
+    :ref:`msgspec <msgspec_recipe>`, `orjson`, `python-rapidjson`, and `mujson`.
 
     This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
     to parse an empty body, or a :class:`falcon.MediaMalformedError`
@@ -30,6 +30,8 @@ class JSONHandler(BaseHandler):
         If you are deploying to PyPy, we recommend sticking with the standard
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
+
+    .. _custom-media-json-library:
 
     .. rubric:: Custom JSON library
 
@@ -160,6 +162,7 @@ class JSONHandler(BaseHandler):
     ) -> None:
         self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self._loads = loads or json.loads
+        self._deserialization_errors: Tuple[Type[Exception], ...] = (ValueError,)
 
         # PERF(kgriffs): Test dumps once up front so we can set the
         #     proper serialize implementation.
@@ -170,6 +173,16 @@ class JSONHandler(BaseHandler):
         else:
             self.serialize = self._serialize_b  # type: ignore[method-assign]
             self.serialize_async = self._serialize_async_b  # type: ignore[method-assign]
+
+        # PERF(vytas): Try to detect nonstandard deserialization exception
+        #   classes (that do not subclass ValueError) up front, and add them to
+        #   the tuple of known deserialization errors.
+        try:
+            self._loads('frozenset({1})')
+        except Exception as ex:
+            error_cls = type(ex)
+            if not issubclass(error_cls, ValueError):
+                self._deserialization_errors += (error_cls,)
 
         # NOTE(kgriffs): To be safe, only enable the optimized protocol when
         #   not subclassed.
@@ -182,8 +195,8 @@ class JSONHandler(BaseHandler):
             raise errors.MediaNotFoundError('JSON')
         try:
             return self._loads(data.decode())
-        except ValueError as err:
-            raise errors.MediaMalformedError('JSON') from err
+        except self._deserialization_errors as ex:
+            raise errors.MediaMalformedError('JSON') from ex
 
     def deserialize(
         self,

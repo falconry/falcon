@@ -626,7 +626,7 @@ How can I access POSTed form params?
 By default, Falcon does not consume request bodies. However, a :ref:`media
 handler <media>` for the ``application/x-www-form-urlencoded`` content type is
 installed by default, thus making the POSTed form available as
-:attr:`Request.media <falcon.Request.media>` with zero configuration:
+:meth:`Request.media <falcon.Request.get_media>` with zero configuration:
 
 .. code:: python
 
@@ -636,7 +636,7 @@ installed by default, thus making the POSTed form available as
     class MyResource:
         def on_post(self, req, resp):
             # TODO: Handle the submitted URL-encoded form
-            form = req.media
+            form = req.get_media()
 
             # NOTE: Falcon chooses the right media handler automatically, but
             #   if we wanted to differentiate from, for instance, JSON, we
@@ -647,10 +647,11 @@ installed by default, thus making the POSTed form available as
    In prior versions of Falcon, a POSTed URL-encoded form could be automatically
    consumed and merged into :attr:`~falcon.Request.params` by setting the
    :attr:`~falcon.RequestOptions.auto_parse_form_urlencoded` option to ``True``. This
-   behavior is still supported in the Falcon 3.x series. However, it has been
+   behavior is still supported in the Falcon 4.x series. However, it has been
    deprecated in favor of :class:`~.media.URLEncodedFormHandler`, and the
    option to merge URL-encoded form data into
-   :attr:`~falcon.Request.params` may be removed in a future release.
+   :attr:`~falcon.Request.params` will be removed in the next major release
+   (Falcon 5.0).
 
 POSTed form parameters may also be read directly from
 :attr:`~falcon.Request.stream` and parsed via
@@ -669,7 +670,7 @@ be used to efficiently parse the submitted ``multipart/form-data``
 
 .. code:: python
 
-    for part in req.media:
+    for part in req.get_media():
         # TODO: Do something with the body part
         pass
 
@@ -700,7 +701,7 @@ method, making it compatible with ``boto3``\'s
 
             s3 = boto3.client('s3')
 
-            for part in req.media:
+            for part in req.get_media():
                 if part.name == 'myfile':
                     s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
 
@@ -828,10 +829,26 @@ via :meth:`~falcon.Request.get_param`, or use the
 :meth:`~falcon.Request.get_param_as_json` convenience method as
 demonstrated above.
 
+Can I use msgspec with Falcon?
+------------------------------
+
+`msgspec <https://jcristharif.com/msgspec/>`__ is a fast serialization and
+validation library, with built-in support for JSON, MessagePack, YAML, and
+TOML.
+
+You can use ``msgspec`` as :ref:`JSON handler <custom-media-json-library>` out
+of the box. Its awesome performance aside, you will also be able to assign
+instances of ``msgspec.Struct`` to :attr:`resp.media <falcon.Response.media>`
+without any additional configuration.
+
+It is also fairly straightforward to set up
+request media validation and error handling; see more in the following recipe:
+:ref:`msgspec integration <msgspec_recipe>`.
+
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
 
-Falcon 4 shipped initial support for
+Falcon 4.0 shipped initial support for
 `field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_
 that can match multiple segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
 is capable of consuming multiple path segments when placed at the end of the URL template.
@@ -859,21 +876,21 @@ set attributes on the object:
    # Falcon 2.0
    req.context.cache_backend = MyUltraFastCache.connect()
 
-The new default context type emulates a dict-like mapping interface in a way
-that context attributes are linked to dict items, i.e. setting an object
-attribute also sets the corresponding dict item, and vice versa. As a result,
-existing code will largely work unmodified with Falcon 2.0. Nevertheless, it is
-recommended to migrate to the new interface as outlined above since the
-dict-like mapping interface may be removed from the context type in a future
-release.
+The new :class:`default context type <falcon.Context>` emulates a dict-like
+mapping interface in a way that context attributes are linked to dict items,
+i.e. setting an object attribute also sets the corresponding dict item, and
+vice versa.
+As a result, existing code will largely work unmodified with Falcon 2.0+.
+Nevertheless, it is recommended to migrate to the new interface as setting
+attributes is more performant than inserting keys via the emulated mapping.
 
 .. warning::
-   If you need to mix-and-match both approaches under migration, beware that
-   setting attributes such as *items* or *values* would obviously shadow the
-   corresponding mapping interface functions.
+   If you need to mix-and-match both approaches, beware that setting attributes
+   such as *items* or *values* would obviously shadow the corresponding mapping
+   interface functions.
 
-If an existing project is making extensive use of dictionary contexts, the type
-can be explicitly overridden back to dict by employing custom request/response
+If an existing project makes extensive use of dictionary contexts, the type can
+be explicitly overridden back to ``dict`` by employing custom request/response
 types:
 
 .. code:: python
@@ -889,8 +906,14 @@ types:
     app = falcon.App(request_type=RequestWithDictContext,
                      response_type=ResponseWithDictContext)
 
+.. attention::
+    Note that third-party middleware might expect to be able to set attributes
+    on ``req.context`` (or ``resp.context``), following the new style.
+
 Response Handling
 ~~~~~~~~~~~~~~~~~
+
+.. _resp_media_data_text:
 
 When would I use media, data, text, and stream?
 -----------------------------------------------
@@ -952,9 +975,10 @@ setting the `default` or `object_hook` params can negatively impact the
 performance of (de)serialization.
 
 If you use an alternative JSON library, you might also look whether it provides
-support for additional data types. For instance, the popular ``orjson`` opts to
-automatically serialize :mod:`dataclasses`, :mod:`enums <enum>`,
-:class:`~datetime.datetime` objects, etc.
+support for additional data types. For instance, the popular ``orjson`` and
+:ref:`msgspec <msgspec_recipe>` libraries opt to automatically serialize
+:mod:`dataclasses`, :mod:`enums <enum>`, :class:`~datetime.datetime` objects,
+etc.
 
 Furthermore, different Internet media types such as YAML,
 :class:`msgpack <falcon.media.MessagePackHandler>`, etc might support more data

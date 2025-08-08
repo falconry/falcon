@@ -24,6 +24,7 @@ except ImportError:
 
 try:
     import websockets
+    import websockets.asyncio.client
     import websockets.exceptions
 except ImportError:
     websockets = None  # type: ignore
@@ -232,9 +233,9 @@ class TestWebSocket:
         if close_code:
             extra_headers['X-Close-Code'] = str(close_code)
 
-        async with websockets.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws,
-            extra_headers=extra_headers,
+            additional_headers=extra_headers,
         ) as ws:
             got_message = False
 
@@ -273,22 +274,22 @@ class TestWebSocket:
         if close_code:
             extra_headers['X-Close-Code'] = str(close_code)
 
-        with pytest.raises(websockets.exceptions.InvalidStatusCode) as exc_info:
-            async with websockets.connect(
-                server_url_events_ws, extra_headers=extra_headers
+        with pytest.raises(websockets.exceptions.InvalidStatus) as exc_info:
+            async with websockets.asyncio.client.connect(
+                server_url_events_ws, additional_headers=extra_headers
             ):
                 pass
 
-        assert exc_info.value.status_code == 403
+        assert exc_info.value.response.status_code == 403
 
     async def test_missing_responder(self, server_url_events_ws):
         server_url_events_ws += '/404'
 
-        with pytest.raises(websockets.exceptions.InvalidStatusCode) as exc_info:
-            async with websockets.connect(server_url_events_ws):
+        with pytest.raises(websockets.exceptions.InvalidStatus) as exc_info:
+            async with websockets.asyncio.client.connect(server_url_events_ws):
                 pass
 
-        assert exc_info.value.status_code == 403
+        assert exc_info.value.response.status_code == 403
 
     @pytest.mark.parametrize(
         'subprotocol, expected',
@@ -301,9 +302,9 @@ class TestWebSocket:
         self, subprotocol, expected, server_url_events_ws
     ):
         extra_headers = {'X-Subprotocol': subprotocol}
-        async with websockets.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws,
-            extra_headers=extra_headers,
+            additional_headers=extra_headers,
             subprotocols=['amqp', 'wamp'],
         ) as ws:
             assert ws.subprotocol == expected
@@ -312,9 +313,9 @@ class TestWebSocket:
         extra_headers = {'X-Subprotocol': 'xmpp'}
 
         try:
-            async with websockets.connect(
+            async with websockets.asyncio.client.connect(
                 server_url_events_ws,
-                extra_headers=extra_headers,
+                additional_headers=extra_headers,
                 subprotocols=['amqp', 'wamp'],
             ):
                 pass
@@ -329,9 +330,13 @@ class TestWebSocket:
         except websockets.exceptions.NegotiationError as ex:
             assert 'unsupported subprotocol: xmpp' in str(ex)
 
-        # Daphne
-        except websockets.exceptions.InvalidMessage:
+        # Daphne, Hypercorn with websockets<14.2
+        except EOFError:
             pass
+
+        # Daphne, Hypercorn with websockets>=14.2
+        except websockets.exceptions.InvalidMessage as ex:
+            assert isinstance(ex.__cause__, EOFError)
 
     # NOTE(kgriffs): When executing this test under pytest with the -s
     #   argument, one should be able to see the message
@@ -340,8 +345,8 @@ class TestWebSocket:
     #   but the usual ways of capturing stdout/stderr with pytest do
     #   not work.
     async def test_disconnecting_client_early(self, server_url_events_ws):
-        ws = await websockets.connect(
-            server_url_events_ws, extra_headers={'X-Close': 'True'}
+        ws = await websockets.asyncio.client.connect(
+            server_url_events_ws, additional_headers={'X-Close': 'True'}
         )
         await asyncio.sleep(0.2)
 
@@ -361,8 +366,8 @@ class TestWebSocket:
     async def test_send_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip'}
 
-        async with websockets.connect(
-            server_url_events_ws, extra_headers=extra_headers
+        async with websockets.asyncio.client.connect(
+            server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
@@ -370,8 +375,8 @@ class TestWebSocket:
     async def test_recv_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip', 'x-command': 'recv'}
 
-        async with websockets.connect(
-            server_url_events_ws, extra_headers=extra_headers
+        async with websockets.asyncio.client.connect(
+            server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
@@ -379,8 +384,8 @@ class TestWebSocket:
     async def test_invalid_close_code(self, server_url_events_ws):
         extra_headers = {'x-close': 'True', 'x-close-code': 42}
 
-        async with websockets.connect(
-            server_url_events_ws, extra_headers=extra_headers
+        async with websockets.asyncio.client.connect(
+            server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             start = time.time()
 
@@ -395,22 +400,22 @@ class TestWebSocket:
     async def test_close_code_on_unhandled_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'generic'}
 
-        async with websockets.connect(
-            server_url_events_ws, extra_headers=extra_headers
+        async with websockets.asyncio.client.connect(
+            server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             await ws.wait_closed()
 
-        assert ws.close_code in {3011, 1011}
+        assert ws.protocol.close_code in {3011, 1011}
 
     async def test_close_code_on_unhandled_http_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'http'}
 
-        async with websockets.connect(
-            server_url_events_ws, extra_headers=extra_headers
+        async with websockets.asyncio.client.connect(
+            server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             await ws.wait_closed()
 
-        assert ws.close_code == 3400
+        assert ws.protocol.close_code == 3400
 
     @pytest.mark.parametrize('mismatch', ['send', 'recv'])
     @pytest.mark.parametrize('mismatch_type', ['text', 'data'])
@@ -420,8 +425,8 @@ class TestWebSocket:
             'X-Mismatch-Type': mismatch_type,
         }
 
-        async with websockets.connect(
-            server_url_events_ws, extra_headers=extra_headers
+        async with websockets.asyncio.client.connect(
+            server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             if mismatch == 'recv':
                 if mismatch_type == 'text':
@@ -431,13 +436,13 @@ class TestWebSocket:
 
             await ws.wait_closed()
 
-        assert ws.close_code in {3011, 1011}
+        assert ws.protocol.close_code in {3011, 1011}
 
     async def test_passing_path_params(self, server_base_url_ws):
         expected_feed_id = '1ee7'
         url = f'{server_base_url_ws}feeds/{expected_feed_id}'
 
-        async with websockets.connect(url) as ws:
+        async with websockets.asyncio.client.connect(url) as ws:
             feed_id = await ws.recv()
             assert feed_id == expected_feed_id
 

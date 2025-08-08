@@ -2349,10 +2349,7 @@ class Request:
 
         """
 
-        if name in self._params:
-            return True
-        else:
-            return False
+        return name in self._params
 
     def log_error(self, message: str) -> None:
         """Write an error message to the server's log.
@@ -2436,7 +2433,7 @@ class RequestOptions:
     respectively.
     """
 
-    keep_black_qs_values: bool
+    keep_blank_qs_values: bool
     """Set to ``False`` to ignore query string params that have missing or blank
     values (default ``True``).
 

@@ -114,7 +114,7 @@ class RemoveBasePathMiddleware:
         req.path = req.path.replace('/base_path', '', 1)
 
 
-class ResponseCacheMiddlware:
+class ResponseCacheMiddleware:
     PROCESS_REQUEST_CACHED_BODY = {'cached': True}
     PROCESS_RESOURCE_CACHED_BODY = {'cached': True, 'resource': True}
 
@@ -237,12 +237,12 @@ class TestRequestTimeMiddleware(TestMiddleware):
         assert 'start_time' in context
         assert 'mid_time' in context
         assert 'end_time' in context
-        assert (
-            context['mid_time'] >= context['start_time']
-        ), 'process_resource not executed after request'
-        assert (
-            context['end_time'] >= context['start_time']
-        ), 'process_response not executed after request'
+        assert context['mid_time'] >= context['start_time'], (
+            'process_resource not executed after request'
+        )
+        assert context['end_time'] >= context['start_time'], (
+            'process_response not executed after request'
+        )
 
         assert context['req_succeeded']
 
@@ -307,12 +307,12 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert 'start_time' in context
         assert 'mid_time' in context
         assert 'end_time' in context
-        assert (
-            context['mid_time'] >= context['start_time']
-        ), 'process_resource not executed after request'
-        assert (
-            context['end_time'] >= context['start_time']
-        ), 'process_response not executed after request'
+        assert context['mid_time'] >= context['start_time'], (
+            'process_resource not executed after request'
+        )
+        assert context['end_time'] >= context['start_time'], (
+            'process_response not executed after request'
+        )
 
     def test_legacy_middleware_called_with_correct_args(self, asgi, util):
         global context
@@ -919,7 +919,7 @@ class TestShortCircuiting(TestMiddleware):
     def _make_client(self, asgi, util, independent_middleware=True):
         mw = [
             RequestTimeMiddleware(),
-            ResponseCacheMiddlware(),
+            ResponseCacheMiddleware(),
             TransactionIdMiddleware(),
         ]
         app = util.create_app(
@@ -946,17 +946,17 @@ class TestShortCircuiting(TestMiddleware):
             '/cached'
         )
         assert response.status == falcon.HTTP_200
-        assert response.json == ResponseCacheMiddlware.PROCESS_REQUEST_CACHED_BODY
+        assert response.json == ResponseCacheMiddleware.PROCESS_REQUEST_CACHED_BODY
 
         # NOTE(kgriffs): Since TransactionIdMiddleware was ordered after
-        # ResponseCacheMiddlware, the response short-circuiting should have
+        # ResponseCacheMiddleware, the response short-circuiting should have
         # skipped it.
         assert 'transaction_id' not in context
         assert 'resource_transaction_id' not in context
 
         # NOTE(kgriffs): RequestTimeMiddleware only adds this in
         # process_resource(), which should be skipped when
-        # ResponseCacheMiddlware sets resp.completed = True in
+        # ResponseCacheMiddleware sets resp.completed = True in
         # process_request().
         assert 'mid_time' not in context
 
@@ -969,7 +969,7 @@ class TestShortCircuiting(TestMiddleware):
             '/cached/resource'
         )
         assert response.status == falcon.HTTP_200
-        assert response.json == ResponseCacheMiddlware.PROCESS_RESOURCE_CACHED_BODY
+        assert response.json == ResponseCacheMiddleware.PROCESS_RESOURCE_CACHED_BODY
 
         # NOTE(kgriffs): This should be present because it is added in
         # process_request(), but the short-circuit does not occur until
@@ -977,13 +977,13 @@ class TestShortCircuiting(TestMiddleware):
         assert 'transaction_id' in context
 
         # NOTE(kgriffs): Since TransactionIdMiddleware was ordered after
-        # ResponseCacheMiddlware, the response short-circuiting should have
+        # ResponseCacheMiddleware, the response short-circuiting should have
         # skipped it.
         assert 'resource_transaction_id' not in context
 
         # NOTE(kgriffs): RequestTimeMiddleware only adds this in
         # process_resource(), which will not be skipped in this case because
-        # RequestTimeMiddleware is ordered before ResponseCacheMiddlware.
+        # RequestTimeMiddleware is ordered before ResponseCacheMiddleware.
         assert 'mid_time' in context
 
         # NOTE(kgriffs): Short-circuiting does not affect process_response()

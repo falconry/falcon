@@ -8,14 +8,21 @@ import pytest
 import falcon
 from falcon import media
 from falcon import testing
+import falcon.asgi
 from falcon.asgi.stream import BoundedStream
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_YAML
 
+msgspec = None
 mujson = None
 orjson = None
 rapidjson = None
 ujson = None
+
+try:
+    import msgspec  # type: ignore
+except ImportError:
+    pass
 
 try:
     import mujson  # type: ignore
@@ -67,6 +74,20 @@ ALL_JSON_IMPL = [(json.dumps, json.loads)]
 ALL_JSON_IMPL_IDS = ['stdlib']
 
 
+if msgspec:
+    SERIALIZATION_PARAM_LIST += [
+        (
+            msgspec.json.encode,
+            {'test': 'value'},
+            b'{"test":"value"}',
+        ),
+    ]
+    DESERIALIZATION_PARAM_LIST += [
+        (msgspec.json.decode, b'{"test": "value"}', {'test': 'value'}),
+    ]
+    ALL_JSON_IMPL += [(msgspec.json.encode, msgspec.json.decode)]
+    ALL_JSON_IMPL_IDS += ['msgspec']
+
 if mujson:
     SERIALIZATION_PARAM_LIST += [
         (
@@ -115,20 +136,23 @@ if ujson:
 @pytest.mark.parametrize(
     'library, name',
     [
+        (msgspec, 'msgspec'),
         (mujson, 'mujson'),
         (orjson, 'orjson'),
         (rapidjson, 'rapidjson'),
         (ujson, 'ujson'),
     ],
-    ids=['mujson', 'orjson', 'rapidjson', 'ujson'],
+    ids=['msgspec', 'mujson', 'orjson', 'rapidjson', 'ujson'],
 )
 def test_check_json_library(library, name):
     # NOTE(vytas): A synthetic test just to visualize which JSON libraries
     #   are absent and skipped.
     if library is None:
         pytest.skip(f'{name} is not installed')
-    assert hasattr(library, 'dumps')
-    assert hasattr(library, 'loads')
+
+    # NOTE(vytas): msgspec does not employ the names dumps() & loads().
+    assert hasattr(library, 'dumps') or hasattr(library, 'json')
+    assert hasattr(library, 'loads') or hasattr(library, 'json')
 
 
 @pytest.mark.parametrize('func, body, expected', SERIALIZATION_PARAM_LIST)
@@ -266,6 +290,83 @@ def test_deserialization_raises(asgi, util, handler_mt):
 
     with pytest.raises(SuchException):
         testing.simulate_post(app, '/', json={})
+
+
+def test_nonstandard_deserialization_error(asgi, util):
+    # NOTE(vytas): At the time of writing, this is also tested by msgspec.
+    #   However, we add an additional generic test here if msgspec restructures
+    #   its class hierarchy to inherit from ValueError, or if it is unavailable
+    #   in the environment in question.
+
+    class SuchException(RuntimeError):
+        def __init__(self):
+            super().__init__('wow such exception')
+
+    def fancy_loads(data):
+        try:
+            return json.loads(data)
+        except ValueError:
+            raise SuchException()
+
+    class DevNull:
+        def on_post(self, req, resp):
+            req.get_media()
+
+        async def on_post_async(self, req, resp):
+            await req.get_media()
+
+    app = util.create_app(asgi)
+    app.add_route('/dev/null', DevNull(), suffix=('async' if asgi else None))
+    app.req_options.media_handlers[falcon.MEDIA_JSON] = media.JSONHandler(
+        loads=fancy_loads
+    )
+
+    resp = testing.simulate_post(
+        app, '/dev/null', body=b'Hello: world', content_type=falcon.MEDIA_JSON
+    )
+    assert resp.status_code == 400
+    assert resp.json.get('title') == 'Invalid JSON'
+
+
+@pytest.mark.parametrize(
+    'custom_json_handler', [True, False], ids=('CustomJSONHandler', 'JSONHandler')
+)
+@pytest.mark.parametrize(
+    'custom_resp_type', [True, False], ids=('CustomResponse', 'Response')
+)
+def test_dumps_bytes_output(asgi, util, custom_json_handler, custom_resp_type):
+    # NOTE(vytas): This scenario is already exercised by certain third party
+    #   serialization libraries (orjson,  msgspec).
+    #   However, they might be unavailable on a new version of CPython, or when
+    #   running minimal tests, so we cover the relevant code paths with this
+    #   test case without any external dependencies.
+
+    def dumpb(obj, **kwargs):
+        return json.dumps(obj, **kwargs).encode()
+
+    class Resource:
+        def on_get(self, req, resp):
+            resp.media = {'msg': 'Hello'}
+
+        async def on_get_async(self, req, resp):
+            resp.media = {'msg': 'Hello'}
+
+    json_handler_type = media.JSONHandler
+    if custom_json_handler:
+        json_handler_type = type('CustomJSONHandler', (media.JSONHandler,), {})
+
+    response_type = None
+    standard_response_type = falcon.asgi.Response if asgi else falcon.Response
+    if custom_resp_type:
+        response_type = type('CustomResponse', (standard_response_type,), {})
+
+    app = util.create_app(asgi, response_type=response_type)
+    app.add_route('/msg', Resource(), suffix=('async' if asgi else None))
+    app.resp_options.media_handlers[falcon.MEDIA_JSON] = json_handler_type(dumps=dumpb)
+
+    resp = testing.simulate_get(app, '/msg')
+    assert resp.status_code == 200
+    assert resp.json == {'msg': 'Hello'}
 
 
 def test_sync_methods_not_overridden(asgi, util):

@@ -54,8 +54,7 @@ Falcon + PyPy first.
 
 **Reliable.** We go to great lengths to avoid introducing
 breaking changes, and when we do they are fully documented and only
-introduced (in the spirit of
-`SemVer <http://semver.org/>`__) with a major version
+introduced (in the spirit of :ref:`SemVer <semver>`) with a major version
 increment. The code is rigorously tested with numerous inputs and we
 require 100% coverage at all times. Falcon does not depend on any
 external Python packages.
@@ -84,10 +83,12 @@ Now, if you do make changes to Falcon itself, please consider contributing your 
 
 .. _`Apache 2.0 License`: http://opensource.org/licenses/Apache-2.0
 
+.. _falcon_license:
+
 Falcon License
 --------------
 
-Copyright 2012-2024 by Rackspace Hosting, Inc. and other contributors,
+Copyright 2012-2025 by Rackspace Hosting, Inc. and other contributors,
 as noted in the individual source code files.
 
 Licensed under the Apache License, Version 2.0 (the "License");

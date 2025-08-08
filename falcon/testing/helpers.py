@@ -206,7 +206,7 @@ class ASGIRequestEventEmitter:
 
     async def emit(self) -> AsgiEvent:
         # NOTE(kgriffs): Special case: if we are immediately disconnected,
-        #   the first event should be 'http.disconnnect'
+        #   the first event should be 'http.disconnect'
         if self._disconnect_at == 0:
             return {'type': EventType.HTTP_DISCONNECT}
 
@@ -974,10 +974,16 @@ def create_scope(
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+
+    .. versionadded:: 4.1
+        The raw (i.e., not URL-decoded) version of the provided `path` is now
+        preserved in the returned scope as the ``raw_path`` byte string.
+        According to the ASGI specification, ``raw_path`` **does not include**
+        any query string.
     """
 
     http_version = _fixup_http_version(http_version)
-
+    raw_path, _, _ = path.partition('?')
     path = uri.decode(path, unquote_plus=False)
 
     # NOTE(kgriffs): Handles both None and ''
@@ -995,6 +1001,7 @@ def create_scope(
         'http_version': http_version,
         'method': method.upper(),
         'path': path,
+        'raw_path': raw_path.encode(),
         'query_string': query_string_bytes,
     }
 
