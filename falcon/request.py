@@ -118,7 +118,7 @@ class Request:
     _cached_if_none_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
 
     # Child classes may override this
-    context_type: ClassVar[Type[structures.Context]] = structures.Context
+    context_type: ClassVar[Type] = structures.Context
     """Class variable that determines the factory or
     type to use for initializing the `context` attribute. By default,
     the framework will instantiate bare objects (instances of the bare
