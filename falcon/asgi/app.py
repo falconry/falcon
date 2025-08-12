@@ -363,7 +363,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
     _middleware_ws: AsyncPreparedMiddlewareWsResult
     _request_type: Type[_ReqT]
     _response_type: Type[_RespT]
-    _unprepared_middleware: List[AsyncMiddleware]  # type: ignore[assignment]
+    _unprepared_middleware: List[AsyncMiddleware[_ReqT, _RespT]]  # type: ignore[assignment]
 
     ws_options: WebSocketOptions
     """A set of behavioral options related to WebSocket connections.
@@ -377,7 +377,11 @@ class App(falcon.app.App[_ReqT, _RespT]):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: None = None,
         response_type: None = None,
-        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -390,7 +394,11 @@ class App(falcon.app.App[_ReqT, _RespT]):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[_ReqT]] = None,
         response_type: None = None,
-        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -403,7 +411,11 @@ class App(falcon.app.App[_ReqT, _RespT]):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: None = None,
         response_type: Optional[Type[_RespT]] = None,
-        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -416,7 +428,11 @@ class App(falcon.app.App[_ReqT, _RespT]):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[_ReqT]] = None,
         response_type: Optional[Type[_RespT]] = None,
-        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -428,7 +444,11 @@ class App(falcon.app.App[_ReqT, _RespT]):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[_ReqT]] = None,
         response_type: Optional[Type[_RespT]] = None,
-        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -897,6 +917,22 @@ class App(falcon.app.App[_ReqT, _RespT]):
         #   off a function call since this is a hot/critical code path.
         if resp._registered_callbacks:
             self._schedule_callbacks(resp)
+
+    def add_middleware(
+        self,
+        middleware: Union[  # type: ignore[override]
+            AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+        ],
+    ) -> None:
+        """Add one or more additional middleware components.
+
+        Arguments:
+            middleware: Either a single middleware component or an iterable
+                of components to add. The component(s) will be invoked, in
+                order, as if they had been appended to the original middleware
+                list passed to the class initializer.
+        """
+        super().add_middleware(middleware)  # type: ignore[arg-type]
 
     def add_route(self, uri_template: str, resource: Resource, **kwargs: Any) -> None:
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
