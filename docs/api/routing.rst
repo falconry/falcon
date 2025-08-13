@@ -483,6 +483,21 @@ be used by custom routing engines.
 .. autofunction:: falcon.app_helpers.prepare_middleware_ws
 
 
+Static File Routes
+------------------
+
+Falcon can serve static files directly from a WSGI or ASGI application
+using the below sink-like :class:`~falcon.routing.StaticRoute`.
+
+Instances of :class:`~falcon.routing.StaticRoute` are normally created via
+:meth:`falcon.App.add_static_route`
+(please see, however, the documentation of :meth:`~falcon.App.add_static_route`
+for the performance implications of serving files through a Python app).
+
+.. autoclass:: falcon.routing.StaticRoute
+    :members:
+
+
 Custom HTTP Methods
 -------------------
 

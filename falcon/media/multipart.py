@@ -1,4 +1,4 @@
-# Copyright 2019-2023 by Vytautas Liuolia.
+# Copyright 2019-2025 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,12 +33,12 @@ from typing import (
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
+from falcon._typing import _UNSET
+from falcon._typing import UnsetOr
 from falcon.errors import MultipartParseError
 from falcon.media.base import BaseHandler
 from falcon.stream import BoundedStream
 from falcon.typing import AsyncReadableIO
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
 from falcon.typing import ReadableIO
 from falcon.util import BufferedReader
 from falcon.util import misc
@@ -80,9 +80,9 @@ class BodyPart:
 
     _content_disposition: Optional[Tuple[str, Dict[str, str]]] = None
     _data: Optional[bytes] = None
-    _filename: MissingOr[Optional[str]] = MISSING
-    _media: MissingOr[Any] = MISSING
-    _name: MissingOr[Optional[str]] = MISSING
+    _filename: UnsetOr[Optional[str]] = _UNSET
+    _media: UnsetOr[Any] = _UNSET
+    _name: UnsetOr[Optional[str]] = _UNSET
 
     stream: PyBufferedReader
     """File-like input object for reading the body part of the
@@ -198,7 +198,7 @@ class BodyPart:
     @property
     def filename(self) -> Optional[str]:
         """File name if the body part is an attached file, and ``None`` otherwise."""
-        if self._filename is MISSING:
+        if self._filename is _UNSET:
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -233,7 +233,10 @@ class BodyPart:
         See also: :func:`~.secure_filename`
         """  # noqa: D205
         try:
-            return misc.secure_filename(self.filename)
+            return misc.secure_filename(
+                self.filename or '',
+                max_length=self._parse_options.max_secure_filename_length,
+            )
         except ValueError as ex:
             raise MultipartParseError(description=str(ex)) from ex
 
@@ -253,7 +256,7 @@ class BodyPart:
             However, Falcon will not raise any error if this parameter is
             missing; the property value will be ``None`` in that case.
         """
-        if self._name is MISSING:
+        if self._name is _UNSET:
             if self._content_disposition is None:
                 value = self._headers.get(b'content-disposition', b'')
                 self._content_disposition = parse_header(value.decode())
@@ -277,7 +280,7 @@ class BodyPart:
         Returns:
             object: The deserialized media representation.
         """
-        if self._media is MISSING:
+        if self._media is _UNSET:
             handler, _, _ = self._parse_options.media_handlers._resolve(
                 self.content_type, 'text/plain'
             )
@@ -383,13 +386,20 @@ class MultipartForm:
                     delimiter = _CRLF + delimiter
                     prologue = False
 
-                separator = stream.read_until(_CRLF, 2, consume_delimiter=True)
-                if separator == b'--':
-                    # NOTE(vytas): boundary delimiter + '--\r\n' signals the
-                    # end of a multipart form.
+                # NOTE(vytas): Interpretations of RFC 2046, Appendix A, vary
+                #   as to whether the closing `--` must be followed by CRLF.
+                #   While the absolute majority of HTTP clients and browsers
+                #   do append it as a common convention, it seems that this is
+                #   not mandated by the RFC, so we do not require it either.
+                # NOTE(vytas): Certain versions of the Undici client
+                #   (Node's fetch implementation) do not follow the convention.
+                if stream.peek(2) == b'--':
+                    # NOTE(vytas): boundary delimiter + '--' signals the end of
+                    #   a multipart form.
+                    stream.read(2)
                     break
-                elif separator:
-                    raise MultipartParseError(description='unexpected form structure')
+
+                stream.read_until(_CRLF, 0, consume_delimiter=True)
 
             except errors.DelimiterError as err:
                 raise MultipartParseError(
@@ -571,6 +581,19 @@ class MultipartParseOptions:
     :class:`.MultipartParseError` will be raised. If this option is set to 0,
     no limit will be imposed by the parser.
     """
+    max_secure_filename_length: Optional[int]
+    """The maximum number characters for a secure filename (default ``None``).
+
+    The value of this option is passed as the `max_length` keyword argument to
+    :func:`~.secure_filename` when evaluating the
+    :attr:`BodyPart.secure_filename` property.
+
+    Note:
+        In Falcon 5.0, the default value of this option will change to a
+        reasonable finite number (e.g., 64 or 96) of characters.
+
+    .. versionadded:: 4.1
+    """
     max_body_part_buffer_size: int
     """The maximum number of bytes to buffer and return when the
     :meth:`BodyPart.get_data` method is called (default ``1 MiB``).
@@ -602,6 +625,7 @@ class MultipartParseOptions:
         'max_body_part_buffer_size',
         'max_body_part_count',
         'max_body_part_headers_size',
+        'max_secure_filename_length',
         'media_handlers',
     )
 
@@ -610,6 +634,7 @@ class MultipartParseOptions:
         self.max_body_part_buffer_size = 1024 * 1024
         self.max_body_part_count = 64
         self.max_body_part_headers_size = 8192
+        self.max_secure_filename_length = None
         # NOTE(myusko,vytas): Here we create a copy of _DEFAULT_HANDLERS in
         #   order to prevent the modification of the class variable whenever
         #   parse_options.media_handlers are customized.

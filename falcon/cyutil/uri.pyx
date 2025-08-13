@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Vytautas Liuolia.
+# Copyright 2019-2025 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,21 +17,23 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.string cimport memcpy
 
 
-cdef list build_hex_table():
-    cdef list result = [-1] * 0x10000
+cdef void _init_hex_table(int* data):
+    cdef Py_ssize_t index
+
+    for index in range(0x10000):
+        data[index] = -1
+
     for ch1 in '0123456789abcdefABCDEF':
         for ch2 in '0123456789abcdefABCDEF':
             try:
-                result[(ord(ch1) << 8) | ord(ch2)] = int(ch1 + ch2, 16)
+                data[(ord(ch1) << 8) | ord(ch2)] = int(ch1 + ch2, 16)
             except ValueError:
                 pass
-
-    return result
 
 
 # PERF(vytas): Cache hex characters lookup table
 cdef int[0x10000] HEX_CHARS
-HEX_CHARS[:] = build_hex_table()
+_init_hex_table(HEX_CHARS)
 
 # PERF(vytas): Cache an empty string object.
 cdef EMPTY_STRING = u''

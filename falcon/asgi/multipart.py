@@ -1,4 +1,4 @@
-# Copyright 2019-2023 by Vytautas Liuolia.
+# Copyright 2019-2025 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ from typing import (
     TYPE_CHECKING,
 )
 
+from falcon._typing import _UNSET
 from falcon.asgi.reader import BufferedReader
 from falcon.errors import DelimiterError
 from falcon.media import multipart
 from falcon.typing import AsyncReadableIO
-from falcon.typing import MISSING
 from falcon.util.mediatypes import parse_header
 
 if TYPE_CHECKING:
@@ -102,7 +102,7 @@ class BodyPart(multipart.BodyPart):
         Returns:
             object: The deserialized media representation.
         """
-        if self._media is MISSING:
+        if self._media is _UNSET:
             handler, _, _ = self._parse_options.media_handlers._resolve(
                 self.content_type, 'text/plain'
             )
@@ -220,13 +220,20 @@ class MultipartForm:
                     delimiter = _CRLF + delimiter
                     prologue = False
 
-                separator = await stream.read_until(_CRLF, 2, consume_delimiter=True)
-                if separator == b'--':
-                    # NOTE(vytas): boundary delimiter + '--\r\n' signals the
-                    # end of a multipart form.
+                # NOTE(vytas): Interpretations of RFC 2046, Appendix A, vary
+                #   as to whether the closing `--` must be followed by CRLF.
+                #   While the absolute majority of HTTP clients and browsers
+                #   do append it as a common convention, it seems that this is
+                #   not mandated by the RFC, so we do not require it either.
+                # NOTE(vytas): Certain versions of the Undici client
+                #   (Node's fetch implementation) do not follow the convention.
+                if await stream.peek(2) == b'--':
+                    # NOTE(vytas): boundary delimiter + '--' signals the end of
+                    #   a multipart form.
+                    await stream.read(2)
                     break
-                elif separator:
-                    raise MultipartParseError(description='unexpected form structure')
+
+                await stream.read_until(_CRLF, 0, consume_delimiter=True)
 
             except DelimiterError as err:
                 raise MultipartParseError(

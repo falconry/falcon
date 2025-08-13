@@ -46,10 +46,10 @@ except ImportError:  # pragma: no cover
 if TYPE_CHECKING:
     import falcon as wsgi
     from falcon import asgi
-    from falcon.typing import AsgiResponderMethod
-    from falcon.typing import Resource
-    from falcon.typing import Responder
-    from falcon.typing import ResponderMethod
+    from falcon._typing import AsgiResponderMethod
+    from falcon._typing import Resource
+    from falcon._typing import Responder
+    from falcon._typing import ResponderMethod
 
 _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
 _FN = ParamSpec('_FN')

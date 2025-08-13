@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Vytautas Liuolia.
+# Copyright 2019-2025 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -224,7 +224,9 @@ class BufferedReader:
                     break
 
             # PERF(vytas) Don't join unless necessary.
-            return result[0] if len(result) == 1 else b''.join(result)
+            return (
+                result[0] if len(result) == 1 else b''.join(result)
+            )  # pragma: no py314 cover
 
         # NOTE(vytas): size > self._max_join_size
         result_bytes = io.BytesIO()
@@ -277,7 +279,7 @@ class BufferedReader:
                 if self._buffer_len >= size:  # pragma: no py39,py310 cover
                     break
 
-        return self._buffer[:size]
+        return self._buffer[:size]  # pragma: no py314 cover
 
     async def pipe(self, destination: Optional[AsyncWritableIO] = None) -> None:
         async for chunk in self._iter_with_buffer():

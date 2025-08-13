@@ -300,11 +300,14 @@ def test_body_part_properties():
             assert part.secure_filename == part.filename
 
 
-def test_empty_filename():
+def test_empty_or_missing_filename():
     data = (
         b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
         b'Content-Disposition: form-data; name="file"; filename=\r\n\r\n'
         b'An empty filename.\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'Content-Disposition: form-data; name="no file";\r\n\r\n'
+        b'No filename.\r\n'
         b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
     )
 
@@ -313,10 +316,16 @@ def test_empty_filename():
     stream = BufferedReader(io.BytesIO(data).read, len(data))
     form = handler.deserialize(stream, content_type, len(data))
 
+    parts = 0
     for part in form:
-        assert part.filename == ''
+        parts += 1
+        if part.name == 'file':
+            assert part.filename == ''
+        else:
+            assert part.filename is None
         with pytest.raises(falcon.MediaMalformedError):
             part.secure_filename
+    assert parts == 2
 
 
 class MultipartAnalyzer:
@@ -478,6 +487,25 @@ def test_upload_multipart(client):
     ]
 
 
+@pytest.mark.parametrize('epilogue', ['', '--', '\n', '\n\n', ' <-- no CRLF', '💥'])
+def test_epilogue(client, epilogue):
+    # NOTE(vytas): According to RFC 2046, actually including an epilogue might
+    #   require a trailing CRLF first, but we do not mandate it either.
+    form_body = EXAMPLE1[:-2] + epilogue.encode()
+
+    resp = client.simulate_post(
+        '/submit',
+        headers={
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+        },
+        body=form_body,
+    )
+
+    assert resp.status_code == 200
+    assert [part['name'] for part in resp.json] == ['hello', 'document', 'file1']
+
+
 @pytest.mark.parametrize('truncated_by', [1, 2, 3, 4])
 def test_truncated_form(client, truncated_by):
     resp = client.simulate_post(
@@ -486,7 +514,8 @@ def test_truncated_form(client, truncated_by):
             'Content-Type': 'multipart/form-data; '
             'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
-        body=EXAMPLE1[:-truncated_by],
+        # NOTE(vytas): The trailing \r\n is not mandatory, hence +2.
+        body=EXAMPLE1[: -(truncated_by + 2)],
     )
 
     assert resp.status_code == 400
@@ -496,14 +525,14 @@ def test_truncated_form(client, truncated_by):
     }
 
 
-def test_unexected_form_structure(client):
+def test_unexpected_form_structure(client):
     resp1 = client.simulate_post(
         '/submit',
         headers={
             'Content-Type': 'multipart/form-data; '
             'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
-        body=EXAMPLE1[:-2] + b'--\r\n',
+        body=EXAMPLE1[:-4] + b'__\r\n',
     )
 
     assert resp1.status_code == 400
@@ -568,7 +597,8 @@ def test_too_many_body_parts(custom_client, max_body_part_count):
 
 
 @pytest.mark.skipif(not msgpack, reason='msgpack not installed')
-def test_random_form(client):
+@pytest.mark.parametrize('close_delimiter', ['--', '--\r\n'])
+def test_random_form(client, close_delimiter):
     part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
     form_data = (
         b''.join(
@@ -579,7 +609,7 @@ def test_random_form(client):
             + b'\r\n'
             for i in range(64)
         )
-        + '--{}--\r\n'.format(HASH_BOUNDARY).encode()
+        + '--{}{}'.format(HASH_BOUNDARY, close_delimiter).encode()
     )
 
     handler = media.MultipartFormHandler()
@@ -754,6 +784,46 @@ def test_filename_star(client):
         'description': 'invalid text or charset: esoteric',
         'title': 'Malformed multipart/form-data request media',
     }
+
+
+@pytest.mark.parametrize(
+    'max_length,expected',
+    [
+        (None, '__Arrow.txt'),
+        (0, '__Arrow.txt'),
+        (4, '__Ar'),
+        (5, '_.txt'),
+        (7, '__A.txt'),
+        (10, '__Arro.txt'),
+        (64, '__Arrow.txt'),
+    ],
+)
+def test_max_secure_filename_length(custom_client, max_length, expected):
+    client = custom_client({'max_secure_filename_length': max_length})
+
+    data = (
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'Content-Disposition: form-data; name="file"; '
+        b'filename=\xe2\xac\x85 Arrow.txt\r\n\r\n'
+        b'A unicode arrow in the filename.\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
+    )
+    content_type = 'multipart/form-data; boundary=' + 'a0d738bcdb30449eb0d13f4b72c2897e'
+
+    resp = client.simulate_post(
+        '/submit', headers={'Content-Type': content_type}, body=data
+    )
+    assert resp.status_code == 200
+    assert resp.json == [
+        {
+            'content_type': 'text/plain',
+            'data': 'A unicode arrow in the filename.',
+            'filename': '⬅ Arrow.txt',
+            'name': 'file',
+            'secure_filename': expected,
+            'text': 'A unicode arrow in the filename.',
+        }
+    ]
 
 
 @pytest.mark.parametrize('max_headers_size', [64, 140, 141, 142, 256, 1024])

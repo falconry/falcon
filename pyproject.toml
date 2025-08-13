@@ -40,6 +40,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Cython",
     "Typing :: Typed",
 ]
@@ -80,13 +81,12 @@ zip-safe = false
 version = {attr = "falcon.version.__version__"}
 
 [tool.setuptools.packages.find]
-exclude = ["examples", "tests"]
+include = ["falcon*"]
 
 [tool.mypy]
     exclude = [
         "falcon/bench",
         "falcon/cmd",
-        "falcon/vendor",
     ]
     disallow_untyped_defs = true
     warn_unused_ignores = true
@@ -116,16 +116,10 @@ exclude = ["examples", "tests"]
         ]
         ignore_missing_imports = true
 
-    [[tool.mypy.overrides]]
-        module = [
-            "falcon.vendor.*",
-        ]
-        disallow_untyped_defs = false
-
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "docs/changes/4.0.0.rst"
+    filename = "docs/changes/4.2.0.rst"
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
@@ -156,74 +150,64 @@ exclude = ["examples", "tests"]
         showcontent = true
 
 [tool.black]
-    # this is kept to avoid reformatting all the code if one were to
-    # inadvertently run black on the project
-    target-version = ["py38"]
-    skip-string-normalization = true
-    line-length = 88
-    extend-exclude = "falcon/vendor"
+# this is kept to avoid reformatting all the code if one were to
+# inadvertently run black on the project
+target-version = ["py38"]
+skip-string-normalization = true
+line-length = 88
 
 [tool.blue]
-    # NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
-    #   With the below settings, accidentally running blue should yield
-    #   only minor cosmetic changes in a handful of files.
-    target-version = ["py38"]
-    line-length = 88
-    extend-exclude = "falcon/vendor"
+# NOTE(vytas): Before switching to Ruff, Falcon used the Blue formatter.
+#   With the below settings, accidentally running blue should yield
+#   only minor cosmetic changes in a handful of files.
+target-version = ["py38"]
+line-length = 88
 
 [tool.ruff]
-    target-version = "py38"
-    format.quote-style = "single"
-    line-length = 88
-    extend-exclude = ["falcon/vendor"]
-    builtins = [
-        "ignore",
-        "attr",
-        "defined",
-    ]
-    exclude = [
-        ".ecosystem",
-        ".eggs",
-        ".git",
-        ".tox",
-        ".venv",
-        "build",
-        "dist",
-        "docs",
-        "falcon/bench/nuts",
-    ]
+target-version = "py38"
+format.quote-style = "single"
+line-length = 88
+builtins = [
+    "ignore",
+    "attr",
+    "defined",
+]
+exclude = [
+    ".ecosystem",
+    ".eggs",
+    ".git",
+    ".tox",
+    ".venv",
+    "build",
+    "dist",
+    "falcon/bench/nuts",
+]
 
 [tool.ruff.lint]
-    select = [
-        "C9",
-        "E",
-        "F",
-        "W",
-        "I",
-        "FA"
-    ]
+select = [
+    "C9",
+    "E",
+    "F",
+    "W",
+    "I",
+    "FA",
+]
 
 [tool.ruff.lint.mccabe]
-    max-complexity = 15
+max-complexity = 15
 
 [tool.ruff.lint.per-file-ignores]
-    "**/__init__.py" = [
-        "F401",
-        "E402",
-        "F403"
-    ]
-    "falcon/uri.py" = ["F401"]
-    "examples/*" = ["FA"]
+"examples/*" = ["FA"]
 
 [tool.ruff.lint.isort]
-    case-sensitive = false
-    force-single-line = true
-    order-by-type = false
-    single-line-exclusions = [
-        "typing"
-    ]
-    force-sort-within-sections = true
-    known-local-folder = ["asgilook", "look"]
+case-sensitive = false
+force-single-line = true
+order-by-type = false
+single-line-exclusions = [
+    "typing"
+]
+force-sort-within-sections = true
+known-local-folder = ["asgilook", "look"]
 
 [tool.pytest.ini_options]
 filterwarnings = [

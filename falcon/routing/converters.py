@@ -24,6 +24,7 @@ __all__ = (
     'DateTimeConverter',
     'FloatConverter',
     'IntConverter',
+    'PathConverter',
     'UUIDConverter',
 )
 
@@ -140,7 +141,9 @@ class FloatConverter(BaseConverter):
         max (float): Reject the value if it is greater than this number.
         finite (bool) : Determines whether or not to only match ordinary
             finite numbers (default: ``True``). Set to ``False`` to match
-            nan, inf, and -inf in addition to finite numbers.
+            ``nan``, ``inf``, and ``-inf`` in addition to finite numbers.
+
+    .. versionadded:: 4.0
     """
 
     __slots__ = '_finite', '_min', '_max'
@@ -179,12 +182,19 @@ class DateTimeConverter(BaseConverter):
     Keyword Args:
         format_string (str): String used to parse the field value
             into a datetime. Any format recognized by strptime() is
-            supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+            supported (default ``'%Y-%m-%dT%H:%M:%S%z'``).
+
+    .. versionchanged:: 4.0
+        The default value of `format_string` was changed from
+        ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
+
+        The new format is a superset of the old one parsing-wise, however, the
+        converted :class:`~datetime.datetime` object is now timezone-aware.
     """
 
     __slots__ = ('_format_string',)
 
-    def __init__(self, format_string: str = '%Y-%m-%dT%H:%M:%SZ') -> None:
+    def __init__(self, format_string: str = '%Y-%m-%dT%H:%M:%S%z') -> None:
         self._format_string = format_string
 
     def convert(self, value: str) -> Optional[datetime]:
@@ -228,6 +238,8 @@ class PathConverter(BaseConverter):
     (the default), while it will *not* match when that option is ``True``.
 
     (See also: :ref:`trailing_slash_in_path`)
+
+    .. versionadded:: 4.0
     """
 
     CONSUME_MULTIPLE_SEGMENTS = True

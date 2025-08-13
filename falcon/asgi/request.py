@@ -34,13 +34,13 @@ from typing import (
 from falcon import errors
 from falcon import request
 from falcon import request_helpers as helpers
+from falcon._typing import _UNSET
+from falcon._typing import AsgiReceive
+from falcon._typing import StoreArg
+from falcon._typing import UnsetOr
 from falcon.asgi_spec import AsgiEvent
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import Forwarded
-from falcon.typing import AsgiReceive
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
-from falcon.typing import StoreArgument
 from falcon.util import deprecation
 from falcon.util import ETag
 from falcon.util.uri import parse_host
@@ -100,7 +100,7 @@ class Request(request.Request):
     _cached_prefix: Optional[str] = None
     _cached_relative_uri: Optional[str] = None
     _cached_uri: Optional[str] = None
-    _media: MissingOr[Any] = MISSING
+    _media: UnsetOr[Any] = _UNSET
     _media_error: Optional[Exception] = None
     _stream: Optional[BoundedStream] = None
 
@@ -163,13 +163,13 @@ class Request(request.Request):
         self.scope = scope
         self.is_websocket = scope['type'] == 'websocket'
 
-        self.options = options if options else request.RequestOptions()
+        self.options = options if options is not None else request.RequestOptions()
 
         self.method = 'GET' if self.is_websocket else scope['method']
 
         self.uri_template = None
         # PERF(vytas): Fall back to class variable(s) when unset.
-        # self._media = MISSING
+        # self._media = _UNSET
         # self._media_error = None
 
         # TODO(kgriffs): ASGI does not specify whether 'path' may be empty,
@@ -252,7 +252,7 @@ class Request(request.Request):
     # ------------------------------------------------------------------------
     # Properties
     #
-    # Much of the logic from the ASGI Request class is duplicted in these
+    # Much of the logic from the ASGI Request class is duplicated in these
     # property implementations; however, to make the code more DRY we would
     # have to factor out the common logic, which would add overhead to these
     # properties and slow them down. They are simple enough that we should
@@ -564,7 +564,7 @@ class Request(request.Request):
 
         return netloc_value
 
-    async def get_media(self, default_when_empty: MissingOr[Any] = MISSING) -> Any:
+    async def get_media(self, default_when_empty: UnsetOr[Any] = _UNSET) -> Any:
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -606,10 +606,10 @@ class Request(request.Request):
             media (object): The deserialized media representation.
         """
 
-        if self._media is not MISSING:
+        if self._media is not _UNSET:
             return self._media
         if self._media_error is not None:
-            if default_when_empty is not MISSING and isinstance(
+            if default_when_empty is not _UNSET and isinstance(
                 self._media_error, errors.MediaNotFoundError
             ):
                 return default_when_empty
@@ -629,7 +629,7 @@ class Request(request.Request):
 
         except errors.MediaNotFoundError as err:
             self._media_error = err
-            if default_when_empty is not MISSING:
+            if default_when_empty is not _UNSET:
                 return default_when_empty
             raise
         except Exception as err:
@@ -655,7 +655,7 @@ class Request(request.Request):
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
-        if self._cached_if_match is MISSING:
+        if self._cached_if_match is _UNSET:
             header_value = self._asgi_headers.get(b'if-match')
             if header_value:
                 self._cached_if_match = helpers._parse_etags(
@@ -668,7 +668,7 @@ class Request(request.Request):
 
     @property
     def if_none_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
-        if self._cached_if_none_match is MISSING:
+        if self._cached_if_none_match is _UNSET:
             header_value = self._asgi_headers.get(b'if-none-match')
             if header_value:
                 self._cached_if_none_match = helpers._parse_etags(
@@ -792,7 +792,7 @@ class Request(request.Request):
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[str] = ...,
     ) -> str: ...
 
@@ -801,7 +801,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: str,
     ) -> str: ...
@@ -811,7 +811,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]: ...
 
@@ -819,7 +819,7 @@ class Request(request.Request):
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]:
         """Return the raw value of a query string parameter as a string.

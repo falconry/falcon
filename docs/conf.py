@@ -1,4 +1,4 @@
-# Copyright 2014-2024 by Falcon Contributors.
+# Copyright 2014-2025 by Falcon Contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,13 @@ import datetime
 import multiprocessing
 import os
 import sys
+
+try:
+    import falconry_pygments_theme
+except ImportError:
+    # NOTE(vytas): If one is packaging Falcon documentation, it might be
+    #   impractical to spend time and effort on our Pygments styles.
+    falconry_pygments_theme = None
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -77,10 +84,13 @@ extensions = [
     'sphinx_design',
     'myst_parser',
     # Falcon-specific extensions
+    'ext.autodoc_customizations',
     'ext.cibuildwheel',
     'ext.doorway',
+    'ext.falcon_releases',
     'ext.private_args',
     'ext.rfc',
+    'ext.workarounds',
 ]
 
 templates_path = ['_templates']
@@ -91,8 +101,34 @@ exclude_patterns = ['_build', '_newsfragments']
 #   so we specify a print-friendly theme here for the likes of latexpdf.
 pygments_style = 'bw'
 
+# myst configuration
+myst_enable_extensions = ['tasklist']
+myst_enable_checkboxes = True
+
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+
+# NOTE(vytas): The autodoc_type_aliases mapping below doesn't really work as
+#   advertised...
+#   Sphinx is looking for the mapped types defined as classes, however, typing
+#   aliases constructed with the help of the | operator (or Union meta type),
+#   etc, are recognized as module data/attributes, not types.
+# TODO(vytas): When defining a class alias manually, it seems to work as
+#   expected, e.g.,
+#
+#   .. class:: PreparedMiddlewareResult
+#
+#       An alias for the return type of prepare_middleware().
+#
+#   See also https://github.com/sphinx-doc/sphinx/issues/10785 & related issues
+#   for discussion and potentially better workarounds.
+# TODO(vytas): If we enable the "nitpicky" mode, we will have to add exceptions
+#   for all unresolved aliases.
+autodoc_type_aliases = {
+    'SyncMiddleware': 'SyncMiddleware',
+    'AsyncMiddleware': 'AsyncMiddleware',
+    'PreparedMiddlewareResult': 'PreparedMiddlewareResult',
+}
 
 # -- Options for HTML output --------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -115,9 +151,14 @@ html_context = {
 # Theme options are theme-specific and customize the look and feel further.
 # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/index.html
 
+_falconry_styles = falconry_pygments_theme is not None
+
 html_theme_options = {
-    'pygments_light_style': 'falconry-light',
-    'pygments_dark_style': 'falconry-dark',
+    # NOTE(vytas): If our Pygments styles are unavailable, fall back to the
+    #   visually closest Gruvbox styles.
+    #   NB that Gruvbox does not meet the WCAG 2.1 AA requirements for contrast.
+    'pygments_light_style': 'falconry-light' if _falconry_styles else 'gruvbox-light',
+    'pygments_dark_style': 'falconry-dark' if _falconry_styles else 'gruvbox-dark',
     'header_links_before_dropdown': 4,
     'external_links': [
         {
@@ -147,11 +188,8 @@ html_theme_options = {
             'icon': 'fa-custom fa-falcon',
         },
     ],
-    # NOTE(vytas): Use only light theme for now.
-    #   Add `theme-switcher` below to resurrect the dark option.
     'logo': {
         'text': 'Falcon',
-        # "image_dark": "_static/img/logo.svg",
     },
     'navbar_end': ['theme-switcher', 'navbar-icon-links'],
     'footer_start': ['copyright'],

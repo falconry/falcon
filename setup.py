@@ -36,12 +36,14 @@ if HAS_CYTHON and IS_CPYTHON and not DISABLE_EXTENSION:
         return module_names
 
     package_names = [
-        'falcon',
         'falcon.cyutil',
-        'falcon.media',
-        'falcon.routing',
-        'falcon.util',
-        'falcon.vendor.mimeparse',
+        # PERF(vytas): It seems that on recent (at the time of writing, 2025)
+        #   CPython versions (especially 3.12+), cythonizing pure Python code
+        #   is actually a de-optimization.
+        # 'falcon',
+        # 'falcon.media',
+        # 'falcon.routing',
+        # 'falcon.util',
     ]
 
     modules_to_exclude = [
@@ -59,13 +61,17 @@ if HAS_CYTHON and IS_CPYTHON and not DISABLE_EXTENSION:
         # NOTE(vytas): It is pointless to cythonize reader.py, since cythonized
         #   Falcon is using reader.pyx instead.
         'falcon.hooks',
+        'falcon.inspect',
         'falcon.responders',
+        'falcon.typing',
+        'falcon._typing',
         'falcon.util.reader',
         'falcon.util.sync',
+        'falcon.util.time',
     ]
 
     cython_package_names = ('falcon.cyutil',)
-    # NOTE(vytas): Now that all our codebase is Python 3.7+, specify the
+    # NOTE(vytas): Now that all our codebase is Python 3.8+, specify the
     #   Python 3 language level for Cython as well to avoid any surprises.
     cython_directives = {'language_level': '3', 'annotation_typing': False}
 

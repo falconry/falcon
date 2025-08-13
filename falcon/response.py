@@ -35,7 +35,11 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+import warnings
 
+from falcon._typing import _UNSET
+from falcon._typing import RangeSetHeader
+from falcon._typing import UnsetOr
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
@@ -47,15 +51,13 @@ from falcon.response_helpers import _format_range
 from falcon.response_helpers import _header_property
 from falcon.response_helpers import _is_ascii_encodable
 from falcon.typing import Headers
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
-from falcon.typing import RangeSetHeader
 from falcon.typing import ReadableIO
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import http_status_to_code
 from falcon.util import structures
 from falcon.util.deprecation import AttributeRemovedError
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
@@ -97,7 +99,7 @@ class Response:
     _extra_headers: Optional[List[Tuple[str, str]]]
     _headers: Headers
     _media: Optional[Any]
-    _media_rendered: MissingOr[bytes]
+    _media_rendered: UnsetOr[bytes]
 
     # Child classes may override this
     context_type: ClassVar[Type[structures.Context]] = structures.Context
@@ -178,7 +180,7 @@ class Response:
         #   only instantiating the list object later on IFF it is needed.
         self._extra_headers = None
 
-        self.options = options if options else ResponseOptions()
+        self.options = options if options is not None else ResponseOptions()
 
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
@@ -188,7 +190,7 @@ class Response:
         self.stream = None
         self._data = None
         self._media = None
-        self._media_rendered = MISSING
+        self._media_rendered = _UNSET
 
         self.context = self.context_type()
 
@@ -208,6 +210,20 @@ class Response:
     @status_code.setter
     def status_code(self, value: int) -> None:
         self.status = value
+
+    @property
+    def body(self) -> NoReturn:
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
+
+    @body.setter
+    def body(self, value: str) -> NoReturn:
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
 
     @property
     def data(self) -> Optional[bytes]:
@@ -251,7 +267,7 @@ class Response:
     @media.setter
     def media(self, value: Any) -> None:
         self._media = value
-        self._media_rendered = MISSING
+        self._media_rendered = _UNSET
 
     def render_body(self) -> Optional[bytes]:
         """Get the raw bytestring content for the response body.
@@ -276,9 +292,9 @@ class Response:
             data = self._data
 
             if data is None and self._media is not None:
-                # NOTE(kgriffs): We use a special MISSING singleton since
+                # NOTE(kgriffs): We use a special _UNSET singleton since
                 #   None is ambiguous (the media handler might return None).
-                if self._media_rendered is MISSING:
+                if self._media_rendered is _UNSET:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 
@@ -456,6 +472,9 @@ class Response:
                 standardized, it is already used by Chrome.
 
                 (See also: `CHIPS`_)
+
+                .. versionadded:: 4.0
+
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -546,9 +565,10 @@ class Response:
     def unset_cookie(
         self,
         name: str,
-        samesite: str = 'Lax',
         domain: Optional[str] = None,
         path: Optional[str] = None,
+        same_site: str = 'Lax',
+        samesite: Optional[str] = None,
     ) -> None:
         """Unset a cookie in the response.
 
@@ -571,9 +591,6 @@ class Response:
             name (str): Cookie name
 
         Keyword Args:
-            samesite (str): Allows to override the default 'Lax' same_site
-                    setting for the unset cookie.
-
             domain (str): Restricts the cookie to a specific domain and
                     any subdomains of that domain. By default, the user
                     agent will return the cookie only to the origin server.
@@ -600,6 +617,16 @@ class Response:
 
                 (See also: RFC 6265, Section 4.1.2.4)
 
+            same_site (str): Allows to override the default 'Lax' same_site
+                    setting for the unset cookie.
+
+                    .. versionadded:: 4.1
+
+            samesite (str): Deprecated. Use `same_site` instead.
+
+                    .. deprecated:: 4.1
+                       Please use the ``same_site`` parameter instead.
+
         .. _Same-Site warnings:
             https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings
         """  # noqa: E501
@@ -615,9 +642,22 @@ class Response:
         # thus removing it from future request objects.
         self._cookies[name]['expires'] = -1
 
+        # Handle deprecated samesite parameter
+        if samesite is not None:
+            warnings.warn(
+                'The "samesite" parameter is deprecated. '
+                'Please use "same_site" instead.',
+                DeprecatedWarning,
+                stacklevel=2,
+            )
+            # Use the deprecated parameter value if same_site was not explicitly set
+            same_site_value = samesite
+        else:
+            same_site_value = same_site
+
         # NOTE(CaselIT): Set SameSite to Lax to avoid setting invalid cookies.
         # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings  # noqa: E501
-        self._cookies[name]['samesite'] = samesite
+        self._cookies[name]['samesite'] = same_site_value
 
         if domain:
             self._cookies[name]['domain'] = domain
@@ -898,10 +938,9 @@ class Response:
                 Can take values 'anonymous' or 'use-credentials' or None.
                 (See:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
-            link_extension(iterable): Provides additional custom attributes, as
-                described in RFC 8288, Section 3.4.2. Each member of the iterable
+            link_extension: Provides additional custom attributes, as
+                described in RFC 8288, Section 3.4.2; each member of the iterable
                 must be a two-tuple in the form of (*param*, *value*).
-                (See: https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2)
 
         """
 
@@ -1371,7 +1410,7 @@ class ResponseOptions:
 
     secure_cookies_by_default: bool
     """Set to ``False`` in development environments to make the ``secure`` attribute
-    for all cookies. (default ``False``).
+    for all cookies. (default ``True``).
 
     This can make testing easier by not requiring HTTPS. Note, however, that this
     setting can be overridden via :meth:`~.Response.set_cookie()`'s ``secure`` kwarg.
@@ -1387,7 +1426,7 @@ class ResponseOptions:
     media_handlers: Handlers
     """A dict-like object for configuring the media-types to handle.
 
-    default, handlers are provided for the ``application/json``,
+    Default handlers are provided for the ``application/json``,
     ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
     """
     static_media_types: Dict[str, str]
@@ -1395,18 +1434,39 @@ class ResponseOptions:
 
     Defaults to ``mimetypes.types_map`` after calling ``mimetypes.init()``.
     """
+    xml_error_serialization: bool
+    """Set to ``False`` to disable automatic inclusion of the XML handler
+    in the :ref:`default error serializer <errors>` (default ``True``).
+
+    Enabling this option does not make Falcon automatically render all error
+    responses in XML, but it is used only in the case the client prefers
+    (via the ``Accept`` request header) XML to JSON and other configured media
+    handlers.
+
+    Note:
+        Falcon 5.0 will either change the default to ``False``, or remove the
+        automatic XML error serialization altogether.
+
+    Note:
+        This option has no effect when a custom error serializer, set using
+        :meth:`~falcon.App.set_error_serializer`, is in use.
+
+    .. versionadded:: 4.0
+    """
 
     __slots__ = (
         'secure_cookies_by_default',
         'default_media_type',
         'media_handlers',
         'static_media_types',
+        'xml_error_serialization',
     )
 
     def __init__(self) -> None:
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
+        self.xml_error_serialization = True
 
         if not mimetypes.inited:
             mimetypes.init()

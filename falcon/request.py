@@ -22,12 +22,12 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Iterable,
     List,
     Literal,
     Mapping,
     Optional,
     overload,
-    Sequence,
     TextIO,
     Tuple,
     Type,
@@ -40,6 +40,9 @@ import warnings
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon._typing import _UNSET
+from falcon._typing import StoreArg
+from falcon._typing import UnsetOr
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
 from falcon.forwarded import _parse_forwarded_header
@@ -47,16 +50,13 @@ from falcon.forwarded import Forwarded
 from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
-from falcon.typing import MISSING
-from falcon.typing import MissingOr
 from falcon.typing import ReadableIO
-from falcon.typing import StoreArgument
 from falcon.util import deprecation
 from falcon.util import ETag
+from falcon.util import mediatypes
 from falcon.util import structures
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
-from falcon.vendor import mimeparse
 
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
@@ -114,10 +114,8 @@ class Request:
     )
     _cookies: Optional[Dict[str, List[str]]] = None
     _cookies_collapsed: Optional[Dict[str, str]] = None
-    _cached_if_match: MissingOr[Optional[List[Union[ETag, Literal['*']]]]] = MISSING
-    _cached_if_none_match: MissingOr[Optional[List[Union[ETag, Literal['*']]]]] = (
-        MISSING
-    )
+    _cached_if_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
+    _cached_if_none_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
 
     # Child classes may override this
     context_type: ClassVar[Type[structures.Context]] = structures.Context
@@ -246,13 +244,13 @@ class Request:
         self.is_websocket: bool = False
 
         self.env = env
-        self.options = options if options else RequestOptions()
+        self.options = options if options is not None else RequestOptions()
 
         self._wsgierrors: TextIO = env['wsgi.errors']
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
-        self._media: MissingOr[Any] = MISSING
+        self._media: UnsetOr[Any] = _UNSET
         self._media_error: Optional[Exception] = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
@@ -474,6 +472,10 @@ class Request:
         """Value of the Date header, converted to a ``datetime`` instance.
 
         The header value is assumed to conform to RFC 1123.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('Date')
 
@@ -492,7 +494,7 @@ class Request:
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
-        if self._cached_if_match is MISSING:
+        if self._cached_if_match is _UNSET:
             header_value = self.env.get('HTTP_IF_MATCH')
             if header_value:
                 self._cached_if_match = helpers._parse_etags(header_value)
@@ -513,7 +515,7 @@ class Request:
 
         (See also: RFC 7232, Section 3.2)
         """  # noqa: D205
-        if self._cached_if_none_match is MISSING:
+        if self._cached_if_none_match is _UNSET:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
             if header_value:
                 self._cached_if_none_match = helpers._parse_etags(header_value)
@@ -527,6 +529,10 @@ class Request:
         """Value of the If-Modified-Since header.
 
         Returns ``None`` if the header is missing.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('If-Modified-Since')
 
@@ -535,6 +541,10 @@ class Request:
         """Value of the If-Unmodified-Since header.
 
         Returns ``None`` if the header is missing.
+
+        .. versionchanged:: 4.0
+            This property now returns timezone-aware
+            :class:`~datetime.datetime` objects (or ``None``).
         """
         return self.get_header_as_datetime('If-Unmodified-Since')
 
@@ -888,7 +898,10 @@ class Request:
 
     @property
     def headers_lower(self) -> Mapping[str, str]:
-        """Same as :attr:`headers` except header names are normalized to lowercase."""
+        """Same as :attr:`headers` except header names are normalized to lowercase.
+
+        .. versionadded:: 4.0
+        """
         if self._cached_headers_lower is None:
             self._cached_headers_lower = {
                 key.lower(): value for key, value in self.headers.items()
@@ -1062,7 +1075,7 @@ class Request:
 
         return netloc_value
 
-    def get_media(self, default_when_empty: MissingOr[Any] = MISSING) -> Any:
+    def get_media(self, default_when_empty: UnsetOr[Any] = _UNSET) -> Any:
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -1103,10 +1116,10 @@ class Request:
         Returns:
             media (object): The deserialized media representation.
         """
-        if self._media is not MISSING:
+        if self._media is not _UNSET:
             return self._media
         if self._media_error is not None:
-            if default_when_empty is not MISSING and isinstance(
+            if default_when_empty is not _UNSET and isinstance(
                 self._media_error, errors.MediaNotFoundError
             ):
                 return default_when_empty
@@ -1122,7 +1135,7 @@ class Request:
             )
         except errors.MediaNotFoundError as err:
             self._media_error = err
-            if default_when_empty is not MISSING:
+            if default_when_empty is not _UNSET:
                 return default_when_empty
             raise
         except Exception as err:
@@ -1169,11 +1182,11 @@ class Request:
 
         # Fall back to full-blown parsing
         try:
-            return mimeparse.quality(media_type, accept) != 0.0
+            return mediatypes.quality(media_type, accept) != 0.0
         except ValueError:
             return False
 
-    def client_prefers(self, media_types: Sequence[str]) -> Optional[str]:
+    def client_prefers(self, media_types: Iterable[str]) -> Optional[str]:
         """Return the client's preferred media type, given several choices.
 
         Args:
@@ -1189,7 +1202,7 @@ class Request:
 
         try:
             # NOTE(kgriffs): best_match will return '' if no match is found
-            preferred_type = mimeparse.best_match(media_types, self.accept)
+            preferred_type = mediatypes.best_match(media_types, self.accept)
         except ValueError:
             # Value for the accept header was not formatted correctly
             preferred_type = ''
@@ -1285,6 +1298,8 @@ class Request:
             HTTPBadRequest: The header was not found in the request, but
                 it was required.
             HttpInvalidHeader: The header contained a malformed/invalid value.
+
+        .. versionadded:: 4.0
         """
 
         http_int = self.get_header(header, required=required)
@@ -1328,6 +1343,10 @@ class Request:
             HTTPBadRequest: The header was not found in the request, but
                 it was required.
             HttpInvalidHeader: The header contained a malformed/invalid value.
+
+        .. versionchanged:: 4.0
+            This method now returns timezone-aware :class:`~datetime.datetime`
+            objects.
         """
 
         http_date = self.get_header(header, required=required)
@@ -1376,7 +1395,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[str] = ...,
     ) -> str: ...
 
@@ -1385,7 +1404,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: str,
     ) -> str: ...
@@ -1395,7 +1414,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]: ...
 
@@ -1403,7 +1422,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[str] = None,
     ) -> Optional[str]:
         """Return the raw value of a query string parameter as a string.
@@ -1488,7 +1507,7 @@ class Request:
         required: Literal[True],
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[int] = ...,
     ) -> int: ...
 
@@ -1499,7 +1518,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: int,
     ) -> int: ...
@@ -1511,7 +1530,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[int] = ...,
         max_value: Optional[int] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[int] = ...,
     ) -> Optional[int]: ...
 
@@ -1521,7 +1540,7 @@ class Request:
         required: bool = False,
         min_value: Optional[int] = None,
         max_value: Optional[int] = None,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[int] = None,
     ) -> Optional[int]:
         """Return the value of a query string parameter as an int.
@@ -1601,7 +1620,7 @@ class Request:
         required: Literal[True],
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[float] = ...,
     ) -> float: ...
 
@@ -1612,7 +1631,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: float,
     ) -> float: ...
@@ -1624,7 +1643,7 @@ class Request:
         required: bool = ...,
         min_value: Optional[float] = ...,
         max_value: Optional[float] = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[float] = ...,
     ) -> Optional[float]: ...
 
@@ -1634,7 +1653,7 @@ class Request:
         required: bool = False,
         min_value: Optional[float] = None,
         max_value: Optional[float] = None,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[float] = None,
     ) -> Optional[float]:
         """Return the value of a query string parameter as an float.
@@ -1712,7 +1731,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[UUID] = ...,
     ) -> UUID: ...
 
@@ -1721,7 +1740,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: UUID,
     ) -> UUID: ...
@@ -1731,7 +1750,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[UUID] = ...,
     ) -> Optional[UUID]: ...
 
@@ -1739,7 +1758,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[UUID] = None,
     ) -> Optional[UUID]:
         """Return the value of a query string parameter as an UUID.
@@ -1812,7 +1831,7 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         blank_as_true: bool = ...,
         default: Optional[bool] = ...,
     ) -> bool: ...
@@ -1822,7 +1841,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         blank_as_true: bool = ...,
         *,
         default: bool,
@@ -1833,7 +1852,7 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         blank_as_true: bool = ...,
         default: Optional[bool] = ...,
     ) -> Optional[bool]: ...
@@ -1842,7 +1861,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         blank_as_true: bool = True,
         default: Optional[bool] = None,
     ) -> Optional[bool]:
@@ -1926,7 +1945,7 @@ class Request:
         transform: None = ...,
         *,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[str]] = ...,
     ) -> List[str]: ...
 
@@ -1936,7 +1955,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[_T]] = ...,
     ) -> List[_T]: ...
 
@@ -1946,7 +1965,7 @@ class Request:
         name: str,
         transform: None = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: List[str],
     ) -> List[str]: ...
@@ -1957,7 +1976,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: List[_T],
     ) -> List[_T]: ...
@@ -1968,7 +1987,7 @@ class Request:
         name: str,
         transform: None = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[str]] = ...,
     ) -> Optional[List[str]]: ...
 
@@ -1978,7 +1997,7 @@ class Request:
         name: str,
         transform: Callable[[str], _T],
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[List[_T]] = ...,
     ) -> Optional[List[_T]]: ...
 
@@ -1987,7 +2006,7 @@ class Request:
         name: str,
         transform: Optional[Callable[[str], _T]] = None,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[List[_T]] = None,
     ) -> Optional[List[_T] | List[str]]:
         """Return the value of a query string parameter as a list.
@@ -2087,7 +2106,7 @@ class Request:
         format_string: str = ...,
         *,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[datetime] = ...,
     ) -> datetime: ...
 
@@ -2097,7 +2116,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: datetime,
     ) -> datetime: ...
@@ -2108,16 +2127,16 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[datetime] = ...,
     ) -> Optional[datetime]: ...
 
     def get_param_as_datetime(
         self,
         name: str,
-        format_string: str = '%Y-%m-%dT%H:%M:%SZ',
+        format_string: str = '%Y-%m-%dT%H:%M:%S%z',
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[datetime] = None,
     ) -> Optional[datetime]:
         """Return the value of a query string parameter as a datetime.
@@ -2128,7 +2147,7 @@ class Request:
         Keyword Args:
             format_string (str): String used to parse the param value
                 into a ``datetime``. Any format recognized by strptime() is
-                supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+                supported (default ``'%Y-%m-%dT%H:%M:%S%z'``).
             required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
@@ -2146,6 +2165,14 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be converted to a ``datetime``.
+
+        .. versionchanged:: 4.0
+            The default value of `format_string` was changed from
+            ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
+
+            The new format is a superset of the old one parsing-wise, however,
+            the converted :class:`~datetime.datetime` object is now
+            timezone-aware.
         """
 
         param_value = self.get_param(name, required=required)
@@ -2171,7 +2198,7 @@ class Request:
         format_string: str = ...,
         *,
         required: Literal[True],
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[py_date] = ...,
     ) -> py_date: ...
 
@@ -2181,7 +2208,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         *,
         default: py_date,
     ) -> py_date: ...
@@ -2192,7 +2219,7 @@ class Request:
         name: str,
         format_string: str = ...,
         required: bool = ...,
-        store: StoreArgument = ...,
+        store: StoreArg = ...,
         default: Optional[py_date] = ...,
     ) -> Optional[py_date]: ...
 
@@ -2201,7 +2228,7 @@ class Request:
         name: str,
         format_string: str = '%Y-%m-%d',
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[py_date] = None,
     ) -> Optional[py_date]:
         """Return the value of a query string parameter as a date.
@@ -2247,7 +2274,7 @@ class Request:
         self,
         name: str,
         required: bool = False,
-        store: StoreArgument = None,
+        store: StoreArg = None,
         default: Optional[Any] = None,
     ) -> Any:
         """Return the decoded JSON value of a query string parameter.
@@ -2322,10 +2349,7 @@ class Request:
 
         """
 
-        if name in self._params:
-            return True
-        else:
-            return False
+        return name in self._params
 
     def log_error(self, message: str) -> None:
         """Write an error message to the server's log.
@@ -2409,7 +2433,7 @@ class RequestOptions:
     respectively.
     """
 
-    keep_black_qs_values: bool
+    keep_blank_qs_values: bool
     """Set to ``False`` to ignore query string params that have missing or blank
     values (default ``True``).
 
@@ -2428,11 +2452,11 @@ class RequestOptions:
         via :attr:`~falcon.Request.params`, :meth:`~falcon.Request.get_param`,
         etc.
 
-        Warning:
+        .. deprecated:: 3.0
             The `auto_parse_form_urlencoded` option is not supported for
             ASGI apps, and is considered deprecated for WSGI apps as of
             Falcon 3.0, in favor of accessing URL-encoded forms
-            through :attr:`~Request.media`.
+            through :meth:`~falcon.Request.get_media`.
 
             The attribute and the auto-parsing functionality will be removed
             entirely in Falcon 5.0.

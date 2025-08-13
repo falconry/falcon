@@ -1,0 +1,53 @@
+# Test various architectures by building out binaries with cibuildwheel.
+name: test-wheels
+
+on:
+  # Trigger the workflow on master but also allow it to run manually.
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  test-emulated:
+    name: "cibuildwheel: ${{ matrix.platform.build }}"
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - build: "cp314-manylinux_aarch64"
+            os: ubuntu-24.04-arm
+          - build: "cp314-manylinux_s390x"
+            os: ubuntu-latest
+            emulation: true
+          - build: "cp38-manylinux_x86_64"
+            os: ubuntu-latest
+          - build: "cp314-musllinux_x86_64"
+            os: ubuntu-latest
+          - build: "cp313-macosx_arm64"
+            os: macos-14
+          - build: "cp313-win_amd64"
+            os: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        if: ${{ matrix.platform.emulation }}
+        with:
+          platforms: all
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.1.0
+        env:
+          # NOTE(vytas): Uncomment to test against alpha/beta CPython
+          #   (usually May-July until rc1).
+          # CIBW_ENABLE: cpython-prerelease
+
+          CIBW_ARCHS_LINUX: all
+          CIBW_BUILD: ${{ matrix.platform.build }}

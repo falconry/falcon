@@ -23,7 +23,7 @@ and then assign its value to :attr:`resp.text <falcon.Response.text>`:
         .. literalinclude:: ../../../examples/recipes/output_csv_text_asgi.py
             :language: python
 
-Here we set the response ``Content-Type`` to ``"text/csv"`` as
+Here we set the response ``Content-Type`` to :data:`~falcon.constants.MEDIA_CSV` as
 recommended by `RFC 4180 <https://tools.ietf.org/html/rfc4180>`_, and assign
 the downloadable file name ``report.csv`` via the ``Content-Disposition``
 header (see also: :ref:`serve-downloadable-as`).

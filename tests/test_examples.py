@@ -13,6 +13,18 @@ except ImportError:
 import falcon.testing as testing
 
 
+def test_quote(util):
+    quote = util.load_module('examples/quote.py')
+
+    resp = testing.simulate_get(quote.app, '/quote')
+
+    assert resp.status_code == 200
+    assert resp.json == {
+        'author': 'Grace Hopper',
+        'quote': "I've always been more interested in the future than in the past.",
+    }
+
+
 def test_things(asgi, util):
     suffix = '_asgi' if asgi else ''
     things = util.load_module(f'examples/things{suffix}.py')

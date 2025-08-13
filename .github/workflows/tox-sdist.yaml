@@ -1,4 +1,4 @@
-name: Run tests (contributor's checklist)
+name: test-tox-sdist
 
 on:
   # Trigger the workflow on master but also allow it to run manually.
@@ -9,7 +9,7 @@ on:
 
 jobs:
   run_tox:
-    name: tox (default envlist on ${{matrix.python-version}})
+    name: tox (python${{ matrix.python-version }})
     runs-on: "ubuntu-latest"
     strategy:
       fail-fast: false
@@ -19,6 +19,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
 
     steps:
       - name: Checkout repo
@@ -26,15 +27,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v5
-        if: ${{ matrix.python-version != '3.13' }}
         with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        if: ${{ matrix.python-version == '3.13' }}
-        with:
-          python-version: "3.13.0-rc.1 - 3.13"
+          python-version: ${{ matrix.python-version != '3.14' && matrix.python-version || '3.14.0-rc.1 - 3.14.0'}}
 
       - name: Install dependencies
         run: |

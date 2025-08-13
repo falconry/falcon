@@ -45,7 +45,7 @@ from falcon.util import deprecation
 from falcon.util.misc import dt_to_http
 
 if TYPE_CHECKING:
-    from falcon.typing import HeaderArg
+    from falcon._typing import HeaderArg
     from falcon.typing import Headers
 
 
@@ -88,6 +88,8 @@ __all__ = (
     'HTTPUnsupportedMediaType',
     'HTTPUriTooLong',
     'HTTPVersionNotSupported',
+    'InvalidMediaRange',
+    'InvalidMediaType',
     'MediaMalformedError',
     'MediaNotFoundError',
     'MediaValidationError',
@@ -109,6 +111,14 @@ class HeaderNotSupported(ValueError):
 
 class CompatibilityError(ValueError):
     """The given method, value, or type is not compatible."""
+
+
+class InvalidMediaType(ValueError):
+    """The provided media type cannot be parsed into type/subtype."""
+
+
+class InvalidMediaRange(InvalidMediaType):
+    """The media range contains an invalid media type and/or the q value."""
 
 
 class UnsupportedScopeError(RuntimeError):
@@ -144,10 +154,10 @@ class WebSocketDisconnected(ConnectionError):
     Keyword Args:
         code (int): The WebSocket close code, as per the WebSocket spec
             (default ``1000``).
-
-    Attributes:
-        code (int): The WebSocket close code, as per the WebSocket spec.
     """
+
+    code: int
+    """The WebSocket close code, as per the WebSocket spec."""
 
     def __init__(self, code: Optional[int] = None) -> None:
         self.code = code or 1000  # Default to "Normal Closure"
@@ -1006,6 +1016,8 @@ class HTTPContentTooLarge(HTTPError):
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
+
+    .. versionadded:: 4.0
     """
 
     def __init__(
@@ -2606,7 +2618,7 @@ class MediaMalformedError(HTTPBadRequest):
         return msg
 
     @description.setter
-    def description(self, value: str) -> None:
+    def description(self, value: Optional[str]) -> None:
         pass
 
 

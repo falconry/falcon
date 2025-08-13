@@ -20,7 +20,12 @@ __all__ = ('TimezoneGMT',)
 
 
 class TimezoneGMT(datetime.tzinfo):
-    """GMT timezone class implementing the :class:`datetime.tzinfo` interface."""
+    """GMT timezone class implementing the :class:`datetime.tzinfo` interface.
+
+    .. deprecated:: 4.0
+        :class:`TimezoneGMT` is deprecated, use :attr:`datetime.timezone.utc`
+        instead. (This class will be removed in Falcon 5.0.)
+    """
 
     GMT_ZERO = datetime.timedelta(hours=0)
 

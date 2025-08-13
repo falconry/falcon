@@ -18,12 +18,12 @@ from __future__ import annotations
 
 from typing import Any, Iterable, NoReturn, TYPE_CHECKING, Union
 
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import ResponderCallable
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPMethodNotAllowed
 from falcon.errors import HTTPRouteNotFound
 from falcon.status_codes import HTTP_200
-from falcon.typing import AsgiResponderCallable
-from falcon.typing import ResponderCallable
 
 if TYPE_CHECKING:
     from falcon import Request

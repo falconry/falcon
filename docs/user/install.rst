@@ -127,7 +127,7 @@ Binary Wheels
 ^^^^^^^^^^^^^
 
 Binary Falcon wheels are automatically built for many CPython platforms,
-courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/en/stable/>`__.
+courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/>`__.
 
 .. wheels:: .github/workflows/cibuildwheel.yaml
 
@@ -148,7 +148,7 @@ courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/en/stable/>`__.
     :ref:`Let us know how it went <chat>`!
 
 While we believe that our build configuration covers the most common
-development and deployment scenarios, :ref:`let us known <chat>` if you are
+development and deployment scenarios, :ref:`let us know <chat>` if you are
 interested in any builds that are currently missing from our selection!
 
 Dependencies

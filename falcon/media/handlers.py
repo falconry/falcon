@@ -18,6 +18,8 @@ from typing import (
 )
 
 from falcon import errors
+from falcon._typing import DeserializeSync
+from falcon._typing import SerializeSync
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MULTIPART
 from falcon.constants import MEDIA_URLENCODED
@@ -28,10 +30,8 @@ from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
 from falcon.media.multipart import MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
-from falcon.typing import DeserializeSync
-from falcon.typing import SerializeSync
+from falcon.util import mediatypes
 from falcon.util import misc
-from falcon.vendor import mimeparse
 
 
 class MissingDependencyHandler(BinaryBaseHandlerWS):
@@ -186,7 +186,7 @@ def _best_match(media_type: str, all_media_types: Sequence[str]) -> Optional[str
     try:
         # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
         # parse the media type, but cannot find a suitable type.
-        result = mimeparse.best_match(all_media_types, media_type)
+        result = mediatypes.best_match(all_media_types, media_type)
     except ValueError:
         pass
 

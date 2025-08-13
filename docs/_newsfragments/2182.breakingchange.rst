@@ -1,3 +1,0 @@
-The function :func:`falcon.http_date_to_dt` now validates HTTP dates to have
-the correct timezone set. It now also returns timezone-aware
-:class:`~datetime.datetime` objects.

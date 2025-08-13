@@ -45,6 +45,19 @@ from falcon import app_helpers as helpers
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import AsgiResponderWsCallable
+from falcon._typing import AsgiSinkCallable
+from falcon._typing import ErrorHandler
+from falcon._typing import ErrorSerializer
+from falcon._typing import FindMethod
+from falcon._typing import ProcessResponseMethod
+from falcon._typing import ResponderCallable
+from falcon._typing import SinkCallable
+from falcon._typing import SinkPrefix
+from falcon._typing import StartResponse
+from falcon._typing import SyncMiddleware
+from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPInternalServerError
@@ -56,19 +69,7 @@ from falcon.request import RequestOptions
 from falcon.response import Response
 from falcon.response import ResponseOptions
 import falcon.status_codes as status
-from falcon.typing import AsgiResponderCallable
-from falcon.typing import AsgiResponderWsCallable
-from falcon.typing import AsgiSinkCallable
-from falcon.typing import ErrorHandler
-from falcon.typing import ErrorSerializer
-from falcon.typing import FindMethod
-from falcon.typing import ProcessResponseMethod
 from falcon.typing import ReadableIO
-from falcon.typing import ResponderCallable
-from falcon.typing import SinkCallable
-from falcon.typing import SinkPrefix
-from falcon.typing import StartResponse
-from falcon.typing import WSGIEnvironment
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
@@ -90,7 +91,7 @@ _TYPELESS_STATUS_CODES = frozenset(
         status.HTTP_304,
     ]
 )
-_BE = TypeVar('_BE', bound=BaseException)
+_BE = TypeVar('_BE', bound=Exception)
 
 
 class App:
@@ -261,7 +262,7 @@ class App:
     )
 
     _cors_enable: bool
-    _error_handlers: Dict[Type[BaseException], ErrorHandler]
+    _error_handlers: Dict[Type[Exception], ErrorHandler]
     _independent_middleware: bool
     _middleware: helpers.PreparedMiddlewareResult
     _request_type: Type[Request]
@@ -286,7 +287,7 @@ class App:
     _static_routes: List[
         Tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
-    _unprepared_middleware: List[object]
+    _unprepared_middleware: List[SyncMiddleware]
 
     # Attributes
     req_options: RequestOptions
@@ -303,9 +304,9 @@ class App:
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Type[Request] = Request,
-        response_type: Type[Response] = Response,
-        middleware: Union[object, Iterable[object]] = None,
+        request_type: Optional[Type[Request]] = None,
+        response_type: Optional[Type[Response]] = None,
+        middleware: Optional[Union[SyncMiddleware, Iterable[SyncMiddleware]]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -317,33 +318,17 @@ class App:
         self._static_routes = []
         self._sink_and_static_routes = ()
 
-        if cors_enable:
-            cm = CORSMiddleware()
-
-            if middleware is None:
-                middleware = [cm]
-            else:
-                try:
-                    # NOTE(kgriffs): Check to see if middleware is an
-                    #   iterable, and if so, append the CORSMiddleware
-                    #   instance.
-                    middleware = list(middleware)  # type: ignore[arg-type]
-                    middleware.append(cm)  # type: ignore[arg-type]
-                except TypeError:
-                    # NOTE(kgriffs): Assume the middleware kwarg references
-                    #   a single middleware component.
-                    middleware = [middleware, cm]
-
-        # set middleware
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
-        self.add_middleware(middleware)
+        self.add_middleware(middleware or [])
+        if cors_enable:
+            self.add_middleware([CORSMiddleware()])
 
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
 
-        self._request_type = request_type
-        self._response_type = response_type
+        self._request_type = request_type or Request
+        self._response_type = response_type or Response
 
         self._error_handlers = {}
         self._serialize_error = helpers.default_serialize_error
@@ -524,7 +509,9 @@ class App:
         """
         return self._router.options
 
-    def add_middleware(self, middleware: Union[object, Iterable[object]]) -> None:
+    def add_middleware(
+        self, middleware: Union[SyncMiddleware, Iterable[SyncMiddleware]]
+    ) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -535,20 +522,22 @@ class App:
         """
 
         # NOTE(kgriffs): Since this is called by the initializer, there is
-        #   the chance that middleware may be None.
+        #   the chance that middleware may be empty.
         if middleware:
             try:
-                middleware = list(middleware)  # type: ignore[call-overload]
+                # NOTE(kgriffs): Check to see if middleware is an iterable.
+                middleware = list(cast(Iterable[SyncMiddleware], middleware))
             except TypeError:
-                # middleware is not iterable; assume it is just one bare component
-                middleware = [middleware]
+                # NOTE(kgriffs): Middleware is not iterable; assume it is just
+                #   one bare component.
+                middleware = [cast(SyncMiddleware, middleware)]
 
             if (
                 self._cors_enable
                 and len(
                     [
                         mc
-                        for mc in self._unprepared_middleware + middleware  # type: ignore[operator]
+                        for mc in self._unprepared_middleware + middleware
                         if isinstance(mc, CORSMiddleware)
                     ]
                 )
@@ -559,7 +548,7 @@ class App:
                     'cors_enable (which already constructs one instance)'
                 )
 
-            self._unprepared_middleware += middleware  # type: ignore[arg-type]
+            self._unprepared_middleware += middleware
 
         # NOTE(kgriffs): Even if middleware is None or an empty list, we still
         #   need to make sure self._middleware is initialized if this is the
@@ -775,7 +764,30 @@ class App:
 
                 Note:
                     When using an async version of the ``App``, this must be a
-                    coroutine.
+                    coroutine function taking the form
+                    ``func(req, resp, ws=None, **kwargs)``.
+
+                    Similar to
+                    :meth:`error handlers <falcon.asgi.App.add_error_handler>`,
+                    in the case of a WebSocket connection, the
+                    :class:`resp <falcon.asgi.Response>` argument will be
+                    ``None``, whereas the `ws` keyword argument will receive
+                    the :class:`~falcon.asgi.WebSocket` connection object.
+
+                    For backwards-compatibility, when `ws` is absent from the
+                    sink's signature, or a regex match (see **prefix** below)
+                    contains a group named 'ws', the
+                    :class:`~falcon.asgi.WebSocket` object is passed in place
+                    of the incompatible `resp`.
+
+                    This behavior will change in Falcon 5.0: when draining a
+                    WebSocket connection, `resp` will always be set to ``None``
+                    regardless of the sink's signature.
+
+                .. versionadded:: 4.1
+                    If an asynchronous sink callable explicitly defines a `ws`
+                    argument, it is used to pass the
+                    :class:`~falcon.asgi.WebSocket` connection object.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the
@@ -823,13 +835,13 @@ class App:
     @overload
     def add_error_handler(
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[ErrorHandler] = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        exception: Union[Type[Exception], Iterable[Type[Exception]]],
         handler: Optional[ErrorHandler] = None,
     ) -> None:
         """Register a handler for one or more exception types.
@@ -913,7 +925,7 @@ class App:
         def wrap_old_handler(old_handler: Callable[..., Any]) -> ErrorHandler:
             @wraps(old_handler)
             def handler(
-                req: Request, resp: Response, ex: BaseException, params: Dict[str, Any]
+                req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
             ) -> None:
                 old_handler(ex, req, resp, params)
 
@@ -945,14 +957,14 @@ class App:
             )
             handler = wrap_old_handler(handler)
 
-        exception_tuple: Tuple[type[BaseException], ...]
+        exception_tuple: Tuple[type[Exception], ...]
         try:
             exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
             exception_tuple = (exception,)  # type: ignore[assignment]
 
         for exc in exception_tuple:
-            if not issubclass(exc, BaseException):
+            if not issubclass(exc, Exception):
                 raise TypeError('"exception" must be an exception type.')
 
             self._error_handlers[exc] = handler
@@ -1012,7 +1024,7 @@ class App:
     # ------------------------------------------------------------------------
 
     def _prepare_middleware(
-        self, middleware: List[object], independent_middleware: bool = False
+        self, middleware: List[SyncMiddleware], independent_middleware: bool = False
     ) -> helpers.PreparedMiddlewareResult:
         return helpers.prepare_middleware(
             middleware=middleware, independent_middleware=independent_middleware
@@ -1136,12 +1148,12 @@ class App:
         self._compose_error_response(req, resp, error)
 
     def _python_error_handler(
-        self, req: Request, resp: Response, error: BaseException, params: Dict[str, Any]
+        self, req: Request, resp: Response, error: Exception, params: Dict[str, Any]
     ) -> None:
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
 
-    def _find_error_handler(self, ex: BaseException) -> Optional[ErrorHandler]:
+    def _find_error_handler(self, ex: Exception) -> Optional[ErrorHandler]:
         # NOTE(csojinb): The `__mro__` class attribute returns the method
         # resolution order tuple, i.e. the complete linear inheritance chain
         # ``(type(ex), ..., object)``. For a valid exception class, the last
@@ -1159,7 +1171,7 @@ class App:
         return None
 
     def _handle_exception(
-        self, req: Request, resp: Response, ex: BaseException, params: Dict[str, Any]
+        self, req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
     ) -> bool:
         """Handle an exception raised from mw or a responder.
 
@@ -1273,8 +1285,9 @@ class API(App):
     reflect the breadth of applications that :class:`App <falcon.App>`, and its
     ASGI counterpart in particular, can now be used for.
 
-    This compatibility alias is deprecated; it will be removed entirely in
-    Falcon 5.0.
+    .. deprecated:: 3.0
+        This compatibility alias is deprecated; it will be removed entirely in
+        Falcon 5.0.
     """
 
     @deprecation.deprecated(

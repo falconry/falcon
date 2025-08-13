@@ -1,7 +1,7 @@
 [run]
 branch = True
 source = falcon
-omit = falcon/tests*,falcon/typing.py,falcon/cmd/bench.py,falcon/bench/*,falcon/vendor/*
+omit = falcon/tests*,falcon/_typing.py,falcon/cmd/bench.py,falcon/bench/*,falcon/vendor/*
 
 parallel = True
 
@@ -13,5 +13,6 @@ exclude_also =
     pragma: nocover
     pragma: no py39,py310 cover
     pragma: no py311 cover
+    pragma: no py314 cover
     @overload
     class .*\bProtocol\):

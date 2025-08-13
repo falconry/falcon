@@ -51,6 +51,7 @@ __all__ = (
     'COMBINED_METHODS',
     'DEFAULT_MEDIA_TYPE',
     'MEDIA_BMP',
+    'MEDIA_CSV',
     'MEDIA_GIF',
     'MEDIA_HTML',
     'MEDIA_JPEG',
@@ -58,6 +59,7 @@ __all__ = (
     'MEDIA_JSON',
     'MEDIA_MSGPACK',
     'MEDIA_MULTIPART',
+    'MEDIA_PARQUET',
     'MEDIA_PNG',
     'MEDIA_TEXT',
     'MEDIA_URLENCODED',
@@ -84,6 +86,7 @@ __all__ = (
     'http_status_to_code',
     'IS_64_BITS',
     'is_python_func',
+    'mediatypes',
     'misc',
     'parse_header',
     'reader',
@@ -138,6 +141,8 @@ __all__ = (
     'HTTPUnsupportedMediaType',
     'HTTPUriTooLong',
     'HTTPVersionNotSupported',
+    'InvalidMediaRange',
+    'InvalidMediaType',
     'MediaMalformedError',
     'MediaNotFoundError',
     'MediaValidationError',
@@ -265,6 +270,7 @@ __all__ = (
     'HTTP_BAD_GATEWAY',
     'HTTP_BAD_REQUEST',
     'HTTP_CONFLICT',
+    'HTTP_CONTENT_TOO_LARGE',
     'HTTP_CONTINUE',
     'HTTP_CREATED',
     'HTTP_EARLY_HINTS',
@@ -332,6 +338,7 @@ from falcon.constants import COMBINED_METHODS
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import HTTP_METHODS
 from falcon.constants import MEDIA_BMP
+from falcon.constants import MEDIA_CSV
 from falcon.constants import MEDIA_GIF
 from falcon.constants import MEDIA_HTML
 from falcon.constants import MEDIA_JPEG
@@ -339,6 +346,7 @@ from falcon.constants import MEDIA_JS
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MSGPACK
 from falcon.constants import MEDIA_MULTIPART
+from falcon.constants import MEDIA_PARQUET
 from falcon.constants import MEDIA_PNG
 from falcon.constants import MEDIA_TEXT
 from falcon.constants import MEDIA_URLENCODED
@@ -387,6 +395,8 @@ from falcon.errors import HTTPUnprocessableEntity
 from falcon.errors import HTTPUnsupportedMediaType
 from falcon.errors import HTTPUriTooLong
 from falcon.errors import HTTPVersionNotSupported
+from falcon.errors import InvalidMediaRange
+from falcon.errors import InvalidMediaType
 from falcon.errors import MediaMalformedError
 from falcon.errors import MediaNotFoundError
 from falcon.errors import MediaValidationError
@@ -616,6 +626,7 @@ from falcon.util import http_now
 from falcon.util import http_status_to_code
 from falcon.util import IS_64_BITS
 from falcon.util import is_python_func
+from falcon.util import mediatypes
 from falcon.util import misc
 from falcon.util import parse_header
 from falcon.util import reader

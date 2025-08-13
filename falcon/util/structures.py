@@ -141,6 +141,14 @@ class Context:
     'lru'
     >>> 'cache_strategy' in context
     True
+
+    Although we have decided to maintain the mapping interface in the
+    foreseeable future, new code should prefer the attribute-based approach, as
+    it is more performant.
+
+    What is more, if you continue to use the mapping interface
+    (or mix-and-match), care needs to be taken not to overwrite :class:`dict`
+    methods such as :meth:`~dict.items`, :meth:`~dict.values`, etc.
     """
 
     # NOTE(vytas): Define synthetic attr access methods (under TYPE_CHECKING)
@@ -259,13 +267,10 @@ class ETag(str):
             resp.status = falcon.HTTP_200
 
     (See also: RFC 7232)
-
-    Attributes:
-        is_weak (bool): ``True`` if the entity-tag is weak, otherwise ``False``.
-
     """
 
-    is_weak = False
+    is_weak: bool = False
+    """``True`` if the entity-tag is weak, otherwise ``False``."""
 
     def strong_compare(self, other: ETag) -> bool:
         """Perform a strong entity-tag comparison.

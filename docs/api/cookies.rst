@@ -155,24 +155,17 @@ at least set this attribute to ``'Lax'`` in order to mitigate
 Currently, :meth:`~falcon.Response.set_cookie` does not set `SameSite` by
 default, although this may change in a future release.
 
-.. note::
-
-    The standard ``http.cookies`` module does not support the `SameSite`
-    attribute in versions prior to Python 3.8. Therefore, Falcon performs a
-    simple monkey-patch on the standard library module to backport this
-    feature for apps running on older Python versions.
-
 .. _RFC 6265, Section 4.1.2.5:
     https://tools.ietf.org/html/rfc6265#section-4.1.2.5
 
 When unsetting a cookie, :meth:`~falcon.Response.unset_cookie`,
 the default `SameSite` setting of the unset cookie is ``'Lax'``, but can be changed
-by setting the 'samesite' kwarg.
+by setting the 'same_site' kwarg.
 
 The Partitioned Attribute
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Q1 2024, Google Chrome will start to
+Starting from Q1 2024, Google Chrome started to
 `phase out support for third-party cookies
 <https://developers.google.com/privacy-sandbox/3pcd/prepare/prepare-for-phaseout>`__.
 If your site is relying on cross-site cookies, it might be necessary to set the
@@ -187,7 +180,7 @@ automatically depending on other attributes (like ``SameSite``),
 although this may change in a future release.
 
 .. note::
-    Similar to ``SameSite`` on older Python versions, the standard
-    :mod:`http.cookies` module does not support the ``Partitioned`` attribute
-    yet, and Falcon performs the same monkey-patching as it did for
-    ``SameSite``.
+    The standard :mod:`http.cookies` module does not support the `Partitioned`
+    attribute in versions prior to Python 3.14. Therefore, Falcon performs a
+    simple monkey-patch on the standard library module to backport this
+    feature for apps running on older Python versions.

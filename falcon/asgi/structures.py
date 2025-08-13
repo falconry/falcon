@@ -5,7 +5,6 @@ from typing import Optional
 from falcon.constants import MEDIA_JSON
 from falcon.media import BaseHandler
 from falcon.media.json import _DEFAULT_JSON_HANDLER
-from falcon.typing import JSONSerializable
 
 __all__ = ('SSEvent',)
 
@@ -60,7 +59,7 @@ class SSEvent:
     """String to use for the ``data`` field in the message.
     Will be encoded as UTF-8 in the event. Takes precedence over `json`.
     """
-    json: JSONSerializable
+    json: object
     """JSON-serializable object to be converted to JSON and used as the ``data``
     field in the event message.
     """
@@ -89,7 +88,7 @@ class SSEvent:
         self,
         data: Optional[bytes] = None,
         text: Optional[str] = None,
-        json: JSONSerializable = None,
+        json: Optional[object] = None,
         event: Optional[str] = None,
         event_id: Optional[str] = None,
         retry: Optional[int] = None,

@@ -33,10 +33,14 @@ HTTP Status
 .. autofunction:: falcon.http_status_to_code
 .. autofunction:: falcon.code_to_http_status
 
+.. _mediatype_util:
+
 Media types
 -----------
 
 .. autofunction:: falcon.parse_header
+.. autofunction:: falcon.mediatypes.quality
+.. autofunction:: falcon.mediatypes.best_match
 
 Async
 -----
