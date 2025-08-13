@@ -69,7 +69,7 @@ UnsetOr = Union[Literal[_Unset.UNSET], _T]
 Link = Dict[str, str]
 CookieArg = Mapping[str, Union[str, Cookie]]
 # Error handlers
-ErrorHandler = Callable[['Request', 'Response', BaseException, Dict[str, Any]], None]
+ErrorHandler = Callable[['Request', 'Response', Exception, Dict[str, Any]], None]
 
 
 class AsgiErrorHandler(Protocol):
@@ -77,7 +77,7 @@ class AsgiErrorHandler(Protocol):
         self,
         req: AsgiRequest,
         resp: Optional[AsgiResponse],
-        error: BaseException,
+        error: Exception,
         params: Dict[str, Any],
         *,
         ws: Optional[WebSocket] = ...,
@@ -99,7 +99,7 @@ class SinkCallable(Protocol):
 
 class AsgiSinkCallable(Protocol):
     async def __call__(
-        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: Optional[str]
+        self, req: AsgiRequest, resp: Optional[AsgiResponse], **kwargs: Optional[str]
     ) -> None: ...
 
 
@@ -198,3 +198,170 @@ class SerializeSync(Protocol):
 DeserializeSync = Callable[[bytes], Any]
 
 Responder = Union[ResponderMethod, AsgiResponderMethod]
+
+
+# WSGI middleware interface
+class WsgiMiddlewareWithProcessRequest(Protocol):
+    """WSGI Middleware with request handler."""
+
+    def process_request(self, req: Request, resp: Response) -> None: ...
+
+
+class WsgiMiddlewareWithProcessResource(Protocol):
+    """WSGI Middleware with resource handler."""
+
+    def process_resource(
+        self,
+        req: Request,
+        resp: Response,
+        resource: object,
+        params: Dict[str, Any],
+    ) -> None: ...
+
+
+class WsgiMiddlewareWithProcessResponse(Protocol):
+    """WSGI Middleware with response handler."""
+
+    def process_response(
+        self, req: Request, resp: Response, resource: object, req_succeeded: bool
+    ) -> None: ...
+
+
+# ASGI lifespan middleware interface
+class AsgiMiddlewareWithProcessStartup(Protocol):
+    """ASGI middleware with startup handler."""
+
+    async def process_startup(
+        self, scope: Mapping[str, Any], event: Mapping[str, Any]
+    ) -> None: ...
+
+
+class AsgiMiddlewareWithProcessShutdown(Protocol):
+    """ASGI middleware with shutdown handler."""
+
+    async def process_shutdown(
+        self, scope: Mapping[str, Any], event: Mapping[str, Any]
+    ) -> None: ...
+
+
+# ASGI middleware interface
+class AsgiMiddlewareWithProcessRequest(Protocol):
+    """ASGI middleware with request handler."""
+
+    async def process_request(self, req: AsgiRequest, resp: AsgiResponse) -> None: ...
+
+
+class AsgiMiddlewareWithProcessResource(Protocol):
+    """ASGI middleware with resource handler."""
+
+    async def process_resource(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        params: Mapping[str, Any],
+    ) -> None: ...
+
+
+class AsgiMiddlewareWithProcessResponse(Protocol):
+    """ASGI middleware with response handler."""
+
+    async def process_response(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None: ...
+
+
+# ASGI WebSocket middleware
+class AsgiMiddlewareWithProcessRequestWs(Protocol):
+    """ASGI middleware with WebSocket request handler."""
+
+    async def process_request_ws(self, req: AsgiRequest, ws: WebSocket) -> None: ...
+
+
+class AsgiMiddlewareWithProcessResourceWs(Protocol):
+    """ASGI middleware with WebSocket resource handler."""
+
+    async def process_resource_ws(
+        self,
+        req: AsgiRequest,
+        ws: WebSocket,
+        resource: object,
+        params: Mapping[str, Any],
+    ) -> None: ...
+
+
+# Universal middleware that provides async versions via the _async postfix
+class UniversalMiddlewareWithProcessRequest(WsgiMiddlewareWithProcessRequest, Protocol):
+    """WSGI/ASGI middleware with request handler."""
+
+    async def process_request_async(
+        self, req: AsgiRequest, resp: AsgiResponse
+    ) -> None: ...
+
+
+class UniversalMiddlewareWithProcessResource(
+    WsgiMiddlewareWithProcessResource, Protocol
+):
+    """WSGI/ASGI middleware with resource handler."""
+
+    async def process_resource_async(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        params: Mapping[str, Any],
+    ) -> None: ...
+
+
+class UniversalMiddlewareWithProcessResponse(
+    WsgiMiddlewareWithProcessResponse, Protocol
+):
+    """WSGI/ASGI middleware with response handler."""
+
+    async def process_response_async(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None: ...
+
+
+# NOTE(jkmnt): This typing is far from perfect due to the Python typing limitations,
+# but better than nothing. Middleware conforming to any protocol of the union
+# will pass the type check. Other protocols violations are not checked.
+SyncMiddleware = Union[
+    WsgiMiddlewareWithProcessRequest,
+    WsgiMiddlewareWithProcessResource,
+    WsgiMiddlewareWithProcessResponse,
+]
+"""Synchronous (WSGI) application middleware.
+
+This type alias reflects the middleware interface for
+components that can be used with a WSGI app.
+"""
+
+AsyncMiddleware = Union[
+    AsgiMiddlewareWithProcessRequest,
+    AsgiMiddlewareWithProcessResource,
+    AsgiMiddlewareWithProcessResponse,
+    # Lifespan middleware
+    AsgiMiddlewareWithProcessStartup,
+    AsgiMiddlewareWithProcessShutdown,
+    # WebSocket middleware
+    AsgiMiddlewareWithProcessRequestWs,
+    AsgiMiddlewareWithProcessResourceWs,
+    # Universal middleware with process_*_async methods
+    UniversalMiddlewareWithProcessRequest,
+    UniversalMiddlewareWithProcessResource,
+    UniversalMiddlewareWithProcessResponse,
+]
+"""Asynchronous (ASGI) application middleware.
+
+This type alias reflects the middleware interface for components that can be
+used with an ASGI app.
+"""

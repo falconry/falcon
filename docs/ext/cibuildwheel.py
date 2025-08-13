@@ -47,6 +47,8 @@ _CPYTHON_PLATFORMS = {
     'win_arm64': '**Windows ARM** 64-bit',
 }
 
+_EXTEND_CPYTHONS = frozenset({'cp38', 'cp39'})
+
 
 class WheelsDirective(sphinx.util.docutils.SphinxDirective):
     """Directive to tabulate build info from a YAML workflow."""
@@ -57,9 +59,9 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
     @classmethod
     def _emit_table(cls, data):
         columns = len(data[0])
-        assert all(
-            len(row) == columns for row in data
-        ), 'All rows must have the same number of columns'
+        assert all(len(row) == columns for row in data), (
+            'All rows must have the same number of columns'
+        )
         # NOTE(vytas): +2 is padding inside cell borders.
         width = max(len(cell) for cell in itertools.chain(*data)) + 2
         hline = ('+' + '-' * width) * columns + '+\n'
@@ -92,7 +94,7 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
 
         matrix = workflow['jobs']['build-wheels']['strategy']['matrix']
         platforms = matrix['platform']
-        include = matrix['include']
+        include = matrix.get('include', [])
         assert not matrix.get('exclude'), 'TODO: exclude is not supported yet'
         supported = set(
             itertools.product(
@@ -100,7 +102,10 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
             )
         )
         supported.update((item['platform']['name'], item['python']) for item in include)
-        cpythons = sorted({cp for _, cp in supported}, key=lambda val: (len(val), val))
+        cpythons = sorted(
+            {cp for _, cp in supported} | _EXTEND_CPYTHONS,
+            key=lambda val: (len(val), val),
+        )
 
         header = ['Platform / CPython version']
         table = [header + [cp.replace('cp3', '3.') for cp in cpythons]]

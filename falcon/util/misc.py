@@ -29,6 +29,7 @@ import datetime
 import functools
 import http
 import inspect
+import os.path
 import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 import unicodedata
@@ -336,7 +337,21 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-def secure_filename(filename: str) -> str:
+@functools.lru_cache
+def _has_arg_name_cached(func: Callable[..., Any], name: str) -> bool:
+    return name in get_argnames(func)
+
+
+def _has_arg_name(func: Callable[..., Any], name: str) -> bool:
+    try:
+        return _has_arg_name_cached(func, name)
+    except TypeError:
+        # NOTE(vytas): Most probably the exception was thrown by the LRU cache
+        #   indicating that the func object was unhashable.
+        return name in get_argnames(func)
+
+
+def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -353,27 +368,52 @@ def secure_filename(filename: str) -> str:
         'Bold_Digit_1'
         >>> secure_filename('Ångström unit physics.pdf')
         'A_ngstro_m_unit_physics.pdf'
+        >>> secure_filename('Ångström unit physics.pdf', max_length=19)
+        'A_ngstro_m_unit.pdf'
 
     Args:
         filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
+        max_length (Optional[int]): Maximum allowed length of the sanitized
+            filename. The sanitized filename is truncated while attempting to
+            preserve its extension. If the provided name has no extension, or
+            the extension is too long, itself, only the head is retained.
+
+            .. versionadded:: 4.1
 
     Returns:
-        str: The sanitized filename.
+        str: The sanitized filename (truncated to `max_length` characters).
 
     Raises:
         ValueError: the provided filename is an empty string.
     """
-    # TODO(vytas): max_length (int): Maximum length of the returned
-    #     filename. Should the returned filename exceed this restriction, it is
-    #     truncated while attempting to preserve the extension.
     if not filename:
         raise ValueError('filename may not be an empty string')
 
     filename = unicodedata.normalize('NFKD', filename)
     if filename.startswith('.'):
         filename = filename.replace('.', '_', 1)
-    return _UNSAFE_CHARS.sub('_', filename)
+
+    filename = _UNSAFE_CHARS.sub('_', filename)
+
+    if max_length and len(filename) > max_length:
+        root, ext = os.path.splitext(filename)
+
+        # NOTE(perodriguezl): Reserve space for the extension if present.
+        allowed_root_len = max_length - len(ext)
+
+        # NOTE(vytas): The remaining root must consist of at least one char.
+        #   Simply drop the tail otherwise.
+        if allowed_root_len > 0:
+            filename = root[:allowed_root_len] + ext
+        elif max_length <= 0:
+            # PERF(vytas): We catch this unlikely programming error here
+            #   in order not to waste CPU cycles earlier.
+            raise ValueError('if provided, max_length must be a positive int')
+        else:
+            filename = filename[:max_length]
+
+    return filename
 
 
 @_lru_cache_for_simple_logic(maxsize=64)

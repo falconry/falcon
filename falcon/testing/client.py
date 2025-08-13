@@ -34,6 +34,7 @@ from typing import (
     Coroutine,
     Dict,
     Iterable,
+    List,
     Literal,
     Mapping,
     Optional,
@@ -381,6 +382,32 @@ class Result(_ResultBase):
         return json_module.loads(self.text)
 
     def __repr__(self) -> str:
+        repr_result = ' '.join(filter(None, self._prepare_repr_args()))
+
+        return 'Result<{}>'.format(repr_result)
+
+    def __rich__(self) -> str:
+        status, content_type, content = self._prepare_repr_args()
+
+        status_color: str
+
+        for prefix, color in (
+            ('1', 'blue'),
+            ('2', 'green'),
+            ('3', 'magenta'),
+            ('4', 'red'),
+            ('5', 'red'),
+        ):
+            if status.startswith(prefix):
+                status_color = color
+
+        result_template = (
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
+        )
+
+        return result_template.format(status_color, status, content_type, content)
+
+    def _prepare_repr_args(self) -> List[str]:
         content_type = self.content_type or ''
 
         if len(self.content) > 40:
@@ -388,10 +415,9 @@ class Result(_ResultBase):
         else:
             content = self.content
 
-        args = [self.status, content_type, str(content)]
+        repr_args = [self.status, content_type, str(content)]
 
-        repr_result = ' '.join(filter(None, args))
-        return 'Result<{}>'.format(repr_result)
+        return repr_args
 
 
 class StreamedResult(_ResultBase):

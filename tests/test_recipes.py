@@ -7,11 +7,6 @@ import pytest
 import falcon
 import falcon.testing
 
-try:
-    import msgspec
-except ImportError:
-    msgspec = None  # type: ignore
-
 
 class TestMultipartMixed:
     """Test parsing example from the now-obsolete RFC 1867:
@@ -218,11 +213,16 @@ class TestRequestIDContext:
         assert response.headers['X-Request-ID'] == response.json['request_id']
 
 
-@pytest.mark.skipif(msgspec is None, reason='this recipe requires msgspec [not found]')
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason='this recipe requires Python 3.9+'
 )
 class TestMsgspec:
+    @pytest.fixture(scope='class', autouse=True)
+    def msgspec(self):
+        return pytest.importorskip(
+            'msgspec', reason='this recipe requires msgspec [not found]'
+        )
+
     def test_basic_media_handlers(self, asgi, util):
         class MediaResource:
             def on_post(self, req, resp):
@@ -249,6 +249,11 @@ class TestMsgspec:
         suffix = 'async' if asgi else None
         app.add_route('/media', MediaResource(), suffix=suffix)
 
+        resp0 = client.simulate_post(
+            '/media', body=b'Hello: world', content_type=falcon.MEDIA_JSON
+        )
+        assert resp0.status_code == 400
+
         resp1 = client.simulate_post('/media', json=[1, 3, 3, 7])
         assert resp1.status_code == 200
         assert resp1.text == '[1, 3, 3, 7]'
@@ -267,7 +272,7 @@ class TestMsgspec:
         assert resp4.status_code == 404
         assert resp4.content == b'\x81\xa5title\xad404 Not Found'
 
-    def test_validation_middleware(self, util):
+    def test_validation_middleware(self, util, msgspec):
         mw_recipe = util.load_module('examples/recipes/msgspec_media_validation.py')
 
         class Metadata(msgspec.Struct):

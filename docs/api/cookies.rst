@@ -160,7 +160,7 @@ default, although this may change in a future release.
 
 When unsetting a cookie, :meth:`~falcon.Response.unset_cookie`,
 the default `SameSite` setting of the unset cookie is ``'Lax'``, but can be changed
-by setting the 'samesite' kwarg.
+by setting the 'same_site' kwarg.
 
 The Partitioned Attribute
 ~~~~~~~~~~~~~~~~~~~~~~~~~
