@@ -41,7 +41,7 @@ try:
     from typing import Concatenate, ParamSpec
 except ImportError:  # pragma: no cover
     from typing_extensions import Concatenate
-    from typing_extensions import ParamSpec  # type: ignore[assignment]
+    from typing_extensions import ParamSpec
 
 if TYPE_CHECKING:
     import falcon as wsgi
