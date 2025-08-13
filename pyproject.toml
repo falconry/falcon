@@ -9,9 +9,7 @@ requires = [
 name = "falcon"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 dynamic = ["version"]
-dependencies = [
-    "typing-extensions >= 4.2.0; python_version<'3.10'",
-]
+dependencies = []
 requires-python = ">=3.8"
 description = "The ultra-reliable, fast ASGI+WSGI framework for building data plane APIs at scale."
 authors = [

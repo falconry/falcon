@@ -37,13 +37,9 @@ from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
-try:
-    from typing import Concatenate, ParamSpec
-except ImportError:  # pragma: no cover
-    from typing_extensions import Concatenate
-    from typing_extensions import ParamSpec
-
 if TYPE_CHECKING:
+    from typing import Concatenate, ParamSpec
+
     import falcon as wsgi
     from falcon import asgi
     from falcon._typing import AsgiResponderMethod
@@ -51,8 +47,9 @@ if TYPE_CHECKING:
     from falcon._typing import Responder
     from falcon._typing import ResponderMethod
 
+    _FN = ParamSpec('_FN')
+
 _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
-_FN = ParamSpec('_FN')
 
 
 _DECORABLE_METHOD_NAME = re.compile(
