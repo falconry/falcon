@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import os.path
+import platform
 import time
 import wsgiref.simple_server
 
@@ -16,6 +17,10 @@ _STARTUP_TIMEOUT = 10
 _START_ATTEMPTS = 3
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason='Non-deterministic issues with macos-15 GitHub Actions runners',
+)
 class TestWSGIServer:
     def test_get(self, requests_lite, server_base_url):
         resp = requests_lite.get(server_base_url)
@@ -113,10 +118,10 @@ def _start_server(port, base_url, requests_lite):
     stop_event = multiprocessing.Event()
     process = multiprocessing.Process(
         target=_run_server,
-        daemon=True,
         # NOTE(kgriffs): Pass these explicitly since if multiprocessing is
         #   using the 'spawn' start method, we can't depend on closures.
         args=(stop_event, _SERVER_HOST, port),
+        daemon=True,
     )
 
     process.start()
