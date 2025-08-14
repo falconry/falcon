@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import os.path
+import platform
 import time
 import wsgiref.simple_server
 
@@ -15,8 +16,18 @@ _SIZE_1_KB = 1024
 _STARTUP_TIMEOUT = 10
 _START_ATTEMPTS = 3
 
+_runs = (
+    [f'run{_run + 1}' for _run in range(100)]
+    if platform.system() == 'Darwin'
+    else ['default']
+)
+
 
 class TestWSGIServer:
+    @pytest.fixture(params=_runs, scope='class', autouse=True)
+    def exercise_macos(self, request):
+        return request.param
+
     def test_get(self, requests_lite, server_base_url):
         resp = requests_lite.get(server_base_url)
         assert resp.status_code == 200
@@ -125,8 +136,10 @@ def _start_server(port, base_url, requests_lite):
     start_time = time.time()
     while time.time() - start_time < _STARTUP_TIMEOUT:
         try:
+            print(f'{time.time()} GET {base_url}')
             requests_lite.get(base_url, timeout=1.0)
-        except OSError:
+        except OSError as ex:
+            print(f'{time.time()} GET {base_url} => {ex}')
             time.sleep(0.2)
         else:
             break
