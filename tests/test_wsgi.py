@@ -2,6 +2,7 @@ import multiprocessing
 import os
 import os.path
 import platform
+import threading
 import time
 import wsgiref.simple_server
 
@@ -15,17 +16,6 @@ _SERVER_HOST = 'localhost'
 _SIZE_1_KB = 1024
 _STARTUP_TIMEOUT = 10
 _START_ATTEMPTS = 3
-
-_runs = (
-    [f'run{_run + 1}' for _run in range(20)]
-    if platform.system() == 'Darwin'
-    else ['default']
-)
-
-
-@pytest.fixture(params=_runs, scope='module')
-def exercise_macos(request):
-    return request.param
 
 
 class TestWSGIServer:
@@ -121,17 +111,25 @@ def _run_server(stop_event, host, port):
     print('wsgiref server is exiting (stop event set)...')
 
 
-def _start_server(port, base_url, requests_lite):
-    stop_event = multiprocessing.Event()
-    process = multiprocessing.Process(
+def _start_server(port, base_url, requests_lite, method='multiprocessing'):
+    if method == 'multiprocessing':
+        event_cls = multiprocessing.Event
+        executor_cls = multiprocessing.Process
+    else:  # threading
+        event_cls = threading.Event
+        executor_cls = threading.Thread
+
+    stop_event = event_cls()
+    server = executor_cls(
         target=_run_server,
-        daemon=True,
         # NOTE(kgriffs): Pass these explicitly since if multiprocessing is
         #   using the 'spawn' start method, we can't depend on closures.
         args=(stop_event, _SERVER_HOST, port),
+        daemon=True,
     )
 
-    process.start()
+    print(f'starting {server}...')
+    server.start()
 
     # NOTE(vytas): Give the server some time to start.
     start_time = time.time()
@@ -145,27 +143,34 @@ def _start_server(port, base_url, requests_lite):
         else:
             break
     else:
-        if process.is_alive():
+        if server.is_alive():
             pytest.fail('server {base_url} is not responding to requests')
         else:
             return None
 
-    return process, stop_event
+    return server, stop_event
 
 
 @pytest.fixture(scope='module')
-def server_base_url(requests_lite, exercise_macos):
+def server_base_url(requests_lite):
+    # NOTE(vytas): Something breaks non-deterministically when using
+    #   multiprocessing.Process on macos-15 in GH Actions.
+    #   Could it be a variation of https://github.com/python/cpython/issues/101225?
+    method = 'threading' if platform.system() == 'Darwin' else 'multiprocessing'
+
     for attempt in range(_START_ATTEMPTS):
         server_port = testing.get_unused_port()
         base_url = f'http://{_SERVER_HOST}:{server_port}/'
-        if server_details := _start_server(server_port, base_url, requests_lite):
+        if server_details := _start_server(
+            server_port, base_url, requests_lite, method
+        ):
             break
     else:
         pytest.fail(f'could not start a wsgiref server in {_START_ATTEMPTS} attempts.')
 
     yield base_url
 
-    process, stop_event = server_details
+    server, stop_event = server_details
     stop_event.set()
 
     # NOTE(kgriffs): Pump the request handler loop in case execution
@@ -176,4 +181,4 @@ def server_base_url(requests_lite, exercise_macos):
     except OSError:
         pass  # Process already exited
 
-    process.join()
+    server.join()
