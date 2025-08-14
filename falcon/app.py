@@ -1050,7 +1050,7 @@ class App(Generic[_ReqT, _RespT]):
 
             self._error_handlers[exc] = handler
 
-    def set_error_serializer(self, serializer: ErrorSerializer) -> None:
+    def set_error_serializer(self, serializer: ErrorSerializer[_ReqT, _RespT]) -> None:
         """Override the default serializer for instances of :class:`~.HTTPError`.
 
         When a responder raises an instance of :class:`~.HTTPError`,

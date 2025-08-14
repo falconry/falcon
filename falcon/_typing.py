@@ -99,7 +99,7 @@ class AsgiErrorHandler(Protocol[_AReqT, _ARespT]):
 
 
 # Error serializers
-ErrorSerializer = Callable[['Request', 'Response', 'HTTPError'], None]
+ErrorSerializer = Callable[[_ReqT, _RespT, 'HTTPError'], None]
 
 # Sinks
 SinkPrefix = Union[str, Pattern[str]]
