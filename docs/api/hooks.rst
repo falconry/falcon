@@ -31,6 +31,11 @@ decorate the resource class:
 
 .. code:: python
 
+    def extract_project_id(req, resp, resource, params):
+        params['project_id'] = None
+        if req.content_type == falcon.MEDIA_JSON:
+            params['project_id'] = req.get_media().get('projectId')
+
     @falcon.before(extract_project_id)
     class Message:
         def on_post(self, req, resp, project_id):
@@ -38,6 +43,10 @@ decorate the resource class:
 
         def on_get(self, req, resp, project_id):
             pass
+
+In addition to just running our hook's logic before all responders of this
+resource, we also inject the `project_id` parameter -- see
+:func:`falcon.before` for a more elaborate explanation.
 
 .. note::
     When decorating an entire resource class, all method names that resemble
