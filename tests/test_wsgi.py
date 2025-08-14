@@ -1,7 +1,6 @@
 import multiprocessing
 import os
 import os.path
-import platform
 import threading
 import time
 import wsgiref.simple_server
@@ -12,7 +11,7 @@ import falcon
 import falcon.testing as testing
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
-_SERVER_HOST = 'localhost'
+_SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
 _STARTUP_TIMEOUT = 10
 _START_ATTEMPTS = 3
@@ -156,14 +155,12 @@ def server_base_url(requests_lite):
     # NOTE(vytas): Something breaks non-deterministically when using
     #   multiprocessing.Process on macos-15 in GH Actions.
     #   Could it be a variation of https://github.com/python/cpython/issues/101225?
-    method = 'threading' if platform.system() == 'Darwin' else 'multiprocessing'
+    # method = 'threading' if platform.system() == 'Darwin' else 'multiprocessing'
 
     for attempt in range(_START_ATTEMPTS):
         server_port = testing.get_unused_port()
         base_url = f'http://{_SERVER_HOST}:{server_port}/'
-        if server_details := _start_server(
-            server_port, base_url, requests_lite, method
-        ):
+        if server_details := _start_server(server_port, base_url, requests_lite):
             break
     else:
         pytest.fail(f'could not start a wsgiref server in {_START_ATTEMPTS} attempts.')
