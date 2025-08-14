@@ -15,6 +15,8 @@ _SERVER_PORT = 9800 + os.getpid() % 100  # Facilitates parallel test execution
 _SERVER_BASE_URL = 'http://{}:{}/'.format(_SERVER_HOST, _SERVER_PORT)
 _SIZE_1_KB = 1024
 
+_STARTUP_TIMEOUT = 10
+
 
 @pytest.mark.usefixtures('_setup_wsgi_server')
 class TestWSGIServer:
@@ -101,10 +103,13 @@ def _run_server(stop_event, host, port):
     api.add_route('/bucket', Bucket())
     api.add_static_route('/tests', _HERE)
 
+    print(f'Starting wsgiref server on {host}:{port}...')
     server = make_server(host, port, application)
 
     while not stop_event.is_set():
         server.handle_request()
+
+    print('wsgiref server is exiting (stop event set)...')
 
 
 @pytest.fixture(scope='module')
@@ -121,14 +126,16 @@ def _setup_wsgi_server(requests_lite):
     process.start()
 
     # NOTE(vytas): Give the server some time to start.
-    for attempt in range(3):
+    start_time = time.time()
+    while time.time() - start_time < _STARTUP_TIMEOUT:
         try:
-            requests_lite.get(_SERVER_BASE_URL, timeout=1)
-            break
+            requests_lite.get(_SERVER_BASE_URL, timeout=1.0)
         except OSError:
-            pass
-
-        time.sleep(attempt + 0.2)
+            time.sleep(0.2)
+        else:
+            break
+    else:
+        pytest.fail('Server process is not responding to requests')
 
     yield
 
@@ -138,7 +145,7 @@ def _setup_wsgi_server(requests_lite):
     # made it to the next server.handle_request() before we sent the
     # event.
     try:
-        requests_lite.get(_SERVER_BASE_URL)
+        requests_lite.get(_SERVER_BASE_URL, timeout=1.0)
     except OSError:
         pass  # Process already exited
 
