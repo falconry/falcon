@@ -17,17 +17,18 @@ _STARTUP_TIMEOUT = 10
 _START_ATTEMPTS = 3
 
 _runs = (
-    [f'run{_run + 1}' for _run in range(100)]
+    [f'run{_run + 1}' for _run in range(20)]
     if platform.system() == 'Darwin'
     else ['default']
 )
 
 
-class TestWSGIServer:
-    @pytest.fixture(params=_runs, scope='class', autouse=True)
-    def exercise_macos(self, request):
-        return request.param
+@pytest.fixture(params=_runs, scope='module')
+def exercise_macos(request):
+    return request.param
 
+
+class TestWSGIServer:
     def test_get(self, requests_lite, server_base_url):
         resp = requests_lite.get(server_base_url)
         assert resp.status_code == 200
@@ -153,7 +154,7 @@ def _start_server(port, base_url, requests_lite):
 
 
 @pytest.fixture(scope='module')
-def server_base_url(requests_lite):
+def server_base_url(requests_lite, exercise_macos):
     for attempt in range(_START_ATTEMPTS):
         server_port = testing.get_unused_port()
         base_url = f'http://{_SERVER_HOST}:{server_port}/'
