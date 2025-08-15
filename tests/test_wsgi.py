@@ -128,6 +128,8 @@ def _diagnostics(base_url):
     ret_code = subprocess.call(('curl', base_url))
     print(f'curl {base_url} => {ret_code}')
 
+    return ret_code == 0
+
 
 def _start_server(port, base_url, requests_lite):
     stop_event = multiprocessing.Event()
@@ -152,7 +154,8 @@ def _start_server(port, base_url, requests_lite):
             break
     else:
         if process.is_alive():
-            _diagnostics(base_url)
+            if _diagnostics(base_url):
+                return process, stop_event
             pytest.fail('server {base_url} is not responding to requests')
         else:
             return None
