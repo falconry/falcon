@@ -109,6 +109,11 @@ jobs:
           tox --version
           coverage --version
 
+      - name: Try to switch off teh bloody Apple firewall
+        if: ${{ matrix.tox.os == 'macos-latest' }}
+        run: |
+          sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off
+
       - name: Run tox
         run: tox -e ${{ matrix.tox.env }}
 
