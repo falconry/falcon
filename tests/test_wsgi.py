@@ -141,8 +141,6 @@ def _start_server(port, base_url, requests_lite):
 
     process.start()
 
-    _diagnostics(base_url)
-
     # NOTE(vytas): Give the server some time to start.
     start_time = time.time()
     while time.time() - start_time < _STARTUP_TIMEOUT:
@@ -154,6 +152,7 @@ def _start_server(port, base_url, requests_lite):
             break
     else:
         if process.is_alive():
+            _diagnostics(base_url)
             pytest.fail('server {base_url} is not responding to requests')
         else:
             return None
