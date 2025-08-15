@@ -18,7 +18,7 @@ _START_ATTEMPTS = 3
 
 
 @pytest.mark.skipif(
-    platform.system() == 'Darwin',
+    platform.system() == 'Alien',
     reason='Non-deterministic issues with macos-15 GitHub Actions runners',
 )
 class TestWSGIServer:
