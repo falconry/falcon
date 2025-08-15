@@ -105,6 +105,7 @@ def _run_server(stop_event, host, port):
     api.add_route('/bucket', Bucket())
     api.add_static_route('/tests', _HERE)
 
+    wsgiref.simple_server.WSGIServer.allow_reuse_address = True
     print(f'wsgiref server is starting on {host}:{port}...')
     server = wsgiref.simple_server.make_server(host, port, application)
 
