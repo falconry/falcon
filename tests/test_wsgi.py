@@ -11,7 +11,7 @@ import falcon
 import falcon.testing as testing
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
-_SERVER_HOST = 'localhost'
+_SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
 _STARTUP_TIMEOUT = 10
 _START_ATTEMPTS = 3
@@ -154,8 +154,7 @@ def _start_server(port, base_url, requests_lite):
             break
     else:
         if process.is_alive():
-            if _diagnostics(base_url):
-                return process, stop_event
+            _diagnostics(base_url)
             pytest.fail('server {base_url} is not responding to requests')
         else:
             return None
