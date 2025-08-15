@@ -114,6 +114,21 @@ def _run_server(stop_event, host, port):
     print('wsgiref server is exiting (stop event set)...')
 
 
+def _diagnostics(base_url):
+    import subprocess
+
+    import requests
+
+    try:
+        resp = requests.get(base_url, timeout=3.0)
+        print(f'requests.get({base_url!r}) => {resp}')
+    except Exception as ex:
+        print(f'requests.get({base_url!r}) => {type(ex)}: {ex}')
+
+    ret_code = subprocess.call(('curl', base_url))
+    print(f'curl {base_url} => {ret_code}')
+
+
 def _start_server(port, base_url, requests_lite):
     stop_event = multiprocessing.Event()
     process = multiprocessing.Process(
@@ -125,6 +140,8 @@ def _start_server(port, base_url, requests_lite):
     )
 
     process.start()
+
+    _diagnostics(base_url)
 
     # NOTE(vytas): Give the server some time to start.
     start_time = time.time()
