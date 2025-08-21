@@ -71,7 +71,7 @@ _CRLF_CRLF = _CRLF + _CRLF
 # TODO(vytas): Consider supporting -charset- stuff.
 #   Does anyone use that (?)
 class BodyPart:
-    """Represents a body part in a multipart form in an ASGI application.
+    """Represents a body part in a multipart form in a WSGI application.
 
     Note:
         :class:`BodyPart` is meant to be instantiated directly only by the

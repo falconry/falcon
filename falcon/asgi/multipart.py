@@ -43,7 +43,7 @@ MultipartParseError = multipart.MultipartParseError
 
 
 class BodyPart(multipart.BodyPart):
-    """Represents a body part in a multipart form in a ASGI application.
+    """Represents a body part in a multipart form in an ASGI application.
 
     Note:
         :class:`BodyPart` is meant to be instantiated directly only by the
