@@ -44,7 +44,7 @@ decorate the resource class:
         def on_get(self, req, resp, project_id):
             pass
 
-In addition to just running your hook's logic before all responders of this
+In addition to just running your logic before all responders of this
 resource, the ``extract_project_id`` hook also injects the `project_id`
 parameter -- see :func:`falcon.before` for a more elaborate explanation.
 
