@@ -1155,6 +1155,9 @@ class Request:
 
         # Equivalent to: deserialized_media = req.get_media()
         deserialized_media = req.media
+
+    New WSGI apps are encouraged to use :meth:`~.get_media` directly instead of
+    this property.
     """
 
     # ------------------------------------------------------------------------
