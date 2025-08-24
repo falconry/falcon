@@ -21,7 +21,6 @@ try:
 except ImportError:
     cbor2 = None  # type: ignore[assignment]
 
-
 try:
     import msgpack
 except ImportError:

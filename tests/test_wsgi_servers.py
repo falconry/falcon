@@ -7,12 +7,9 @@ import time
 
 import pytest
 
-try:
-    import requests
-except ImportError:
-    requests = None  # type: ignore
-
 from falcon import testing
+
+requests = pytest.importorskip('requests')
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = '127.0.0.1'
