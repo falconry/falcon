@@ -35,34 +35,58 @@ Falcon's emphasis on flexibility and performance presents certain
 challenges when it comes to adding type annotations to the existing code base.
 
 One notable limitation involves using custom :class:`~falcon.Request` and/or
-:class:`~falcon.Response` types in callbacks that are passed back
-to the framework, such as when adding an
-:meth:`error handler <falcon.App.add_error_handler>`.
-For instance, the following application might unexpectedly not pass type
-checking:
+:class:`~falcon.Response` types together with a custom
+:attr:`context type <falcon.Request.context_type>`:
 
 .. code-block:: python
 
-    from typing import Any
-
-    from falcon import App, HTTPInternalServerError, Request, Response
+    from falcon import Request
 
 
-    class MyRequest(Request):
+    class MyRichContext:
+        """My fancy context type with well annotated attributes."""
+
         ...
 
 
-    def handle_os_error(req: MyRequest, resp: Response, ex: Exception,
-                        params: dict[str, Any]) -> None:
-        raise HTTPInternalServerError(title='OS error!') from ex
+    class MyRequest(Request):
+        context_type = MyRichContext
+
+Although a code base employing the above pattern may pass type checking without
+any warnings even under ``--strict`` settings, the problem here is that
+:attr:`MyRequest.context <falcon.Request.context>` is still annotated as
+:class:`~falcon.Context`, allowing arbitrary attribute access.
+As a result, this would mask any potential typing issues in the use of
+``MyRichContext``.
+
+If you make extensive use of a custom context type, and do want to perform type
+checking against its interface, you can explicitly redefine `context` as
+having the desired type. In order to convince the type checker, this will
+require at least one strategically placed ``# type: ignore``:
+
+.. code-block:: python
+
+    from falcon import Request
 
 
-    app = App(request_type=MyRequest)
-    app.add_error_handler(OSError, handle_os_error)
+    class MyRichContext:
+        """My fancy context type with well annotated attributes."""
 
-(We are working on addressing this limitation at the time of writing --
-please see the following GitHub issue for the progress, and possible solutions:
-`#2372 <https://github.com/falconry/falcon/issues/2372>`__.)
+        ...
+
+
+    class MyRequest(Request):
+        context_type = MyRichContext
+
+        context: MyRichContext  # type: ignore[assignment]
+
+Our efforts to work around this issue have so far hit the wall of
+`PEP 526 <https://peps.python.org/pep-0526/#class-and-instance-variable-annotations>`__,
+which states that a :any:`ClassVar <typing.ClassVar>` parameter cannot include
+any type variables, regardless of the level of nesting.
+
+If you come up with an elegant solution to this problem,
+:ref:`let us know <chat>`!
 
 Another known inconsistency is the typing of the
 :class:`converter interface <falcon.routing.BaseConverter>`, where certain
