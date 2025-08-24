@@ -31,7 +31,6 @@ Request
 .. autoclass:: falcon.asgi.Request
     :members:
     :inherited-members:
-    :exclude-members: media, context_type
 
 .. autoclass:: falcon.asgi.BoundedStream
     :members:
@@ -42,7 +41,7 @@ Response
 .. autoclass:: falcon.asgi.Response
     :members:
     :inherited-members:
-    :exclude-members: context_type, add_link
+    :exclude-members: add_link
 
 .. autoclass:: falcon.asgi.SSEvent
     :members:
