@@ -248,33 +248,66 @@ class TestFalconUtils:
         assert uri.encode('%26') == '%2526'
         assert uri.decode(uri.encode('%26')) == '%26'
 
-    def test_uri_encode_double(self):
-        url = 'http://example.com/v1/fiz bit/messages'
-        expected = 'http://example.com/v1/fiz%20bit/messages'
+    @pytest.mark.parametrize(
+        'url,expected',
+        [
+            (
+                'http://example.com/v1/fiz bit/messages',
+                'http://example.com/v1/fiz%20bit/messages',
+            ),
+            (
+                'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true',
+                'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true',
+            ),
+            (
+                'http://example.com/v1/fiz%bit/mess%ages/%',
+                'http://example.com/v1/fiz%25bit/mess%25ages/%25',
+            ),
+            ('http://example.com/%%', 'http://example.com/%25%25'),
+            (
+                'http://something?redirect_uri=http%3A%2F%2Fsite',
+                'http://something?redirect_uri=http%3A%2F%2Fsite',
+            ),
+        ],
+    )
+    def test_uri_encode_double(self, url, expected):
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
-        url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        expected = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
+    @pytest.mark.parametrize(
+        'value,expected',
+        [
+            ('', ''),
+            ('%', '%25'),
+            ('fiz bit/fizzy', 'fiz%20bit%2Ffizzy'),
+            ('e\u00e7ho', 'e%C3%A7ho'),
+            ('key_%2', 'key_%252'),
+            ('%%', '%25%25'),
+            ('http%3A%2F%2Fsite', 'http%3A%2F%2Fsite'),
+        ],
+    )
+    def test_uri_encode_value_double(self, value, expected):
+        assert (
+            uri.encode_value_check_escaped(uri.encode_value_check_escaped(value))
+            == expected
+        )
 
-        url = 'http://example.com/v1/fiz%bit/mess%ages/%'
-        expected = 'http://example.com/v1/fiz%25bit/mess%25ages/%25'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
-
-        url = 'http://example.com/%%'
-        expected = 'http://example.com/%25%25'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
-
-        # NOTE(kgriffs): Specific example cited in GH issue
-        url = 'http://something?redirect_uri=http%3A%2F%2Fsite'
-        assert uri.encode_check_escaped(url) == url
-
+    def test_uri_encode_double_hexchars(self):
         hex_digits = 'abcdefABCDEF0123456789'
         for c1 in hex_digits:
             for c2 in hex_digits:
-                url = 'http://example.com/%' + c1 + c2
+                url = f'http://example.com/{c1}{c2}'
                 encoded = uri.encode_check_escaped(uri.encode_check_escaped(url))
                 assert encoded == url
+
+    def test_uri_encode_value_double_hexchars(self):
+        hex_digits = 'abcdefABCDEF0123456789'
+        for c1 in hex_digits:
+            for c2 in hex_digits:
+                value = f'example-%{c1}{c2}'
+                encoded = uri.encode_value_check_escaped(
+                    uri.encode_value_check_escaped(value)
+                )
+                assert encoded == value
 
     def test_uri_encode_value(self):
         assert uri.encode_value('abcd') == 'abcd'
