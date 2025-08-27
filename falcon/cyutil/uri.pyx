@@ -33,8 +33,8 @@ cdef void _init_hex_chars_table(int* data):
 
 cdef void _init_hex_encoded_table(int* data):
     cdef Py_ssize_t index
-    cdef unsigned char b1
-    cdef unsigned char b2
+    cdef unsigned short b1
+    cdef unsigned short b2
 
     for index in range(0x100):
         b1, b2 = f'{index:02X}'.encode()
