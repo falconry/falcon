@@ -16,21 +16,20 @@ from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 from falcon.util.deprecation import DeprecatedWarning
 
-try:
-    import cbor2
-except ImportError:
-    cbor2 = None  # type: ignore[assignment]
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
+@pytest.fixture(scope='session')
+def cbor2_lib():
+    return pytest.importorskip('cbor2')
 
 
-try:
-    import rapidjson
-except ImportError:
-    rapidjson = None  # type: ignore[assignment]
+@pytest.fixture(scope='session')
+def msgpack_lib():
+    return pytest.importorskip('msgpack')
+
+
+@pytest.fixture(scope='session')
+def rapidjson_lib():
+    return pytest.importorskip('rapidjson')
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -409,8 +408,9 @@ async def test_client_disconnect_early(  # noqa: C901
 
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
-@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
+async def test_media(
+    custom_text, custom_data, conductor, msgpack_lib, cbor2_lib, rapidjson_lib
+):  # NOQA: C901
     # TODO(kgriffs): Refactor to reduce McCabe score
 
     sample_doc = {
@@ -455,7 +455,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
     app.add_route('/', resource)
 
     if custom_text:
-        if rapidjson is None:
+        if rapidjson_lib is None:
             pytest.skip('rapidjson is required for this test')
 
         # Let's say we want to use a faster JSON library. You could also use this
@@ -463,27 +463,27 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
         #   normally JSON-serializable out of the box.
         class RapidJSONHandler(media.TextBaseHandlerWS):
             def serialize(self, media: object) -> str:
-                return rapidjson.dumps(media, ensure_ascii=False)
+                return rapidjson_lib.dumps(media, ensure_ascii=False)
 
             # The raw TEXT payload will be passed as a Unicode string
             def deserialize(self, payload: str) -> object:
-                return rapidjson.loads(payload)
+                return rapidjson_lib.loads(payload)
 
         app.ws_options.media_handlers[falcon.WebSocketPayloadType.TEXT] = (
             RapidJSONHandler()
         )
 
     if custom_data:
-        if cbor2 is None:
+        if cbor2_lib is None:
             pytest.skip('cbor2 is required for this test')
 
         class CBORHandler(media.BinaryBaseHandlerWS):
             def serialize(self, media: object) -> bytes:
-                return cbor2.dumps(media)
+                return cbor2_lib.dumps(media)
 
             # The raw BINARY payload will be passed as a byte string
             def deserialize(self, payload: bytes) -> object:
-                return cbor2.loads(payload)
+                return cbor2_lib.loads(payload)
 
         app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = (
             CBORHandler()
@@ -497,7 +497,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
 
             if custom_data:
                 data = await ws.receive_data()
-                cbor2.loads(data)  # NOTE(kgriffs): Validate serialization format
+                cbor2_lib.loads(data)  # NOTE(kgriffs): Validate serialization format
                 await ws.send_data(data)
             else:
                 doc = await ws.receive_msgpack()
@@ -1151,16 +1151,18 @@ async def test_ws_responder_never_ready(conductor, monkeypatch):
                 pass
 
 
-@pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
 def test_msgpack_missing():
-    options = WebSocketOptions()
-    handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]
+    try:
+        pytest.importorskip('msgpack')
+    except pytest.skip.Exception:
+        options = WebSocketOptions()
+        handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]
 
-    with pytest.raises(RuntimeError):
-        handler.serialize({})
+        with pytest.raises(RuntimeError):
+            handler.serialize({})
 
-    with pytest.raises(RuntimeError):
-        handler.deserialize(b'{}')
+        with pytest.raises(RuntimeError):
+            handler.deserialize(b'{}')
 
 
 @pytest.mark.parametrize('reason', ['Client closing connection', '', None])
