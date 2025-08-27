@@ -408,9 +408,9 @@ async def test_client_disconnect_early(  # noqa: C901
 
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
-async def test_media(
+async def test_media(  # NOQA: C901
     custom_text, custom_data, conductor, msgpack_lib, cbor2_lib, rapidjson_lib
-):  # NOQA: C901
+):
     # TODO(kgriffs): Refactor to reduce McCabe score
 
     sample_doc = {
