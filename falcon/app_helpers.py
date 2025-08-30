@@ -20,6 +20,8 @@ from inspect import iscoroutinefunction
 from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
 
 from falcon import util
+from falcon._typing import _ReqT
+from falcon._typing import _RespT
 from falcon._typing import AsgiProcessRequestMethod as APRequest
 from falcon._typing import AsgiProcessRequestWsMethod
 from falcon._typing import AsgiProcessResourceMethod as APResource
@@ -64,7 +66,7 @@ AsyncPreparedMiddlewareResult = Tuple[
 
 @overload
 def prepare_middleware(
-    middleware: Iterable[SyncMiddleware],
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]],
     independent_middleware: bool = ...,
     asgi: Literal[False] = ...,
 ) -> PreparedMiddlewareResult: ...
@@ -81,14 +83,18 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: Union[Iterable[SyncMiddleware], Iterable[AsyncMiddleware]],
+    middleware: Union[
+        Iterable[SyncMiddleware[_ReqT, _RespT]], Iterable[AsyncMiddleware]
+    ],
     independent_middleware: bool = ...,
     asgi: bool = ...,
 ) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]: ...
 
 
 def prepare_middleware(
-    middleware: Union[Iterable[SyncMiddleware], Iterable[AsyncMiddleware]],
+    middleware: Union[
+        Iterable[SyncMiddleware[_ReqT, _RespT]], Iterable[AsyncMiddleware]
+    ],
     independent_middleware: bool = False,
     asgi: bool = False,
 ) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]:
