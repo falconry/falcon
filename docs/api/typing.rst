@@ -1,8 +1,9 @@
 Typing
 ======
 
-Type checking support was introduced in version 4.0. While most of the library is
-now typed, further type annotations may be added throughout the 4.x release cycle.
+Type checking support was introduced in Falcon :doc:`4.0 </changes/4.0.0>`.
+While most of the library is now typed, further type annotations may be added
+throughout the 4.x release cycle.
 To improve them, we may introduce changes to the typing that do not affect
 runtime behavior, but may surface new or different errors with type checkers.
 
@@ -26,6 +27,99 @@ runtime behavior, but may surface new or different errors with type checkers.
     to avoid possible runtime errors after an update.
     Also, make sure to :ref:`let us know <chat>` which essential aliases are
     missing from the public interface!
+
+
+App Types
+---------
+
+Falcon's :class:`~falcon.App` (and :class:`asgi.App <falcon.asgi.App>`) is a
+:class:`generic type <typing.Generic>` parametrized by its request and response
+types. Consequently, static type checkers (such as Mypy or Pyright) can
+correctly infer the specialized :class:`~falcon.App` type from the
+`request_type` and/or `response_type` arguments supplied to the initializer.
+
+The use of generics should in most cases require no explicit effort on your
+side. However, if you annotate your variables or return types as
+``falcon.App``, the type checker may require you to provide the explicit type
+parameters when running in the strict mode (Mypy calls the option
+``--disallow-any-generics``, also part of the ``--strict`` mode flag).
+
+For instance, the following mini-application will not pass type checking with
+Mypy in the ``--strict`` mode:
+
+.. code-block:: python
+
+    import falcon
+
+
+    class HelloResource:
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
+            resp.media = {'message': 'Hello, typing!'}
+
+
+    def create_app() -> falcon.App:
+        app = falcon.App()
+        app.add_route('/', HelloResource())
+        return app
+
+In order to address this ``type-arg`` issue, we could explicitly specify which
+variant of ``App`` our ``create_app()`` is expected to instantiate:
+
+.. code-block:: python
+
+    import falcon
+
+
+    class HelloResource:
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
+            resp.media = {'message': 'Hello, typing!'}
+
+
+    def create_app() -> falcon.App[falcon.Request, falcon.Response]:
+        app = falcon.App()
+        app.add_route('/', HelloResource())
+        return app
+
+Alternatively, we could ask ourselves what the purpose of ``create_app()`` is.
+If we want to instantiate a WSGI application suitable for a PEP-3333 compliant
+app server, we could type it accordingly:
+
+.. code-block:: python
+
+    import wsgiref.simple_server
+    import wsgiref.types
+
+    import falcon
+
+
+    class HelloResource:
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
+            resp.media = {'message': 'Hello, typing!'}
+
+
+    def create_app() -> wsgiref.types.WSGIApplication:
+        app = falcon.App()
+        app.add_route('/', HelloResource())
+        return app
+
+
+    if __name__ == '__main__':
+        with wsgiref.simple_server.make_server('', 8000, create_app()) as httpd:
+            httpd.serve_forever()
+
+Both alternatives should now pass type checking in the ``--strict`` mode.
+
+.. attention::
+    For illustration purposes, we also included a
+    :mod:`wsgiref.simple_server`-based server in the second revised example,
+    allowing you to run the file directly with Python 3.11+.
+    However, for a real deployment you should always :ref:`install <install>` a
+    production-ready WSGI or ASGI server.
+
+.. versionchanged:: 4.2
+    :class:`falcon.App` and :class:`falcon.asgi.App` are now annotated as
+    :class:`generic types <typing.Generic>` parametrized by the request and
+    response classes.
 
 
 Known Limitations
