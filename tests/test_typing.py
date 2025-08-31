@@ -36,7 +36,7 @@ class FancyAsyncRequest(falcon.asgi.Request):
 class FancyAsyncResponse(falcon.asgi.Response):
     context_type = RichContext
 
-    # NOTE(vytas): the `type: ignore exemption` is currently required if it is
+    # NOTE(vytas): the `type: ignore` exemption is currently required if it is
     #   desirable to actually check typing of context attributes. See also:
     #   https://falcon.readthedocs.io/en/latest/api/typing.html#known-limitations
     context: RichContext  # type: ignore[assignment]
