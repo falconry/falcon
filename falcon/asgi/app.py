@@ -374,69 +374,69 @@ class App(falcon.app.App[_ReqT, _RespT]):
     @overload
     def __init__(
         self: 'App[Request, Response]',
-        media_type: str = ...,
+        media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: None = None,
         response_type: None = None,
         middleware: Optional[
             Union[
                 AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
             ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
-        independent_middleware: bool = ...,
-        cors_enable: bool = ...,
-        sink_before_static_route: bool = ...,
+        ] = None,
+        router: Optional[routing.CompiledRouter] = None,
+        independent_middleware: bool = True,
+        cors_enable: bool = False,
+        sink_before_static_route: bool = True,
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'App[_ReqT, Response]',
-        media_type: str = ...,
+        media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[_ReqT]] = None,
         response_type: None = None,
         middleware: Optional[
             Union[
                 AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
             ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
-        independent_middleware: bool = ...,
-        cors_enable: bool = ...,
-        sink_before_static_route: bool = ...,
+        ] = None,
+        router: Optional[routing.CompiledRouter] = None,
+        independent_middleware: bool = True,
+        cors_enable: bool = False,
+        sink_before_static_route: bool = True,
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'App[Request, _RespT]',
-        media_type: str = ...,
+        media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: None = None,
         response_type: Optional[Type[_RespT]] = None,
         middleware: Optional[
             Union[
                 AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
             ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
-        independent_middleware: bool = ...,
-        cors_enable: bool = ...,
-        sink_before_static_route: bool = ...,
+        ] = None,
+        router: Optional[routing.CompiledRouter] = None,
+        independent_middleware: bool = True,
+        cors_enable: bool = False,
+        sink_before_static_route: bool = True,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        media_type: str = ...,
+        media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: Optional[Type[_ReqT]] = None,
         response_type: Optional[Type[_RespT]] = None,
         middleware: Optional[
             Union[
                 AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
             ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
-        independent_middleware: bool = ...,
-        cors_enable: bool = ...,
-        sink_before_static_route: bool = ...,
+        ] = None,
+        router: Optional[routing.CompiledRouter] = None,
+        independent_middleware: bool = True,
+        cors_enable: bool = False,
+        sink_before_static_route: bool = True,
     ) -> None: ...
 
     def __init__(
