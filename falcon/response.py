@@ -102,7 +102,7 @@ class Response:
     _media_rendered: UnsetOr[bytes]
 
     # Child classes may override this
-    context_type: ClassVar[Type[structures.Context]] = structures.Context
+    context_type: ClassVar[Type] = structures.Context
     """Class variable that determines the factory or
     type to use for initializing the `context` attribute. By default,
     the framework will instantiate bare objects (instances of the bare

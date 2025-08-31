@@ -49,6 +49,7 @@ from falcon._typing import AsgiResponderWsCallable
 from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import AsyncMiddleware
+from falcon._typing import Resource
 from falcon._typing import SinkPrefix
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
@@ -96,10 +97,13 @@ _BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 _TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
-_BE = TypeVar('_BE', bound=Exception)
+
+_ExcT = TypeVar('_ExcT', bound=Exception)
+_ReqT = TypeVar('_ReqT', bound=Request, contravariant=True)
+_RespT = TypeVar('_RespT', bound=Response, contravariant=True)
 
 
-class App(falcon.app.App):
+class App(falcon.app.App[_ReqT, _RespT]):
     '''The main entry point into a Falcon-based ASGI app.
 
     Each App instance provides a callable
@@ -354,12 +358,12 @@ class App(falcon.app.App):
         'ws_options',
     )
 
-    _error_handlers: Dict[Type[Exception], AsgiErrorHandler]  # type: ignore[assignment]
+    _error_handlers: Dict[Type[Exception], AsgiErrorHandler[_ReqT, _RespT]]  # type: ignore[assignment]
     _middleware: AsyncPreparedMiddlewareResult  # type: ignore[assignment]
     _middleware_ws: AsyncPreparedMiddlewareWsResult
-    _request_type: Type[Request]
-    _response_type: Type[Response]
-    _unprepared_middleware: List[AsyncMiddleware]  # type: ignore[assignment]
+    _request_type: Type[_ReqT]
+    _response_type: Type[_RespT]
+    _unprepared_middleware: List[AsyncMiddleware[_ReqT, _RespT]]  # type: ignore[assignment]
 
     ws_options: WebSocketOptions
     """A set of behavioral options related to WebSocket connections.
@@ -367,12 +371,84 @@ class App(falcon.app.App):
     See also: :class:`~.WebSocketOptions`.
     """
 
+    @overload
+    def __init__(
+        self: 'App[Request, Response]',
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: None = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: 'App[_ReqT, Response]',
+        media_type: str = ...,
+        request_type: Optional[Type[_ReqT]] = None,
+        response_type: None = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: 'App[Request, _RespT]',
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: Optional[Type[_RespT]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        media_type: str = ...,
+        request_type: Optional[Type[_ReqT]] = None,
+        response_type: Optional[Type[_RespT]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Optional[Type[Request]] = None,
-        response_type: Optional[Type[Response]] = None,
-        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
+        request_type: Optional[Type[_ReqT]] = None,
+        response_type: Optional[Type[_RespT]] = None,
+        middleware: Optional[
+            Union[
+                AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -380,8 +456,8 @@ class App(falcon.app.App):
     ) -> None:
         super().__init__(
             media_type,
-            request_type or Request,
-            response_type or Response,
+            request_type or Request,  # type: ignore[arg-type]
+            response_type or Response,  # type: ignore[arg-type]
             middleware,  # type: ignore[arg-type]
             router,
             independent_middleware,
@@ -461,7 +537,7 @@ class App(falcon.app.App):
         )
         resp = self._response_type(options=self.resp_options)
 
-        resource: Optional[object] = None
+        resource: Optional[Resource] = None
         params: Dict[str, Any] = {}
 
         dependent_mw_resp_stack: list = []
@@ -842,7 +918,23 @@ class App(falcon.app.App):
         if resp._registered_callbacks:
             self._schedule_callbacks(resp)
 
-    def add_route(self, uri_template: str, resource: object, **kwargs: Any) -> None:
+    def add_middleware(
+        self,
+        middleware: Union[  # type: ignore[override]
+            AsyncMiddleware[_ReqT, _RespT], Iterable[AsyncMiddleware[_ReqT, _RespT]]
+        ],
+    ) -> None:
+        """Add one or more additional middleware components.
+
+        Arguments:
+            middleware: Either a single middleware component or an iterable
+                of components to add. The component(s) will be invoked, in
+                order, as if they had been appended to the original middleware
+                list passed to the class initializer.
+        """
+        super().add_middleware(middleware)  # type: ignore[arg-type]
+
+    def add_route(self, uri_template: str, resource: Resource, **kwargs: Any) -> None:
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
         #   will know to validate the responder methods to make sure they
         #   are async coroutines.
@@ -851,7 +943,9 @@ class App(falcon.app.App):
 
     add_route.__doc__ = falcon.app.App.add_route.__doc__  # NOTE: not really required
 
-    def add_sink(self, sink: AsgiSinkCallable, prefix: SinkPrefix = r'/') -> None:  # type: ignore[override]
+    def add_sink(  # type: ignore[override]
+        self, sink: AsgiSinkCallable[_ReqT, _RespT], prefix: SinkPrefix = r'/'
+    ) -> None:
         if not iscoroutinefunction(sink) and is_python_func(sink):
             if _should_wrap_non_coroutines():
                 sink = wrap_sync_to_async(sink)
@@ -868,21 +962,21 @@ class App(falcon.app.App):
     @overload  # type: ignore[override]
     def add_error_handler(
         self,
-        exception: Type[_BE],
-        handler: Callable[[Request, Response, _BE, Dict[str, Any]], Awaitable[None]],
+        exception: Type[_ExcT],
+        handler: Callable[[_ReqT, _RespT, _ExcT, Dict[str, Any]], Awaitable[None]],
     ) -> None: ...
 
     @overload
     def add_error_handler(
         self,
         exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[AsgiErrorHandler] = None,
+        handler: Optional[AsgiErrorHandler[_ReqT, _RespT]] = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
         exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[AsgiErrorHandler] = None,
+        handler: Optional[AsgiErrorHandler[_ReqT, _RespT]] = None,
     ) -> None:
         """Register a handler for one or more exception types.
 
@@ -1010,7 +1104,7 @@ class App(falcon.app.App):
                 'The handler must be an awaitable coroutine function in order '
                 'to be used safely with an ASGI app.'
             )
-        handler_callable: AsgiErrorHandler = handler
+        handler_callable: AsgiErrorHandler[_ReqT, _RespT] = handler
 
         exception_tuple: Tuple[type[Exception], ...]
         try:
@@ -1144,6 +1238,7 @@ class App(falcon.app.App):
         params: Dict[str, Any] = {}
 
         request_mw, resource_mw = self._middleware_ws
+        resource: Optional[Resource]
 
         try:
             for process_request_ws in request_mw:
@@ -1216,8 +1311,8 @@ class App(falcon.app.App):
 
     async def _http_status_handler(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: Optional[_RespT],
         status: HTTPStatus,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
@@ -1238,8 +1333,8 @@ class App(falcon.app.App):
 
     async def _http_error_handler(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: Optional[_RespT],
         error: HTTPError,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
@@ -1260,8 +1355,8 @@ class App(falcon.app.App):
 
     async def _python_error_handler(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: Optional[_RespT],
         error: Exception,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
@@ -1277,8 +1372,8 @@ class App(falcon.app.App):
 
     async def _ws_disconnected_error_handler(
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: Optional[_RespT],
         error: WebSocketDisconnected,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,
@@ -1294,12 +1389,12 @@ class App(falcon.app.App):
 
         def _find_error_handler(  # type: ignore[override]
             self, ex: Exception
-        ) -> Optional[AsgiErrorHandler]: ...
+        ) -> Optional[AsgiErrorHandler[_ReqT, _RespT]]: ...
 
     async def _handle_exception(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: Optional[_RespT],
         ex: Exception,
         params: Dict[str, Any],
         ws: Optional[WebSocket] = None,

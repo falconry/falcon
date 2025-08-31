@@ -28,6 +28,7 @@ from typing import (
     ClassVar,
     Dict,
     FrozenSet,
+    Generic,
     Iterable,
     List,
     Literal,
@@ -91,10 +92,13 @@ _TYPELESS_STATUS_CODES = frozenset(
         status.HTTP_304,
     ]
 )
-_BE = TypeVar('_BE', bound=Exception)
+
+_ExcT = TypeVar('_ExcT', bound=Exception)
+_ReqT = TypeVar('_ReqT', bound=Request, contravariant=True)
+_RespT = TypeVar('_RespT', bound=Response, contravariant=True)
 
 
-class App:
+class App(Generic[_ReqT, _RespT]):
     '''The main entry point into a Falcon-based WSGI app.
 
     Each App instance provides a callable
@@ -262,11 +266,11 @@ class App:
     )
 
     _cors_enable: bool
-    _error_handlers: Dict[Type[Exception], ErrorHandler]
+    _error_handlers: Dict[Type[Exception], ErrorHandler[_ReqT, _RespT]]
     _independent_middleware: bool
     _middleware: helpers.PreparedMiddlewareResult
-    _request_type: Type[Request]
-    _response_type: Type[Response]
+    _request_type: Type[_ReqT]
+    _response_type: Type[_RespT]
     _router_search: FindMethod
     # NOTE(caselit): this should actually be a protocol of the methods required
     # by a router, hardcoded to CompiledRouter for convenience for now.
@@ -301,11 +305,79 @@ class App:
     See also: :class:`~.ResponseOptions`
     """
 
+    @overload
+    def __init__(
+        self: 'App[Request, Response]',
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: None = None,
+        middleware: Optional[
+            Union[
+                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: 'App[_ReqT, Response]',
+        media_type: str = ...,
+        request_type: Optional[Type[_ReqT]] = None,
+        response_type: None = None,
+        middleware: Optional[
+            Union[
+                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: 'App[Request, _RespT]',
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: Optional[Type[_RespT]] = None,
+        middleware: Optional[
+            Union[
+                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        media_type: str = ...,
+        request_type: Optional[Type[_ReqT]] = None,
+        response_type: Optional[Type[_RespT]] = None,
+        middleware: Optional[
+            Union[
+                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
+            ]
+        ] = ...,
+        router: Optional[routing.CompiledRouter] = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Optional[Type[Request]] = None,
-        response_type: Optional[Type[Response]] = None,
+        request_type: Optional[Type[_ReqT]] = None,
+        response_type: Optional[Type[_RespT]] = None,
         middleware: Optional[Union[SyncMiddleware, Iterable[SyncMiddleware]]] = None,
         router: Optional[routing.CompiledRouter] = None,
         independent_middleware: bool = True,
@@ -327,8 +399,8 @@ class App:
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
 
-        self._request_type = request_type or Request
-        self._response_type = response_type or Response
+        self._request_type = request_type or Request  # type: ignore[assignment]
+        self._response_type = response_type or Response  # type: ignore[assignment]
 
         self._error_handlers = {}
         self._serialize_error = helpers.default_serialize_error
@@ -510,7 +582,10 @@ class App:
         return self._router.options
 
     def add_middleware(
-        self, middleware: Union[SyncMiddleware, Iterable[SyncMiddleware]]
+        self,
+        middleware: Union[
+            SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
+        ],
     ) -> None:
         """Add one or more additional middleware components.
 
@@ -526,7 +601,9 @@ class App:
         if middleware:
             try:
                 # NOTE(kgriffs): Check to see if middleware is an iterable.
-                middleware = list(cast(Iterable[SyncMiddleware], middleware))
+                middleware = list(
+                    cast(Iterable[SyncMiddleware[_ReqT, _RespT]], middleware)
+                )
             except TypeError:
                 # NOTE(kgriffs): Middleware is not iterable; assume it is just
                 #   one bare component.
@@ -738,7 +815,9 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink: SinkCallable, prefix: SinkPrefix = r'/') -> None:
+    def add_sink(
+        self, sink: SinkCallable[_ReqT, _RespT], prefix: SinkPrefix = r'/'
+    ) -> None:
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
@@ -828,21 +907,21 @@ class App:
     @overload
     def add_error_handler(
         self,
-        exception: Type[_BE],
-        handler: Callable[[Request, Response, _BE, Dict[str, Any]], None],
+        exception: Type[_ExcT],
+        handler: Callable[[_ReqT, _RespT, _ExcT, Dict[str, Any]], None],
     ) -> None: ...
 
     @overload
     def add_error_handler(
         self,
         exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[ErrorHandler] = None,
+        handler: Optional[ErrorHandler[_ReqT, _RespT]] = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
         exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[ErrorHandler] = None,
+        handler: Optional[ErrorHandler[_ReqT, _RespT]] = None,
     ) -> None:
         """Register a handler for one or more exception types.
 
@@ -922,14 +1001,16 @@ class App:
 
         """
 
-        def wrap_old_handler(old_handler: Callable[..., Any]) -> ErrorHandler:
+        def wrap_old_handler(
+            old_handler: Callable[..., Any],
+        ) -> ErrorHandler[_ReqT, _RespT]:
             @wraps(old_handler)
             def handler(
-                req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
+                req: _ReqT, resp: _RespT, ex: Exception, params: Dict[str, Any]
             ) -> None:
                 old_handler(ex, req, resp, params)
 
-            return handler
+            return handler  # type: ignore[return-value]
 
         if handler is None:
             handler = getattr(exception, 'handle', None)
@@ -951,7 +1032,7 @@ class App:
         ) or arg_names[1:3] in (('req', 'resp'), ('request', 'response')):
             warnings.warn(
                 f'handler is using a deprecated signature; please order its '
-                f'arguments as {handler.__qualname__}(req, resp, ex, params). '
+                f'arguments as {handler.__qualname__}(req, resp, ex, params). '  # type: ignore
                 f'This compatibility shim will be removed in Falcon 5.0.',
                 deprecation.DeprecatedWarning,
             )
@@ -969,7 +1050,7 @@ class App:
 
             self._error_handlers[exc] = handler
 
-    def set_error_serializer(self, serializer: ErrorSerializer) -> None:
+    def set_error_serializer(self, serializer: ErrorSerializer[_ReqT, _RespT]) -> None:
         """Override the default serializer for instances of :class:`~.HTTPError`.
 
         When a responder raises an instance of :class:`~.HTTPError`,
@@ -1031,7 +1112,7 @@ class App:
         )
 
     def _get_responder(
-        self, req: Request
+        self, req: _ReqT
     ) -> Tuple[
         Union[ResponderCallable, AsgiResponderCallable, AsgiResponderWsCallable],
         Dict[str, Any],
@@ -1109,7 +1190,7 @@ class App:
         return (responder, params, resource, uri_template)
 
     def _compose_status_response(
-        self, req: Request, resp: Response, http_status: HTTPStatus
+        self, req: _ReqT, resp: _RespT, http_status: HTTPStatus
     ) -> None:
         """Compose a response for the given HTTPStatus instance."""
 
@@ -1126,7 +1207,7 @@ class App:
         resp.text = http_status.text
 
     def _compose_error_response(
-        self, req: Request, resp: Response, error: HTTPError
+        self, req: _ReqT, resp: _RespT, error: HTTPError
     ) -> None:
         """Compose a response for the given HTTPError instance."""
 
@@ -1138,17 +1219,17 @@ class App:
         self._serialize_error(req, resp, error)
 
     def _http_status_handler(
-        self, req: Request, resp: Response, status: HTTPStatus, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, status: HTTPStatus, params: Dict[str, Any]
     ) -> None:
         self._compose_status_response(req, resp, status)
 
     def _http_error_handler(
-        self, req: Request, resp: Response, error: HTTPError, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, error: HTTPError, params: Dict[str, Any]
     ) -> None:
         self._compose_error_response(req, resp, error)
 
     def _python_error_handler(
-        self, req: Request, resp: Response, error: Exception, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, error: Exception, params: Dict[str, Any]
     ) -> None:
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
@@ -1171,7 +1252,7 @@ class App:
         return None
 
     def _handle_exception(
-        self, req: Request, resp: Response, ex: Exception, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, ex: Exception, params: Dict[str, Any]
     ) -> bool:
         """Handle an exception raised from mw or a responder.
 
