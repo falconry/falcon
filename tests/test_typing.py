@@ -13,6 +13,7 @@ import falcon.testing
 class RichContext:
     userid: Optional[UUID] = None
     role: str = 'anonymous'
+    comment: str = 'no comment'
 
 
 class FancyRequest(falcon.Request):
@@ -22,6 +23,11 @@ class FancyRequest(falcon.Request):
 class FancyResponse(falcon.Response):
     context_type = RichContext
 
+    # NOTE(vytas): the `type: ignore` exemption is currently required if it is
+    #   desirable to actually check typing of context attributes. See also:
+    #   https://falcon.readthedocs.io/en/latest/api/typing.html#known-limitations
+    context: RichContext  # type: ignore[assignment]
+
 
 class FancyAsyncRequest(falcon.asgi.Request):
     context_type = RichContext
@@ -29,6 +35,11 @@ class FancyAsyncRequest(falcon.asgi.Request):
 
 class FancyAsyncResponse(falcon.asgi.Response):
     context_type = RichContext
+
+    # NOTE(vytas): the `type: ignore exemption` is currently required if it is
+    #   desirable to actually check typing of context attributes. See also:
+    #   https://falcon.readthedocs.io/en/latest/api/typing.html#known-limitations
+    context: RichContext  # type: ignore[assignment]
 
 
 USERS = {
@@ -80,10 +91,15 @@ class AuthMiddlewareFancyBoth:
     def process_request(self, req: FancyRequest, resp: FancyResponse) -> None:
         _process_auth(req, resp)
 
+        # NOTE(vytas): Unlike req.context, resp.context.comment is type checked,
+        #   try misspelling it or using with an incompatible type.
+        resp.context.comment = 'fancy req/resp'
+
     async def process_request_async(
         self, req: FancyAsyncRequest, resp: FancyAsyncResponse
     ) -> None:
         _process_auth(req, resp)
+        resp.context.comment = 'fancy req/resp'
 
 
 def _sink_impl(req: falcon.Request, resp: falcon.Response) -> None:
@@ -99,6 +115,8 @@ def sink_fancy_req(req: FancyRequest, resp: falcon.Response, **kwargs: Any) -> N
 
 def sink_fancy_both(req: FancyRequest, resp: FancyResponse, **kwargs: Any) -> None:
     _sink_impl(req, resp)
+    resp.context.comment += ' (sink)'
+    resp.media.update(comment=resp.context.comment)
 
 
 async def sink_fancy_async_req(
@@ -113,6 +131,8 @@ async def sink_fancy_async_both(
 ) -> None:
     if resp is not None:
         _sink_impl(req, resp)
+        resp.context.comment += ' (sink)'
+        resp.media.update(comment=resp.context.comment)
 
 
 # NOTE(vytas): We don't use fixtures here because that is hard to marry to strict
@@ -160,20 +180,34 @@ def _exercise_app(app: falcon.App[Any, Any]) -> None:
 
     result1 = client.get()
     assert result1.status_code == 200
-    assert result1.json == {
-        'role': 'anonymous',
-        'userid': None,
-    }
+    assert result1.json in (
+        {
+            'role': 'anonymous',
+            'userid': None,
+        },
+        {
+            'comment': 'fancy req/resp (sink)',
+            'role': 'anonymous',
+            'userid': None,
+        },
+    )
 
     result2 = client.get(headers={'Authorization': 'ApiKey 123'})
     assert result2.status_code == 401
 
     result3 = client.get(headers={'Authorization': 'Basic am9objoxMjM0'})
     assert result3.status_code == 200
-    assert result3.json == {
-        'role': 'user',
-        'userid': '51e4b478-3825-4e46-9fd7-be7b61d616dc',
-    }
+    assert result3.json in (
+        {
+            'role': 'user',
+            'userid': '51e4b478-3825-4e46-9fd7-be7b61d616dc',
+        },
+        {
+            'comment': 'fancy req/resp (sink)',
+            'role': 'user',
+            'userid': '51e4b478-3825-4e46-9fd7-be7b61d616dc',
+        },
+    )
 
     result4 = client.get('/not-found')
     assert result4.status_code == 404
