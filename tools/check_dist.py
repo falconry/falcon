@@ -2,10 +2,16 @@
 
 import argparse
 import pathlib
+import re
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
-DIST = HERE.parent / 'dist'
+FALCON_ROOT = HERE.parent
+DIST = FALCON_ROOT / 'dist'
+
+CHANGELOGS = FALCON_ROOT / 'docs' / 'changes'
+RELEASE_STABLE_VERSION_PATTERN = re.compile(r'^(\d+)\.(\d+).(\d+)$')
+RELEASE_META_PATTERN = re.compile(r'\.\.\s+falcon-release\:\s+([\d-]+)')
 
 
 def check_dist(dist, git_ref):
@@ -54,10 +60,22 @@ def check_dist(dist, git_ref):
     if wheels:
         wheel_list = ''.join(f'    {wheel}\n' for wheel in sorted(wheels))
 
+    release_date = None
+    if RELEASE_STABLE_VERSION_PATTERN.match(version):
+        changelog = CHANGELOGS / f'{version}.rst'
+        if not changelog.is_file():
+            sys.stderr.write(f'Changelog for stable release missing: {changelog}\n')
+            sys.exit(1)
+        if not (meta := RELEASE_META_PATTERN.search(changelog.read_text())):
+            sys.stderr.write(f'falcon-release meta missing in: {changelog}\n')
+            sys.exit(1)
+        release_date = meta.group(1)
+
     print(f'[{dist}]\n')
     print(f'sdist found:\n    {sdist}\n')
     print(f'wheels found:\n{wheel_list}')
     print(f'version identified:\n    {version}\n')
+    print(f'release date:\n    {release_date}\n')
 
 
 def main():

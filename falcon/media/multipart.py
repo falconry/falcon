@@ -71,7 +71,7 @@ _CRLF_CRLF = _CRLF + _CRLF
 # TODO(vytas): Consider supporting -charset- stuff.
 #   Does anyone use that (?)
 class BodyPart:
-    """Represents a body part in a multipart form in an ASGI application.
+    """Represents a body part in a multipart form in a WSGI application.
 
     Note:
         :class:`BodyPart` is meant to be instantiated directly only by the
@@ -233,7 +233,10 @@ class BodyPart:
         See also: :func:`~.secure_filename`
         """  # noqa: D205
         try:
-            return misc.secure_filename(self.filename or '')
+            return misc.secure_filename(
+                self.filename or '',
+                max_length=self._parse_options.max_secure_filename_length,
+            )
         except ValueError as ex:
             raise MultipartParseError(description=str(ex)) from ex
 
@@ -578,6 +581,19 @@ class MultipartParseOptions:
     :class:`.MultipartParseError` will be raised. If this option is set to 0,
     no limit will be imposed by the parser.
     """
+    max_secure_filename_length: Optional[int]
+    """The maximum number characters for a secure filename (default ``None``).
+
+    The value of this option is passed as the `max_length` keyword argument to
+    :func:`~.secure_filename` when evaluating the
+    :attr:`BodyPart.secure_filename` property.
+
+    Note:
+        In Falcon 5.0, the default value of this option will change to a
+        reasonable finite number (e.g., 64 or 96) of characters.
+
+    .. versionadded:: 4.1
+    """
     max_body_part_buffer_size: int
     """The maximum number of bytes to buffer and return when the
     :meth:`BodyPart.get_data` method is called (default ``1 MiB``).
@@ -609,6 +625,7 @@ class MultipartParseOptions:
         'max_body_part_buffer_size',
         'max_body_part_count',
         'max_body_part_headers_size',
+        'max_secure_filename_length',
         'media_handlers',
     )
 
@@ -617,6 +634,7 @@ class MultipartParseOptions:
         self.max_body_part_buffer_size = 1024 * 1024
         self.max_body_part_count = 64
         self.max_body_part_headers_size = 8192
+        self.max_secure_filename_length = None
         # NOTE(myusko,vytas): Here we create a copy of _DEFAULT_HANDLERS in
         #   order to prevent the modification of the class variable whenever
         #   parse_options.media_handlers are customized.

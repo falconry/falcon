@@ -87,8 +87,10 @@ extensions = [
     'ext.autodoc_customizations',
     'ext.cibuildwheel',
     'ext.doorway',
+    'ext.falcon_releases',
     'ext.private_args',
     'ext.rfc',
+    'ext.workarounds',
 ]
 
 templates_path = ['_templates']
@@ -100,11 +102,33 @@ exclude_patterns = ['_build', '_newsfragments']
 pygments_style = 'bw'
 
 # myst configuration
-myst_enable_extensions = ["tasklist"]
+myst_enable_extensions = ['tasklist']
 myst_enable_checkboxes = True
 
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+
+# NOTE(vytas): The autodoc_type_aliases mapping below doesn't really work as
+#   advertised...
+#   Sphinx is looking for the mapped types defined as classes, however, typing
+#   aliases constructed with the help of the | operator (or Union meta type),
+#   etc, are recognized as module data/attributes, not types.
+# TODO(vytas): When defining a class alias manually, it seems to work as
+#   expected, e.g.,
+#
+#   .. class:: PreparedMiddlewareResult
+#
+#       An alias for the return type of prepare_middleware().
+#
+#   See also https://github.com/sphinx-doc/sphinx/issues/10785 & related issues
+#   for discussion and potentially better workarounds.
+# TODO(vytas): If we enable the "nitpicky" mode, we will have to add exceptions
+#   for all unresolved aliases.
+autodoc_type_aliases = {
+    'SyncMiddleware': 'SyncMiddleware',
+    'AsyncMiddleware': 'AsyncMiddleware',
+    'PreparedMiddlewareResult': 'PreparedMiddlewareResult',
+}
 
 # -- Options for HTML output --------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -135,7 +159,6 @@ html_theme_options = {
     #   NB that Gruvbox does not meet the WCAG 2.1 AA requirements for contrast.
     'pygments_light_style': 'falconry-light' if _falconry_styles else 'gruvbox-light',
     'pygments_dark_style': 'falconry-dark' if _falconry_styles else 'gruvbox-dark',
-
     'header_links_before_dropdown': 4,
     'external_links': [
         {

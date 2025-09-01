@@ -23,18 +23,17 @@ Media handlers
     ``msgspec.json.decode()`` and ``msgspec.json.encode()``, respectively.
     This optimization is left as an exercise for the reader.
 
-.. attention::
-    As seen above, plugging ``msgspec`` into :class:`~falcon.media.JSONHandler`
-    may look extremely straightforward. We have, however, omitted an important
-    caveat when it comes to error handling -- see a more detailed discussion in
-    the below chapter: :ref:`msgspec_error_handling`.
-
 Using ``msgspec`` for handling MessagePack (or YAML) media is slightly more
 involved, as we need to implement the :class:`~falcon.media.BaseHandler`
 interface:
 
 .. literalinclude:: ../../../examples/recipes/msgspec_msgpack_handler.py
     :language: python
+
+.. attention::
+    In contrast to :class:`~falcon.media.JSONHandler`, we would also need to
+    implement error handling for invalid MessagePack payload. See more in the
+    below chapter: :ref:`msgspec_error_handling`.
 
 We can now use these handlers for request and response media
 (see also: :ref:`custom_media_handlers`).
@@ -90,17 +89,20 @@ case is represented by ``msgspec.ValidationError``. We could either create an
 exception as :class:`~falcon.MediaValidationError`, or just use a
 ``try.. except`` clause, and reraise directly inside middleware.
 
-Our customized :class:`~falcon.media.JSONHandler` has another issue: unlike the
-stdlib's :mod:`json` or the majority of other JSON libraries,
-``msgspec.DecodeError`` is not a subclass of :class:`ValueError`:
+``msgspec.json.decode()`` has another peculiarity: unlike the stdlib's
+:mod:`json` or the majority of other JSON libraries, ``msgspec.DecodeError`` is
+not a subclass of :class:`ValueError`:
 
 >>> import msgspec
 >>> issubclass(msgspec.DecodeError, ValueError)
 False
 
-This discrepancy can be worked around using a wrapper around
-``msgspec.json.decode()`` that reraises a :class:`ValueError` from
-``msgspec.DecodeError``. Furthermore, the problem has been reported upstream,
+Falcon's :class:`~falcon.media.JSONHandler` works around this discrepancy by
+detecting the actual deserialization exception type at the time of
+initialization, but you may still encounter the issue when using the library
+manually, or when using it for other media types such as MessagePack
+(see above).
+Furthermore, the problem has been reported upstream,
 and received positive feedback from the maintainer, so hopefully it could get
 resolved in the near future.
 

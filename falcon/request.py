@@ -118,7 +118,7 @@ class Request:
     _cached_if_none_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
 
     # Child classes may override this
-    context_type: ClassVar[Type[structures.Context]] = structures.Context
+    context_type: ClassVar[Type] = structures.Context
     """Class variable that determines the factory or
     type to use for initializing the `context` attribute. By default,
     the framework will instantiate bare objects (instances of the bare
@@ -1155,6 +1155,9 @@ class Request:
 
         # Equivalent to: deserialized_media = req.get_media()
         deserialized_media = req.media
+
+    New WSGI apps are encouraged to use :meth:`~.get_media` directly instead of
+    this property.
     """
 
     # ------------------------------------------------------------------------
@@ -2349,10 +2352,7 @@ class Request:
 
         """
 
-        if name in self._params:
-            return True
-        else:
-            return False
+        return name in self._params
 
     def log_error(self, message: str) -> None:
         """Write an error message to the server's log.
@@ -2436,7 +2436,7 @@ class RequestOptions:
     respectively.
     """
 
-    keep_black_qs_values: bool
+    keep_blank_qs_values: bool
     """Set to ``False`` to ignore query string params that have missing or blank
     values (default ``True``).
 

@@ -173,7 +173,7 @@ class _RequestsLite:
         headers = headers or {}
         timeout = timeout or self.DEFAULT_TIMEOUT
 
-        conn = http.client.HTTPConnection(parsed.netloc)
+        conn = http.client.HTTPConnection(parsed.netloc, timeout=timeout)
         conn.request(method, uri, body=data, headers=headers)
         return self.Response(conn.getresponse())
 

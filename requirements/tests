@@ -6,9 +6,7 @@ testtools
 
 # ASGI Specific (Daphne & Hypercorn are installed in their own tox env)
 aiofiles
-# NOTE(vytas): httpcore (a dependency of httpx) fails to import under 3.14.0a6:
-#   https://github.com/encode/httpcore/issues/994
-httpx; python_version < '3.14'
+httpx
 uvicorn >= 0.17.0
 websockets >= 13.1
 

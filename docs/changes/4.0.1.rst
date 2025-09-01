@@ -1,6 +1,8 @@
 Changelog for Falcon 4.0.1
 ==========================
 
+.. falcon-release: 2024-10-22
+
 Summary
 -------
 
