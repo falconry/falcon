@@ -2,8 +2,15 @@ import pytest
 
 import falcon.testing as testing
 
-httpx = pytest.importorskip('httpx')
-requests = pytest.importorskip('requests')
+
+@pytest.fixture(scope='session')
+def httpx():
+    return pytest.importorskip('httpx')
+
+
+@pytest.fixture(scope='session')
+def requests():
+    return pytest.importorskip('requests')
 
 
 def test_quote(util):
@@ -31,13 +38,7 @@ def test_things(asgi, util):
     )
 
 
-@pytest.mark.skipif(
-    httpx is None, reason='things_advanced_asgi.py requires httpx [not found]'
-)
-@pytest.mark.skipif(
-    requests is None, reason='things_advanced.py requires requests [not found]'
-)
-def test_things_advanced(asgi, util):
+def test_things_advanced(asgi, util, httpx, requests):
     suffix = '_asgi' if asgi else ''
     advanced = util.load_module(f'examples/things_advanced{suffix}.py')
 

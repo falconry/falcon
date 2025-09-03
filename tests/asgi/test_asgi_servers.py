@@ -22,20 +22,16 @@ def httpx_lib():
 
 
 @pytest.fixture(scope='session')
-def requests_lib():
+def requests():
     return pytest.importorskip('requests')
 
 
-@pytest.fixture(scope='session')
-def websockets_lib():
-    websockets = pytest.importorskip('websockets')
-    # Optionally, check for submodules and raise if missing
-    try:
-        import websockets.asyncio.client
-        import websockets.exceptions
-    except ImportError as e:
-        pytest.skip(f'websockets submodules missing: {e}')
-    return websockets
+try:
+    import websockets
+    import websockets.asyncio.client
+    import websockets.exceptions
+except ImportError:
+    websockets = None  # type: ignore
 
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -54,23 +50,23 @@ _REQUEST_TIMEOUT = 10
 
 
 class TestASGIServer:
-    def test_get(self, server_base_url, requests_lib):
-        resp = requests_lib.get(server_base_url, timeout=_REQUEST_TIMEOUT)
+    def test_get(self, server_base_url, requests):
+        resp = requests.get(server_base_url, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == '127.0.0.1'
 
-    def test_put(self, server_base_url, requests_lib):
+    def test_put(self, server_base_url, requests):
         body = '{}'
-        resp = requests_lib.put(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.put(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == '{}'
 
-    def test_head_405(self, server_base_url, requests_lib):
+    def test_head_405(self, server_base_url, requests):
         body = '{}'
-        resp = requests_lib.head(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.head(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 405
 
-    def test_post_multipart_form(self, server_base_url, requests_lib):
+    def test_post_multipart_form(self, server_base_url, requests):
         size = random.randint(16 * _SIZE_1_MB, 32 * _SIZE_1_MB)
         data = os.urandom(size)
         digest = hashlib.sha1(data).hexdigest()
@@ -79,7 +75,7 @@ class TestASGIServer:
             'message': ('hello.txt', b'Hello, World!\n'),
         }
 
-        resp = requests_lib.post(
+        resp = requests.post(
             server_base_url + 'forms', files=files, timeout=_REQUEST_TIMEOUT
         )
         assert resp.status_code == 200
@@ -94,30 +90,30 @@ class TestASGIServer:
             },
         }
 
-    def test_post_multiple(self, server_base_url, requests_lib):
+    def test_post_multiple(self, server_base_url, requests):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
-        resp = requests_lib.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == body
         assert resp.headers['X-Counter'] == '0'
 
         time.sleep(1)
 
-        resp = requests_lib.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.headers['X-Counter'] == '2002'
 
-    def test_post_invalid_content_length(self, server_base_url, requests_lib):
+    def test_post_invalid_content_length(self, server_base_url, requests):
         headers = {'Content-Length': 'invalid'}
 
         try:
-            resp = requests_lib.post(
+            resp = requests.post(
                 server_base_url, headers=headers, timeout=_REQUEST_TIMEOUT
             )
 
             # Daphne responds with a 400
             assert resp.status_code == 400
 
-        except requests_lib.ConnectionError:
+        except requests.ConnectionError:
             # NOTE(kgriffs): Uvicorn will kill the request so it does not
             #   even get to our app; the app logic is tested on the WSGI
             #   side. We leave this here in case something changes in
@@ -125,15 +121,15 @@ class TestASGIServer:
             #   get a heads-up if the request is no longer blocked.
             pass
 
-    def test_post_read_bounded_stream(self, server_base_url, requests_lib):
+    def test_post_read_bounded_stream(self, server_base_url, requests):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
-        resp = requests_lib.post(
+        resp = requests.post(
             server_base_url + 'bucket', data=body, timeout=_REQUEST_TIMEOUT
         )
         assert resp.status_code == 200
         assert resp.text == body
 
-    def test_post_read_bounded_stream_large(self, server_base_url, requests_lib):
+    def test_post_read_bounded_stream_large(self, server_base_url, requests):
         """Test that we can correctly read large bodies chunked server-side.
 
         ASGI servers typically employ some type of flow control to stream
@@ -146,19 +142,19 @@ class TestASGIServer:
         size_mb = 5
 
         body = os.urandom(_SIZE_1_MB * size_mb)
-        resp = requests_lib.put(
+        resp = requests.put(
             server_base_url + 'bucket/drops', data=body, timeout=_REQUEST_TIMEOUT
         )
         assert resp.status_code == 200
         assert resp.json().get('drops') > size_mb
         assert resp.json().get('sha1') == hashlib.sha1(body).hexdigest()
 
-    def test_post_read_bounded_stream_no_body(self, server_base_url, requests_lib):
-        resp = requests_lib.post(server_base_url + 'bucket', timeout=_REQUEST_TIMEOUT)
+    def test_post_read_bounded_stream_no_body(self, server_base_url, requests):
+        resp = requests.post(server_base_url + 'bucket', timeout=_REQUEST_TIMEOUT)
         assert not resp.text
 
-    def test_sse(self, server_base_url, requests_lib):
-        resp = requests_lib.get(server_base_url + 'events', timeout=_REQUEST_TIMEOUT)
+    def test_sse(self, server_base_url, requests):
+        resp = requests.get(server_base_url + 'events', timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
 
         events = resp.text.split('\n\n')
@@ -168,7 +164,7 @@ class TestASGIServer:
 
         assert not events[-1]
 
-    def test_sse_client_disconnects_early(self, server_base_url, requests_lib):
+    def test_sse_client_disconnects_early(self, server_base_url, requests):
         """Test that when the client connection is lost, the server task does not hang.
 
         In the case of SSE, Falcon should detect when the client connection is
@@ -177,8 +173,8 @@ class TestASGIServer:
         _run_server_isolated() method will fail the test if the server process
         takes too long to shut down.
         """
-        with pytest.raises(requests_lib.exceptions.ConnectionError):
-            requests_lib.get(
+        with pytest.raises(requests.exceptions.ConnectionError):
+            requests.get(
                 server_base_url + 'events',
                 timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
@@ -200,6 +196,9 @@ class TestASGIServer:
             assert resp.json().get('drops') >= 1
 
 
+@pytest.mark.skipif(
+    websockets is None, reason='websockets is required for this test class'
+)
 class TestWebSocket:
     @pytest.mark.parametrize('explicit_close', [True, False])
     @pytest.mark.parametrize('close_code', [None, 4321])
@@ -211,10 +210,9 @@ class TestWebSocket:
         max_receive_queue,
         server_base_url,
         server_url_events_ws,
-        requests_lib,
-        websockets_lib,
+        requests,
     ):
-        resp = requests_lib.patch(
+        resp = requests.patch(
             server_base_url + 'wsoptions', json={'max_receive_queue': max_receive_queue}
         )
         resp.raise_for_status()
@@ -229,7 +227,7 @@ class TestWebSocket:
         if close_code:
             extra_headers['X-Close-Code'] = str(close_code)
 
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws,
             additional_headers=extra_headers,
         ) as ws:
@@ -245,7 +243,7 @@ class TestWebSocket:
                     message_text = await ws.recv()
                     message_echo = await ws.recv()
                     message_binary = await ws.recv()
-                except websockets_lib.exceptions.ConnectionClosed as ex:
+                except websockets.exceptions.ConnectionClosed as ex:
                     if explicit_close and close_code:
                         assert ex.rcvd.code == close_code
                     else:
@@ -262,9 +260,7 @@ class TestWebSocket:
 
     @pytest.mark.parametrize('explicit_close', [True, False])
     @pytest.mark.parametrize('close_code', [None, 4040])
-    async def test_rejected(
-        self, explicit_close, close_code, server_url_events_ws, websockets_lib
-    ):
+    async def test_rejected(self, explicit_close, close_code, server_url_events_ws):
         extra_headers = {'X-Accept': 'reject'}
         if explicit_close:
             extra_headers['X-Close'] = 'True'
@@ -272,19 +268,19 @@ class TestWebSocket:
         if close_code:
             extra_headers['X-Close-Code'] = str(close_code)
 
-        with pytest.raises(websockets_lib.exceptions.InvalidStatus) as exc_info:
-            async with websockets_lib.asyncio.client.connect(
+        with pytest.raises(websockets.exceptions.InvalidStatus) as exc_info:
+            async with websockets.asyncio.client.connect(
                 server_url_events_ws, additional_headers=extra_headers
             ):
                 pass
 
         assert exc_info.value.response.status_code == 403
 
-    async def test_missing_responder(self, server_url_events_ws, websockets_lib):
+    async def test_missing_responder(self, server_url_events_ws):
         server_url_events_ws += '/404'
 
-        with pytest.raises(websockets_lib.exceptions.InvalidStatus) as exc_info:
-            async with websockets_lib.asyncio.client.connect(server_url_events_ws):
+        with pytest.raises(websockets.exceptions.InvalidStatus) as exc_info:
+            async with websockets.asyncio.client.connect(server_url_events_ws):
                 pass
 
         assert exc_info.value.response.status_code == 403
@@ -297,23 +293,21 @@ class TestWebSocket:
         ],
     )
     async def test_select_subprotocol_known(
-        self, subprotocol, expected, server_url_events_ws, websockets_lib
+        self, subprotocol, expected, server_url_events_ws
     ):
         extra_headers = {'X-Subprotocol': subprotocol}
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws,
             additional_headers=extra_headers,
             subprotocols=['amqp', 'wamp'],
         ) as ws:
             assert ws.subprotocol == expected
 
-    async def test_select_subprotocol_unknown(
-        self, server_url_events_ws, websockets_lib
-    ):
+    async def test_select_subprotocol_unknown(self, server_url_events_ws):
         extra_headers = {'X-Subprotocol': 'xmpp'}
 
         try:
-            async with websockets_lib.asyncio.client.connect(
+            async with websockets.asyncio.client.connect(
                 server_url_events_ws,
                 additional_headers=extra_headers,
                 subprotocols=['amqp', 'wamp'],
@@ -327,7 +321,7 @@ class TestWebSocket:
             pytest.fail('no error raised')
 
         # Uvicorn
-        except websockets_lib.exceptions.NegotiationError as ex:
+        except websockets.exceptions.NegotiationError as ex:
             assert 'unsupported subprotocol: xmpp' in str(ex)
 
         # Daphne, Hypercorn with websockets<14.2
@@ -335,7 +329,7 @@ class TestWebSocket:
             pass
 
         # Daphne, Hypercorn with websockets>=14.2
-        except websockets_lib.exceptions.InvalidMessage as ex:
+        except websockets.exceptions.InvalidMessage as ex:
             assert isinstance(ex.__cause__, EOFError)
 
     # NOTE(kgriffs): When executing this test under pytest with the -s
@@ -344,10 +338,8 @@ class TestWebSocket:
     #   tried to capture this output and check it in the test below,
     #   but the usual ways of capturing stdout/stderr with pytest do
     #   not work.
-    async def test_disconnecting_client_early(
-        self, server_url_events_ws, websockets_lib
-    ):
-        ws = await websockets_lib.asyncio.client.connect(
+    async def test_disconnecting_client_early(self, server_url_events_ws):
+        ws = await websockets.asyncio.client.connect(
             server_url_events_ws, additional_headers={'X-Close': 'True'}
         )
         await asyncio.sleep(0.2)
@@ -365,28 +357,28 @@ class TestWebSocket:
         #   messages after the close.
         await asyncio.sleep(1)
 
-    async def test_send_before_accept(self, server_url_events_ws, websockets_lib):
+    async def test_send_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip'}
 
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
 
-    async def test_recv_before_accept(self, server_url_events_ws, websockets_lib):
+    async def test_recv_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip', 'x-command': 'recv'}
 
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
 
-    async def test_invalid_close_code(self, server_url_events_ws, websockets_lib):
+    async def test_invalid_close_code(self, server_url_events_ws):
         extra_headers = {'x-close': 'True', 'x-close-code': 42}
 
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             start = time.time()
@@ -399,24 +391,20 @@ class TestWebSocket:
                 elapsed = time.time() - start
                 assert elapsed < 2
 
-    async def test_close_code_on_unhandled_error(
-        self, server_url_events_ws, websockets_lib
-    ):
+    async def test_close_code_on_unhandled_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'generic'}
 
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             await ws.wait_closed()
 
         assert ws.protocol.close_code in {3011, 1011}
 
-    async def test_close_code_on_unhandled_http_error(
-        self, server_url_events_ws, websockets_lib
-    ):
+    async def test_close_code_on_unhandled_http_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'http'}
 
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             await ws.wait_closed()
@@ -425,15 +413,13 @@ class TestWebSocket:
 
     @pytest.mark.parametrize('mismatch', ['send', 'recv'])
     @pytest.mark.parametrize('mismatch_type', ['text', 'data'])
-    async def test_type_mismatch(
-        self, mismatch, mismatch_type, server_url_events_ws, websockets_lib
-    ):
+    async def test_type_mismatch(self, mismatch, mismatch_type, server_url_events_ws):
         extra_headers = {
             'X-Mismatch': mismatch,
             'X-Mismatch-Type': mismatch_type,
         }
 
-        async with websockets_lib.asyncio.client.connect(
+        async with websockets.asyncio.client.connect(
             server_url_events_ws, additional_headers=extra_headers
         ) as ws:
             if mismatch == 'recv':
@@ -446,11 +432,11 @@ class TestWebSocket:
 
         assert ws.protocol.close_code in {3011, 1011}
 
-    async def test_passing_path_params(self, server_base_url_ws, websockets_lib):
+    async def test_passing_path_params(self, server_base_url_ws):
         expected_feed_id = '1ee7'
         url = f'{server_base_url_ws}feeds/{expected_feed_id}'
 
-        async with websockets_lib.asyncio.client.connect(url) as ws:
+        async with websockets.asyncio.client.connect(url) as ws:
             feed_id = await ws.recv()
             assert feed_id == expected_feed_id
 
@@ -625,7 +611,7 @@ def _can_run(factory):
 
 
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory, _hypercorn_factory])
-def server_base_url(request, requests_lib):
+def server_base_url(request, requests):
     process_factory = request.param
     _can_run(process_factory)
 
@@ -638,10 +624,10 @@ def server_base_url(request, requests_lib):
             start_ts = time.time()
             while (time.time() - start_ts) < 5:
                 try:
-                    requests_lib.get(base_url, timeout=0.2)
+                    requests.get(base_url, timeout=0.2)
                 except (
-                    requests_lib.exceptions.Timeout,
-                    requests_lib.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                    requests.exceptions.ConnectionError,
                 ):
                     time.sleep(0.2)
                 else:

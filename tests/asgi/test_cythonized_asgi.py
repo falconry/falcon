@@ -8,8 +8,12 @@ from falcon import testing
 import falcon.asgi
 from falcon.util import is_python_func
 
-pyximport = pytest.importorskip('pyximport')
-pyximport.install()
+try:
+    import pyximport
+
+    pyximport.install()
+except ImportError:
+    pyximport = None
 
 # NOTE(kgriffs): We do this here rather than inside the try block above,
 #   so that we don't mask errors importing _cythonized itself.

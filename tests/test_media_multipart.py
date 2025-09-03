@@ -11,7 +11,11 @@ from falcon import testing
 from falcon.media.multipart import MultipartParseOptions
 from falcon.util import BufferedReader
 
-msgpack = pytest.importorskip('msgpack')
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
+
 
 EXAMPLE1 = (
     b'--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'
@@ -410,7 +414,7 @@ class AsyncMultipartAnalyzer:
 
 
 @pytest.fixture
-def custom_client(asgi, util):
+def custom_client(asgi, util, msgpack):
     def _factory(options):
         multipart_handler = media.MultipartFormHandler()
         for key, value in options.items():
@@ -592,9 +596,8 @@ def test_too_many_body_parts(custom_client, max_body_part_count):
         assert len(resp.json) == EXAMPLE2_PART_COUNT
 
 
-@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
 @pytest.mark.parametrize('close_delimiter', ['--', '--\r\n'])
-def test_random_form(client, close_delimiter):
+def test_random_form(client, close_delimiter, msgpack):
     part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
     form_data = (
         b''.join(
