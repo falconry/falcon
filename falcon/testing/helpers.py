@@ -1415,8 +1415,7 @@ def closed_wsgi_iterable(iterable: Iterable[bytes]) -> Iterable[bytes]:
 
     def wrapper() -> Iterator[bytes]:
         try:
-            for item in iterable:
-                yield item
+            yield from iterable
         finally:
             if hasattr(iterable, 'close'):
                 iterable.close()

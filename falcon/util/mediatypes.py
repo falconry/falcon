@@ -223,12 +223,12 @@ _parse_media_type = functools.lru_cache(_MediaType.parse)
 _parse_media_range = functools.lru_cache(_MediaRange.parse)
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def _parse_media_ranges(header: str) -> Tuple[_MediaRange, ...]:
     return tuple(_MediaRange.parse(media_range) for media_range in header.split(','))
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def quality(media_type: str, header: str) -> float:
     """Get quality of the most specific matching media range.
 

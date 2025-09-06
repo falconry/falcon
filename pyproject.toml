@@ -189,6 +189,21 @@ select = [
     "W",
     "I",
     "FA",
+    "UP",
+]
+ignore = [
+    "UP006",
+    "UP007",
+    "UP008",
+    "UP012",
+    "UP015",
+    "UP020",
+    "UP024",
+    "UP030",
+    "UP031",
+    "UP032",
+    "UP037",
+    "UP045",
 ]
 
 [tool.ruff.lint.mccabe]
