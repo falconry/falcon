@@ -47,7 +47,7 @@ _CPYTHON_PLATFORMS = {
     'win_arm64': '**Windows ARM** 64-bit',
 }
 
-_EXTEND_CPYTHONS = frozenset({'cp38', 'cp39'})
+_EXTEND_CPYTHONS = frozenset({'cp39'})
 
 
 class WheelsDirective(sphinx.util.docutils.SphinxDirective):
