@@ -142,9 +142,9 @@ class BoundedStream(io.IOBase):
         return self._read(hint, self.stream.readlines)
 
     def write(self, data: bytes) -> None:
-        """Raise IOError always; writing is not supported."""
+        """Raise OSError always; writing is not supported."""
 
-        raise IOError('Stream is not writeable')
+        raise OSError('Stream is not writeable')
 
     def exhaust(self, chunk_size: int = 64 * 1024) -> None:
         """Exhaust the stream.

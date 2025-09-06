@@ -553,7 +553,7 @@ class WebSocket:
 
         # NOTE(vytas): Per ASGI HTTP & WebSocket spec v2.4:
         #   If send() is called on a closed connection the server should raise
-        #   a server-specific subclass of IOError.
+        #   a server-specific subclass of OSError.
         # NOTE(vytas): Uvicorn 0.30.6 seems to conform to the spec only when
         #   using the wsproto stack, it then raises an instance of
         #   uvicorn.protocols.utils.ClientDisconnected.

@@ -31,7 +31,7 @@ def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_
     try:
         fh = io.open(file_path, 'rb')  # noqa: UP020
         st = os.fstat(fh.fileno())
-    except IOError:
+    except OSError:
         if fh is not None:
             fh.close()
         raise falcon.HTTPNotFound()
@@ -286,7 +286,7 @@ class StaticRoute:
         req_range = req.range if req.range_unit == 'bytes' else None
         try:
             stream, length, content_range = _set_range(fh, st, req_range)
-        except IOError:
+        except OSError:
             fh.close()
             raise falcon.HTTPNotFound()
 

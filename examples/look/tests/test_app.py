@@ -112,7 +112,7 @@ def test_opening_image():
     assert file_reader.read() == fake_image_bytes
     os.remove(file_path)
 
-    with TestCase().assertRaises(IOError):
+    with TestCase().assertRaises(OSError):
         store.open('wrong_file_name_format')
 
 

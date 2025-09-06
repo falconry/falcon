@@ -135,7 +135,7 @@ class OperationNotAllowed(ValueError):
     """The requested operation is not allowed."""
 
 
-class DelimiterError(IOError):
+class DelimiterError(OSError):
     """The read operation did not find the requested stream delimiter."""
 
 
