@@ -38,8 +38,6 @@ jobs:
             coverage: true
           - env: pypy3
             python-version: "pypy3.10"
-          - env: py38
-            python-version: "3.8"
           - env: py39
             python-version: "3.9"
           - env: py310
