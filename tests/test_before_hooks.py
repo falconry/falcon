@@ -20,7 +20,7 @@ def validate_param(req, resp, resource, params, param_name, maxval=100):
 
     limit = req.get_param_as_int(param_name)
     if limit and int(limit) > maxval:
-        msg = '{0} must be <= {1}'.format(param_name, maxval)
+        msg = f'{param_name} must be <= {maxval}'
         raise falcon.HTTPBadRequest(title='Out of Range', description=msg)
 
 
@@ -459,7 +459,7 @@ class PiggybackingCollection:
         self._sequence += 1
         itemid = self._sequence
         self._items[itemid] = dict(req.media, itemid=itemid)
-        resp.location = '/items/{}'.format(itemid)
+        resp.location = f'/items/{itemid}'
         resp.status = falcon.HTTP_CREATED
 
 
@@ -472,7 +472,7 @@ class PiggybackingCollectionAsync(PiggybackingCollection):
         doc = await req.get_media()
 
         self._items[itemid] = dict(doc, itemid=itemid)
-        resp.location = '/items/{}'.format(itemid)
+        resp.location = f'/items/{itemid}'
         resp.status = falcon.HTTP_CREATED
 
 
@@ -515,7 +515,7 @@ def test_piggybacking_resource_post_and_delete(app_client):
 
         assert len(app_client.simulate_get('/items').json) == number
 
-    resp = app_client.simulate_delete('/items/{}'.format(number))
+    resp = app_client.simulate_delete(f'/items/{number}')
     assert resp.status_code == 204
     assert resp.headers['X-Fish-Trait'] == 'wet'
     assert resp.headers['X-Hook-Applied'] == '1'

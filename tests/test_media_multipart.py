@@ -210,7 +210,7 @@ def test_invalid_text_or_charset(charset, data):
         b'--BOUNDARY\r\n'
         b'Content-Disposition: form-data; name="text"\r\n'
         b'Content-Type: text/plain; '
-        + 'charset={}\r\n\r\n'.format(charset).encode()
+        + f'charset={charset}\r\n\r\n'.encode()
         + data
         + b'\r\n'
         b'--BOUNDARY\r\n'
@@ -602,14 +602,14 @@ def test_random_form(client, close_delimiter):
     part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
     form_data = (
         b''.join(
-            '--{}\r\n'.format(HASH_BOUNDARY).encode()
-            + 'Content-Disposition: form-data; name="p{}"\r\n'.format(i).encode()
+            f'--{HASH_BOUNDARY}\r\n'.encode()
+            + f'Content-Disposition: form-data; name="p{i}"\r\n'.encode()
             + b'Content-Type: application/x-falcon-urandom\r\n\r\n'
             + part_data[i]
             + b'\r\n'
             for i in range(64)
         )
-        + '--{}{}'.format(HASH_BOUNDARY, close_delimiter).encode()
+        + f'--{HASH_BOUNDARY}{close_delimiter}'.encode()
     )
 
     handler = media.MultipartFormHandler()
@@ -888,13 +888,13 @@ def test_deserialize_custom_media(custom_client):
         def deserialize(self, stream, content_type, content_length):
             first_byte = stream.read(1)
             if first_byte:
-                return '0x{:02x}'.format(first_byte[0])
+                return f'0x{first_byte[0]:02x}'
             return ''
 
         async def deserialize_async(self, stream, content_type, content_length):
             first_byte = await stream.read(1)
             if first_byte:
-                return '0x{:02x}'.format(first_byte[0])
+                return f'0x{first_byte[0]:02x}'
             return ''
 
     handlers = media.Handlers({'application/x-falcon-first-byte': FirstByteHandler()})

@@ -198,9 +198,6 @@ ignore = [
     "UP006",
     "UP007",
     "UP024",
-    "UP030",
-    "UP031",
-    "UP032",
     "UP037",
     "UP045",
 ]
@@ -210,6 +207,10 @@ max-complexity = 15
 
 [tool.ruff.lint.per-file-ignores]
 "examples/*" = ["FA"]
+# TODO(vytas): We do want to migrate to f-strings over time, however the
+#   changes need to be carefully inspected and benchmarked where relevant.
+#   (The tests and examples have already been automatically converted.)
+"falcon/*" = ["UP030", "UP031", "UP032"]
 
 [tool.ruff.lint.isort]
 case-sensitive = false

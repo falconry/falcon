@@ -859,7 +859,7 @@ class TestFalconTestingUtils:
 
         expected_content = ' '.join(filter(None, args))
 
-        expected_result = 'Result<{}>'.format(expected_content)
+        expected_result = f'Result<{expected_content}>'
 
         assert str(result) == expected_result
 
@@ -868,7 +868,7 @@ class TestFalconTestingUtils:
         header = [('Not-content-type', 'no!')]
         result = falcon.testing.Result([value], falcon.HTTP_200, header)
 
-        expected_result = 'Result<200 OK {}>'.format(value)
+        expected_result = f'Result<200 OK {value}>'
         assert str(result) == expected_result
 
     @pytest.mark.parametrize(
@@ -1523,7 +1523,7 @@ class TestContextType:
 
         assert repr(ctx) == type_name + "({'details': None})"
         assert str(ctx) == type_name + "({'details': None})"
-        assert '{}'.format(ctx) == type_name + "({'details': None})"
+        assert f'{ctx}' == type_name + "({'details': None})"
 
         with pytest.raises(TypeError):
             {ctx: ctx}

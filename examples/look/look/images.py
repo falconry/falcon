@@ -50,7 +50,7 @@ class ImageStore:
 
     def save(self, image_stream, image_content_type):
         ext = mimetypes.guess_extension(image_content_type)
-        name = '{uuid}{ext}'.format(uuid=self._uuidgen(), ext=ext)
+        name = f'{self._uuidgen()}{ext}'
         image_path = os.path.join(self._storage_path, name)
 
         with self._fopen(image_path, 'wb') as image_file:
