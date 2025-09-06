@@ -16,7 +16,7 @@ from __future__ import annotations
 import abc
 from datetime import datetime
 from math import isfinite
-from typing import Any, ClassVar, Iterable, Optional, overload, Union
+from typing import Any, ClassVar, Iterable, overload
 import uuid
 
 __all__ = (
@@ -49,7 +49,7 @@ class BaseConverter(metaclass=abc.ABCMeta):
         """Convert a URI template field value to another format or type.
 
         Args:
-            value (str or List[str]): Original string to convert.
+            value (str or list[str]): Original string to convert.
                 If ``CONSUME_MULTIPLE_SEGMENTS=True`` this value is a
                 list of strings containing the path segments matched by
                 the converter.
@@ -80,9 +80,9 @@ class IntConverter(BaseConverter):
 
     def __init__(
         self,
-        num_digits: Optional[int] = None,
-        min: Optional[int] = None,
-        max: Optional[int] = None,
+        num_digits: int | None = None,
+        min: int | None = None,
+        max: int | None = None,
     ) -> None:
         if num_digits is not None and num_digits < 1:
             raise ValueError('num_digits must be at least 1')
@@ -90,7 +90,7 @@ class IntConverter(BaseConverter):
         self._min = min
         self._max = max
 
-    def convert(self, value: str) -> Optional[int]:
+    def convert(self, value: str) -> int | None:
         if self._num_digits is not None and len(value) != self._num_digits:
             return None
 
@@ -111,18 +111,18 @@ class IntConverter(BaseConverter):
 
 
 @overload
-def _validate_min_max_value(converter: IntConverter, value: int) -> Optional[int]: ...
+def _validate_min_max_value(converter: IntConverter, value: int) -> int | None: ...
 
 
 @overload
 def _validate_min_max_value(
     converter: FloatConverter, value: float
-) -> Optional[float]: ...
+) -> float | None: ...
 
 
 def _validate_min_max_value(
-    converter: Union[IntConverter, FloatConverter], value: Union[int, float]
-) -> Optional[Union[int, float]]:
+    converter: IntConverter | FloatConverter, value: int | float
+) -> int | float | None:
     if converter._min is not None and value < converter._min:
         return None
     if converter._max is not None and value > converter._max:
@@ -150,15 +150,15 @@ class FloatConverter(BaseConverter):
 
     def __init__(
         self,
-        min: Optional[float] = None,
-        max: Optional[float] = None,
+        min: float | None = None,
+        max: float | None = None,
         finite: bool = True,
     ) -> None:
         self._min = min
         self._max = max
         self._finite = finite if finite is not None else True
 
-    def convert(self, value: str) -> Optional[float]:
+    def convert(self, value: str) -> float | None:
         if value.strip() != value:
             return None
 
@@ -197,7 +197,7 @@ class DateTimeConverter(BaseConverter):
     def __init__(self, format_string: str = '%Y-%m-%dT%H:%M:%S%z') -> None:
         self._format_string = format_string
 
-    def convert(self, value: str) -> Optional[datetime]:
+    def convert(self, value: str) -> datetime | None:
         try:
             return strptime(value, self._format_string)
         except ValueError:
@@ -214,7 +214,7 @@ class UUIDConverter(BaseConverter):
     Note, however, that hyphens and the URN prefix are optional.
     """
 
-    def convert(self, value: str) -> Optional[uuid.UUID]:
+    def convert(self, value: str) -> uuid.UUID | None:
         try:
             return uuid.UUID(value)
         except ValueError:

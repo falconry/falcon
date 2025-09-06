@@ -19,7 +19,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import math
-from typing import Dict, Iterable, Iterator, Tuple
+from typing import Iterable, Iterator
 
 from falcon import errors
 
@@ -39,7 +39,7 @@ def _parse_param_old_stdlib(s: str) -> Iterator[str]:
         s = s[end:]
 
 
-def _parse_header_old_stdlib(line: str) -> Tuple[str, Dict[str, str]]:
+def _parse_header_old_stdlib(line: str) -> tuple[str, dict[str, str]]:
     """Parse a Content-type like header.
 
     Return the main content-type and a dictionary of options.
@@ -50,7 +50,7 @@ def _parse_header_old_stdlib(line: str) -> Tuple[str, Dict[str, str]]:
     """
     parts = _parse_param_old_stdlib(';' + line)
     key = parts.__next__()
-    pdict: Dict[str, str] = {}
+    pdict: dict[str, str] = {}
     for p in parts:
         i = p.find('=')
         if i >= 0:
@@ -63,7 +63,7 @@ def _parse_header_old_stdlib(line: str) -> Tuple[str, Dict[str, str]]:
     return key, pdict
 
 
-def parse_header(line: str) -> Tuple[str, Dict[str, str]]:
+def parse_header(line: str) -> tuple[str, dict[str, str]]:
     """Parse a Content-type like header.
 
     Return the main content-type and a dictionary of options.
@@ -97,7 +97,7 @@ def parse_header(line: str) -> Tuple[str, Dict[str, str]]:
     return _parse_header_old_stdlib(line)
 
 
-def _parse_media_type_header(media_type: str) -> Tuple[str, str, dict]:
+def _parse_media_type_header(media_type: str) -> tuple[str, str, dict]:
     full_type, params = parse_header(media_type)
 
     # TODO(vytas): Workaround from python-mimeparse by J. Gregorio et al.
@@ -183,7 +183,7 @@ class _MediaRange:
 
         return cls(main_type, subtype, q, params)
 
-    def match_score(self, media_type: _MediaType) -> Tuple[int, int, int, int, float]:
+    def match_score(self, media_type: _MediaType) -> tuple[int, int, int, int, float]:
         if self.main_type == '*' or media_type.main_type == '*':
             main_matches = 0
         elif self.main_type != media_type.main_type:
@@ -224,7 +224,7 @@ _parse_media_range = functools.lru_cache(_MediaRange.parse)
 
 
 @functools.lru_cache
-def _parse_media_ranges(header: str) -> Tuple[_MediaRange, ...]:
+def _parse_media_ranges(header: str) -> tuple[_MediaRange, ...]:
     return tuple(_MediaRange.parse(media_range) for media_range in header.split(','))
 
 

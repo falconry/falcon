@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import io
-from typing import Optional, Union
 
 from falcon._typing import DeserializeSync
 from falcon._typing import SerializeSync
@@ -21,10 +20,10 @@ class BaseHandler(metaclass=abc.ABCMeta):
     #   might make it part of the public interface for use by custom
     #   media type handlers.
 
-    _serialize_sync: Optional[SerializeSync] = None
+    _serialize_sync: SerializeSync | None = None
     """Override to provide a synchronous serialization method that takes an object."""
 
-    _deserialize_sync: Optional[DeserializeSync] = None
+    _deserialize_sync: DeserializeSync | None = None
     """Override to provide a synchronous deserialization method that
     takes a byte string."""
 
@@ -90,8 +89,8 @@ class BaseHandler(metaclass=abc.ABCMeta):
     def deserialize(
         self,
         stream: ReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
@@ -128,8 +127,8 @@ class BaseHandler(metaclass=abc.ABCMeta):
     async def deserialize_async(
         self,
         stream: AsyncReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
@@ -212,7 +211,7 @@ class TextBaseHandlerWS(metaclass=abc.ABCMeta):
 class BinaryBaseHandlerWS(metaclass=abc.ABCMeta):
     """Abstract Base Class for a WebSocket BINARY media handler."""
 
-    def serialize(self, media: object) -> Union[bytes, bytearray, memoryview]:
+    def serialize(self, media: object) -> bytes | bytearray | memoryview:
         """Serialize the media object to a byte string.
 
         By default, this method raises an instance of

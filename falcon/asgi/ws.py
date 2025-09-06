@@ -5,7 +5,7 @@ import collections
 from enum import auto
 from enum import Enum
 import re
-from typing import Any, Deque, Dict, Iterable, Mapping, Optional, Tuple, Union
+from typing import Any, Iterable, Mapping
 
 from falcon import errors
 from falcon import media
@@ -54,8 +54,8 @@ class WebSocket:
     _asgi_receive: AsgiReceive
     _asgi_send: AsgiSend
     _state: _WebSocketState
-    _close_code: Optional[int]
-    subprotocols: Tuple[str, ...]
+    _close_code: int | None
+    subprotocols: tuple[str, ...]
     """The list of subprotocol strings advertised by the client, or an empty tuple if
     no subprotocols were specified.
     """
@@ -63,15 +63,15 @@ class WebSocket:
     def __init__(
         self,
         ver: str,
-        scope: Dict[str, Any],
+        scope: dict[str, Any],
         receive: AsgiReceive,
         send: AsgiSend,
         media_handlers: Mapping[
             WebSocketPayloadType,
-            Union[media.BinaryBaseHandlerWS, media.TextBaseHandlerWS],
+            media.BinaryBaseHandlerWS | media.TextBaseHandlerWS,
         ],
         max_receive_queue: int,
-        default_close_reasons: Dict[int, str],
+        default_close_reasons: dict[int, str],
     ):
         self._supports_accept_headers = ver != '2.0'
         self._supports_reason = _supports_reason(ver)
@@ -143,8 +143,8 @@ class WebSocket:
 
     async def accept(
         self,
-        subprotocol: Optional[str] = None,
-        headers: Optional[HeaderArg] = None,
+        subprotocol: str | None = None,
+        headers: HeaderArg | None = None,
     ) -> None:
         """Accept the incoming WebSocket connection.
 
@@ -193,7 +193,7 @@ class WebSocket:
                 'accept() may only be called once on an open WebSocket connection'
             )
 
-        event: Dict[str, Any] = {
+        event: dict[str, Any] = {
             'type': EventType.WS_ACCEPT,
         }
 
@@ -245,9 +245,7 @@ class WebSocket:
         #   ASGI spec committee and see if they can't come up with a better
         #   way to deal with this.
 
-    async def close(
-        self, code: Optional[int] = None, reason: Optional[str] = None
-    ) -> None:
+    async def close(self, code: int | None = None, reason: str | None = None) -> None:
         """Close the WebSocket connection.
 
         This coroutine method sends a WebSocket ``CloseEvent`` to the client
@@ -374,7 +372,7 @@ class WebSocket:
             }
         )
 
-    async def send_data(self, payload: Union[bytes, bytearray, memoryview]) -> None:
+    async def send_data(self, payload: bytes | bytearray | memoryview) -> None:
         """Send a message to the client with a binary data payload.
 
         Arguments:
@@ -536,7 +534,7 @@ class WebSocket:
         elif self._state == _WebSocketState.CLOSED:
             raise errors.WebSocketDisconnected(self._close_code)
 
-    def _translate_webserver_error(self, ex: Exception) -> Optional[Exception]:
+    def _translate_webserver_error(self, ex: Exception) -> Exception | None:
         s = str(ex)
 
         # NOTE(kgriffs): uvicorn or any other server using the "websockets"
@@ -587,13 +585,13 @@ class WebSocketOptions:
     For a list of valid close codes and ranges, see also:
     https://tools.ietf.org/html/rfc6455#section-7.4.
     """
-    default_close_reasons: Dict[int, str]
+    default_close_reasons: dict[int, str]
     """A default mapping between the Websocket close code, and the reason why
     the connection is closed.
     Close codes corresponding to HTTP errors are also included in this mapping.
     """
-    media_handlers: Dict[
-        WebSocketPayloadType, Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS]
+    media_handlers: dict[
+        WebSocketPayloadType, media.TextBaseHandlerWS | media.BinaryBaseHandlerWS
     ]
     """A dict-like object for configuring media handlers according to the WebSocket
     payload type (TEXT vs. BINARY) of a given message.
@@ -627,7 +625,7 @@ class WebSocketOptions:
     )
 
     @classmethod
-    def _init_default_close_reasons(cls) -> Dict[int, str]:
+    def _init_default_close_reasons(cls) -> dict[int, str]:
         reasons = dict(cls._STANDARD_CLOSE_REASONS)
         for status_constant in dir(status_codes):
             if 'HTTP_100' <= status_constant < 'HTTP_599':
@@ -697,12 +695,12 @@ class _BufferedReceiver:
         'client_disconnected_code',
     ]
 
-    _pop_message_waiter: Optional[asyncio.Future[None]]
-    _put_message_waiter: Optional[asyncio.Future[None]]
-    _pump_task: Optional[asyncio.Task[None]]
-    _messages: Deque[AsgiEvent]
+    _pop_message_waiter: asyncio.Future[None] | None
+    _put_message_waiter: asyncio.Future[None] | None
+    _pump_task: asyncio.Task[None] | None
+    _messages: collections.deque[AsgiEvent]
     client_disconnected: bool
-    client_disconnected_code: Optional[int]
+    client_disconnected_code: int | None
 
     def __init__(self, asgi_receive: AsgiReceive, max_queue: int) -> None:
         self._asgi_receive = asgi_receive

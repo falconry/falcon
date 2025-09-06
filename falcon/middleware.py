@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, TYPE_CHECKING, Union
+from typing import Iterable, TYPE_CHECKING
 
 from ._typing import UniversalMiddlewareWithProcessResponse
 
@@ -65,9 +65,9 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
 
     def __init__(
         self,
-        allow_origins: Union[str, Iterable[str]] = '*',
-        expose_headers: Optional[Union[str, Iterable[str]]] = None,
-        allow_credentials: Optional[Union[str, Iterable[str]]] = None,
+        allow_origins: str | Iterable[str] = '*',
+        expose_headers: str | Iterable[str] | None = None,
+        allow_credentials: str | Iterable[str] | None = None,
         allow_private_network: bool = False,
     ):
         if allow_origins == '*':

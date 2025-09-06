@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, NoReturn, TYPE_CHECKING, Union
+from typing import Any, Iterable, NoReturn, TYPE_CHECKING
 
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import ResponderCallable
@@ -54,7 +54,7 @@ async def bad_request_async(req: Request, resp: Response, **kwargs: Any) -> NoRe
 
 def create_method_not_allowed(
     allowed_methods: Iterable[str], asgi: bool = False
-) -> Union[ResponderCallable, AsgiResponderCallable]:
+) -> ResponderCallable | AsgiResponderCallable:
     """Create a responder for "405 Method Not Allowed".
 
     Args:
@@ -81,7 +81,7 @@ def create_method_not_allowed(
 
 def create_default_options(
     allowed_methods: Iterable[str], asgi: bool = False
-) -> Union[ResponderCallable, AsgiResponderCallable]:
+) -> ResponderCallable | AsgiResponderCallable:
     """Create a default responder for the OPTIONS method.
 
     Args:

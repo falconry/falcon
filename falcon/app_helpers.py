@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 from inspect import iscoroutinefunction
-from typing import IO, Iterable, List, Literal, Optional, overload, Tuple, Union
+from typing import IO, Iterable, Literal, Optional, overload, Tuple, Union
 
 from falcon import util
 from falcon._typing import _ReqT
@@ -83,21 +83,17 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: Union[
-        Iterable[SyncMiddleware[_ReqT, _RespT]], Iterable[AsyncMiddleware]
-    ],
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]] | Iterable[AsyncMiddleware],
     independent_middleware: bool = ...,
     asgi: bool = ...,
-) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]: ...
+) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult: ...
 
 
 def prepare_middleware(
-    middleware: Union[
-        Iterable[SyncMiddleware[_ReqT, _RespT]], Iterable[AsyncMiddleware]
-    ],
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]] | Iterable[AsyncMiddleware],
     independent_middleware: bool = False,
     asgi: bool = False,
-) -> Union[PreparedMiddlewareResult, AsyncPreparedMiddlewareResult]:
+) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult:
     """Check middleware interfaces and prepare the methods for request handling.
 
     Note:
@@ -119,14 +115,14 @@ def prepare_middleware(
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    request_mw: Union[
-        List[PRequest],
-        List[Tuple[Optional[PRequest], Optional[PResource]]],
-        List[APRequest],
-        List[Tuple[Optional[APRequest], Optional[APResource]]],
-    ] = []
-    resource_mw: Union[List[APResource], List[PResource]] = []
-    response_mw: Union[List[APResponse], List[PResponse]] = []
+    request_mw: (
+        list[PRequest]
+        | list[tuple[PRequest | None, PResource | None]]
+        | list[APRequest]
+        | list[tuple[APRequest | None, APResource | None]]
+    ) = []
+    resource_mw: list[APResource] | list[PResource] = []
+    response_mw: list[APResponse] | list[PResponse] = []
 
     for component in middleware:
         # NOTE(kgriffs): Middleware that supports both WSGI and ASGI can
@@ -134,21 +130,20 @@ def prepare_middleware(
         #   to distinguish the two. Otherwise, the prefix is unnecessary.
 
         if asgi:
-            process_request: Union[Optional[APRequest], Optional[PRequest]] = (
-                util.get_bound_method(component, 'process_request_async')
-                or _wrap_non_coroutine_unsafe(
-                    util.get_bound_method(component, 'process_request')
-                )
+            process_request: APRequest | None | PRequest | None = util.get_bound_method(
+                component, 'process_request_async'
+            ) or _wrap_non_coroutine_unsafe(
+                util.get_bound_method(component, 'process_request')
             )
 
-            process_resource: Union[Optional[APResource], Optional[PResource]] = (
+            process_resource: APResource | None | PResource | None = (
                 util.get_bound_method(component, 'process_resource_async')
                 or _wrap_non_coroutine_unsafe(
                     util.get_bound_method(component, 'process_resource')
                 )
             )
 
-            process_response: Union[Optional[APResponse], Optional[PResponse]] = (
+            process_response: APResponse | None | PResponse | None = (
                 util.get_bound_method(component, 'process_response_async')
                 or _wrap_non_coroutine_unsafe(
                     util.get_bound_method(component, 'process_response')
@@ -248,11 +243,11 @@ def prepare_middleware_ws(
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    request_mw: List[AsgiProcessRequestWsMethod] = []
-    resource_mw: List[AsgiProcessResourceWsMethod] = []
+    request_mw: list[AsgiProcessRequestWsMethod] = []
+    resource_mw: list[AsgiProcessResourceWsMethod] = []
 
-    process_request_ws: Optional[AsgiProcessRequestWsMethod]
-    process_resource_ws: Optional[AsgiProcessResourceWsMethod]
+    process_request_ws: AsgiProcessRequestWsMethod | None
+    process_resource_ws: AsgiProcessResourceWsMethod | None
 
     for component in middleware:
         process_request_ws = util.get_bound_method(component, 'process_request_ws')

@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from falcon import constants
 from falcon import responders
@@ -31,7 +31,7 @@ class SuffixedMethodNotFoundError(Exception):
         self.message = message
 
 
-def map_http_methods(resource: object, suffix: Optional[str] = None) -> MethodDict:
+def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:

@@ -6,7 +6,7 @@ from functools import partial
 from functools import wraps
 import inspect
 import os
-from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
+from typing import Any, Awaitable, Callable, TypeVar
 
 from falcon.util import deprecation
 
@@ -99,7 +99,7 @@ def wrap_sync_to_async_unsafe(func: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def wrap_sync_to_async(
-    func: Callable[..., Any], threadsafe: Optional[bool] = None
+    func: Callable[..., Any], threadsafe: bool | None = None
 ) -> Callable[..., Any]:
     """Wrap a callable in a coroutine that executes the callable in the background.
 
@@ -202,8 +202,8 @@ def _should_wrap_non_coroutines() -> bool:
 
 
 def _wrap_non_coroutine_unsafe(
-    func: Optional[Callable[..., Any]],
-) -> Union[Callable[..., Awaitable[Any]], Callable[..., Any], None]:
+    func: Callable[..., Any] | None,
+) -> Callable[..., Awaitable[Any]] | Callable[..., Any] | None:
     """Wrap a coroutine using ``wrap_sync_to_async_unsafe()`` for internal test cases.
 
     This method is intended for Falcon's own test suite and should not be

@@ -25,9 +25,6 @@ from typing import (
     Awaitable,
     Callable,
     cast,
-    Dict,
-    List,
-    Tuple,
     TYPE_CHECKING,
     TypeVar,
     Union,
@@ -58,15 +55,12 @@ _DECORABLE_METHOD_NAME = re.compile(
 
 
 def before(
-    action: Union[
-        Callable[
-            Concatenate[wsgi.Request, wsgi.Response, Resource, Dict[str, Any], _FN],
-            None,
-        ],
-        Callable[
-            Concatenate[asgi.Request, asgi.Response, Resource, Dict[str, Any], _FN],
-            Awaitable[None],
-        ],
+    action: Callable[
+        Concatenate[wsgi.Request, wsgi.Response, Resource, dict[str, Any], _FN], None
+    ]
+    | Callable[
+        Concatenate[asgi.Request, asgi.Response, Resource, dict[str, Any], _FN],
+        Awaitable[None],
     ],
     *args: _FN.args,
     **kwargs: _FN.kwargs,
@@ -128,11 +122,9 @@ def before(
 
 
 def after(
-    action: Union[
-        Callable[Concatenate[wsgi.Request, wsgi.Response, Resource, _FN], None],
-        Callable[
-            Concatenate[asgi.Request, asgi.Response, Resource, _FN], Awaitable[None]
-        ],
+    action: Callable[Concatenate[wsgi.Request, wsgi.Response, Resource, _FN], None]
+    | Callable[
+        Concatenate[asgi.Request, asgi.Response, Resource, _FN], Awaitable[None]
     ],
     *args: _FN.args,
     **kwargs: _FN.kwargs,
@@ -183,7 +175,7 @@ def after(
 
 def _wrap_with_after(
     responder: Responder,
-    action: Callable[..., Union[None, Awaitable[None]]],
+    action: Callable[..., None | Awaitable[None]],
     action_args: Any,
     action_kwargs: Any,
 ) -> Responder:
@@ -246,9 +238,9 @@ def _wrap_with_after(
 
 def _wrap_with_before(
     responder: Responder,
-    action: Callable[..., Union[None, Awaitable[None]]],
-    action_args: Tuple[Any, ...],
-    action_kwargs: Dict[str, Any],
+    action: Callable[..., None | Awaitable[None]],
+    action_args: tuple[Any, ...],
+    action_kwargs: dict[str, Any],
 ) -> Responder:
     """Execute the given action function before a responder method.
 
@@ -308,7 +300,7 @@ def _wrap_with_before(
 
 
 def _merge_responder_args(
-    args: Tuple[Any, ...], kwargs: Dict[str, Any], argnames: List[str]
+    args: tuple[Any, ...], kwargs: dict[str, Any], argnames: list[str]
 ) -> None:
     """Merge responder args into kwargs.
 

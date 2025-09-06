@@ -41,7 +41,7 @@ class ReadableIO(Protocol):
     .. versionadded:: 4.0
     """
 
-    def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    def read(self, n: int | None = ..., /) -> bytes: ...
 
 
 # ASGI
@@ -51,7 +51,7 @@ class AsyncReadableIO(Protocol):
     .. versionadded:: 4.0
     """
 
-    async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    async def read(self, n: int | None = ..., /) -> bytes: ...
     def __aiter__(self) -> AsyncIterator[bytes]: ...
 
 

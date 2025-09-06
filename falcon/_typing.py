@@ -82,7 +82,7 @@ class ErrorHandler(Protocol[_ReqT, _RespT]):
         req: _ReqT,
         resp: _RespT,
         error: Exception,
-        params: Dict[str, Any],
+        params: dict[str, Any],
     ) -> None: ...
 
 
@@ -90,11 +90,11 @@ class AsgiErrorHandler(Protocol[_AReqT, _ARespT]):
     async def __call__(
         self,
         req: _AReqT,
-        resp: Optional[_ARespT],
+        resp: _ARespT | None,
         error: Exception,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         *,
-        ws: Optional[WebSocket] = ...,
+        ws: WebSocket | None = ...,
     ) -> None: ...
 
 
@@ -111,7 +111,7 @@ class SinkCallable(Protocol[_ReqT, _RespT]):
 
 class AsgiSinkCallable(Protocol[_AReqT, _ARespT]):
     async def __call__(
-        self, req: _AReqT, resp: Optional[_ARespT], **kwargs: Any
+        self, req: _AReqT, resp: _ARespT | None, **kwargs: Any
     ) -> None: ...
 
 
@@ -200,13 +200,13 @@ MethodDict = Union[
 
 class FindMethod(Protocol):
     def __call__(
-        self, uri: str, req: Optional[Request]
-    ) -> Optional[Tuple[object, MethodDict, Dict[str, Any], Optional[str]]]: ...
+        self, uri: str, req: Request | None
+    ) -> tuple[object, MethodDict, dict[str, Any], str | None] | None: ...
 
 
 # Media
 class SerializeSync(Protocol):
-    def __call__(self, media: Any, content_type: Optional[str] = ...) -> bytes: ...
+    def __call__(self, media: Any, content_type: str | None = ...) -> bytes: ...
 
 
 DeserializeSync = Callable[[bytes], Any]
@@ -228,8 +228,8 @@ class WsgiMiddlewareWithProcessResource(Protocol[_ReqT, _RespT]):
         self,
         req: _ReqT,
         resp: _RespT,
-        resource: Optional[Resource],
-        params: Dict[str, Any],
+        resource: Resource | None,
+        params: dict[str, Any],
     ) -> None: ...
 
 
@@ -240,7 +240,7 @@ class WsgiMiddlewareWithProcessResponse(Protocol[_ReqT, _RespT]):
         self,
         req: _ReqT,
         resp: _RespT,
-        resource: Optional[Resource],
+        resource: Resource | None,
         req_succeeded: bool,
     ) -> None: ...
 

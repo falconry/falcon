@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator, NoReturn, Optional
+from typing import AsyncIterator, NoReturn
 
 from falcon._typing import AsgiReceive
 from falcon.asgi_spec import AsgiEvent
@@ -119,8 +119,8 @@ class BoundedStream:
     def __init__(
         self,
         receive: AsgiReceive,
-        first_event: Optional[AsgiEvent] = None,
-        content_length: Optional[int] = None,
+        first_event: AsgiEvent | None = None,
+        content_length: int | None = None,
     ) -> None:
         self._closed = False
         self._iteration_started = False
@@ -326,7 +326,7 @@ class BoundedStream:
 
         return data
 
-    async def read(self, size: Optional[int] = None) -> bytes:
+    async def read(self, size: int | None = None) -> bytes:
         """Read some or all of the remaining bytes in the request body.
 
         Warning:

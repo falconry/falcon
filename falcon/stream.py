@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import io
-from typing import BinaryIO, Callable, List, Optional, TypeVar, Union
+from typing import BinaryIO, Callable, List, TypeVar, Union
 
 from falcon.util import deprecated
 
@@ -61,7 +61,7 @@ class BoundedStream(io.IOBase):
 
     next = __next__
 
-    def _read(self, size: Optional[int], target: Callable[[int], Result]) -> Result:
+    def _read(self, size: int | None, target: Callable[[int], Result]) -> Result:
         """Proxy reads to the underlying stream.
 
         Args:
@@ -99,7 +99,7 @@ class BoundedStream(io.IOBase):
         """Return ``False`` always."""
         return False
 
-    def read(self, size: Optional[int] = None) -> bytes:
+    def read(self, size: int | None = None) -> bytes:
         """Read from the stream.
 
         Args:
@@ -113,7 +113,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(size, self.stream.read)
 
-    def readline(self, limit: Optional[int] = None) -> bytes:
+    def readline(self, limit: int | None = None) -> bytes:
         """Read a line from the stream.
 
         Args:
@@ -127,7 +127,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(limit, self.stream.readline)
 
-    def readlines(self, hint: Optional[int] = None) -> List[bytes]:
+    def readlines(self, hint: int | None = None) -> list[bytes]:
         """Read lines from the stream.
 
         Args:

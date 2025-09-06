@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import io
-from typing import AsyncIterator, List, NoReturn, Optional, Protocol, Union
+from typing import AsyncIterator, NoReturn, Protocol
 
 from falcon.errors import DelimiterError
 from falcon.errors import OperationNotAllowed
@@ -61,8 +61,8 @@ class BufferedReader:
 
     def __init__(
         self,
-        source: Union[AsyncReadableIO, AsyncIterator[bytes]],
-        chunk_size: Optional[int] = None,
+        source: AsyncReadableIO | AsyncIterator[bytes],
+        chunk_size: int | None = None,
     ):
         self._source = self._iter_normalized(source)
         self._chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
@@ -76,7 +76,7 @@ class BufferedReader:
         self._iteration_started = False
 
     async def _iter_normalized(
-        self, source: Union[AsyncReadableIO, AsyncIterator[bytes]]
+        self, source: AsyncReadableIO | AsyncIterator[bytes]
     ) -> AsyncIterator[bytes]:
         chunk = b''
         chunk_size = self._chunk_size
@@ -196,7 +196,7 @@ class BufferedReader:
         self._buffer_pos = 0
 
     async def _read_from(
-        self, source: AsyncIterator[bytes], size: Optional[int] = -1
+        self, source: AsyncIterator[bytes], size: int | None = -1
     ) -> bytes:
         if size == -1 or size is None:
             result_bytes = io.BytesIO()
@@ -210,7 +210,7 @@ class BufferedReader:
         remaining = size
 
         if size <= self._max_join_size:
-            result: List[bytes] = []
+            result: list[bytes] = []
             async for chunk in source:
                 chunk_len = len(chunk)
                 if remaining < chunk_len:
@@ -281,7 +281,7 @@ class BufferedReader:
 
         return self._buffer[:size]  # pragma: no py314 cover
 
-    async def pipe(self, destination: Optional[AsyncWritableIO] = None) -> None:
+    async def pipe(self, destination: AsyncWritableIO | None = None) -> None:
         async for chunk in self._iter_with_buffer():
             if destination is not None:
                 await destination.write(chunk)
@@ -289,7 +289,7 @@ class BufferedReader:
     async def pipe_until(
         self,
         delimiter: bytes,
-        destination: Optional[AsyncWritableIO] = None,
+        destination: AsyncWritableIO | None = None,
         consume_delimiter: bool = False,
     ) -> None:
         async for chunk in self._iter_delimited(delimiter):
@@ -299,7 +299,7 @@ class BufferedReader:
         if consume_delimiter:
             await self._consume_delimiter(delimiter)
 
-    async def read(self, size: Optional[int] = -1) -> bytes:
+    async def read(self, size: int | None = -1) -> bytes:
         return await self._read_from(self._iter_with_buffer(size_hint=size or 0), size)
 
     async def readall(self) -> bytes:

@@ -22,11 +22,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
-    List,
     Literal,
-    Optional,
-    Tuple,
-    Union,
 )
 
 from falcon import response
@@ -53,10 +49,10 @@ class Response(response.Response):
     # PERF(kgriffs): These will be shadowed when set on an instance; let's
     #   us avoid having to implement __init__ and incur the overhead of
     #   an additional function call.
-    _sse: Optional[SSEEmitter] = None
-    _registered_callbacks: Optional[List[ResponseCallbacks]] = None
+    _sse: SSEEmitter | None = None
+    _registered_callbacks: list[ResponseCallbacks] | None = None
 
-    stream: Union[AsyncReadableIO, AsyncIterator[bytes], None]  # type: ignore[assignment]
+    stream: AsyncReadableIO | AsyncIterator[bytes] | None  # type: ignore[assignment]
     """An async iterator or generator that yields a series of
     byte strings that will be streamed to the ASGI server as a
     series of "http.response.body" events. Falcon will assume the
@@ -95,7 +91,7 @@ class Response(response.Response):
     """
 
     @property
-    def sse(self) -> Optional[SSEEmitter]:
+    def sse(self) -> SSEEmitter | None:
         """A Server-Sent Event (SSE) emitter, implemented as
         an async iterator or generator that yields a series of
         of :class:`falcon.asgi.SSEvent` instances. Each event will be
@@ -143,12 +139,12 @@ class Response(response.Response):
         return self._sse
 
     @sse.setter
-    def sse(self, value: Optional[SSEEmitter]) -> None:
+    def sse(self, value: SSEEmitter | None) -> None:
         self._sse = value
 
     def set_stream(
         self,
-        stream: Union[AsyncReadableIO, AsyncIterator[bytes]],  # type: ignore[override]
+        stream: AsyncReadableIO | AsyncIterator[bytes],  # type: ignore[override]
         content_length: int,
     ) -> None:
         """Set both `stream` and `content_length`.
@@ -181,7 +177,7 @@ class Response(response.Response):
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    async def render_body(self) -> Optional[bytes]:  # type: ignore[override]
+    async def render_body(self) -> bytes | None:  # type: ignore[override]
         """Get the raw bytestring content for the response body.
 
         This coroutine can be awaited to get the raw data for the
@@ -201,7 +197,7 @@ class Response(response.Response):
 
         # NOTE(vytas): The code below is also inlined in asgi.App.__call__.
 
-        data: Optional[bytes]
+        data: bytes | None
         text = self.text
         if text is None:
             data = self._data
@@ -282,7 +278,7 @@ class Response(response.Response):
             #   by tests running in a Cython environment, but we can't
             #   detect it with the coverage tool.
 
-        rc: Tuple[Callable[[], Awaitable[None]], Literal[True]] = (callback, True)
+        rc: tuple[Callable[[], Awaitable[None]], Literal[True]] = (callback, True)
 
         if not self._registered_callbacks:
             self._registered_callbacks = [rc]
@@ -328,7 +324,7 @@ class Response(response.Response):
                 callable. The callback will be called without arguments.
         """
 
-        rc: Tuple[Callable[[], None], Literal[False]] = (callback, False)
+        rc: tuple[Callable[[], None], Literal[False]] = (callback, False)
 
         if not self._registered_callbacks:
             self._registered_callbacks = [rc]
@@ -339,9 +335,7 @@ class Response(response.Response):
     # Helper methods
     # ------------------------------------------------------------------------
 
-    def _asgi_headers(
-        self, media_type: Optional[str] = None
-    ) -> List[Tuple[bytes, bytes]]:
+    def _asgi_headers(self, media_type: str | None = None) -> list[tuple[bytes, bytes]]:
         """Convert headers into the format expected by ASGI servers.
 
         Header names must be lowercased and both name and value must be

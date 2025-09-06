@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 import falcon
@@ -11,7 +11,7 @@ import falcon.testing
 
 @dataclass
 class RichContext:
-    userid: Optional[UUID] = None
+    userid: UUID | None = None
     role: str = 'anonymous'
     comment: str = 'no comment'
 
@@ -103,7 +103,7 @@ class AuthMiddlewareFancyBoth:
 
 
 def _sink_impl(req: falcon.Request, resp: falcon.Response) -> None:
-    userid: Optional[str] = str(req.context.userid) if req.context.userid else None
+    userid: str | None = str(req.context.userid) if req.context.userid else None
     resp.media = {'role': req.context.role, 'userid': userid}
     if req.path == '/not-found':
         raise falcon.HTTPNotFound()
@@ -120,14 +120,14 @@ def sink_fancy_both(req: FancyRequest, resp: FancyResponse, **kwargs: Any) -> No
 
 
 async def sink_fancy_async_req(
-    req: FancyAsyncRequest, resp: Optional[falcon.asgi.Response], **kwargs: Any
+    req: FancyAsyncRequest, resp: falcon.asgi.Response | None, **kwargs: Any
 ) -> None:
     if resp is not None:
         _sink_impl(req, resp)
 
 
 async def sink_fancy_async_both(
-    req: FancyAsyncRequest, resp: Optional[FancyAsyncResponse], **kwargs: Any
+    req: FancyAsyncRequest, resp: FancyAsyncResponse | None, **kwargs: Any
 ) -> None:
     if resp is not None:
         _sink_impl(req, resp)

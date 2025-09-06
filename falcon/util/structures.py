@@ -32,13 +32,10 @@ from collections.abc import Mapping
 from collections.abc import MutableMapping
 from typing import (
     Any,
-    Dict,
     ItemsView,
     Iterable,
     Iterator,
     KeysView,
-    Optional,
-    Tuple,
     TYPE_CHECKING,
     ValuesView,
 )
@@ -74,8 +71,8 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 
     """
 
-    def __init__(self, data: Optional[Iterable[Tuple[str, Any]]] = None, **kwargs: Any):
-        self._store: Dict[str, Tuple[str, Any]] = dict()
+    def __init__(self, data: Iterable[tuple[str, Any]] | None = None, **kwargs: Any):
+        self._store: dict[str, tuple[str, Any]] = dict()
         if data is None:
             data = {}
         self.update(data, **kwargs)
@@ -97,7 +94,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
     def __len__(self) -> int:
         return len(self._store)
 
-    def lower_items(self) -> Iterator[Tuple[str, Any]]:
+    def lower_items(self) -> Iterator[tuple[str, Any]]:
         """Like iteritems(), but with all lowercase keys."""
         return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
 
@@ -164,7 +161,7 @@ class Context:
     def __contains__(self, key: str) -> bool:
         return self.__dict__.__contains__(key)
 
-    def __getitem__(self, key: str) -> Optional[Any]:
+    def __getitem__(self, key: str) -> Any | None:
         # PERF(vytas): On CPython, using this mapping interface (instead of a
         #   standard dict) to get, set and delete items incurs overhead
         #   approximately comparable to that of two function calls
@@ -210,7 +207,7 @@ class Context:
         ctx.update(self.__dict__)
         return ctx
 
-    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    def get(self, key: str, default: Any | None = None) -> Any | None:
         return self.__dict__.get(key, default)
 
     def items(self) -> ItemsView[str, Any]:
@@ -219,15 +216,13 @@ class Context:
     def keys(self) -> KeysView[str]:
         return self.__dict__.keys()
 
-    def pop(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    def pop(self, key: str, default: Any | None = None) -> Any | None:
         return self.__dict__.pop(key, default)
 
-    def popitem(self) -> Tuple[str, Any]:
+    def popitem(self) -> tuple[str, Any]:
         return self.__dict__.popitem()
 
-    def setdefault(
-        self, key: str, default_value: Optional[Any] = None
-    ) -> Optional[Any]:
+    def setdefault(self, key: str, default_value: Any | None = None) -> Any | None:
         return self.__dict__.setdefault(key, default_value)
 
     def update(self, items: dict[str, Any]) -> None:

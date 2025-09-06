@@ -1,4 +1,4 @@
-# Copyright 2020 by Federico Caselli
+# Copyright 2020-2025 by Federico Caselli
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +22,7 @@ from typing import (
     Any,
     Callable,
     cast,
-    Dict,
     Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
 )
 
 from falcon import app_helpers
@@ -57,7 +51,7 @@ def inspect_app(app: App) -> AppInfo:
     return AppInfo(routes, middleware, static, sinks, error_handlers, app._ASGI)
 
 
-def inspect_routes(app: App) -> List[RouteInfo]:
+def inspect_routes(app: App) -> list[RouteInfo]:
     """Inspects the routes of an application.
 
     Args:
@@ -65,7 +59,7 @@ def inspect_routes(app: App) -> List[RouteInfo]:
             :class:`falcon.App` and :class:`falcon.asgi.App`.
 
     Returns:
-        List[RouteInfo]: A list of route descriptions for the application.
+        list[RouteInfo]: A list of route descriptions for the application.
     """
     router = app._router
 
@@ -80,8 +74,8 @@ def inspect_routes(app: App) -> List[RouteInfo]:
 
 
 def register_router(
-    router_class: Type,
-) -> Callable[..., Callable[..., List[RouteInfo]]]:
+    router_class: type,
+) -> Callable[..., Callable[..., list[RouteInfo]]]:
     """Register a function to inspect a particular router.
 
     This decorator registers a new function for a custom router
@@ -99,7 +93,7 @@ def register_router(
             already registered an error will be raised.
     """
 
-    def wraps(fn: Callable[..., List[RouteInfo]]) -> Callable[..., List[RouteInfo]]:
+    def wraps(fn: Callable[..., list[RouteInfo]]) -> Callable[..., list[RouteInfo]]:
         if router_class in _supported_routers:
             raise ValueError(
                 'Another function is already registered for the router {}'.format(
@@ -112,10 +106,10 @@ def register_router(
     return wraps
 
 
-_supported_routers: Dict[Type, Callable[..., Any]] = {}
+_supported_routers: dict[type, Callable[..., Any]] = {}
 
 
-def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
+def inspect_static_routes(app: App) -> list[StaticRouteInfo]:
     """Inspects the static routes of an application.
 
     Args:
@@ -123,7 +117,7 @@ def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
             :class:`falcon.App` and :class:`falcon.asgi.App`.
 
     Returns:
-        List[StaticRouteInfo]: A list of static routes that have
+        list[StaticRouteInfo]: A list of static routes that have
         been added to the application.
     """
     routes = []
@@ -133,7 +127,7 @@ def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
     return routes
 
 
-def inspect_sinks(app: App) -> 'List[SinkInfo]':
+def inspect_sinks(app: App) -> list[SinkInfo]:
     """Inspects the sinks of an application.
 
     Args:
@@ -141,7 +135,7 @@ def inspect_sinks(app: App) -> 'List[SinkInfo]':
             :class:`falcon.App` and :class:`falcon.asgi.App`.
 
     Returns:
-        List[SinkInfo]: A list of sinks used by the application.
+        list[SinkInfo]: A list of sinks used by the application.
     """
     sinks = []
     for prefix, sink, _ in app._sinks:
@@ -152,7 +146,7 @@ def inspect_sinks(app: App) -> 'List[SinkInfo]':
     return sinks
 
 
-def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
+def inspect_error_handlers(app: App) -> list[ErrorHandlerInfo]:
     """Inspects the error handlers of an application.
 
     Args:
@@ -160,7 +154,7 @@ def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
             :class:`falcon.App` and :class:`falcon.asgi.App`.
 
     Returns:
-        List[ErrorHandlerInfo]: A list of error handlers used by the
+        list[ErrorHandlerInfo]: A list of error handlers used by the
         application.
     """
     errors = []
@@ -172,7 +166,7 @@ def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
     return errors
 
 
-def inspect_middleware(app: App) -> 'MiddlewareInfo':
+def inspect_middleware(app: App) -> MiddlewareInfo:
     """Inspects the middleware components of an application.
 
     Args:
@@ -217,7 +211,7 @@ def inspect_middleware(app: App) -> 'MiddlewareInfo':
 
 
 @register_router(CompiledRouter)
-def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
+def inspect_compiled_router(router: CompiledRouter) -> list[RouteInfo]:
     """Walk an instance of :class:`~.CompiledRouter` to return a list of defined routes.
 
     Default route inspector for CompiledRouter.
@@ -226,10 +220,10 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
         router (CompiledRouter): The router to inspect.
 
     Returns:
-        List[RouteInfo]: A list of :class:`~.RouteInfo`.
+        list[RouteInfo]: A list of :class:`~.RouteInfo`.
     """
 
-    def _traverse(roots: List[CompiledRouterNode], parent: str) -> None:
+    def _traverse(roots: list[CompiledRouterNode], parent: str) -> None:
         for root in roots:
             path = parent + '/' + root.raw_segment
             if root.resource is not None:
@@ -259,7 +253,7 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
             if root.children:
                 _traverse(root.children, path)
 
-    routes = []  # type: List[RouteInfo]
+    routes: list[RouteInfo] = []
     _traverse(router._roots, '')
     return routes
 
@@ -332,7 +326,7 @@ class RouteInfo(_Traversable):
         path (str): The path of this route.
         class_name (str): The class name of the responder of this route.
         source_info (str): The source path where this responder was defined.
-        methods (List[RouteMethodInfo]): List of methods defined in the route.
+        methods (list[RouteMethodInfo]): List of methods defined in the route.
     """
 
     __visit_name__ = 'route'
@@ -342,7 +336,7 @@ class RouteInfo(_Traversable):
         path: str,
         class_name: str,
         source_info: str,
-        methods: List[RouteMethodInfo],
+        methods: list[RouteMethodInfo],
     ):
         self.path = path
         self.class_name = class_name
@@ -361,7 +355,7 @@ class StaticRouteInfo(_Traversable):
 
     __visit_name__ = 'static_route'
 
-    def __init__(self, prefix: str, directory: str, fallback_filename: Optional[str]):
+    def __init__(self, prefix: str, directory: str, fallback_filename: str | None):
         self.prefix = prefix
         self.directory = directory
         self.fallback_filename = fallback_filename
@@ -426,14 +420,14 @@ class MiddlewareClassInfo(_Traversable):
     Args:
         name (str): The name of the middleware class.
         source_info (str): The source path where the middleware was defined.
-        methods (List[MiddlewareMethodInfo]): List of method defined by the
+        methods (list[MiddlewareMethodInfo]): List of method defined by the
             middleware class.
     """
 
     __visit_name__ = 'middleware_class'
 
     def __init__(
-        self, name: str, source_info: str, methods: List[MiddlewareMethodInfo]
+        self, name: str, source_info: str, methods: list[MiddlewareMethodInfo]
     ):
         self.name = name
         self.source_info = source_info
@@ -465,18 +459,18 @@ class MiddlewareTreeInfo(_Traversable):
     """Describes the middleware methods used by the app.
 
     Args:
-        request (List[MiddlewareTreeItemInfo]): The `process_request` methods.
-        resource (List[MiddlewareTreeItemInfo]): The `process_resource` methods.
-        response (List[MiddlewareTreeItemInfo]): The `process_response` methods.
+        request (list[MiddlewareTreeItemInfo]): The `process_request` methods.
+        resource (list[MiddlewareTreeItemInfo]): The `process_resource` methods.
+        response (list[MiddlewareTreeItemInfo]): The `process_response` methods.
     """
 
     __visit_name__ = 'middleware_tree'
 
     def __init__(
         self,
-        request: List[MiddlewareTreeItemInfo],
-        resource: List[MiddlewareTreeItemInfo],
-        response: List[MiddlewareTreeItemInfo],
+        request: list[MiddlewareTreeItemInfo],
+        resource: list[MiddlewareTreeItemInfo],
+        response: list[MiddlewareTreeItemInfo],
     ):
         self.request = request
         self.resource = resource
@@ -488,7 +482,7 @@ class MiddlewareInfo(_Traversable):
 
     Args:
         middlewareTree (MiddlewareTreeInfo): The middleware tree of the app.
-        middlewareClasses (List[MiddlewareClassInfo]): The middleware classes of
+        middlewareClasses (list[MiddlewareClassInfo]): The middleware classes of
             the app.
         independent (bool): Whether or not the middleware components are executed
             independently.
@@ -503,7 +497,7 @@ class MiddlewareInfo(_Traversable):
     def __init__(
         self,
         middleware_tree: MiddlewareTreeInfo,
-        middleware_classes: List[MiddlewareClassInfo],
+        middleware_classes: list[MiddlewareClassInfo],
         independent: bool,
     ):
         self.middleware_tree = middleware_tree
@@ -520,11 +514,11 @@ class AppInfo(_Traversable):
     """Describes an application.
 
     Args:
-        routes (List[RouteInfo]): The routes of the application.
+        routes (list[RouteInfo]): The routes of the application.
         middleware (MiddlewareInfo): The middleware information in the application.
-        static_routes (List[StaticRouteInfo]): The static routes of this application.
-        sinks (List[SinkInfo]): The sinks of this application.
-        error_handlers (List[ErrorHandlerInfo]): The error handlers of this application.
+        static_routes (list[StaticRouteInfo]): The static routes of this application.
+        sinks (list[SinkInfo]): The sinks of this application.
+        error_handlers (list[ErrorHandlerInfo]): The error handlers of this application.
         asgi (bool): Whether or not this is an ASGI application.
     """
 
@@ -532,11 +526,11 @@ class AppInfo(_Traversable):
 
     def __init__(
         self,
-        routes: List[RouteInfo],
+        routes: list[RouteInfo],
         middleware: MiddlewareInfo,
-        static_routes: List[StaticRouteInfo],
-        sinks: List[SinkInfo],
-        error_handlers: List[ErrorHandlerInfo],
+        static_routes: list[StaticRouteInfo],
+        sinks: list[SinkInfo],
+        error_handlers: list[ErrorHandlerInfo],
         asgi: bool,
     ):
         self.routes = routes
@@ -626,7 +620,7 @@ class StringVisitor(InspectVisitor):
         return text
 
     def _methods_to_string(
-        self, methods: Union[List[RouteMethodInfo], List[MiddlewareMethodInfo]]
+        self, methods: list[RouteMethodInfo] | list[MiddlewareMethodInfo]
     ) -> str:
         """Return a string from the list of methods."""
         tab = self.tab + ' ' * 3
@@ -783,9 +777,7 @@ class StringVisitor(InspectVisitor):
 # ------------------------------------------------------------------------
 
 
-def _get_source_info(
-    obj: Any, default: Optional[str] = '[unknown file]'
-) -> Optional[str]:
+def _get_source_info(obj: Any, default: str | None = '[unknown file]') -> str | None:
     """Try to get the definition file and line of obj.
 
     Return default on error.
@@ -803,7 +795,7 @@ def _get_source_info(
     return source_info
 
 
-def _get_source_info_and_name(obj: Any) -> Tuple[Optional[str], str]:
+def _get_source_info_and_name(obj: Any) -> tuple[str | None, str]:
     """Attempt to get the definition file and line of obj and its name."""
     source_info = _get_source_info(obj, None)
     if source_info is None:
@@ -825,13 +817,11 @@ def _is_internal(obj: Any) -> bool:
 
 
 def _filter_internal(
-    iterable: Union[
-        Iterable[RouteMethodInfo],
-        Iterable[ErrorHandlerInfo],
-        Iterable[MiddlewareMethodInfo],
-    ],
+    iterable: Iterable[RouteMethodInfo]
+    | Iterable[ErrorHandlerInfo]
+    | Iterable[MiddlewareMethodInfo],
     return_internal: bool,
-) -> Union[Iterable[_Traversable], List[_Traversable]]:
+) -> Iterable[_Traversable] | list[_Traversable]:
     """Filter the internal elements of an iterable."""
     if return_internal:
         return iterable

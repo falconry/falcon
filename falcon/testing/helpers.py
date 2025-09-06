@@ -41,17 +41,10 @@ import time
 from typing import (
     Any,
     Callable,
-    Deque,
-    Dict,
     Iterable,
     Iterator,
-    List,
     Mapping,
-    Optional,
     TextIO,
-    Tuple,
-    Type,
-    Union,
 )
 
 import falcon
@@ -153,9 +146,9 @@ class ASGIRequestEventEmitter:
 
     def __init__(
         self,
-        body: Optional[Union[str, bytes]] = None,
-        chunk_size: Optional[int] = None,
-        disconnect_at: Optional[Union[int, float]] = None,
+        body: str | bytes | None = None,
+        chunk_size: int | None = None,
+        disconnect_at: int | float | None = None,
     ) -> None:
         if body is None:
             body = b''
@@ -170,7 +163,7 @@ class ASGIRequestEventEmitter:
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body: Optional[memoryview] = body
+        self._body: memoryview | None = body
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
@@ -187,7 +180,7 @@ class ASGIRequestEventEmitter:
         """  # noqa: D205
         return self._disconnected or (self._disconnect_at <= time.time())
 
-    def disconnect(self, exhaust_body: Optional[bool] = None) -> None:
+    def disconnect(self, exhaust_body: bool | None = None) -> None:
         """Set the client connection state to disconnected.
 
         Call this method to simulate an immediate client disconnect and
@@ -228,7 +221,7 @@ class ASGIRequestEventEmitter:
 
             return {'type': EventType.HTTP_DISCONNECT}
 
-        event: Dict[str, Any] = {'type': EventType.HTTP_REQUEST}
+        event: dict[str, Any] = {'type': EventType.HTTP_REQUEST}
 
         if self._emit_empty_chunks:
             # NOTE(kgriffs): Return a couple variations on empty chunks
@@ -309,23 +302,23 @@ class ASGIResponseEventCollector:
     _HEADER_NAME_RE = re.compile(rb'^[a-zA-Z][a-zA-Z0-9\-_]*$')
     _BAD_HEADER_VALUE_RE = re.compile(rb'[\000-\037]')
 
-    events: List[AsgiEvent]
+    events: list[AsgiEvent]
     """An iterable of events that were emitted by the app,
     collected as-is from the app.
     """
-    headers: List[Tuple[str, str]]
+    headers: list[tuple[str, str]]
     """An iterable of (str, str) tuples representing the ISO-8859-1 decoded
     headers emitted by the app in the body of the ``'http.response.start'`` event.
     """
-    status: Optional[ResponseStatus]
+    status: ResponseStatus | None
     """HTTP status code emitted by the app in the body of the
     ``'http.response.start'`` event.
     """
-    body_chunks: List[bytes]
+    body_chunks: list[bytes]
     """An iterable of ``bytes`` objects emitted by the app via
     ``'http.response.body'`` events.
     """
-    more_body: Optional[bool]
+    more_body: bool | None
     """Whether or not the app expects to emit more body chunks.
 
     Will be ``None`` if unknown (i.e., the app has not yet emitted
@@ -425,12 +418,12 @@ class ASGIWebSocketSimulator:
 
         self._state = _WebSocketState.CONNECT
         self._disconnect_emitted = False
-        self._close_code: Optional[int] = None
-        self._close_reason: Optional[str] = None
-        self._accepted_subprotocol: Optional[str] = None
-        self._accepted_headers: Optional[List[Tuple[bytes, bytes]]] = None
-        self._collected_server_events: Deque[AsgiEvent] = deque()
-        self._collected_client_events: Deque[AsgiEvent] = deque()
+        self._close_code: int | None = None
+        self._close_reason: str | None = None
+        self._accepted_subprotocol: str | None = None
+        self._accepted_headers: list[tuple[bytes, bytes]] | None = None
+        self._collected_server_events: deque[AsgiEvent] = deque()
+        self._collected_client_events: deque[AsgiEvent] = deque()
 
         self._event_handshake_complete = asyncio.Event()
 
@@ -449,7 +442,7 @@ class ASGIWebSocketSimulator:
         return self._state in {_WebSocketState.DENIED, _WebSocketState.CLOSED}
 
     @property
-    def close_code(self) -> Optional[int]:
+    def close_code(self) -> int | None:
         """The WebSocket close code provided by the app if the connection is closed.
 
         Returns ``None`` if the connection is still open.
@@ -457,7 +450,7 @@ class ASGIWebSocketSimulator:
         return self._close_code
 
     @property
-    def close_reason(self) -> Optional[str]:
+    def close_reason(self) -> str | None:
         """The WebSocket close reason provided by the app if the connection is closed.
 
         Returns ``None`` if the connection is still open.
@@ -465,12 +458,12 @@ class ASGIWebSocketSimulator:
         return self._close_reason
 
     @property
-    def subprotocol(self) -> Optional[str]:
+    def subprotocol(self) -> str | None:
         """The subprotocol the app wishes to accept, or ``None`` if not specified."""
         return self._accepted_subprotocol
 
     @property
-    def headers(self) -> Optional[List[Tuple[bytes, bytes]]]:
+    def headers(self) -> list[tuple[bytes, bytes]] | None:
         """An iterable of ``[name, value]`` two-item tuples, where *name* is the
         header name, and *value* is the header value for each header returned by
         the app when it accepted the WebSocket connection.
@@ -478,7 +471,7 @@ class ASGIWebSocketSimulator:
         """  # noqa: D205
         return self._accepted_headers
 
-    async def wait_ready(self, timeout: Optional[int] = None) -> None:
+    async def wait_ready(self, timeout: int | None = None) -> None:
         """Wait until the connection has been accepted or denied.
 
         This coroutine can be awaited in order to pause execution until the
@@ -508,9 +501,7 @@ class ASGIWebSocketSimulator:
     # NOTE(kgriffs): This is a coroutine just in case we need it to be
     #   in a future code revision. It also makes it more consistent
     #   with the other methods.
-    async def close(
-        self, code: Optional[int] = None, reason: Optional[str] = None
-    ) -> None:
+    async def close(self, code: int | None = None, reason: str | None = None) -> None:
         """Close the simulated connection.
 
         Keyword Args:
@@ -560,7 +551,7 @@ class ASGIWebSocketSimulator:
         #   but the server will be expecting websocket.receive
         await self._send(text=payload)
 
-    async def send_data(self, payload: Union[bytes, bytearray, memoryview]) -> None:
+    async def send_data(self, payload: bytes | bytearray | memoryview) -> None:
         """Send a message to the app with a binary data payload.
 
         Arguments:
@@ -706,14 +697,12 @@ class ASGIWebSocketSimulator:
     # NOTE(kgriffs): This is a coroutine just in case we need it to be
     #   in a future code revision. It also makes it more consistent
     #   with the other methods.
-    async def _send(
-        self, data: Optional[bytes] = None, text: Optional[str] = None
-    ) -> None:
+    async def _send(self, data: bytes | None = None, text: str | None = None) -> None:
         self._require_accepted()
 
         # NOTE(kgriffs): From the client's perspective, it was a send,
         #   but the server will be expecting websocket.receive
-        event: Dict[str, Any] = {'type': EventType.WS_RECEIVE}
+        event: dict[str, Any] = {'type': EventType.WS_RECEIVE}
         if data is not None:
             event['bytes'] = data
 
@@ -849,7 +838,7 @@ class ASGIWebSocketSimulator:
 
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
 # used here under the terms of the Apache License, Version 2.0.
-def get_encoding_from_headers(headers: Mapping[str, str]) -> Optional[str]:
+def get_encoding_from_headers(headers: Mapping[str, str]) -> str | None:
     """Return encoding from given HTTP Header Dict.
 
     Args:
@@ -914,17 +903,17 @@ def create_scope(
     path: str = '/',
     query_string: str = '',
     method: str = 'GET',
-    headers: Optional[HeaderArg] = None,
+    headers: HeaderArg | None = None,
     host: str = DEFAULT_HOST,
-    scheme: Optional[str] = None,
-    port: Optional[int] = None,
+    scheme: str | None = None,
+    port: int | None = None,
     http_version: str = '1.1',
-    remote_addr: Optional[str] = None,
-    root_path: Optional[str] = None,
-    content_length: Optional[int] = None,
+    remote_addr: str | None = None,
+    root_path: str | None = None,
+    content_length: int | None = None,
     include_server: bool = True,
-    cookies: Optional[CookieArg] = None,
-) -> Dict[str, Any]:
+    cookies: CookieArg | None = None,
+) -> dict[str, Any]:
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -992,7 +981,7 @@ def create_scope(
     if query_string_bytes and query_string_bytes.startswith(b'?'):
         raise ValueError("query_string should not start with '?'")
 
-    scope: Dict[str, Any] = {
+    scope: dict[str, Any] = {
         'type': ScopeType.HTTP,
         'asgi': {
             'version': '3.0',
@@ -1058,17 +1047,17 @@ def create_scope(
 def create_scope_ws(
     path: str = '/',
     query_string: str = '',
-    headers: Optional[HeaderArg] = None,
+    headers: HeaderArg | None = None,
     host: str = DEFAULT_HOST,
-    scheme: Optional[str] = None,
-    port: Optional[int] = None,
+    scheme: str | None = None,
+    port: int | None = None,
     http_version: str = '1.1',
-    remote_addr: Optional[str] = None,
-    root_path: Optional[str] = None,
+    remote_addr: str | None = None,
+    root_path: str | None = None,
     include_server: bool = True,
-    subprotocols: Optional[str] = None,
+    subprotocols: str | None = None,
     spec_version: str = '2.1',
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1144,17 +1133,17 @@ def create_environ(
     http_version: str = '1.1',
     scheme: str = 'http',
     host: str = DEFAULT_HOST,
-    port: Optional[int] = None,
-    headers: Optional[HeaderArg] = None,
-    app: Optional[str] = None,
-    body: Union[str, bytes] = b'',
+    port: int | None = None,
+    headers: HeaderArg | None = None,
+    app: str | None = None,
+    body: str | bytes = b'',
     method: str = 'GET',
-    wsgierrors: Optional[TextIO] = None,
-    file_wrapper: Optional[Callable[..., Any]] = None,
-    remote_addr: Optional[str] = None,
-    root_path: Optional[str] = None,
-    cookies: Optional[CookieArg] = None,
-) -> Dict[str, Any]:
+    wsgierrors: TextIO | None = None,
+    file_wrapper: Callable[..., Any] | None = None,
+    remote_addr: str | None = None,
+    root_path: str | None = None,
+    cookies: CookieArg | None = None,
+) -> dict[str, Any]:
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
@@ -1313,7 +1302,7 @@ def create_environ(
 
 
 def create_req(
-    options: Optional[falcon.request.RequestOptions] = None, **kwargs: Any
+    options: falcon.request.RequestOptions | None = None, **kwargs: Any
 ) -> falcon.Request:
     """Create and return a new Request instance.
 
@@ -1332,9 +1321,9 @@ def create_req(
 
 
 def create_asgi_req(
-    body: Optional[bytes] = None,
-    req_type: Optional[Type[falcon.asgi.Request]] = None,
-    options: Optional[falcon.request.RequestOptions] = None,
+    body: bytes | None = None,
+    req_type: type[falcon.asgi.Request] | None = None,
+    options: falcon.request.RequestOptions | None = None,
     **kwargs: Any,
 ) -> falcon.asgi.Request:
     """Create and return a new ASGI Request instance.
@@ -1421,7 +1410,7 @@ def closed_wsgi_iterable(iterable: Iterable[bytes]) -> Iterable[bytes]:
                 iterable.close()
 
     wrapped = wrapper()
-    head: Tuple[bytes, ...]
+    head: tuple[bytes, ...]
     try:
         head = (next(wrapped),)
     except StopIteration:
@@ -1434,7 +1423,7 @@ def closed_wsgi_iterable(iterable: Iterable[bytes]) -> Iterable[bytes]:
 # ---------------------------------------------------------------------
 
 
-def _add_headers_to_environ(env: Dict[str, Any], headers: Optional[HeaderArg]) -> None:
+def _add_headers_to_environ(env: dict[str, Any], headers: HeaderArg | None) -> None:
     if headers:
         try:
             items = headers.items()  # type: ignore[union-attr]
@@ -1461,16 +1450,16 @@ def _add_headers_to_environ(env: Dict[str, Any], headers: Optional[HeaderArg]) -
 
 def _add_headers_to_scope(
     scope: dict[str, Any],
-    headers: Optional[HeaderArg],
-    content_length: Optional[int],
+    headers: HeaderArg | None,
+    content_length: int | None,
     host: str,
     port: int,
-    scheme: Optional[str],
+    scheme: str | None,
     http_version: str,
-    cookies: Optional[CookieArg],
+    cookies: CookieArg | None,
 ) -> None:
     found_ua = False
-    prepared_headers: List[Iterable[bytes]] = []
+    prepared_headers: list[Iterable[bytes]] = []
 
     if headers:
         try:

@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING
+from typing import Any, Callable, Iterable, TYPE_CHECKING
 
 from falcon._typing import RangeSetHeader
 from falcon.util import uri
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 def _header_property(
-    name: str, doc: str, transform: Optional[Callable[[Any], str]] = None
+    name: str, doc: str, transform: Callable[[Any], str] | None = None
 ) -> Any:
     """Create a header getter/setter.
 
@@ -42,7 +42,7 @@ def _header_property(
     """
     normalized_name = name.lower()
 
-    def fget(self: Response) -> Optional[str]:
+    def fget(self: Response) -> str | None:
         try:
             return self._headers[normalized_name]
         except KeyError:
@@ -50,7 +50,7 @@ def _header_property(
 
     if transform is None:
 
-        def fset(self: Response, value: Optional[Any]) -> None:
+        def fset(self: Response, value: Any | None) -> None:
             if value is None:
                 try:
                     del self._headers[normalized_name]
@@ -61,7 +61,7 @@ def _header_property(
 
     else:
 
-        def fset(self: Response, value: Optional[Any]) -> None:
+        def fset(self: Response, value: Any | None) -> None:
             if value is None:
                 try:
                     del self._headers[normalized_name]

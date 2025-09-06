@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import re
 import string
-from typing import List, Optional
 
 from falcon.util.uri import unquote_string
 
@@ -62,22 +61,22 @@ class Forwarded:
     # falcon.Request interface.
     __slots__ = ('src', 'dest', 'host', 'scheme')
 
-    src: Optional[str]
+    src: str | None
     """The value of the "for" parameter, or ``None`` if the parameter is absent.
 
     Identifies the node making the request to the proxy.
     """
-    dest: Optional[str]
+    dest: str | None
     """The value of the "by" parameter, or ``None`` if the parameter is absent.
 
     Identifies the client-facing interface of the proxy.
     """
-    host: Optional[str]
+    host: str | None
     """The value of the "host" parameter, or ``None`` if the parameter is absent.
 
     Provides the host request header field as received by the proxy.
     """
-    scheme: Optional[str]
+    scheme: str | None
     """The value of the "proto" parameter, or ``None`` if the parameter is absent.
 
     Indicates the protocol that was used to make the request to the proxy.
@@ -90,7 +89,7 @@ class Forwarded:
         self.scheme = None
 
 
-def _parse_forwarded_header(forwarded: str) -> List[Forwarded]:
+def _parse_forwarded_header(forwarded: str) -> list[Forwarded]:
     """Parse the value of a Forwarded header.
 
     Makes an effort to parse Forwarded headers as specified by RFC 7239:
