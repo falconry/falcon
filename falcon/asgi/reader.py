@@ -154,8 +154,8 @@ class BufferedReader:
                     self._buffer += chunk
                     self._buffer_len += len(chunk)
                     self._buffer_pos = offset + pos
-                    # PERF(vytas): local1 + local2 is faster than self._attr
-                    #   (still true on CPython 3.8)
+                    # PERF(vytas): local1 + local2 was faster than self._attr.
+                    # TODO(vytas): Verify this on 3.12+.
                     yield self._buffer[: offset + pos]
                     return
             elif self._buffer:

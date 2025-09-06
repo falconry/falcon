@@ -8,17 +8,18 @@ on:
 
 jobs:
   run-tox:
-    name: tox -e ${{ matrix.toxenv }}
+    name: tox -e ${{ matrix.tox.env }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          - "3.8"
-        toxenv:
-          - "py38_smoke"
-          - "py38_smoke_cython"
-          - "wsgi_meinheld"
+        tox:
+          - env: "py310_smoke"
+            python-version: "3.10"
+          - env: "py310_smoke_cython"
+            python-version: "3.10"
+          - env: "wsgi_meinheld"
+            python-version: "3.9"
 
     steps:
       - name: Checkout repo
@@ -29,7 +30,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.tox.python-version }}
 
       - name: Install smoke test dependencies
         run: |
@@ -45,4 +46,4 @@ jobs:
           tox --version
 
       - name: Run tox
-        run: tox -e ${{ matrix.toxenv }}
+        run: tox -e ${{ matrix.tox.env }}

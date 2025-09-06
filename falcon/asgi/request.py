@@ -732,6 +732,7 @@ class Request(request.Request):
     #   that is then called from get_header(), was benchmarked to be more
     #   efficient across CPython 3.6/3.8 (regardless of cythonization) and
     #   PyPy 3.6.
+    # TODO(vytas): Verify whether this is still the case on 3.12+.
     def get_header(
         self,
         name: str,
