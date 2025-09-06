@@ -29,7 +29,7 @@ def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_
     """
     fh: Optional[io.BufferedReader] = None
     try:
-        fh = io.open(file_path, 'rb')
+        fh = io.open(file_path, 'rb')  # noqa: UP020
         st = os.fstat(fh.fileno())
     except IOError:
         if fh is not None:
