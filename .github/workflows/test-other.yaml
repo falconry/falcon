@@ -5,10 +5,6 @@ on:
   push:
     branches:
       - "*"
-  # TODO(vytas): Remove from the default run once verified in a PR.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   run-tox:
