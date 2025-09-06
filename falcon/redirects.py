@@ -48,7 +48,7 @@ class HTTPMovedPermanently(HTTPStatus):
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPMovedPermanently, self).__init__(falcon.HTTP_301, headers)
+        super().__init__(falcon.HTTP_301, headers)
 
 
 class HTTPFound(HTTPStatus):
@@ -77,7 +77,7 @@ class HTTPFound(HTTPStatus):
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPFound, self).__init__(falcon.HTTP_302, headers)
+        super().__init__(falcon.HTTP_302, headers)
 
 
 class HTTPSeeOther(HTTPStatus):
@@ -111,7 +111,7 @@ class HTTPSeeOther(HTTPStatus):
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPSeeOther, self).__init__(falcon.HTTP_303, headers)
+        super().__init__(falcon.HTTP_303, headers)
 
 
 class HTTPTemporaryRedirect(HTTPStatus):
@@ -140,7 +140,7 @@ class HTTPTemporaryRedirect(HTTPStatus):
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPTemporaryRedirect, self).__init__(falcon.HTTP_307, headers)
+        super().__init__(falcon.HTTP_307, headers)
 
 
 class HTTPPermanentRedirect(HTTPStatus):
@@ -166,4 +166,4 @@ class HTTPPermanentRedirect(HTTPStatus):
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPPermanentRedirect, self).__init__(falcon.HTTP_308, headers)
+        super().__init__(falcon.HTTP_308, headers)

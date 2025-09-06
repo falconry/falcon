@@ -114,7 +114,7 @@ class WrappedRespondersResourceChild(WrappedRespondersResource):
 
     def on_put(self, req, resp):
         # Test passing no extra args
-        super(WrappedRespondersResourceChild, self).on_put(req, resp)
+        super().on_put(req, resp)
 
 
 class WrappedRespondersBodyParserResource:
@@ -194,13 +194,13 @@ class TestFieldResource:
 class TestFieldResourceChild(TestFieldResource):
     def on_get(self, req, resp, id):
         # Test passing a single extra arg
-        super(TestFieldResourceChild, self).on_get(req, resp, id)
+        super().on_get(req, resp, id)
 
 
 class TestFieldResourceChildToo(TestFieldResource):
     def on_get(self, req, resp, id):
         # Test passing a single kwarg, but no extra args
-        super(TestFieldResourceChildToo, self).on_get(req, resp, id=id)
+        super().on_get(req, resp, id=id)
 
 
 @falcon.before(bunnies)
@@ -217,7 +217,7 @@ class ZooResource:
 
 class ZooResourceChild(ZooResource):
     def on_get(self, req, resp):
-        super(ZooResourceChild, self).on_get(
+        super().on_get(
             req,
             resp,
             # Test passing a mixture of args and kwargs

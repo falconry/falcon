@@ -191,10 +191,12 @@ select = [
     "FA",
     "UP",
 ]
+# PERF(vytas): Do not hesitate to add any "UP" rules to the list of ignores
+#   if the suggested option is less performant, or makes no sense otherwise.
+#   (Individual occurrences can also be ignored inline, though.)
 ignore = [
     "UP006",
     "UP007",
-    "UP008",
     "UP012",
     "UP015",
     "UP020",

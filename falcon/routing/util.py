@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 class SuffixedMethodNotFoundError(Exception):
     def __init__(self, message: str) -> None:
-        super(SuffixedMethodNotFoundError, self).__init__(message)
+        super().__init__(message)
         self.message = message
 
 
