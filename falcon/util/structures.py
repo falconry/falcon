@@ -28,16 +28,16 @@ for convenience::
 
 from __future__ import annotations
 
+from collections.abc import ItemsView
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import KeysView
 from collections.abc import Mapping
 from collections.abc import MutableMapping
+from collections.abc import ValuesView
 from typing import (
     Any,
-    ItemsView,
-    Iterable,
-    Iterator,
-    KeysView,
     TYPE_CHECKING,
-    ValuesView,
 )
 
 

@@ -16,8 +16,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 import io
-from typing import AsyncIterator, NoReturn, Protocol
+from typing import NoReturn, Protocol
 
 from falcon.errors import DelimiterError
 from falcon.errors import OperationNotAllowed

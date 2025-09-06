@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 from collections import UserDict
+from collections.abc import Mapping
+from collections.abc import Sequence
 import functools
 from typing import (
     Any,
     cast,
     Literal,
-    Mapping,
     NoReturn,
     Optional,
     overload,
     Protocol,
-    Sequence,
-    Tuple,
 )
 
 from falcon import errors
@@ -51,7 +50,7 @@ class MissingDependencyHandler(BinaryBaseHandlerWS):
     serialize = deserialize = _raise
 
 
-_ResolverMethodReturnTuple = Tuple[
+_ResolverMethodReturnTuple = tuple[
     BaseHandler, Optional[SerializeSync], Optional[DeserializeSync]
 ]
 

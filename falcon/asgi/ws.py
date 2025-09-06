@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import collections
+from collections.abc import Iterable
+from collections.abc import Mapping
 from enum import auto
 from enum import Enum
 import re
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 from falcon import errors
 from falcon import media

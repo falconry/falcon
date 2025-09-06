@@ -16,12 +16,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
+from collections.abc import Mapping
 from typing import (
     Any,
-    Awaitable,
     cast,
     Literal,
-    Mapping,
     NoReturn,
     overload,
 )

@@ -17,14 +17,14 @@
 from __future__ import annotations
 
 import io
-from typing import BinaryIO, Callable, List, TypeVar, Union
+from typing import BinaryIO, Callable, TypeVar, Union
 
 from falcon.util import deprecated
 
 __all__ = ('BoundedStream',)
 
 
-Result = TypeVar('Result', bound=Union[bytes, List[bytes]])
+Result = TypeVar('Result', bound=Union[bytes, list[bytes]])
 
 
 class BoundedStream(io.IOBase):

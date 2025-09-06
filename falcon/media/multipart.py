@@ -16,11 +16,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 import re
 from typing import (
     Any,
     ClassVar,
-    Iterator,
     NoReturn,
     overload,
     TYPE_CHECKING,

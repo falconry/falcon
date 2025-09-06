@@ -14,9 +14,10 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Iterable
 from datetime import datetime
 from math import isfinite
-from typing import Any, ClassVar, Iterable, overload
+from typing import Any, ClassVar, overload
 import uuid
 
 __all__ = (

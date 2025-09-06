@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from collections.abc import Mapping
 from datetime import date as py_date
 from datetime import datetime
 from io import BytesIO
@@ -21,9 +23,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Iterable,
     Literal,
-    Mapping,
     overload,
     TextIO,
     TypeVar,

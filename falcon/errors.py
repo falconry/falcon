@@ -36,8 +36,9 @@ package namespace::
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Any, Iterable, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING, Union
 
 from falcon.http_error import HTTPError
 import falcon.status_codes as status

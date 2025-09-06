@@ -16,7 +16,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, NoReturn, TYPE_CHECKING
+from collections.abc import Iterable
+from typing import Any, NoReturn, TYPE_CHECKING
 
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import ResponderCallable

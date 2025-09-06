@@ -16,10 +16,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from functools import wraps
 from inspect import iscoroutinefunction
 import pathlib
 import re
+from re import Pattern
 import traceback
 from typing import (
     Any,
@@ -27,10 +29,8 @@ from typing import (
     cast,
     ClassVar,
     Generic,
-    Iterable,
     Literal,
     overload,
-    Pattern,
     TypeVar,
 )
 import warnings

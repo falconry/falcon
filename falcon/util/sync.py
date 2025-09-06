@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from functools import wraps
 import inspect
 import os
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 from falcon.util import deprecation
 

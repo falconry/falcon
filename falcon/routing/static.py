@@ -8,7 +8,8 @@ import io
 import os
 from pathlib import Path
 import re
-from typing import Any, ClassVar, IO, Pattern, TYPE_CHECKING
+from re import Pattern
+from typing import Any, ClassVar, IO, TYPE_CHECKING
 
 import falcon
 from falcon.typing import ReadableIO

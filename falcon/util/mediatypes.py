@@ -16,10 +16,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from collections.abc import Iterator
 import dataclasses
 import functools
 import math
-from typing import Iterable, Iterator
 
 from falcon import errors
 

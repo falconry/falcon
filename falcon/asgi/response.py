@@ -16,11 +16,11 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from collections.abc import Awaitable
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
 from typing import (
-    AsyncIterator,
-    Awaitable,
     Callable,
     Literal,
 )

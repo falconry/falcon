@@ -25,13 +25,14 @@ framework itself. These functions are hoisted into the front-door
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import datetime
 import functools
 import http
 import inspect
 import os.path
 import re
-from typing import Any, Callable, Mapping
+from typing import Any, Callable
 import unicodedata
 
 from falcon import status_codes

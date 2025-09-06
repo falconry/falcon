@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from collections.abc import Mapping
 from datetime import datetime
 from datetime import timezone
 import functools
@@ -23,8 +25,6 @@ import mimetypes
 from typing import (
     Any,
     ClassVar,
-    Iterable,
-    Mapping,
     NoReturn,
     overload,
     TYPE_CHECKING,

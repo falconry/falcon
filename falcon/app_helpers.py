@@ -16,8 +16,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from inspect import iscoroutinefunction
-from typing import IO, Iterable, Literal, Optional, overload, Tuple, Union
+from typing import IO, Literal, Optional, overload, Union
 
 from falcon import util
 from falcon._typing import _ReqT
@@ -47,20 +48,20 @@ __all__ = (
     'CloseableStreamIterator',
 )
 
-PreparedMiddlewareResult = Tuple[
+PreparedMiddlewareResult = tuple[
     Union[
-        Tuple[PRequest, ...], Tuple[Tuple[Optional[PRequest], Optional[PResource]], ...]
+        tuple[PRequest, ...], tuple[tuple[Optional[PRequest], Optional[PResource]], ...]
     ],
-    Tuple[PResource, ...],
-    Tuple[PResponse, ...],
+    tuple[PResource, ...],
+    tuple[PResponse, ...],
 ]
-AsyncPreparedMiddlewareResult = Tuple[
+AsyncPreparedMiddlewareResult = tuple[
     Union[
-        Tuple[APRequest, ...],
-        Tuple[Tuple[Optional[APRequest], Optional[APResource]], ...],
+        tuple[APRequest, ...],
+        tuple[tuple[Optional[APRequest], Optional[APResource]], ...],
     ],
-    Tuple[APResource, ...],
-    Tuple[APResponse, ...],
+    tuple[APResource, ...],
+    tuple[APResponse, ...],
 ]
 
 
@@ -218,8 +219,8 @@ def prepare_middleware(
     return tuple(request_mw), tuple(resource_mw), tuple(response_mw)  # type: ignore[return-value]
 
 
-AsyncPreparedMiddlewareWsResult = Tuple[
-    Tuple[AsgiProcessRequestWsMethod, ...], Tuple[AsgiProcessResourceWsMethod, ...]
+AsyncPreparedMiddlewareWsResult = tuple[
+    tuple[AsgiProcessRequestWsMethod, ...], tuple[AsgiProcessResourceWsMethod, ...]
 ]
 
 

@@ -15,7 +15,8 @@
 
 from __future__ import annotations
 
-from typing import MutableMapping, TYPE_CHECKING
+from collections.abc import MutableMapping
+from typing import TYPE_CHECKING
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON

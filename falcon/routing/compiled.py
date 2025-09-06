@@ -20,11 +20,11 @@ from collections import UserDict
 from inspect import iscoroutinefunction
 import keyword
 import re
+from re import Pattern
 from threading import Lock
 from typing import (
     Any,
     Callable,
-    Pattern,
     TYPE_CHECKING,
     Union,
 )

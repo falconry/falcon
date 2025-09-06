@@ -27,6 +27,9 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict
 from collections import deque
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Mapping
 import contextlib
 from enum import auto
 from enum import Enum
@@ -41,9 +44,6 @@ import time
 from typing import (
     Any,
     Callable,
-    Iterable,
-    Iterator,
-    Mapping,
     TextIO,
 )
 

@@ -21,6 +21,11 @@ WSGI callable, without having to stand up a WSGI server.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable
+from collections.abc import Coroutine
+from collections.abc import Iterable
+from collections.abc import Mapping
+from collections.abc import Sequence
 import datetime as dt
 from http.cookies import Morsel
 import inspect
@@ -28,15 +33,10 @@ import json as json_module
 import time
 from typing import (
     Any,
-    Awaitable,
     Callable,
     cast,
-    Coroutine,
-    Iterable,
     Literal,
-    Mapping,
     overload,
-    Sequence,
     TextIO,
     TYPE_CHECKING,
     TypeVar,

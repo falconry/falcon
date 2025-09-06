@@ -16,13 +16,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from functools import partial
 import inspect
 from typing import (
     Any,
     Callable,
     cast,
-    Iterable,
 )
 
 from falcon import app_helpers

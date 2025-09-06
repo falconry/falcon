@@ -17,15 +17,15 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable
+from collections.abc import Iterable
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
 import traceback
 from typing import (
     Any,
-    Awaitable,
     Callable,
     ClassVar,
-    Iterable,
     overload,
     TYPE_CHECKING,
     TypeVar,

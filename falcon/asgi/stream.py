@@ -16,7 +16,8 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator, NoReturn
+from collections.abc import AsyncIterator
+from typing import NoReturn
 
 from falcon._typing import AsgiReceive
 from falcon.asgi_spec import AsgiEvent

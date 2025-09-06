@@ -16,7 +16,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, TYPE_CHECKING
+from collections.abc import Iterable
+from typing import Any, Callable, TYPE_CHECKING
 
 from falcon._typing import RangeSetHeader
 from falcon.util import uri

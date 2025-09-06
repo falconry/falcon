@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterable, TYPE_CHECKING
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from ._typing import UniversalMiddlewareWithProcessResponse
 

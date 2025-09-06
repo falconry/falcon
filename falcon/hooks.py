@@ -16,13 +16,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
 from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
 import re
 from typing import (
     Any,
-    Awaitable,
     Callable,
     cast,
     TYPE_CHECKING,
