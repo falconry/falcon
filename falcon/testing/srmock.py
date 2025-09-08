@@ -20,7 +20,7 @@ used, along with a mock environ dict, to simulate a WSGI request.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from falcon import util
 from falcon._typing import HeaderIter
@@ -30,9 +30,9 @@ from falcon.typing import Headers
 class StartResponseMock:
     """Mock object representing a WSGI `start_response` callable."""
 
-    status: Optional[str]
+    status: str | None
     """HTTP status line, e.g. '785 TPS Cover Sheet not attached'."""
-    headers: Optional[HeaderIter]
+    headers: HeaderIter | None
     """Raw headers list passed to `start_response`, per PEP-3333."""
     headers_dict: Headers
     """Headers as a case-insensitive ``dict``-like object, instead of a ``list``."""
@@ -41,13 +41,13 @@ class StartResponseMock:
         self._called = 0
         self.status = None
         self.headers = None
-        self.exc_info: Optional[Any] = None
+        self.exc_info: Any | None = None
 
     def __call__(
         self,
         status: str,
         headers: HeaderIter,
-        exc_info: Optional[Any] = None,
+        exc_info: Any | None = None,
     ) -> Any:
         """Implement the PEP-3333 `start_response` protocol."""
 

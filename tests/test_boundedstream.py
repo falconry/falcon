@@ -14,7 +14,7 @@ def bounded_stream():
 def test_not_writable(bounded_stream):
     assert not bounded_stream.writable()
 
-    with pytest.raises(IOError):
+    with pytest.raises(OSError):
         bounded_stream.write(b'something something')
 
 

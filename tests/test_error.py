@@ -223,7 +223,7 @@ def test_with_retry_after_and_headers(err):
 
 def test_http_error_repr():
     error = falcon.HTTPBadRequest()
-    _repr = '<%s: %s>' % (error.__class__.__name__, error.status)
+    _repr = f'<{error.__class__.__name__}: {error.status}>'
     assert error.__repr__() == _repr
 
 

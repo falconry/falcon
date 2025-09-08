@@ -34,7 +34,7 @@ def _cheroot_args(host, port):
         '-m',
         'cheroot',
         '--bind',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         # NOTE(vytas): In case a worker hangs for an unexpectedly long time
         #   while reading or processing request (the default value is 30).
         '--timeout',
@@ -54,7 +54,7 @@ def _gunicorn_args(host, port, extra_opts=()):
         '--access-logfile',
         '-',
         '--bind',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         # NOTE(vytas): Although rare, but Meinheld workers have been noticed to
         #   occasionally hang on shutdown.
         '--graceful-timeout',
@@ -108,7 +108,7 @@ def _uwsgi_args(host, port):
     return (
         'uwsgi',
         '--http',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         '--wsgi-file',
         '_wsgi_test_app.py',
     )
@@ -124,7 +124,7 @@ def _waitress_args(host, port):
         '-m',
         'waitress',
         '--listen',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         '_wsgi_test_app:app',
     )
 
@@ -156,15 +156,15 @@ def server_url(server_args):
 
     for attempt in range(3):
         server_port = testing.get_unused_port()
-        base_url = 'http://{}:{}'.format(_SERVER_HOST, server_port)
+        base_url = f'http://{_SERVER_HOST}:{server_port}'
 
         args = server_args(_SERVER_HOST, server_port)
-        print('Starting {}...'.format(server_args.__doc__))
+        print(f'Starting {server_args.__doc__}...')
         print(' '.join(args))
         try:
             server = subprocess.Popen(args, cwd=_HERE)
         except FileNotFoundError:
-            pytest.skip('{} executable is not installed'.format(args[0]))
+            pytest.skip(f'{args[0]} executable is not installed')
 
         # NOTE(vytas): give the app server some time to start.
         start_time = time.time()

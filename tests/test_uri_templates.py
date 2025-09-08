@@ -184,7 +184,7 @@ def test_special_chars(client, resource):
     ],
 )
 def test_single(client, resource, field_name):
-    template = '/widgets/{{{}}}'.format(field_name)
+    template = f'/widgets/{{{field_name}}}'
 
     client.app.add_route(template, resource)
 
@@ -236,12 +236,12 @@ def test_float_converter(client, uri_template, id_value):
     resource1 = IDResource()
     client.app.add_route(uri_template, resource1)
 
-    result = client.simulate_get('/{0}'.format(id_value))
+    result = client.simulate_get(f'/{id_value}')
 
     assert result.status_code == 200
     assert resource1.called
     assert resource1.id == id_value
-    assert resource1.req.path == '/{0}'.format(id_value)
+    assert resource1.req.path == f'/{id_value}'
 
 
 @pytest.mark.parametrize('value', ['nan', '-inf', 'inf'])
@@ -334,7 +334,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         ),
         (
             '/versions/diff/{left:uuid()}...{right:uuid()}',
-            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            f'/versions/diff/{_TEST_UUID_STR}...{_TEST_UUID_STR_2}',
             {
                 'left': _TEST_UUID,
                 'right': _TEST_UUID_2,
@@ -342,7 +342,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         ),
         (
             '/versions/diff/{left:uuid}...{right:uuid()}',
-            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            f'/versions/diff/{_TEST_UUID_STR}...{_TEST_UUID_STR_2}',
             {
                 'left': _TEST_UUID,
                 'right': _TEST_UUID_2,
@@ -350,7 +350,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         ),
         (
             '/versions/diff/{left:uuid()}...{right:uuid}',
-            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            f'/versions/diff/{_TEST_UUID_STR}...{_TEST_UUID_STR_2}',
             {
                 'left': _TEST_UUID,
                 'right': _TEST_UUID_2,
@@ -384,7 +384,7 @@ def test_uuid_converter_complex_segment(client, resource):
     first_uuid = uuid.uuid4()
     last_uuid = uuid.uuid4()
 
-    result = client.simulate_get('/pages/{}...{}'.format(first_uuid, last_uuid))
+    result = client.simulate_get(f'/pages/{first_uuid}...{last_uuid}')
 
     assert result.status_code == 200
     assert resource.called

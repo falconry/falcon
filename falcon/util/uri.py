@@ -25,7 +25,7 @@ in the `falcon` module, and so must be explicitly imported::
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional, overload, Tuple, Union
+from typing import Callable, overload
 
 from falcon.constants import PYPY
 
@@ -233,7 +233,7 @@ Returns:
 """
 
 
-def _join_tokens_bytearray(tokens: List[bytes]) -> str:
+def _join_tokens_bytearray(tokens: list[bytes]) -> str:
     decoded_uri = bytearray(tokens[0])
     for token in tokens[1:]:
         token_partial = token[:2]
@@ -247,7 +247,7 @@ def _join_tokens_bytearray(tokens: List[bytes]) -> str:
     return decoded_uri.decode('utf-8', 'replace')
 
 
-def _join_tokens_list(tokens: List[bytes]) -> str:
+def _join_tokens_list(tokens: list[bytes]) -> str:
     decoded = tokens[:1]
     # PERF(vytas): Do not copy list: a simple bool flag is fastest on PyPy JIT.
     skip = True
@@ -341,7 +341,7 @@ def decode(encoded_uri: str, unquote_plus: bool = True) -> str:
 
 def parse_query_string(
     query_string: str, keep_blank: bool = False, csv: bool = False
-) -> Dict[str, Union[str, List[str]]]:
+) -> dict[str, str | list[str]]:
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -470,18 +470,16 @@ def parse_query_string(
 
 
 @overload
-def parse_host(host: str, default_port: int) -> Tuple[str, int]: ...
+def parse_host(host: str, default_port: int) -> tuple[str, int]: ...
 
 
 @overload
 def parse_host(
-    host: str, default_port: Optional[int] = None
-) -> Tuple[str, Optional[int]]: ...
+    host: str, default_port: int | None = None
+) -> tuple[str, int | None]: ...
 
 
-def parse_host(
-    host: str, default_port: Optional[int] = None
-) -> Tuple[str, Optional[int]]:
+def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | None]:
     """Parse a canonical 'host:port' string into parts.
 
     Parse a host string (which may or may not contain a port) into

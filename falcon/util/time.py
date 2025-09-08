@@ -12,7 +12,6 @@ for convenience::
 from __future__ import annotations
 
 import datetime
-from typing import Optional
 
 from .deprecation import deprecated
 
@@ -36,7 +35,7 @@ class TimezoneGMT(datetime.tzinfo):
     def __init__(self) -> None:
         super().__init__()
 
-    def utcoffset(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
+    def utcoffset(self, dt: datetime.datetime | None) -> datetime.timedelta:
         """Get the offset from UTC.
 
         Args:
@@ -49,7 +48,7 @@ class TimezoneGMT(datetime.tzinfo):
 
         return self.GMT_ZERO
 
-    def tzname(self, dt: Optional[datetime.datetime]) -> str:
+    def tzname(self, dt: datetime.datetime | None) -> str:
         """Get the name of this timezone.
 
         Args:
@@ -61,7 +60,7 @@ class TimezoneGMT(datetime.tzinfo):
 
         return 'GMT'
 
-    def dst(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
+    def dst(self, dt: datetime.datetime | None) -> datetime.timedelta:
         """Return the daylight saving time (DST) adjustment.
 
         Args:

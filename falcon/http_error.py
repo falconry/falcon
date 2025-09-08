@@ -15,7 +15,8 @@
 
 from __future__ import annotations
 
-from typing import MutableMapping, Optional, Type, TYPE_CHECKING, Union
+from collections.abc import MutableMapping
+from typing import TYPE_CHECKING
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
@@ -107,13 +108,13 @@ class HTTPError(Exception):
 
     Derived from the ``status`` if not provided.
     """
-    description: Optional[str]
+    description: str | None
     """Description of the error to send to the client."""
-    headers: Optional[HeaderArg]
+    headers: HeaderArg | None
     """Extra headers to add to the response."""
-    link: Optional[Link]
+    link: Link | None
     """An href that the client can provide to the user for getting help."""
-    code: Optional[int]
+    code: int | None
     """An internal application code that a user can reference when requesting
     support for the error.
     """
@@ -122,12 +123,12 @@ class HTTPError(Exception):
         self,
         status: ResponseStatus,
         *,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        headers: Optional[HeaderArg] = None,
-        href: Optional[str] = None,
-        href_text: Optional[str] = None,
-        code: Optional[int] = None,
+        title: str | None = None,
+        description: str | None = None,
+        headers: HeaderArg | None = None,
+        href: str | None = None,
+        href_text: str | None = None,
+        code: int | None = None,
     ):
         self.status = status
 
@@ -163,8 +164,8 @@ class HTTPError(Exception):
         return misc.http_status_to_code(self.status)
 
     def to_dict(
-        self, obj_type: Type[MutableMapping[str, Union[str, int, None, Link]]] = dict
-    ) -> MutableMapping[str, Union[str, int, None, Link]]:
+        self, obj_type: type[MutableMapping[str, str | int | None | Link]] = dict
+    ) -> MutableMapping[str, str | int | None | Link]:
         """Return a basic dictionary representing the error.
 
         This method can be useful when serializing the error to hash-like
@@ -195,7 +196,7 @@ class HTTPError(Exception):
 
         return obj
 
-    def to_json(self, handler: Optional[BaseHandler] = None) -> bytes:
+    def to_json(self, handler: BaseHandler | None = None) -> bytes:
         """Return a JSON representation of the error.
 
         Args:

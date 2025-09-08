@@ -623,7 +623,7 @@ def server_base_url(request):
 
     for i in range(3):
         server_port = testing.get_unused_port()
-        base_url = 'http://{}:{}/'.format(_SERVER_HOST, server_port)
+        base_url = f'http://{_SERVER_HOST}:{server_port}/'
 
         with _run_server_isolated(process_factory, _SERVER_HOST, server_port) as server:
             # NOTE(kgriffs): Let the server start up. Give up after 5 seconds.
