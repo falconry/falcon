@@ -15,24 +15,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
+from collections.abc import Iterable
+from collections.abc import Mapping
 from enum import auto
 from enum import Enum
 import http
 from http.cookiejar import Cookie
+from re import Pattern
 import sys
 from typing import (
     Any,
-    Awaitable,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Pattern,
     Protocol,
-    Tuple,
     TYPE_CHECKING,
     TypeVar,
     Union,
@@ -44,8 +41,8 @@ if sys.version_info >= (3, 11):
     from wsgiref.types import StartResponse as StartResponse
     from wsgiref.types import WSGIEnvironment as WSGIEnvironment
 else:
-    WSGIEnvironment = Dict[str, Any]
-    StartResponse = Callable[[str, List[Tuple[str, str]]], Callable[[bytes], None]]
+    WSGIEnvironment = dict[str, Any]
+    StartResponse = Callable[[str, list[tuple[str, str]]], Callable[[bytes], None]]
 
 if TYPE_CHECKING:
     from falcon.asgi import Request as AsgiRequest
@@ -71,7 +68,7 @@ _RespT = TypeVar('_RespT', bound='Response', contravariant=True)
 _AReqT = TypeVar('_AReqT', bound='AsgiRequest', contravariant=True)
 _ARespT = TypeVar('_ARespT', bound='AsgiResponse', contravariant=True)
 
-Link = Dict[str, str]
+Link = dict[str, str]
 CookieArg = Mapping[str, Union[str, Cookie]]
 
 
@@ -82,7 +79,7 @@ class ErrorHandler(Protocol[_ReqT, _RespT]):
         req: _ReqT,
         resp: _RespT,
         error: Exception,
-        params: Dict[str, Any],
+        params: dict[str, Any],
     ) -> None: ...
 
 
@@ -90,11 +87,11 @@ class AsgiErrorHandler(Protocol[_AReqT, _ARespT]):
     async def __call__(
         self,
         req: _AReqT,
-        resp: Optional[_ARespT],
+        resp: _ARespT | None,
         error: Exception,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         *,
-        ws: Optional[WebSocket] = ...,
+        ws: WebSocket | None = ...,
     ) -> None: ...
 
 
@@ -111,17 +108,17 @@ class SinkCallable(Protocol[_ReqT, _RespT]):
 
 class AsgiSinkCallable(Protocol[_AReqT, _ARespT]):
     async def __call__(
-        self, req: _AReqT, resp: Optional[_ARespT], **kwargs: Any
+        self, req: _AReqT, resp: _ARespT | None, **kwargs: Any
     ) -> None: ...
 
 
 HeaderMapping = Mapping[str, str]
-HeaderIter = Iterable[Tuple[str, str]]
+HeaderIter = Iterable[tuple[str, str]]
 HeaderArg = Union[HeaderMapping, HeaderIter]
 ResponseStatus = Union[http.HTTPStatus, str, int]
-StoreArg = Optional[Dict[str, Any]]
+StoreArg = Optional[dict[str, Any]]
 Resource = object
-RangeSetHeader = Union[Tuple[int, int, int], Tuple[int, int, int, str]]
+RangeSetHeader = Union[tuple[int, int, int], tuple[int, int, int, str]]
 
 
 # WSGI
@@ -141,7 +138,7 @@ class ResponderCallable(Protocol):
 
 ProcessRequestMethod = Callable[['Request', 'Response'], None]
 ProcessResourceMethod = Callable[
-    ['Request', 'Response', Optional[Resource], Dict[str, Any]], None
+    ['Request', 'Response', Optional[Resource], dict[str, Any]], None
 ]
 ProcessResponseMethod = Callable[
     ['Request', 'Response', Optional[Resource], bool], None
@@ -175,38 +172,38 @@ AsgiReceive = Callable[[], Awaitable['AsgiEvent']]
 AsgiSend = Callable[['AsgiSendMsg'], Awaitable[None]]
 AsgiProcessRequestMethod = Callable[['AsgiRequest', 'AsgiResponse'], Awaitable[None]]
 AsgiProcessResourceMethod = Callable[
-    ['AsgiRequest', 'AsgiResponse', Optional[Resource], Dict[str, Any]], Awaitable[None]
+    ['AsgiRequest', 'AsgiResponse', Optional[Resource], dict[str, Any]], Awaitable[None]
 ]
 AsgiProcessResponseMethod = Callable[
     ['AsgiRequest', 'AsgiResponse', Optional[Resource], bool], Awaitable[None]
 ]
 AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[None]]
 AsgiProcessResourceWsMethod = Callable[
-    ['AsgiRequest', 'WebSocket', Optional[Resource], Dict[str, Any]], Awaitable[None]
+    ['AsgiRequest', 'WebSocket', Optional[Resource], dict[str, Any]], Awaitable[None]
 ]
 ResponseCallbacks = Union[
-    Tuple[Callable[[], None], Literal[False]],
-    Tuple[Callable[[], Awaitable[None]], Literal[True]],
+    tuple[Callable[[], None], Literal[False]],
+    tuple[Callable[[], Awaitable[None]], Literal[True]],
 ]
 
 
 # Routing
 
 MethodDict = Union[
-    Dict[str, ResponderCallable],
-    Dict[str, Union[AsgiResponderCallable, AsgiResponderWsCallable]],
+    dict[str, ResponderCallable],
+    dict[str, Union[AsgiResponderCallable, AsgiResponderWsCallable]],
 ]
 
 
 class FindMethod(Protocol):
     def __call__(
-        self, uri: str, req: Optional[Request]
-    ) -> Optional[Tuple[object, MethodDict, Dict[str, Any], Optional[str]]]: ...
+        self, uri: str, req: Request | None
+    ) -> tuple[object, MethodDict, dict[str, Any], str | None] | None: ...
 
 
 # Media
 class SerializeSync(Protocol):
-    def __call__(self, media: Any, content_type: Optional[str] = ...) -> bytes: ...
+    def __call__(self, media: Any, content_type: str | None = ...) -> bytes: ...
 
 
 DeserializeSync = Callable[[bytes], Any]
@@ -228,8 +225,8 @@ class WsgiMiddlewareWithProcessResource(Protocol[_ReqT, _RespT]):
         self,
         req: _ReqT,
         resp: _RespT,
-        resource: Optional[Resource],
-        params: Dict[str, Any],
+        resource: Resource | None,
+        params: dict[str, Any],
     ) -> None: ...
 
 
@@ -240,7 +237,7 @@ class WsgiMiddlewareWithProcessResponse(Protocol[_ReqT, _RespT]):
         self,
         req: _ReqT,
         resp: _RespT,
-        resource: Optional[Resource],
+        resource: Resource | None,
         req_succeeded: bool,
     ) -> None: ...
 

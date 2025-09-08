@@ -97,7 +97,7 @@ class ResourceWithId:
         self.resource_id = resource_id
 
     def __repr__(self):
-        return 'ResourceWithId({})'.format(self.resource_id)
+        return f'ResourceWithId({self.resource_id})'
 
     def on_get(self, req, resp):
         resp.text = self.resource_id

@@ -67,7 +67,7 @@ _prerelease_version = any(
 
 
 project = 'Falcon'
-copyright = '{year} Falcon Contributors'.format(year=datetime.datetime.now().year)
+copyright = f'{datetime.datetime.now().year} Falcon Contributors'
 author = 'Kurt Griffiths et al.'
 version = '.'.join(_version_components[0:2])
 release = falcon.__version__

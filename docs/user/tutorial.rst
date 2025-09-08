@@ -1200,7 +1200,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
         def open(self, name):
             # Always validate untrusted input!
             if not self._IMAGE_NAME_PATTERN.match(name):
-                raise IOError('File not found')
+                raise OSError('File not found')
 
             image_path = os.path.join(self._storage_path, name)
             stream = self._fopen(image_path, 'rb')
@@ -1447,7 +1447,7 @@ and also to enable a minimum value validation.
         def open(self, name):
             # Always validate untrusted input!
             if not self._IMAGE_NAME_PATTERN.match(name):
-                raise IOError('File not found')
+                raise OSError('File not found')
 
             image_path = os.path.join(self._storage_path, name)
             stream = self._fopen(image_path, 'rb')
@@ -1679,7 +1679,7 @@ as follows:
 
             try:
                 resp.stream, resp.content_length = self._image_store.open(name)
-            except IOError:
+            except OSError:
                 # Normally you would also log the error.
                 raise falcon.HTTPNotFound()
 

@@ -16,29 +16,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from functools import wraps
 from inspect import iscoroutinefunction
 import pathlib
 import re
+from re import Pattern
 import traceback
 from typing import (
     Any,
     Callable,
     cast,
     ClassVar,
-    Dict,
-    FrozenSet,
     Generic,
-    Iterable,
-    List,
     Literal,
-    Optional,
     overload,
-    Pattern,
-    Tuple,
-    Type,
     TypeVar,
-    Union,
 )
 import warnings
 
@@ -226,11 +219,11 @@ class App(Generic[_ReqT, _RespT]):
             This has an effect only if no route was matched. (default ``True``)
     '''
 
-    _META_METHODS: ClassVar[FrozenSet[str]] = frozenset(constants._META_METHODS)
+    _META_METHODS: ClassVar[frozenset[str]] = frozenset(constants._META_METHODS)
 
     _STREAM_BLOCK_SIZE: ClassVar[int] = 8 * 1024  # 8 KiB
 
-    _STATIC_ROUTE_TYPE: ClassVar[Type[routing.StaticRoute]] = routing.StaticRoute
+    _STATIC_ROUTE_TYPE: ClassVar[type[routing.StaticRoute]] = routing.StaticRoute
 
     # NOTE(kgriffs): This makes it easier to tell what we are dealing with
     #   without having to import falcon.asgi.
@@ -266,32 +259,30 @@ class App(Generic[_ReqT, _RespT]):
     )
 
     _cors_enable: bool
-    _error_handlers: Dict[Type[Exception], ErrorHandler[_ReqT, _RespT]]
+    _error_handlers: dict[type[Exception], ErrorHandler[_ReqT, _RespT]]
     _independent_middleware: bool
     _middleware: helpers.PreparedMiddlewareResult
-    _request_type: Type[_ReqT]
-    _response_type: Type[_RespT]
+    _request_type: type[_ReqT]
+    _response_type: type[_RespT]
     _router_search: FindMethod
     # NOTE(caselit): this should actually be a protocol of the methods required
     # by a router, hardcoded to CompiledRouter for convenience for now.
     _router: routing.CompiledRouter
     _serialize_error: ErrorSerializer
-    _sink_and_static_routes: Tuple[
-        Tuple[
-            Union[Pattern[str], routing.StaticRoute],
-            Union[SinkCallable, AsgiSinkCallable, routing.StaticRoute],
+    _sink_and_static_routes: tuple[
+        tuple[
+            Pattern[str] | routing.StaticRoute,
+            SinkCallable | AsgiSinkCallable | routing.StaticRoute,
             bool,
         ],
         ...,
     ]
     _sink_before_static_route: bool
-    _sinks: List[
-        Tuple[Pattern[str], Union[SinkCallable, AsgiSinkCallable], Literal[True]]
+    _sinks: list[tuple[Pattern[str], SinkCallable | AsgiSinkCallable, Literal[True]]]
+    _static_routes: list[
+        tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
-    _static_routes: List[
-        Tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
-    ]
-    _unprepared_middleware: List[SyncMiddleware]
+    _unprepared_middleware: list[SyncMiddleware]
 
     # Attributes
     req_options: RequestOptions
@@ -307,16 +298,14 @@ class App(Generic[_ReqT, _RespT]):
 
     @overload
     def __init__(
-        self: 'App[Request, Response]',
+        self: App[Request, Response],
         media_type: str = ...,
         request_type: None = None,
         response_type: None = None,
-        middleware: Optional[
-            Union[
-                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
-            ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
@@ -324,16 +313,14 @@ class App(Generic[_ReqT, _RespT]):
 
     @overload
     def __init__(
-        self: 'App[_ReqT, Response]',
+        self: App[_ReqT, Response],
         media_type: str = ...,
-        request_type: Optional[Type[_ReqT]] = None,
+        request_type: type[_ReqT] | None = None,
         response_type: None = None,
-        middleware: Optional[
-            Union[
-                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
-            ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
@@ -341,16 +328,14 @@ class App(Generic[_ReqT, _RespT]):
 
     @overload
     def __init__(
-        self: 'App[Request, _RespT]',
+        self: App[Request, _RespT],
         media_type: str = ...,
         request_type: None = None,
-        response_type: Optional[Type[_RespT]] = None,
-        middleware: Optional[
-            Union[
-                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
-            ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
+        response_type: type[_RespT] | None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
@@ -360,14 +345,12 @@ class App(Generic[_ReqT, _RespT]):
     def __init__(
         self,
         media_type: str = ...,
-        request_type: Optional[Type[_ReqT]] = None,
-        response_type: Optional[Type[_RespT]] = None,
-        middleware: Optional[
-            Union[
-                SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
-            ]
-        ] = ...,
-        router: Optional[routing.CompiledRouter] = ...,
+        request_type: type[_ReqT] | None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
@@ -376,10 +359,10 @@ class App(Generic[_ReqT, _RespT]):
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Optional[Type[_ReqT]] = None,
-        response_type: Optional[Type[_RespT]] = None,
-        middleware: Optional[Union[SyncMiddleware, Iterable[SyncMiddleware]]] = None,
-        router: Optional[routing.CompiledRouter] = None,
+        request_type: type[_ReqT] | None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: SyncMiddleware | Iterable[SyncMiddleware] | None = None,
+        router: routing.CompiledRouter | None = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
         sink_before_static_route: bool = True,
@@ -435,10 +418,10 @@ class App(Generic[_ReqT, _RespT]):
         """
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
-        resource: Optional[object] = None
-        params: Dict[str, Any] = {}
+        resource: object | None = None
+        params: dict[str, Any] = {}
 
-        dependent_mw_resp_stack: List[ProcessResponseMethod] = []
+        dependent_mw_resp_stack: list[ProcessResponseMethod] = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -512,7 +495,7 @@ class App(Generic[_ReqT, _RespT]):
                 req_succeeded = False
 
         body: Iterable[bytes] = []
-        length: Optional[int] = 0
+        length: int | None = 0
 
         try:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
@@ -523,7 +506,7 @@ class App(Generic[_ReqT, _RespT]):
             req_succeeded = False
 
         resp_status: str = code_to_http_status(resp.status)
-        default_media_type: Optional[str] = self.resp_options.default_media_type
+        default_media_type: str | None = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
@@ -561,7 +544,7 @@ class App(Generic[_ReqT, _RespT]):
             if length is not None:
                 resp._headers['content-length'] = str(length)
 
-        headers: List[Tuple[str, str]] = resp._wsgi_headers(default_media_type)
+        headers: list[tuple[str, str]] = resp._wsgi_headers(default_media_type)
 
         # Return the response per the WSGI spec.
         start_response(resp_status, headers)
@@ -583,9 +566,8 @@ class App(Generic[_ReqT, _RespT]):
 
     def add_middleware(
         self,
-        middleware: Union[
-            SyncMiddleware[_ReqT, _RespT], Iterable[SyncMiddleware[_ReqT, _RespT]]
-        ],
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]],
     ) -> None:
         """Add one or more additional middleware components.
 
@@ -744,9 +726,9 @@ class App(Generic[_ReqT, _RespT]):
     def add_static_route(
         self,
         prefix: str,
-        directory: Union[str, pathlib.Path],
+        directory: str | pathlib.Path,
         downloadable: bool = False,
-        fallback_filename: Optional[str] = None,
+        fallback_filename: str | None = None,
     ) -> None:
         """Add a route to a directory of static files.
 
@@ -907,21 +889,21 @@ class App(Generic[_ReqT, _RespT]):
     @overload
     def add_error_handler(
         self,
-        exception: Type[_ExcT],
-        handler: Callable[[_ReqT, _RespT, _ExcT, Dict[str, Any]], None],
+        exception: type[_ExcT],
+        handler: Callable[[_ReqT, _RespT, _ExcT, dict[str, Any]], None],
     ) -> None: ...
 
     @overload
     def add_error_handler(
         self,
-        exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[ErrorHandler[_ReqT, _RespT]] = None,
+        exception: type[Exception] | Iterable[type[Exception]],
+        handler: ErrorHandler[_ReqT, _RespT] | None = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
-        exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[ErrorHandler[_ReqT, _RespT]] = None,
+        exception: type[Exception] | Iterable[type[Exception]],
+        handler: ErrorHandler[_ReqT, _RespT] | None = None,
     ) -> None:
         """Register a handler for one or more exception types.
 
@@ -1006,7 +988,7 @@ class App(Generic[_ReqT, _RespT]):
         ) -> ErrorHandler[_ReqT, _RespT]:
             @wraps(old_handler)
             def handler(
-                req: _ReqT, resp: _RespT, ex: Exception, params: Dict[str, Any]
+                req: _ReqT, resp: _RespT, ex: Exception, params: dict[str, Any]
             ) -> None:
                 old_handler(ex, req, resp, params)
 
@@ -1038,7 +1020,7 @@ class App(Generic[_ReqT, _RespT]):
             )
             handler = wrap_old_handler(handler)
 
-        exception_tuple: Tuple[type[Exception], ...]
+        exception_tuple: tuple[type[Exception], ...]
         try:
             exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
@@ -1105,7 +1087,7 @@ class App(Generic[_ReqT, _RespT]):
     # ------------------------------------------------------------------------
 
     def _prepare_middleware(
-        self, middleware: List[SyncMiddleware], independent_middleware: bool = False
+        self, middleware: list[SyncMiddleware], independent_middleware: bool = False
     ) -> helpers.PreparedMiddlewareResult:
         return helpers.prepare_middleware(
             middleware=middleware, independent_middleware=independent_middleware
@@ -1113,11 +1095,11 @@ class App(Generic[_ReqT, _RespT]):
 
     def _get_responder(
         self, req: _ReqT
-    ) -> Tuple[
-        Union[ResponderCallable, AsgiResponderCallable, AsgiResponderWsCallable],
-        Dict[str, Any],
+    ) -> tuple[
+        ResponderCallable | AsgiResponderCallable | AsgiResponderWsCallable,
+        dict[str, Any],
         object,
-        Optional[str],
+        str | None,
     ]:
         """Search routes for a matching responder.
 
@@ -1219,22 +1201,22 @@ class App(Generic[_ReqT, _RespT]):
         self._serialize_error(req, resp, error)
 
     def _http_status_handler(
-        self, req: _ReqT, resp: _RespT, status: HTTPStatus, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, status: HTTPStatus, params: dict[str, Any]
     ) -> None:
         self._compose_status_response(req, resp, status)
 
     def _http_error_handler(
-        self, req: _ReqT, resp: _RespT, error: HTTPError, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, error: HTTPError, params: dict[str, Any]
     ) -> None:
         self._compose_error_response(req, resp, error)
 
     def _python_error_handler(
-        self, req: _ReqT, resp: _RespT, error: Exception, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, error: Exception, params: dict[str, Any]
     ) -> None:
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
 
-    def _find_error_handler(self, ex: Exception) -> Optional[ErrorHandler]:
+    def _find_error_handler(self, ex: Exception) -> ErrorHandler | None:
         # NOTE(csojinb): The `__mro__` class attribute returns the method
         # resolution order tuple, i.e. the complete linear inheritance chain
         # ``(type(ex), ..., object)``. For a valid exception class, the last
@@ -1252,7 +1234,7 @@ class App(Generic[_ReqT, _RespT]):
         return None
 
     def _handle_exception(
-        self, req: _ReqT, resp: _RespT, ex: Exception, params: Dict[str, Any]
+        self, req: _ReqT, resp: _RespT, ex: Exception, params: dict[str, Any]
     ) -> bool:
         """Handle an exception raised from mw or a responder.
 
@@ -1295,10 +1277,8 @@ class App(Generic[_ReqT, _RespT]):
     def _get_body(
         self,
         resp: Response,
-        wsgi_file_wrapper: Optional[
-            Callable[[ReadableIO, int], Iterable[bytes]]
-        ] = None,
-    ) -> Tuple[Iterable[bytes], Optional[int]]:
+        wsgi_file_wrapper: Callable[[ReadableIO, int], Iterable[bytes]] | None = None,
+    ) -> tuple[Iterable[bytes], int | None]:
         """Convert resp content into an iterable as required by PEP 333.
 
         Args:
@@ -1321,7 +1301,7 @@ class App(Generic[_ReqT, _RespT]):
 
         """
 
-        data: Optional[bytes] = resp.render_body()
+        data: bytes | None = resp.render_body()
         if data is not None:
             return [data], len(data)
 
