@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 from falcon import errors
@@ -45,7 +45,7 @@ class URLEncodedFormHandler(BaseHandler):
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def serialize(self, media: Any, content_type: Optional[str] = None) -> bytes:
+    def serialize(self, media: Any, content_type: str | None = None) -> bytes:
         # NOTE(vytas): Setting doseq to True to mirror the parse_query_string
         # behaviour.
         return urlencode(media, doseq=True).encode()
@@ -67,15 +67,15 @@ class URLEncodedFormHandler(BaseHandler):
     def deserialize(
         self,
         stream: ReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> Any:
         return self._deserialize(stream.read())
 
     async def deserialize_async(
         self,
         stream: AsyncReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> Any:
         return self._deserialize(await stream.read())

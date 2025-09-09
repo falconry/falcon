@@ -1,20 +1,17 @@
 from __future__ import annotations
 
 from collections import UserDict
+from collections.abc import Mapping
+from collections.abc import Sequence
 import functools
 from typing import (
     Any,
     cast,
-    Dict,
     Literal,
-    Mapping,
     NoReturn,
     Optional,
     overload,
     Protocol,
-    Sequence,
-    Tuple,
-    Union,
 )
 
 from falcon import errors
@@ -53,7 +50,7 @@ class MissingDependencyHandler(BinaryBaseHandlerWS):
     serialize = deserialize = _raise
 
 
-_ResolverMethodReturnTuple = Tuple[
+_ResolverMethodReturnTuple = tuple[
     BaseHandler, Optional[SerializeSync], Optional[DeserializeSync]
 ]
 
@@ -61,28 +58,28 @@ _ResolverMethodReturnTuple = Tuple[
 class ResolverMethod(Protocol):
     @overload
     def __call__(
-        self, media_type: Optional[str], default: str, raise_not_found: Literal[False]
-    ) -> Union[Tuple[None, None, None], _ResolverMethodReturnTuple]: ...
+        self, media_type: str | None, default: str, raise_not_found: Literal[False]
+    ) -> tuple[None, None, None] | _ResolverMethodReturnTuple: ...
 
     @overload
     def __call__(
         self,
-        media_type: Optional[str],
+        media_type: str | None,
         default: str,
         raise_not_found: Literal[True] = ...,
     ) -> _ResolverMethodReturnTuple: ...
 
     def __call__(
-        self, media_type: Optional[str], default: str, raise_not_found: bool = True
-    ) -> Union[Tuple[None, None, None], _ResolverMethodReturnTuple]: ...
+        self, media_type: str | None, default: str, raise_not_found: bool = True
+    ) -> tuple[None, None, None] | _ResolverMethodReturnTuple: ...
 
 
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
 
-    data: Dict[str, BaseHandler]
+    data: dict[str, BaseHandler]
 
-    def __init__(self, initial: Optional[Mapping[str, BaseHandler]] = None) -> None:
+    def __init__(self, initial: Mapping[str, BaseHandler] | None = None) -> None:
         self._resolve: ResolverMethod = self._create_resolver()
 
         handlers: Mapping[str, BaseHandler] = initial or {
@@ -122,8 +119,8 @@ class Handlers(UserDict):
         #   combinations of the method args. We may need to tune this later.
         @misc._lru_cache_for_simple_logic(maxsize=64)
         def resolve(
-            media_type: Optional[str], default: str, raise_not_found: bool = True
-        ) -> Union[Tuple[None, None, None], _ResolverMethodReturnTuple]:
+            media_type: str | None, default: str, raise_not_found: bool = True
+        ) -> tuple[None, None, None] | _ResolverMethodReturnTuple:
             if media_type == '*/*' or not media_type:
                 media_type = default
 
@@ -180,7 +177,7 @@ class Handlers(UserDict):
         return handlers_cls(self.data)
 
 
-def _best_match(media_type: str, all_media_types: Sequence[str]) -> Optional[str]:
+def _best_match(media_type: str, all_media_types: Sequence[str]) -> str | None:
     result = None
 
     try:

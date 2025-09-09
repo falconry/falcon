@@ -16,19 +16,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 import re
 from typing import (
     Any,
     ClassVar,
-    Dict,
-    Iterator,
     NoReturn,
-    Optional,
     overload,
-    Tuple,
-    Type,
     TYPE_CHECKING,
-    Union,
 )
 from urllib.parse import unquote_to_bytes
 
@@ -78,11 +73,11 @@ class BodyPart:
         :class:`MultipartFormHandler` parser.
     """
 
-    _content_disposition: Optional[Tuple[str, Dict[str, str]]] = None
-    _data: Optional[bytes] = None
-    _filename: UnsetOr[Optional[str]] = _UNSET
+    _content_disposition: tuple[str, dict[str, str]] | None = None
+    _data: bytes | None = None
+    _filename: UnsetOr[str | None] = _UNSET
     _media: UnsetOr[Any] = _UNSET
-    _name: UnsetOr[Optional[str]] = _UNSET
+    _name: UnsetOr[str | None] = _UNSET
 
     stream: PyBufferedReader
     """File-like input object for reading the body part of the
@@ -110,7 +105,7 @@ class BodyPart:
     def __init__(
         self,
         stream: PyBufferedReader,
-        headers: Dict[bytes, bytes],
+        headers: dict[bytes, bytes],
         parse_options: MultipartParseOptions,
     ):
         self.stream = stream
@@ -146,7 +141,7 @@ class BodyPart:
 
         return self._data
 
-    def get_text(self) -> Optional[str]:
+    def get_text(self) -> str | None:
         """Return the body part content decoded as a text string.
 
         Text is decoded from the part content (as returned by
@@ -196,7 +191,7 @@ class BodyPart:
         return value.decode('ascii')
 
     @property
-    def filename(self) -> Optional[str]:
+    def filename(self) -> str | None:
         """File name if the body part is an attached file, and ``None`` otherwise."""
         if self._filename is _UNSET:
             if self._content_disposition is None:
@@ -241,7 +236,7 @@ class BodyPart:
             raise MultipartParseError(description=str(ex)) from ex
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """The name parameter of the Content-Disposition header.
 
         The value of the "name" parameter is the original field name from
@@ -342,7 +337,7 @@ class MultipartForm:
         self,
         stream: ReadableIO,
         boundary: bytes,
-        content_length: Optional[int],
+        content_length: int | None,
         parse_options: MultipartParseOptions,
     ) -> None:
         # NOTE(vytas): More lenient check whether the provided stream is not
@@ -406,7 +401,7 @@ class MultipartForm:
                     description='unexpected form structure'
                 ) from err
 
-            headers: Dict[bytes, bytes] = {}
+            headers: dict[bytes, bytes] = {}
             try:
                 headers_block = stream.read_until(
                     _CRLF_CRLF, max_headers_size, consume_delimiter=True
@@ -469,7 +464,7 @@ class MultipartFormHandler(BaseHandler):
     For examples on parsing the request form, see also: :ref:`multipart`.
     """
 
-    _ASGI_MULTIPART_FORM: ClassVar[Type[AsgiMultipartForm]]
+    _ASGI_MULTIPART_FORM: ClassVar[type[AsgiMultipartForm]]
 
     parse_options: MultipartParseOptions
     """Configuration options for the multipart form parser and instances of
@@ -478,34 +473,34 @@ class MultipartFormHandler(BaseHandler):
     See also: :ref:`multipart_parser_conf`.
     """
 
-    def __init__(self, parse_options: Optional[MultipartParseOptions] = None) -> None:
+    def __init__(self, parse_options: MultipartParseOptions | None = None) -> None:
         self.parse_options = parse_options or MultipartParseOptions()
 
     @overload
     def _deserialize_form(
         self,
         stream: ReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
-        form_cls: Type[MultipartForm] = ...,
+        content_type: str | None,
+        content_length: int | None,
+        form_cls: type[MultipartForm] = ...,
     ) -> MultipartForm: ...
 
     @overload
     def _deserialize_form(
         self,
         stream: AsyncReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
-        form_cls: Type[AsgiMultipartForm] = ...,
+        content_type: str | None,
+        content_length: int | None,
+        form_cls: type[AsgiMultipartForm] = ...,
     ) -> AsgiMultipartForm: ...
 
     def _deserialize_form(
         self,
-        stream: Union[ReadableIO, AsyncReadableIO],
-        content_type: Optional[str],
-        content_length: Optional[int],
-        form_cls: Type[Union[MultipartForm, AsgiMultipartForm]] = MultipartForm,
-    ) -> Union[MultipartForm, AsgiMultipartForm]:
+        stream: ReadableIO | AsyncReadableIO,
+        content_type: str | None,
+        content_length: int | None,
+        form_cls: type[MultipartForm | AsgiMultipartForm] = MultipartForm,
+    ) -> MultipartForm | AsgiMultipartForm:
         assert content_type is not None
         _, options = parse_header(content_type)
         try:
@@ -537,16 +532,16 @@ class MultipartFormHandler(BaseHandler):
     def deserialize(
         self,
         stream: ReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> MultipartForm:
         return self._deserialize_form(stream, content_type, content_length)
 
     async def deserialize_async(
         self,
         stream: AsyncReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> AsgiMultipartForm:
         return self._deserialize_form(
             stream, content_type, content_length, form_cls=self._ASGI_MULTIPART_FORM
@@ -581,7 +576,7 @@ class MultipartParseOptions:
     :class:`.MultipartParseError` will be raised. If this option is set to 0,
     no limit will be imposed by the parser.
     """
-    max_secure_filename_length: Optional[int]
+    max_secure_filename_length: int | None
     """The maximum number characters for a secure filename (default ``None``).
 
     The value of this option is passed as the `max_length` keyword argument to

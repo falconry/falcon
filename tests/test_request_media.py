@@ -151,7 +151,7 @@ def test_unknown_media_type(asgi, media_type):
     )
 
     title_msg = '415 Unsupported Media Type'
-    description_msg = '{} is an unsupported media type.'.format(media_type)
+    description_msg = f'{media_type} is an unsupported media type.'
     assert client.resource.captured_error.value.title == title_msg
     assert client.resource.captured_error.value.description == description_msg
 
