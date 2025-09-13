@@ -28,39 +28,13 @@ Here's an example showing how to get cookies from a request:
 
     .. tab-item:: WSGI
 
-        .. code:: python
-
-            class Resource:
-                def on_get(self, req, resp):
-
-                    # Get a dict of name/value cookie pairs.
-                    cookies = req.cookies
-
-                    my_cookie_values = req.get_cookie_values('my_cookie')
-
-                    if my_cookie_values:
-                        # NOTE: If there are multiple values set for the cookie, you
-                        #   will need to choose how to handle the additional values.
-                        v = my_cookie_values[0]
+       .. literalinclude:: ../../examples/cookies/get_cookies_wsgi.py
+            :language: python
 
     .. tab-item:: ASGI
 
-        .. code:: python
-
-            class Resource:
-                async def on_get(self, req, resp):
-
-                    # Get a dict of name/value cookie pairs.
-                    cookies = req.cookies
-
-                    # NOTE: Since get_cookie_values() is synchronous, it does
-                    #   not need to be await'd.
-                    my_cookie_values = req.get_cookie_values('my_cookie')
-
-                    if my_cookie_values:
-                        # NOTE: If there are multiple values set for the cookie, you
-                        #   will need to choose how to handle the additional values.
-                        v = my_cookie_values[0]
+        .. literalinclude:: ../../examples/cookies/get_cookies_asgi.py
+            :language: python
 
 .. _setting-cookies:
 
@@ -85,35 +59,20 @@ are sent to the client).
 
 Simple example:
 
-.. code:: python
-
-    # Set the cookie 'my_cookie' to the value 'my cookie value'
-    resp.set_cookie('my_cookie', 'my cookie value')
-
+.. literalinclude:: ../../examples/cookies/set_cookie_value.py
+    :language: python
 
 You can of course also set the domain, path and lifetime of the cookie.
 
-.. code:: python
 
-    # Set the maximum age of the cookie to 10 minutes (600 seconds)
-    #   and the cookie's domain to 'example.com'
-    resp.set_cookie('my_cookie', 'my cookie value',
-                    max_age=600, domain='example.com')
-
+.. literalinclude:: ../../examples/cookies/set_cookie_options.py
+    :language: python
 
 You can also instruct the client to remove a cookie with the
 :meth:`~falcon.Response.unset_cookie` method:
 
-.. code:: python
-
-    # Set a cookie in middleware or in a previous request.
-    resp.set_cookie('my_cookie', 'my cookie value')
-
-    # -- snip --
-
-    # Clear the cookie for the current request and instruct the user agent
-    #   to expire its own copy of the cookie (if any).
-    resp.unset_cookie('my_cookie')
+.. literalinclude:: ../../examples/cookies/unset_cookie.py
+    :language: python
 
 .. _cookie-secure-attribute:
 
