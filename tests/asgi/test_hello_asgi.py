@@ -151,9 +151,9 @@ class ClosingStreamResource:
 
 
 class AIOFilesHelloResource:
-    def __init__(self, aiofiles_lib):
+    def __init__(self, aiofiles):
         self.sample_utf8 = testing.rand_string(8 * SIZE_1_KB, 16 * SIZE_1_KB).encode()
-        self._aiofiles_lib = aiofiles_lib
+        self._aiofiles_lib = aiofiles
         fh, self.tempfile_name = tempfile.mkstemp()
         with open(fh, 'wb') as f:
             f.write(self.sample_utf8)
