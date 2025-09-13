@@ -26,10 +26,10 @@ from falcon.util import structures
 from falcon.util import uri
 from falcon.util.time import TimezoneGMT
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
 
 
 @pytest.fixture
@@ -1238,8 +1238,9 @@ class TestFalconTestingUtils:
             MEDIA_URLENCODED,
         ],
     )
-    @pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-    def test_simulate_content_type_extra_handler(self, asgi, util, content_type):
+    def test_simulate_content_type_extra_handler(
+        self, asgi, util, content_type, msgpack
+    ):
         class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):
                 super().__init__()

@@ -14,10 +14,10 @@ from falcon.media import BaseHandler
 import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
 
-try:
-    import yaml
-except ImportError:
-    yaml = None  # type: ignore[assignment]
+
+@pytest.fixture(scope='session')
+def yaml():
+    return pytest.importorskip('yaml')
 
 
 @pytest.fixture
@@ -382,8 +382,7 @@ class TestHTTPError:
         assert response.headers['Vary'] == 'Accept'
         assert not response.content
 
-    @pytest.mark.skipif(yaml is None, reason='PyYAML is required for this test')
-    def test_custom_error_serializer(self, client):
+    def test_custom_error_serializer(self, client, yaml):
         headers = {
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': (

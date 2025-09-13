@@ -16,10 +16,10 @@ from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 from falcon.util.deprecation import DeprecatedWarning
 
-try:
-    import cbor2
-except ImportError:
-    cbor2 = None  # type: ignore[assignment]
+
+@pytest.fixture(scope='session')
+def cbor2():
+    return pytest.importorskip('cbor2')
 
 
 try:
@@ -28,10 +28,9 @@ except ImportError:
     msgpack = None
 
 
-try:
-    import rapidjson
-except ImportError:
-    rapidjson = None  # type: ignore[assignment]
+@pytest.fixture(scope='session')
+def rapidjson():
+    return pytest.importorskip('rapidjson')
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -411,7 +410,9 @@ async def test_client_disconnect_early(  # noqa: C901
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
 @pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
+async def test_media(  # NOQA: C901
+    custom_text, custom_data, conductor, cbor2, rapidjson
+):
     # TODO(kgriffs): Refactor to reduce McCabe score
 
     sample_doc = {
