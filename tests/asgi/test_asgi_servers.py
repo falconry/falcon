@@ -17,7 +17,7 @@ from . import _asgi_test_app
 
 
 @pytest.fixture(scope='session')
-def httpx_lib():
+def httpx():
     return pytest.importorskip('httpx')
 
 
@@ -179,14 +179,14 @@ class TestASGIServer:
                 timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
 
-    async def test_stream_chunked_request(self, server_base_url, httpx_lib):
+    async def test_stream_chunked_request(self, server_base_url, httpx):
         """Regression test for https://github.com/falconry/falcon/issues/2024"""
 
         async def emitter():
             for _ in range(64):
                 yield b'123456789ABCDEF\n'
 
-        async with httpx_lib.AsyncClient() as client:
+        async with httpx.AsyncClient() as client:
             resp = await client.put(
                 server_base_url + 'bucket/drops',
                 content=emitter(),

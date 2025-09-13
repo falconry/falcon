@@ -9,7 +9,11 @@ import pytest
 
 from falcon import testing
 
-requests = pytest.importorskip('requests')
+
+@pytest.fixture(scope='session')
+def requests():
+    return pytest.importorskip('requests')
+
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = '127.0.0.1'
@@ -147,7 +151,7 @@ def server_args(wsgi_server):
 
 
 @pytest.fixture
-def server_url(server_args):
+def server_url(server_args, requests):
     if sys.platform.startswith('win'):
         pytest.skip('WSGI server tests are currently unsupported on Windows')
 
@@ -204,24 +208,21 @@ def server_url(server_args):
         )
 
 
-@pytest.mark.skipif(
-    requests is None, reason='requests module is required for this test'
-)
 class TestWSGIServer:
-    def test_get(self, server_url):
+    def test_get(self, server_url, requests):
         resp = requests.get(server_url + '/hello', timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == 'Hello, World!\n'
         assert resp.headers.get('Content-Type') == 'text/plain; charset=utf-8'
         assert resp.headers.get('X-Falcon') == 'peregrine'
 
-    def test_get_deprecated(self, server_url):
+    def test_get_deprecated(self, server_url, requests):
         resp = requests.get(server_url + '/deprecated', timeout=_REQUEST_TIMEOUT)
 
         # Since it tries to use resp.add_link() we expect an unhandled error
         assert resp.status_code == 500
 
-    def test_post_multipart_form(self, server_url):
+    def test_post_multipart_form(self, server_url, requests):
         size = random.randint(8 * _SIZE_1_MB, 15 * _SIZE_1_MB)
         data = os.urandom(size)
         digest = hashlib.sha1(data).hexdigest()
@@ -245,7 +246,7 @@ class TestWSGIServer:
             },
         }
 
-    def test_static_file(self, server_url):
+    def test_static_file(self, server_url, requests):
         resp = requests.get(
             server_url + '/tests/test_wsgi_servers.py', timeout=_REQUEST_TIMEOUT
         )
@@ -280,7 +281,7 @@ class TestWSGIServer:
         ],
     )
     def test_static_file_byte_range(
-        self, byte_range, expected_head, wsgi_server, server_url
+        self, byte_range, expected_head, wsgi_server, server_url, requests
     ):
         if wsgi_server == 'meinheld':
             pytest.xfail(
