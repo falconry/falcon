@@ -13,7 +13,6 @@ try:
 except ImportError:
     aiofiles = None  # type: ignore[assignment]
 
-
 SIZE_1_KB = 1024
 
 
@@ -153,6 +152,7 @@ class ClosingStreamResource:
 class AIOFilesHelloResource:
     def __init__(self):
         self.sample_utf8 = testing.rand_string(8 * SIZE_1_KB, 16 * SIZE_1_KB).encode()
+
         fh, self.tempfile_name = tempfile.mkstemp()
         with open(fh, 'wb') as f:
             f.write(self.sample_utf8)
