@@ -8,10 +8,10 @@ import falcon
 from falcon import testing
 import falcon.asgi
 
-
-@pytest.fixture(scope='session')
-def aiofiles():
-    return pytest.importorskip('aiofiles')
+try:
+    import aiofiles
+except ImportError:
+    aiofiles = None  # type: ignore[assignment]
 
 
 SIZE_1_KB = 1024
@@ -151,9 +151,8 @@ class ClosingStreamResource:
 
 
 class AIOFilesHelloResource:
-    def __init__(self, aiofiles):
+    def __init__(self):
         self.sample_utf8 = testing.rand_string(8 * SIZE_1_KB, 16 * SIZE_1_KB).encode()
-        self._aiofiles_lib = aiofiles
         fh, self.tempfile_name = tempfile.mkstemp()
         with open(fh, 'wb') as f:
             f.write(self.sample_utf8)
@@ -168,7 +167,7 @@ class AIOFilesHelloResource:
         os.remove(self.tempfile_name)
 
     async def on_get(self, req, resp):
-        self._aiofiles = await self._aiofiles_lib.open(self.tempfile_name, 'rb')
+        self._aiofiles = await aiofiles.open(self.tempfile_name, 'rb')
         resp.stream = self._aiofiles
 
 
@@ -312,8 +311,9 @@ class TestHelloWorld:
         if assert_closed:
             assert resource.stream.close_called
 
-    def test_filelike_closing_aiofiles(self, client, aiofiles):
-        resource = AIOFilesHelloResource(aiofiles)
+    @pytest.mark.skipif(aiofiles is None, reason='aiofiles is required for this test')
+    def test_filelike_closing_aiofiles(self, client):
+        resource = AIOFilesHelloResource()
         try:
             client.app.add_route('/filelike-closing', resource)
 
