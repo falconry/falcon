@@ -1282,7 +1282,9 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 raise
 
     def _prepare_middleware(  # type: ignore[override]
-        self, middleware: list[AsyncMiddleware], independent_middleware: bool = False
+        self,
+        middleware: list[AsyncMiddleware[_ReqT, _RespT]],
+        independent_middleware: bool = False,
     ) -> AsyncPreparedMiddlewareResult:
         self._middleware_ws = prepare_middleware_ws(middleware)
 
