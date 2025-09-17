@@ -134,22 +134,8 @@ might interfere with the user's logging setup.
 Here's how you can set up basic logging in your ASGI Falcon application via
 :func:`logging.basicConfig`:
 
-.. code:: python
-
-    import logging
-
-    import falcon
-
-    logging.basicConfig(level=logging.INFO)
-
-
-    class ErrorResource:
-        def on_get(self, req, resp):
-            raise Exception('Something went wrong!')
-
-
-    app = falcon.App()
-    app.add_route('/error', ErrorResource())
+.. literalinclude:: ../../examples/asgilook/asgilook/logging.py
+    :language: python
 
 When the above route is accessed, Falcon will catch the unhandled exception and
 automatically log an error message. Below is an example of what the log output
