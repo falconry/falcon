@@ -180,23 +180,8 @@ In this tutorial, we'll just pass around a ``Config`` instance to resource
 initializers for easier testing (coming later in this tutorial). Create a new
 module, ``config.py`` next to ``app.py``, and add the following code to it:
 
-.. code:: python
-
-    import os
-    import pathlib
-    import uuid
-
-
-    class Config:
-        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
-        DEFAULT_UUID_GENERATOR = uuid.uuid4
-
-        def __init__(self):
-            self.storage_path = pathlib.Path(
-                os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH))
-            self.storage_path.mkdir(parents=True, exist_ok=True)
-
-            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
+.. literalinclude:: ../../examples/asgilook/asgilook/config/base_config_01.py
+    :language: python
 
 Image Store
 -----------
@@ -592,25 +577,8 @@ The :ref:`app configuration <asgi_tutorial_config>` will need to be updated
 to add the ``min_thumb_size`` option (by default initialized to 64 pixels)
 as follows:
 
-.. code:: python
-
-    import os
-    import pathlib
-    import uuid
-
-
-    class Config:
-        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
-        DEFAULT_MIN_THUMB_SIZE = 64
-        DEFAULT_UUID_GENERATOR = uuid.uuid4
-
-        def __init__(self):
-            self.storage_path = pathlib.Path(
-                os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH))
-            self.storage_path.mkdir(parents=True, exist_ok=True)
-
-            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
-            self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
+.. literalinclude:: ../../examples/asgilook/asgilook/config/image_config_02.py
+   :language: python
 
 Let's also add a ``Thumbnails`` resource to expose the new
 functionality. The final version of ``images.py`` reads:
@@ -778,7 +746,7 @@ implementations for production and testing.
 Assuming we call our new :ref:`configuration <asgi_tutorial_config>` item
 ``redis_host`` the final version of ``config.py`` now reads:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/config.py
+.. literalinclude:: ../../examples/asgilook/asgilook/config/redis_config_03.py
     :language: python
 
 Let's complete the Redis cache component by implementing
