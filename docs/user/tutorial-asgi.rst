@@ -560,45 +560,29 @@ purposes.
 Let's add a new method ``Store.make_thumbnail()`` to perform scaling on the
 fly:
 
-.. code:: python
-
-    async def make_thumbnail(self, image, size):
-        async with aiofiles.open(image.path, 'rb') as img_file:
-            data = await img_file.read()
-
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self._resize, data, size)
+.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+    :start-at: async def make_thumbnail(self, image, size):
+    :end-at: return await loop.run_in_executor(None, self._resize, data, size)
+    :language: python
+    :dedent: 4
 
 We'll also add an internal helper to run the ``Pillow`` thumbnail operation that
 is offloaded to a threadpool executor, again, in hoping that Pillow can release
 the GIL for some operations:
 
-.. code:: python
-
-    def _resize(self, data, size):
-        image = PIL.Image.open(io.BytesIO(data))
-        image.thumbnail(size)
-
-        resized = io.BytesIO()
-        image.save(resized, 'JPEG')
-        return resized.getvalue()
+.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+    :start-at: def _resize(self, data, size):
+    :end-at: return resized.getvalue()
+    :language: python
+    :dedent: 4
 
 The ``store.Image`` class can be extended to also return URIs to thumbnails:
 
-.. code:: python
-
-    def thumbnails(self):
-        def reductions(size, min_size):
-            width, height = size
-            factor = 2
-            while width // factor >= min_size and height // factor >= min_size:
-                yield (width // factor, height // factor)
-                factor *= 2
-
-        return [
-            f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
-            for width, height in reductions(
-                self.size, self._config.min_thumb_size)]
+.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+    :start-at: def thumbnails(self):
+    :end-before: class Store:
+    :language: python
+    :dedent: 4
 
 Here, we only generate URIs for a series of downsized resolutions. The actual
 scaling will happen on the fly upon requesting these resources.
