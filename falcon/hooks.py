@@ -16,19 +16,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
 from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
 import re
 from typing import (
     Any,
-    Awaitable,
     Callable,
     cast,
-    Dict,
-    List,
-    Protocol,
-    Tuple,
     TYPE_CHECKING,
     TypeVar,
     Union,
@@ -39,6 +35,8 @@ from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 if TYPE_CHECKING:
+    from typing import Concatenate, ParamSpec
+
     import falcon as wsgi
     from falcon import asgi
     from falcon._typing import AsgiResponderMethod
@@ -46,61 +44,8 @@ if TYPE_CHECKING:
     from falcon._typing import Responder
     from falcon._typing import ResponderMethod
 
+    _FN = ParamSpec('_FN')
 
-# TODO: when targeting only 3.10+ these protocol would no longer be needed, since
-# ParamSpec could be used together with Concatenate to use a simple Callable
-# to type the before and after functions. This approach was prototyped in
-# https://github.com/falconry/falcon/pull/2234
-class SyncBeforeFn(Protocol):
-    def __call__(
-        self,
-        req: wsgi.Request,
-        resp: wsgi.Response,
-        resource: Resource,
-        params: Dict[str, Any],
-        *args: Any,
-        **kwargs: Any,
-    ) -> None: ...
-
-
-class AsyncBeforeFn(Protocol):
-    def __call__(
-        self,
-        req: asgi.Request,
-        resp: asgi.Response,
-        resource: Resource,
-        params: Dict[str, Any],
-        *args: Any,
-        **kwargs: Any,
-    ) -> Awaitable[None]: ...
-
-
-BeforeFn = Union[SyncBeforeFn, AsyncBeforeFn]
-
-
-class SyncAfterFn(Protocol):
-    def __call__(
-        self,
-        req: wsgi.Request,
-        resp: wsgi.Response,
-        resource: Resource,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None: ...
-
-
-class AsyncAfterFn(Protocol):
-    def __call__(
-        self,
-        req: asgi.Request,
-        resp: asgi.Response,
-        resource: Resource,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Awaitable[None]: ...
-
-
-AfterFn = Union[SyncAfterFn, AsyncAfterFn]
 _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
 
 
@@ -109,7 +54,17 @@ _DECORABLE_METHOD_NAME = re.compile(
 )
 
 
-def before(action: BeforeFn, *args: Any, **kwargs: Any) -> Callable[[_R], _R]:
+def before(
+    action: Callable[
+        Concatenate[wsgi.Request, wsgi.Response, Resource, dict[str, Any], _FN], None
+    ]
+    | Callable[
+        Concatenate[asgi.Request, asgi.Response, Resource, dict[str, Any], _FN],
+        Awaitable[None],
+    ],
+    *args: _FN.args,
+    **kwargs: _FN.kwargs,
+) -> Callable[[_R], _R]:
     """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
@@ -184,7 +139,14 @@ def before(action: BeforeFn, *args: Any, **kwargs: Any) -> Callable[[_R], _R]:
     return _before
 
 
-def after(action: AfterFn, *args: Any, **kwargs: Any) -> Callable[[_R], _R]:
+def after(
+    action: Callable[Concatenate[wsgi.Request, wsgi.Response, Resource, _FN], None]
+    | Callable[
+        Concatenate[asgi.Request, asgi.Response, Resource, _FN], Awaitable[None]
+    ],
+    *args: _FN.args,
+    **kwargs: _FN.kwargs,
+) -> Callable[[_R], _R]:
     """Execute the given action function *after* the responder.
 
     Args:
@@ -249,7 +211,10 @@ def after(action: AfterFn, *args: Any, **kwargs: Any) -> Callable[[_R], _R]:
 
 
 def _wrap_with_after(
-    responder: Responder, action: AfterFn, action_args: Any, action_kwargs: Any
+    responder: Responder,
+    action: Callable[..., None | Awaitable[None]],
+    action_args: Any,
+    action_kwargs: Any,
 ) -> Responder:
     """Execute the given action function after a responder method.
 
@@ -266,7 +231,9 @@ def _wrap_with_after(
     do_after_responder: Responder
 
     if iscoroutinefunction(responder):
-        async_action = cast('AsyncAfterFn', _wrap_non_coroutine_unsafe(action))
+        async_action = cast(
+            Callable[..., Awaitable[None]], _wrap_non_coroutine_unsafe(action)
+        )
         async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
@@ -285,7 +252,7 @@ def _wrap_with_after(
 
         do_after_responder = cast('AsgiResponderMethod', do_after)
     else:
-        sync_action = cast('SyncAfterFn', action)
+        sync_action = cast(Callable[..., None], action)
         sync_responder = cast('ResponderMethod', responder)
 
         @wraps(sync_responder)
@@ -308,9 +275,9 @@ def _wrap_with_after(
 
 def _wrap_with_before(
     responder: Responder,
-    action: BeforeFn,
-    action_args: Tuple[Any, ...],
-    action_kwargs: Dict[str, Any],
+    action: Callable[..., None | Awaitable[None]],
+    action_args: tuple[Any, ...],
+    action_kwargs: dict[str, Any],
 ) -> Responder:
     """Execute the given action function before a responder method.
 
@@ -327,7 +294,9 @@ def _wrap_with_before(
     do_before_responder: Responder
 
     if iscoroutinefunction(responder):
-        async_action = cast('AsyncBeforeFn', _wrap_non_coroutine_unsafe(action))
+        async_action = cast(
+            Callable[..., Awaitable[None]], _wrap_non_coroutine_unsafe(action)
+        )
         async_responder = cast('AsgiResponderMethod', responder)
 
         @wraps(async_responder)
@@ -346,7 +315,7 @@ def _wrap_with_before(
 
         do_before_responder = cast('AsgiResponderMethod', do_before)
     else:
-        sync_action = cast('SyncBeforeFn', action)
+        sync_action = cast(Callable[..., None], action)
         sync_responder = cast('ResponderMethod', responder)
 
         @wraps(sync_responder)
@@ -368,7 +337,7 @@ def _wrap_with_before(
 
 
 def _merge_responder_args(
-    args: Tuple[Any, ...], kwargs: Dict[str, Any], argnames: List[str]
+    args: tuple[Any, ...], kwargs: dict[str, Any], argnames: list[str]
 ) -> None:
     """Merge responder args into kwargs.
 

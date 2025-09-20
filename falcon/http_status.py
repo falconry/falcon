@@ -15,7 +15,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from falcon.util import http_status_to_code
 
@@ -47,9 +47,9 @@ class HTTPStatus(Exception):
     """The HTTP status line or integer code for the status that this exception
     represents.
     """
-    headers: Optional[HeaderArg]
+    headers: HeaderArg | None
     """Extra headers to add to the response."""
-    text: Optional[str]
+    text: str | None
     """String representing response content.
     Falcon will encode this value as UTF-8 in the response.
     """
@@ -57,8 +57,8 @@ class HTTPStatus(Exception):
     def __init__(
         self,
         status: ResponseStatus,
-        headers: Optional[HeaderArg] = None,
-        text: Optional[str] = None,
+        headers: HeaderArg | None = None,
+        text: str | None = None,
     ) -> None:
         self.status = status
         self.headers = headers

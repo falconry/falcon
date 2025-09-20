@@ -206,7 +206,7 @@ class WrappedClassDefaultResponderResourceAsync:
 class WrappedClassResourceChild(WrappedClassResource):
     def on_head(self, req, resp):
         # Test passing no extra args
-        super(WrappedClassResourceChild, self).on_head(req, resp)
+        super().on_head(req, resp)
 
 
 class ClassResourceWithURIFields:
@@ -224,9 +224,7 @@ class ClassResourceWithURIFieldsAsync:
 class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
     def on_get(self, req, resp, field1, field2):
         # Test passing mixed args and kwargs
-        super(ClassResourceWithURIFieldsChild, self).on_get(
-            req, resp, field1, field2=field2
-        )
+        super().on_get(req, resp, field1, field2=field2)
 
 
 # NOTE(swistakm): we use both type of hooks (class and method)

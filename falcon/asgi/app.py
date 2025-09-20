@@ -17,24 +17,18 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable
+from collections.abc import Iterable
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
 import traceback
 from typing import (
     Any,
-    Awaitable,
     Callable,
     ClassVar,
-    Dict,
-    Iterable,
-    List,
-    Optional,
     overload,
-    Tuple,
-    Type,
     TYPE_CHECKING,
     TypeVar,
-    Union,
 )
 import warnings
 
@@ -49,6 +43,7 @@ from falcon._typing import AsgiResponderWsCallable
 from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import AsyncMiddleware
+from falcon._typing import Resource
 from falcon._typing import SinkPrefix
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
@@ -96,10 +91,13 @@ _BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 _TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
-_BE = TypeVar('_BE', bound=Exception)
+
+_ExcT = TypeVar('_ExcT', bound=Exception)
+_ReqT = TypeVar('_ReqT', bound=Request, contravariant=True)
+_RespT = TypeVar('_RespT', bound=Response, contravariant=True)
 
 
-class App(falcon.app.App):
+class App(falcon.app.App[_ReqT, _RespT]):
     '''The main entry point into a Falcon-based ASGI app.
 
     Each App instance provides a callable
@@ -354,12 +352,12 @@ class App(falcon.app.App):
         'ws_options',
     )
 
-    _error_handlers: Dict[Type[Exception], AsgiErrorHandler]  # type: ignore[assignment]
+    _error_handlers: dict[type[Exception], AsgiErrorHandler[_ReqT, _RespT]]  # type: ignore[assignment]
     _middleware: AsyncPreparedMiddlewareResult  # type: ignore[assignment]
     _middleware_ws: AsyncPreparedMiddlewareWsResult
-    _request_type: Type[Request]
-    _response_type: Type[Response]
-    _unprepared_middleware: List[AsyncMiddleware]  # type: ignore[assignment]
+    _request_type: type[_ReqT]
+    _response_type: type[_RespT]
+    _unprepared_middleware: list[AsyncMiddleware[_ReqT, _RespT]]  # type: ignore[assignment]
 
     ws_options: WebSocketOptions
     """A set of behavioral options related to WebSocket connections.
@@ -367,21 +365,83 @@ class App(falcon.app.App):
     See also: :class:`~.WebSocketOptions`.
     """
 
+    @overload
+    def __init__(
+        self: App[Request, Response],
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: None = None,
+        middleware: AsyncMiddleware[_ReqT, _RespT]
+        | Iterable[AsyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: App[_ReqT, Response],
+        media_type: str = ...,
+        request_type: type[_ReqT] | None = None,
+        response_type: None = None,
+        middleware: AsyncMiddleware[_ReqT, _RespT]
+        | Iterable[AsyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: App[Request, _RespT],
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: AsyncMiddleware[_ReqT, _RespT]
+        | Iterable[AsyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        media_type: str = ...,
+        request_type: type[_ReqT] | None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: AsyncMiddleware[_ReqT, _RespT]
+        | Iterable[AsyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
     def __init__(
         self,
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
-        request_type: Optional[Type[Request]] = None,
-        response_type: Optional[Type[Response]] = None,
-        middleware: Optional[Union[AsyncMiddleware, Iterable[AsyncMiddleware]]] = None,
-        router: Optional[routing.CompiledRouter] = None,
+        request_type: type[_ReqT] | None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: AsyncMiddleware[_ReqT, _RespT]
+        | Iterable[AsyncMiddleware[_ReqT, _RespT]]
+        | None = None,
+        router: routing.CompiledRouter | None = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
         sink_before_static_route: bool = True,
     ) -> None:
         super().__init__(
             media_type,
-            request_type or Request,
-            response_type or Response,
+            request_type or Request,  # type: ignore[arg-type]
+            response_type or Response,  # type: ignore[arg-type]
             middleware,  # type: ignore[arg-type]
             router,
             independent_middleware,
@@ -399,7 +459,7 @@ class App(falcon.app.App):
     @_wrap_asgi_coroutine_func
     async def __call__(  # type: ignore[override] # noqa: C901
         self,
-        scope: Dict[str, Any],
+        scope: dict[str, Any],
         receive: AsgiReceive,
         send: AsgiSend,
     ) -> None:
@@ -409,14 +469,14 @@ class App(falcon.app.App):
         # PERF(kgriffs): This should usually be present, so use a
         #   try..except
         try:
-            asgi_info: Dict[str, str] = scope['asgi']
+            asgi_info: dict[str, str] = scope['asgi']
         except KeyError:
             # NOTE(kgriffs): According to the ASGI spec, "2.0" is
             #   the default version.
             asgi_info = scope['asgi'] = {'version': '2.0'}
 
         try:
-            spec_version: Optional[str] = asgi_info['spec_version']
+            spec_version: str | None = asgi_info['spec_version']
         except KeyError:
             spec_version = None
 
@@ -461,8 +521,8 @@ class App(falcon.app.App):
         )
         resp = self._response_type(options=self.resp_options)
 
-        resource: Optional[object] = None
-        params: Dict[str, Any] = {}
+        resource: Resource | None = None
+        params: dict[str, Any] = {}
 
         dependent_mw_resp_stack: list = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
@@ -544,7 +604,7 @@ class App(falcon.app.App):
 
                 req_succeeded = False
 
-        data: Optional[bytes] = b''
+        data: bytes | None = b''
 
         try:
             # NOTE(vytas): It is only safe to inline Response.render_body()
@@ -596,7 +656,7 @@ class App(falcon.app.App):
             req_succeeded = False
 
         resp_status: int = resp.status_code
-        default_media_type: Optional[str] = self.resp_options.default_media_type
+        default_media_type: str | None = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             #
@@ -842,7 +902,22 @@ class App(falcon.app.App):
         if resp._registered_callbacks:
             self._schedule_callbacks(resp)
 
-    def add_route(self, uri_template: str, resource: object, **kwargs: Any) -> None:
+    def add_middleware(
+        self,
+        middleware: AsyncMiddleware[_ReqT, _RespT]  # type: ignore[override]
+        | Iterable[AsyncMiddleware[_ReqT, _RespT]],
+    ) -> None:
+        """Add one or more additional middleware components.
+
+        Arguments:
+            middleware: Either a single middleware component or an iterable
+                of components to add. The component(s) will be invoked, in
+                order, as if they had been appended to the original middleware
+                list passed to the class initializer.
+        """
+        super().add_middleware(middleware)  # type: ignore[arg-type]
+
+    def add_route(self, uri_template: str, resource: Resource, **kwargs: Any) -> None:
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
         #   will know to validate the responder methods to make sure they
         #   are async coroutines.
@@ -851,7 +926,9 @@ class App(falcon.app.App):
 
     add_route.__doc__ = falcon.app.App.add_route.__doc__  # NOTE: not really required
 
-    def add_sink(self, sink: AsgiSinkCallable, prefix: SinkPrefix = r'/') -> None:  # type: ignore[override]
+    def add_sink(  # type: ignore[override]
+        self, sink: AsgiSinkCallable[_ReqT, _RespT], prefix: SinkPrefix = r'/'
+    ) -> None:
         if not iscoroutinefunction(sink) and is_python_func(sink):
             if _should_wrap_non_coroutines():
                 sink = wrap_sync_to_async(sink)
@@ -868,21 +945,21 @@ class App(falcon.app.App):
     @overload  # type: ignore[override]
     def add_error_handler(
         self,
-        exception: Type[_BE],
-        handler: Callable[[Request, Response, _BE, Dict[str, Any]], Awaitable[None]],
+        exception: type[_ExcT],
+        handler: Callable[[_ReqT, _RespT, _ExcT, dict[str, Any]], Awaitable[None]],
     ) -> None: ...
 
     @overload
     def add_error_handler(
         self,
-        exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[AsgiErrorHandler] = None,
+        exception: type[Exception] | Iterable[type[Exception]],
+        handler: AsgiErrorHandler[_ReqT, _RespT] | None = None,
     ) -> None: ...
 
     def add_error_handler(  # type: ignore[misc]
         self,
-        exception: Union[Type[Exception], Iterable[Type[Exception]]],
-        handler: Optional[AsgiErrorHandler] = None,
+        exception: type[Exception] | Iterable[type[Exception]],
+        handler: AsgiErrorHandler[_ReqT, _RespT] | None = None,
     ) -> None:
         """Register a handler for one or more exception types.
 
@@ -1010,9 +1087,9 @@ class App(falcon.app.App):
                 'The handler must be an awaitable coroutine function in order '
                 'to be used safely with an ASGI app.'
             )
-        handler_callable: AsgiErrorHandler = handler
+        handler_callable: AsgiErrorHandler[_ReqT, _RespT] = handler
 
-        exception_tuple: Tuple[type[Exception], ...]
+        exception_tuple: tuple[type[Exception], ...]
         try:
             exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
@@ -1044,7 +1121,7 @@ class App(falcon.app.App):
                 loop.run_in_executor(None, cb)
 
     async def _call_lifespan_handlers(
-        self, ver: str, scope: Dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
     ) -> None:
         while True:
             event = await receive()
@@ -1053,7 +1130,7 @@ class App(falcon.app.App):
                 #   startup, as opposed to repeating them every request.
 
                 # NOTE(vytas): If missing, 'asgi' is populated in __call__.
-                asgi_info: Dict[str, str] = scope['asgi']
+                asgi_info: dict[str, str] = scope['asgi']
                 version = asgi_info.get('version', '2.0 (implicit)')
                 if not version.startswith('3.'):
                     await send(
@@ -1114,7 +1191,7 @@ class App(falcon.app.App):
                 return
 
     async def _handle_websocket(
-        self, ver: str, scope: Dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
     ) -> None:
         first_event = await receive()
         if first_event['type'] != EventType.WS_CONNECT:
@@ -1141,9 +1218,10 @@ class App(falcon.app.App):
             self.ws_options.default_close_reasons,
         )
 
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         request_mw, resource_mw = self._middleware_ws
+        resource: Resource | None
 
         try:
             for process_request_ws in request_mw:
@@ -1204,7 +1282,9 @@ class App(falcon.app.App):
                 raise
 
     def _prepare_middleware(  # type: ignore[override]
-        self, middleware: List[AsyncMiddleware], independent_middleware: bool = False
+        self,
+        middleware: list[AsyncMiddleware[_ReqT, _RespT]],
+        independent_middleware: bool = False,
     ) -> AsyncPreparedMiddlewareResult:
         self._middleware_ws = prepare_middleware_ws(middleware)
 
@@ -1216,11 +1296,11 @@ class App(falcon.app.App):
 
     async def _http_status_handler(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: _RespT | None,
         status: HTTPStatus,
-        params: Dict[str, Any],
-        ws: Optional[WebSocket] = None,
+        params: dict[str, Any],
+        ws: WebSocket | None = None,
     ) -> None:
         if resp:
             self._compose_status_response(req, resp, status)
@@ -1238,11 +1318,11 @@ class App(falcon.app.App):
 
     async def _http_error_handler(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: _RespT | None,
         error: HTTPError,
-        params: Dict[str, Any],
-        ws: Optional[WebSocket] = None,
+        params: dict[str, Any],
+        ws: WebSocket | None = None,
     ) -> None:
         if resp:
             self._compose_error_response(req, resp, error)
@@ -1260,11 +1340,11 @@ class App(falcon.app.App):
 
     async def _python_error_handler(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: _RespT | None,
         error: Exception,
-        params: Dict[str, Any],
-        ws: Optional[WebSocket] = None,
+        params: dict[str, Any],
+        ws: WebSocket | None = None,
     ) -> None:
         falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
@@ -1277,11 +1357,11 @@ class App(falcon.app.App):
 
     async def _ws_disconnected_error_handler(
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: _RespT | None,
         error: WebSocketDisconnected,
-        params: Dict[str, Any],
-        ws: Optional[WebSocket] = None,
+        params: dict[str, Any],
+        ws: WebSocket | None = None,
     ) -> None:
         assert resp is None
         assert ws is not None
@@ -1294,15 +1374,15 @@ class App(falcon.app.App):
 
         def _find_error_handler(  # type: ignore[override]
             self, ex: Exception
-        ) -> Optional[AsgiErrorHandler]: ...
+        ) -> AsgiErrorHandler[_ReqT, _RespT] | None: ...
 
     async def _handle_exception(  # type: ignore[override]
         self,
-        req: Request,
-        resp: Optional[Response],
+        req: _ReqT,
+        resp: _RespT | None,
         ex: Exception,
-        params: Dict[str, Any],
-        ws: Optional[WebSocket] = None,
+        params: dict[str, Any],
+        ws: WebSocket | None = None,
     ) -> bool:
         """Handle an exception raised from mw or a responder.
 

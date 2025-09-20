@@ -25,12 +25,12 @@ def test_custom_router_find_should_be_used(asgi, util):
     if asgi:
 
         async def resource(req, resp, **kwargs):
-            resp.text = '{{"uri_template": "{0}"}}'.format(req.uri_template)
+            resp.text = f'{{"uri_template": "{req.uri_template}"}}'
 
     else:
 
         def resource(req, resp, **kwargs):
-            resp.text = '{{"uri_template": "{0}"}}'.format(req.uri_template)
+            resp.text = f'{{"uri_template": "{req.uri_template}"}}'
 
     class CustomRouter:
         def __init__(self):

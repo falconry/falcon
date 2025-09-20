@@ -7,7 +7,7 @@ PyPy
 ----
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.8+ is supported as of PyPy v7.3.7.
+PyPy3.9+ is supported as of PyPy v7.3.10.
 
 .. code:: bash
 
@@ -23,7 +23,7 @@ CPython
 -------
 
 Falcon fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.8+.
+`CPython <https://www.python.org/downloads/>`__ 3.9+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
@@ -96,9 +96,8 @@ Compiling on Mac OS
 ^^^^^^^^^^^^^^^^^^^
 
 .. tip::
-    Pre-compiled Falcon wheels are available for macOS on both Intel and Apple
-    Silicon chips, so normally you should be fine with just
-    ``pip install falcon``.
+    Pre-compiled Falcon wheels are available for macOS on Apple Silicon chips,
+    so normally you should be fine with just ``pip install falcon``.
 
 Xcode Command Line Tools are required to compile Cython. Install them
 with this command:

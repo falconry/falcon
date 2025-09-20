@@ -7,12 +7,13 @@ import time
 
 import pytest
 
-try:
-    import requests
-except ImportError:
-    requests = None  # type: ignore
-
 from falcon import testing
+
+
+@pytest.fixture(scope='session')
+def requests():
+    return pytest.importorskip('requests')
+
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = '127.0.0.1'
@@ -34,7 +35,7 @@ def _cheroot_args(host, port):
         '-m',
         'cheroot',
         '--bind',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         # NOTE(vytas): In case a worker hangs for an unexpectedly long time
         #   while reading or processing request (the default value is 30).
         '--timeout',
@@ -54,7 +55,7 @@ def _gunicorn_args(host, port, extra_opts=()):
         '--access-logfile',
         '-',
         '--bind',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         # NOTE(vytas): Although rare, but Meinheld workers have been noticed to
         #   occasionally hang on shutdown.
         '--graceful-timeout',
@@ -108,7 +109,7 @@ def _uwsgi_args(host, port):
     return (
         'uwsgi',
         '--http',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         '--wsgi-file',
         '_wsgi_test_app.py',
     )
@@ -124,7 +125,7 @@ def _waitress_args(host, port):
         '-m',
         'waitress',
         '--listen',
-        '{}:{}'.format(host, port),
+        f'{host}:{port}',
         '_wsgi_test_app:app',
     )
 
@@ -150,21 +151,21 @@ def server_args(wsgi_server):
 
 
 @pytest.fixture
-def server_url(server_args):
+def server_url(server_args, requests):
     if sys.platform.startswith('win'):
         pytest.skip('WSGI server tests are currently unsupported on Windows')
 
     for attempt in range(3):
         server_port = testing.get_unused_port()
-        base_url = 'http://{}:{}'.format(_SERVER_HOST, server_port)
+        base_url = f'http://{_SERVER_HOST}:{server_port}'
 
         args = server_args(_SERVER_HOST, server_port)
-        print('Starting {}...'.format(server_args.__doc__))
+        print(f'Starting {server_args.__doc__}...')
         print(' '.join(args))
         try:
             server = subprocess.Popen(args, cwd=_HERE)
         except FileNotFoundError:
-            pytest.skip('{} executable is not installed'.format(args[0]))
+            pytest.skip(f'{args[0]} executable is not installed')
 
         # NOTE(vytas): give the app server some time to start.
         start_time = time.time()
@@ -207,24 +208,21 @@ def server_url(server_args):
         )
 
 
-@pytest.mark.skipif(
-    requests is None, reason='requests module is required for this test'
-)
 class TestWSGIServer:
-    def test_get(self, server_url):
+    def test_get(self, server_url, requests):
         resp = requests.get(server_url + '/hello', timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == 'Hello, World!\n'
         assert resp.headers.get('Content-Type') == 'text/plain; charset=utf-8'
         assert resp.headers.get('X-Falcon') == 'peregrine'
 
-    def test_get_deprecated(self, server_url):
+    def test_get_deprecated(self, server_url, requests):
         resp = requests.get(server_url + '/deprecated', timeout=_REQUEST_TIMEOUT)
 
         # Since it tries to use resp.add_link() we expect an unhandled error
         assert resp.status_code == 500
 
-    def test_post_multipart_form(self, server_url):
+    def test_post_multipart_form(self, server_url, requests):
         size = random.randint(8 * _SIZE_1_MB, 15 * _SIZE_1_MB)
         data = os.urandom(size)
         digest = hashlib.sha1(data).hexdigest()
@@ -248,7 +246,7 @@ class TestWSGIServer:
             },
         }
 
-    def test_static_file(self, server_url):
+    def test_static_file(self, server_url, requests):
         resp = requests.get(
             server_url + '/tests/test_wsgi_servers.py', timeout=_REQUEST_TIMEOUT
         )
@@ -283,7 +281,7 @@ class TestWSGIServer:
         ],
     )
     def test_static_file_byte_range(
-        self, byte_range, expected_head, wsgi_server, server_url
+        self, byte_range, expected_head, wsgi_server, server_url, requests
     ):
         if wsgi_server == 'meinheld':
             pytest.xfail(

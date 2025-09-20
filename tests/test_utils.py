@@ -26,10 +26,10 @@ from falcon.util import structures
 from falcon.util import uri
 from falcon.util.time import TimezoneGMT
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
 
 
 @pytest.fixture
@@ -248,33 +248,66 @@ class TestFalconUtils:
         assert uri.encode('%26') == '%2526'
         assert uri.decode(uri.encode('%26')) == '%26'
 
-    def test_uri_encode_double(self):
-        url = 'http://example.com/v1/fiz bit/messages'
-        expected = 'http://example.com/v1/fiz%20bit/messages'
+    @pytest.mark.parametrize(
+        'url,expected',
+        [
+            (
+                'http://example.com/v1/fiz bit/messages',
+                'http://example.com/v1/fiz%20bit/messages',
+            ),
+            (
+                'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true',
+                'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true',
+            ),
+            (
+                'http://example.com/v1/fiz%bit/mess%ages/%',
+                'http://example.com/v1/fiz%25bit/mess%25ages/%25',
+            ),
+            ('http://example.com/%%', 'http://example.com/%25%25'),
+            (
+                'http://something?redirect_uri=http%3A%2F%2Fsite',
+                'http://something?redirect_uri=http%3A%2F%2Fsite',
+            ),
+        ],
+    )
+    def test_uri_encode_double(self, url, expected):
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
-        url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        expected = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
+    @pytest.mark.parametrize(
+        'value,expected',
+        [
+            ('', ''),
+            ('%', '%25'),
+            ('fiz bit/fizzy', 'fiz%20bit%2Ffizzy'),
+            ('e\u00e7ho', 'e%C3%A7ho'),
+            ('key_%2', 'key_%252'),
+            ('%%', '%25%25'),
+            ('http%3A%2F%2Fsite', 'http%3A%2F%2Fsite'),
+        ],
+    )
+    def test_uri_encode_value_double(self, value, expected):
+        assert (
+            uri.encode_value_check_escaped(uri.encode_value_check_escaped(value))
+            == expected
+        )
 
-        url = 'http://example.com/v1/fiz%bit/mess%ages/%'
-        expected = 'http://example.com/v1/fiz%25bit/mess%25ages/%25'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
-
-        url = 'http://example.com/%%'
-        expected = 'http://example.com/%25%25'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
-
-        # NOTE(kgriffs): Specific example cited in GH issue
-        url = 'http://something?redirect_uri=http%3A%2F%2Fsite'
-        assert uri.encode_check_escaped(url) == url
-
+    def test_uri_encode_double_hexchars(self):
         hex_digits = 'abcdefABCDEF0123456789'
         for c1 in hex_digits:
             for c2 in hex_digits:
-                url = 'http://example.com/%' + c1 + c2
+                url = f'http://example.com/{c1}{c2}'
                 encoded = uri.encode_check_escaped(uri.encode_check_escaped(url))
                 assert encoded == url
+
+    def test_uri_encode_value_double_hexchars(self):
+        hex_digits = 'abcdefABCDEF0123456789'
+        for c1 in hex_digits:
+            for c2 in hex_digits:
+                value = f'example-%{c1}{c2}'
+                encoded = uri.encode_value_check_escaped(
+                    uri.encode_value_check_escaped(value)
+                )
+                assert encoded == value
 
     def test_uri_encode_value(self):
         assert uri.encode_value('abcd') == 'abcd'
@@ -826,7 +859,7 @@ class TestFalconTestingUtils:
 
         expected_content = ' '.join(filter(None, args))
 
-        expected_result = 'Result<{}>'.format(expected_content)
+        expected_result = f'Result<{expected_content}>'
 
         assert str(result) == expected_result
 
@@ -835,7 +868,7 @@ class TestFalconTestingUtils:
         header = [('Not-content-type', 'no!')]
         result = falcon.testing.Result([value], falcon.HTTP_200, header)
 
-        expected_result = 'Result<200 OK {}>'.format(value)
+        expected_result = f'Result<200 OK {value}>'
         assert str(result) == expected_result
 
     @pytest.mark.parametrize(
@@ -1205,8 +1238,9 @@ class TestFalconTestingUtils:
             MEDIA_URLENCODED,
         ],
     )
-    @pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-    def test_simulate_content_type_extra_handler(self, asgi, util, content_type):
+    def test_simulate_content_type_extra_handler(
+        self, asgi, util, content_type, msgpack
+    ):
         class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):
                 super().__init__()
@@ -1315,7 +1349,7 @@ class TestNoApiClass(testing.TestCase):
 
 class TestSetupApi(testing.TestCase):
     def setUp(self):
-        super(TestSetupApi, self).setUp()
+        super().setUp()
         with pytest.warns(UserWarning, match='API class will be removed in Falcon 5.0'):
             self.app = falcon.API()
         self.app.add_route('/', testing.SimpleTestResource(body='test'))
@@ -1490,7 +1524,7 @@ class TestContextType:
 
         assert repr(ctx) == type_name + "({'details': None})"
         assert str(ctx) == type_name + "({'details': None})"
-        assert '{}'.format(ctx) == type_name + "({'details': None})"
+        assert f'{ctx}' == type_name + "({'details': None})"
 
         with pytest.raises(TypeError):
             {ctx: ctx}

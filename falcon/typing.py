@@ -15,7 +15,8 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator, Dict, Optional, Protocol, TYPE_CHECKING
+from collections.abc import AsyncIterator
+from typing import Optional, Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from falcon.asgi import SSEvent
@@ -27,7 +28,7 @@ __all__ = (
     'SSEEmitter',
 )
 
-Headers = Dict[str, str]
+Headers = dict[str, str]
 """Headers dictionary returned by the framework.
 
 .. versionadded:: 4.0
@@ -41,7 +42,7 @@ class ReadableIO(Protocol):
     .. versionadded:: 4.0
     """
 
-    def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    def read(self, n: int | None = ..., /) -> bytes: ...
 
 
 # ASGI
@@ -51,7 +52,7 @@ class AsyncReadableIO(Protocol):
     .. versionadded:: 4.0
     """
 
-    async def read(self, n: Optional[int] = ..., /) -> bytes: ...
+    async def read(self, n: int | None = ..., /) -> bytes: ...
     def __aiter__(self) -> AsyncIterator[bytes]: ...
 
 

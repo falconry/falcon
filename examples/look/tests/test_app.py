@@ -55,7 +55,7 @@ def test_post_image(client, mock_store):
     )
 
     assert response.status == falcon.HTTP_CREATED
-    assert response.headers['location'] == '/images/{}'.format(file_name)
+    assert response.headers['location'] == f'/images/{file_name}'
     saver_call = mock_store.save.call_args
 
     # saver_call is a unittest.mock.call tuple. It's first element is a
@@ -112,7 +112,7 @@ def test_opening_image():
     assert file_reader.read() == fake_image_bytes
     os.remove(file_path)
 
-    with TestCase().assertRaises(IOError):
+    with TestCase().assertRaises(OSError):
         store.open('wrong_file_name_format')
 
 
