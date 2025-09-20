@@ -8,10 +8,10 @@ from falcon import media
 from falcon import testing
 import falcon.asgi
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
 
 
 def create_client(resource, handlers=None):
@@ -93,8 +93,7 @@ def test_non_ascii_json_serialization(document):
         ('application/x-msgpack'),
     ],
 )
-@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-def test_msgpack(media_type):
+def test_msgpack(media_type, msgpack):
     class TestResource:
         async def on_get(self, req, resp):
             resp.content_type = media_type
