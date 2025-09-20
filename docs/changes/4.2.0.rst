@@ -22,7 +22,7 @@ Changes to Supported Platforms
   (Note that 3.9 is completely unsupported for new development of Falcon apps,
   as type checking, building documentation, etc, are likely to fail outright.)
 
-- Pre-compiled wheels are longer provided for the macOS x86_64 (Intel) platform.
+- Pre-compiled wheels are no longer provided for the macOS x86_64 (Intel) platform.
   Falcon will continue to :ref:`install <install>` (from the pure Python wheel)
   and run on macOS Intel just fine.
   You can also build the binary from *sdist* yourself.
