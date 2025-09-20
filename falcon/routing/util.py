@@ -33,7 +33,9 @@ class SuffixedMethodNotFoundError(Exception):
         self.message = message
 
 
-def map_http_methods(resource: object, suffix: str | None = None, default_to_on_request: bool = False) -> MethodDict:
+def map_http_methods(
+    resource: object, suffix: str | None = None, default_to_on_request: bool = False
+) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
@@ -92,7 +94,7 @@ def map_http_methods(resource: object, suffix: str | None = None, default_to_on_
 def set_default_responders(
     method_map: MethodDict,
     asgi: bool = False,
-    default_responder: Optional[Union[ResponderCallable, AsgiResponderCallable]] = None,
+    default_responder: ResponderCallable | AsgiResponderCallable | None = None,
 ) -> None:
     """Map HTTP methods not explicitly defined on a resource to default responders.
 
