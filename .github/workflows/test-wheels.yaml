@@ -7,10 +7,6 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): Remove once the PoC passes on a PR.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   test-emulated:
@@ -29,7 +25,7 @@ jobs:
             os: ubuntu-latest
           - build: "cp314-musllinux_x86_64"
             os: ubuntu-latest
-          - build: "cp39-macosx_arm64"
+          - build: "cp313-macosx_arm64"
             os: macos-15
           - build: "cp313-win_amd64"
             os: windows-latest
