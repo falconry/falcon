@@ -975,12 +975,12 @@ class CompiledRouterOptions:
 
         class Resource:
             def on_request(self, req: Request, resp: Response) -> None:
-                if req.method == "GET":
-                    ... # handle get
-                elif req.method == "POST":
+                if req.method == 'GET':
+                    ... # handle GET
+                elif req.method == 'POST':
                     ... # handle post
                 else:
-                    raise HTTPMethodNotAllowed
+                    raise HTTPMethodNotAllowed(['GET', 'POST'])
 
         app = falcon.App()
         app.router_options.default_to_on_request = True
@@ -1008,9 +1008,9 @@ class CompiledRouterOptions:
 
     Note:
         In order for this option to take effect, it must be enabled before
-        calling :meth:`add_route()`.
+        calling :meth:`.CompiledRouter.add_route`.
 
-    .. versionadded:: 4.1
+    .. versionadded:: 4.2
     """
 
     __slots__ = ('converters', 'default_to_on_request')
