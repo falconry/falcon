@@ -200,76 +200,8 @@ all uploaded images to JPEG with the popular
 We can now implement a basic async image store. Save the following code as
 ``store.py`` next to ``app.py`` and ``config.py``:
 
-.. code:: python
-
-    import asyncio
-    import datetime
-    import io
-
-    import aiofiles
-    import PIL.Image
-
-    import falcon
-
-
-    class Image:
-        def __init__(self, config, image_id, size):
-            self._config = config
-
-            self.image_id = image_id
-            self.size = size
-            self.modified = datetime.datetime.now(datetime.timezone.utc)
-
-        @property
-        def path(self):
-            return self._config.storage_path / self.image_id
-
-        @property
-        def uri(self):
-            return f'/images/{self.image_id}.jpeg'
-
-        def serialize(self):
-            return {
-                'id': self.image_id,
-                'image': self.uri,
-                'modified': falcon.dt_to_http(self.modified),
-                'size': self.size,
-            }
-
-
-    class Store:
-        def __init__(self, config):
-            self._config = config
-            self._images = {}
-
-        def _load_from_bytes(self, data):
-            return PIL.Image.open(io.BytesIO(data))
-
-        def _convert(self, image):
-            rgb_image = image.convert('RGB')
-
-            converted = io.BytesIO()
-            rgb_image.save(converted, 'JPEG')
-            return converted.getvalue()
-
-        def get(self, image_id):
-            return self._images.get(image_id)
-
-        def list_images(self):
-            return sorted(self._images.values(), key=lambda item: item.modified)
-
-        async def save(self, image_id, data):
-            loop = asyncio.get_running_loop()
-            image = await loop.run_in_executor(None, self._load_from_bytes, data)
-            converted = await loop.run_in_executor(None, self._convert, image)
-
-            path = self._config.storage_path / image_id
-            async with aiofiles.open(path, 'wb') as output:
-                await output.write(converted)
-
-            stored = Image(self._config, image_id, image.size)
-            self._images[image_id] = stored
-            return stored
+.. literalinclude:: ../../examples/asgilook/asgilook/store/store_01.py
+    :language: python
 
 Here we store data using ``aiofiles``, and run ``Pillow`` image transformation
 functions in the default :class:`~concurrent.futures.ThreadPoolExecutor`,
@@ -296,35 +228,10 @@ methods must be awaitable coroutines. Let's see how this works by
 implementing a resource to represent both a single image and a collection
 of images. Place the code below in a file named ``images.py``:
 
-.. code:: python
-
-    import aiofiles
-
-    import falcon
-
-
-    class Images:
-        def __init__(self, config, store):
-            self._config = config
-            self._store = store
-
-        async def on_get(self, req, resp):
-            resp.media = [image.serialize() for image in self._store.list_images()]
-
-        async def on_get_image(self, req, resp, image_id):
-            # NOTE: image_id: UUID is converted back to a string identifier.
-            image = self._store.get(str(image_id))
-            resp.stream = await aiofiles.open(image.path, 'rb')
-            resp.content_type = falcon.MEDIA_JPEG
-
-        async def on_post(self, req, resp):
-            data = await req.stream.read()
-            image_id = str(self._config.uuid_generator())
-            image = await self._store.save(image_id, data)
-
-            resp.location = image.uri
-            resp.media = image.serialize()
-            resp.status = falcon.HTTP_201
+.. literalinclude:: ../../examples/asgilook/asgilook/images.py
+    :start-at: import aiofiles
+    :end-before: class Thumbnails:
+    :language: python
 
 This module is an example of a Falcon "resource" class, as described in
 :ref:`routing`. Falcon uses resource-based routing to encourage a RESTful
@@ -531,7 +438,7 @@ purposes.
 Let's add a new method ``Store.make_thumbnail()`` to perform scaling on the
 fly:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
     :start-at: async def make_thumbnail(self, image, size):
     :end-at: return await loop.run_in_executor(None, self._resize, data, size)
     :language: python
@@ -541,7 +448,7 @@ We'll also add an internal helper to run the ``Pillow`` thumbnail operation that
 is offloaded to a threadpool executor, again, in hoping that Pillow can release
 the GIL for some operations:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
     :start-at: def _resize(self, data, size):
     :end-at: return resized.getvalue()
     :language: python
@@ -549,7 +456,7 @@ the GIL for some operations:
 
 The ``store.Image`` class can be extended to also return URIs to thumbnails:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
     :start-at: def thumbnails(self):
     :end-before: class Store:
     :language: python
@@ -565,7 +472,7 @@ You may wish to experiment with this resolution distribution.
 
 After updating ``store.py``, the module should now look like this:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
     :language: python
 
 Furthermore, it is practical to impose a minimum resolution, as any potential
