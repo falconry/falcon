@@ -1943,6 +1943,7 @@ class Request:
         *,
         required: Literal[True],
         store: StoreArg = ...,
+        delimiter: str | None = None,
         default: list[str] | None = ...,
     ) -> list[str]: ...
 
@@ -1953,6 +1954,7 @@ class Request:
         transform: Callable[[str], _T],
         required: Literal[True],
         store: StoreArg = ...,
+        delimiter: str | None = None,
         default: list[_T] | None = ...,
     ) -> list[_T]: ...
 
@@ -1963,6 +1965,7 @@ class Request:
         transform: None = ...,
         required: bool = ...,
         store: StoreArg = ...,
+        delimiter: str | None = None,
         *,
         default: list[str],
     ) -> list[str]: ...
@@ -1974,6 +1977,7 @@ class Request:
         transform: Callable[[str], _T],
         required: bool = ...,
         store: StoreArg = ...,
+        delimiter: str | None = None,
         *,
         default: list[_T],
     ) -> list[_T]: ...
@@ -1985,6 +1989,7 @@ class Request:
         transform: None = ...,
         required: bool = ...,
         store: StoreArg = ...,
+        delimiter: str | None = None,
         default: list[str] | None = ...,
     ) -> list[str] | None: ...
 
@@ -1995,6 +2000,7 @@ class Request:
         transform: Callable[[str], _T],
         required: bool = ...,
         store: StoreArg = ...,
+        delimiter: str | None = None,
         default: list[_T] | None = ...,
     ) -> list[_T] | None: ...
 
@@ -2004,6 +2010,7 @@ class Request:
         transform: Callable[[str], _T] | None = None,
         required: bool = False,
         store: StoreArg = None,
+        delimiter: str | None = None,
         default: list[_T] | None = None,
     ) -> list[_T] | list[str] | None:
         """Return the value of a query string parameter as a list.
@@ -2021,6 +2028,10 @@ class Request:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
 
         Keyword Args:
+            delimiter(str): An optional character for splitting a parameter
+                value into a list. Useful for styles like ``spaceDelimited``
+                or ``pipeDelimited``. If not provided, default list parsing
+                applies.
             transform (callable): An optional transform function
                 that takes as input each element in the list as a ``str`` and
                 outputs a transformed element for inclusion in the list that
@@ -2065,6 +2076,16 @@ class Request:
         #       know how likely params are to be specified by clients.
         if name in params:
             items = params[name]
+
+            # If a delimiter is specified AND the param is a single string, split it.
+            if delimiter and isinstance(items, str):
+                if delimiter == ' ':
+                    items = items.split(' ')
+                elif delimiter == '|':
+                    items = items.split('|')
+                else:
+                    # For commas and others, also strip whitespace for convenience.
+                    items = [v.strip() for v in items.split(delimiter)]
 
             # NOTE(warsaw): When a key appears multiple times in the request
             # query, it will already be represented internally as a list.

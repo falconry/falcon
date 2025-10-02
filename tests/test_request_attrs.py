@@ -1012,6 +1012,35 @@ class TestRequestAttributes:
 
         assert _parse_etags(header_value) is None
 
+    @pytest.mark.parametrize('asgi', [False, True])
+    def test_get_param_as_list_space_delimited(self, asgi):
+        req = create_req(asgi, query_string='names=Luke%20Leia%20Han')
+        result = req.get_param_as_list('names', delimiter=' ')
+        assert result == ['Luke', 'Leia', 'Han']
+
+    @pytest.mark.parametrize('asgi', [False, True])
+    def test_get_param_as_list_pipe_delimited(self, asgi):
+        req = create_req(asgi, query_string='names=Luke|Leia|Han')
+        result = req.get_param_as_list('names', delimiter='|')
+        assert result == ['Luke', 'Leia', 'Han']
+
+    @pytest.mark.parametrize('asgi', [False, True])
+    def test_get_param_as_list_custom_delimiter(self, asgi):
+        req = create_req(asgi, query_string='names=Luke;Leia;Han')
+        result = req.get_param_as_list('names', delimiter=';')
+        assert result == ['Luke', 'Leia', 'Han']
+
+    @pytest.mark.parametrize('asgi', [False, True])
+    def test_get_param_as_list_no_delimiter_still_defaults_to_comma(self, asgi):
+        options = falcon.RequestOptions()
+        options.auto_parse_qs_csv = True
+
+        req = create_req(asgi, query_string='names=Luke,Leia,Han', options=options)
+
+        result = req.get_param_as_list('names', delimiter=None)
+
+        assert result == ['Luke', 'Leia', 'Han']
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
