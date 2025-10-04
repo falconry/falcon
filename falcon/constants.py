@@ -5,6 +5,7 @@ import sys
 
 __all__ = (
     'HTTP_METHODS',
+    'HTTP_DRAFT_METHODS',
     'WEBDAV_METHODS',
     'COMBINED_METHODS',
     'DEFAULT_MEDIA_TYPE',
@@ -52,24 +53,17 @@ HTTP_METHODS = [
     'CONNECT',
     'DELETE',
     'GET',
-    # NOTE:
-    # The "QUERY" method is an extension used to represent a safe,
-    # idempotent retrieval-like operation (similar to GET) while still
-    # allowing an optional request body. The semantics align with the
-    # discussions in OpenAPI 3.2 (which permits explicit method names)
-    # and the IETF draft "Safe Methods with Body" describing the
-    # possibility of bodies with otherwise safe methods.
-    #
-    # References:
-    # - OpenAPI 3.2: https://spec.openapis.org/oas/v3.2.0
-    # - IETF draft: "HTTP Methods with Body" (Nottingham) — datatracker link may change
-    'QUERY',
     'HEAD',
     'OPTIONS',
     'PATCH',
     'POST',
     'PUT',
     'TRACE',
+]
+
+# HTTP methods from various HTTP WG drafts
+HTTP_DRAFT_METHODS = [
+    'QUERY',
 ]
 
 # RFC 2518 and 4918 methods
@@ -102,7 +96,11 @@ _META_METHODS = [
 ]
 
 COMBINED_METHODS = (
-    HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS + _META_METHODS
+    HTTP_METHODS
+    + WEBDAV_METHODS
+    + HTTP_DRAFT_METHODS
+    + FALCON_CUSTOM_HTTP_METHODS
+    + _META_METHODS
 )
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume

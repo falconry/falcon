@@ -149,16 +149,17 @@ class TestQueryParams:
     def test_query_method_with_body(self, client, resource):
         """Ensure a QUERY request with an x-www-form-urlencoded body is parsed
         when form parsing is enabled (WSGI). ASGI does not support
-        RequestOptions.auto_parse_form_urlencoded, so skip in that case.
+        the synchronous Request.get_media() API, so skip in ASGI which uses
+        the async variant.
         """
         if client.app._ASGI:
-            pytest.skip(
-                'The ASGI implementation does not support '
-                'RequestOptions.auto_parse_form_urlencoded'
-            )
+            pytest.skip('ASGI requests use the async get_media API')
 
         client.app.add_route('/', resource)
-
+        # Ensure we use the media API for this test so the body is
+        # deserialized by Request.get_media() instead of being
+        # auto-parsed into params (which would consume the stream).
+        client.app.req_options.auto_parse_form_urlencoded = False
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         body = 'a=1&b=two+words'
 
@@ -167,8 +168,11 @@ class TestQueryParams:
 
         req = resource.captured_req
 
-        assert req.get_param('a') == '1'
-        assert req.get_param('b') == 'two words'
+        # Use the public API to deserialize the request body
+        media = req.get_media()
+
+        assert media['a'] == '1'
+        assert media['b'] == 'two words'
 
     def test_percent_encoded(self, simulate_request, client, resource):
         query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
