@@ -38,6 +38,11 @@ class Resource(testing.SimpleTestResource):
     def on_options(self, req, resp, **kwargs):
         pass
 
+    @falcon.before(testing.capture_responder_args)
+    @falcon.before(testing.set_resp_defaults)
+    def on_query(self, req, resp, **kwargs):
+        pass
+
 
 @pytest.fixture
 def resource():
@@ -140,6 +145,34 @@ class TestQueryParams:
 
         assert store['marker'] == 'deadbeef'
         assert store['limit'] == '25'
+
+    def test_query_method_with_body(self, client, resource):
+        """Ensure a QUERY request with an x-www-form-urlencoded body is parsed
+        when form parsing is enabled (WSGI). ASGI does not support
+        the synchronous Request.get_media() API, so skip in ASGI which uses
+        the async variant.
+        """
+        if client.app._ASGI:
+            pytest.skip('ASGI requests use the async get_media API')
+
+        client.app.add_route('/', resource)
+        # Ensure we use the media API for this test so the body is
+        # deserialized by Request.get_media() instead of being
+        # auto-parsed into params (which would consume the stream).
+        client.app.req_options.auto_parse_form_urlencoded = False
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        body = 'a=1&b=two+words'
+
+        # Send a QUERY request with a form body
+        client.simulate_request(path='/', method='QUERY', body=body, headers=headers)
+
+        req = resource.captured_req
+
+        # Use the public API to deserialize the request body
+        media = req.get_media()
+
+        assert media['a'] == '1'
+        assert media['b'] == 'two words'
 
     def test_percent_encoded(self, simulate_request, client, resource):
         query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
@@ -985,7 +1018,7 @@ class TestQueryParams:
 
 class TestPostQueryParams:
     @pytest.mark.parametrize(
-        'http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS')
+        'http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'QUERY')
     )
     def test_http_methods_body_expected(self, client, resource, http_method):
         client.app.add_route('/', resource)

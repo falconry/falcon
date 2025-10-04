@@ -1,0 +1,4 @@
+
+Falcon now supports the retrieval-like ``QUERY`` HTTP method. It is safe,
+idempotent, and may include an optional request body. Handlers can be
+implemented using ``on_query(req, resp, …)`` on resources.
