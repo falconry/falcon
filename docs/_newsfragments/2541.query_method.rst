@@ -1,0 +1,14 @@
+```restructuredtext
+QUERY method
+------------
+
+Falcon now supports a retrieval-like HTTP method named ``QUERY``. It is
+treated as a safe, idempotent method for routing while still permitting an
+optional request body. Resources can implement an ``on_query(self, req, resp,
+...)`` responder to handle this method the same way they implement other
+responders (for example, ``on_get``).
+
+See also the evolving discussion around safe methods with bodies (OpenAPI
+3.2 and the IETF draft "HTTP Methods with Body").
+
+```

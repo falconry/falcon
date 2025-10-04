@@ -146,6 +146,30 @@ class TestQueryParams:
         assert store['marker'] == 'deadbeef'
         assert store['limit'] == '25'
 
+    def test_query_method_with_body(self, client, resource):
+        """Ensure a QUERY request with an x-www-form-urlencoded body is parsed
+        when form parsing is enabled (WSGI). ASGI does not support
+        RequestOptions.auto_parse_form_urlencoded, so skip in that case.
+        """
+        if client.app._ASGI:
+            pytest.skip(
+                'The ASGI implementation does not support '
+                'RequestOptions.auto_parse_form_urlencoded'
+            )
+
+        client.app.add_route('/', resource)
+
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        body = 'a=1&b=two+words'
+
+        # Send a QUERY request with a form body
+        client.simulate_request(path='/', method='QUERY', body=body, headers=headers)
+
+        req = resource.captured_req
+
+        assert req.get_param('a') == '1'
+        assert req.get_param('b') == 'two words'
+
     def test_percent_encoded(self, simulate_request, client, resource):
         query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
         client.app.add_route('/', resource)

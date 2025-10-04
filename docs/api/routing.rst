@@ -169,21 +169,6 @@ For ASGI apps, the responder must be a coroutine function::
         pass
 
 
-QUERY method
-------------
-
-Falcon also supports a retrieval-like method named ``QUERY`` which is treated
-as a safe, idempotent method for routing purposes while still permitting an
-optional request body. Resources that wish to handle this method should
-implement an ``on_query(self, req, resp, ...)`` responder the same way they
-would implement other method responders (for example, ``on_get``).
-
-This approach aligns with the evolving discussion around safe methods that
-may carry a request body. See also:
-
-- OpenAPI 3.2: https://spec.openapis.org/oas/v3.2.0
-- IETF draft "HTTP Methods with Body":
-    https://datatracker.ietf.org/doc/html/draft-nottingham-http-methods-with-body
 
 
 The :class:`~.falcon.Request` object represents the incoming HTTP
