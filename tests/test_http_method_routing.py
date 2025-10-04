@@ -96,12 +96,6 @@ class ThingsResource:
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
-    def on_query(self, req, resp, id, sid):
-        self.called = True
-
-        self.req, self.resp = req, resp
-        resp.status = falcon.HTTP_204
-
     def on_put(self, req, resp, id, sid):
         self.called = True
 
