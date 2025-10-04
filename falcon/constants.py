@@ -62,7 +62,7 @@ HTTP_METHODS = [
     #
     # References:
     # - OpenAPI 3.2: https://spec.openapis.org/oas/v3.2.0
-    # - IETF draft: https://datatracker.ietf.org/doc/html/draft-nottingham-http-methods-with-body
+    # - IETF draft: "HTTP Methods with Body" (Nottingham) — datatracker link may change
     'QUERY',
     'HEAD',
     'OPTIONS',
