@@ -38,6 +38,11 @@ class Resource(testing.SimpleTestResource):
     def on_options(self, req, resp, **kwargs):
         pass
 
+    @falcon.before(testing.capture_responder_args)
+    @falcon.before(testing.set_resp_defaults)
+    def on_query(self, req, resp, **kwargs):
+        pass
+
 
 @pytest.fixture
 def resource():
@@ -985,7 +990,7 @@ class TestQueryParams:
 
 class TestPostQueryParams:
     @pytest.mark.parametrize(
-        'http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS')
+        'http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'QUERY')
     )
     def test_http_methods_body_expected(self, client, resource, http_method):
         client.app.add_route('/', resource)

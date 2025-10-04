@@ -52,6 +52,18 @@ HTTP_METHODS = [
     'CONNECT',
     'DELETE',
     'GET',
+    # NOTE:
+    # The "QUERY" method is an extension used to represent a safe,
+    # idempotent retrieval-like operation (similar to GET) while still
+    # allowing an optional request body. The semantics align with the
+    # discussions in OpenAPI 3.2 (which permits explicit method names)
+    # and the IETF draft "Safe Methods with Body" describing the
+    # possibility of bodies with otherwise safe methods.
+    #
+    # References:
+    # - OpenAPI 3.2: https://spec.openapis.org/oas/v3.2.0
+    # - IETF draft: https://datatracker.ietf.org/doc/html/draft-nottingham-http-methods-with-body
+    'QUERY',
     'HEAD',
     'OPTIONS',
     'PATCH',

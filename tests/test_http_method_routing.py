@@ -96,6 +96,12 @@ class ThingsResource:
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
+    def on_query(self, req, resp, id, sid):
+        self.called = True
+
+        self.req, self.resp = req, resp
+        resp.status = falcon.HTTP_204
+
     def on_put(self, req, resp, id, sid):
         self.called = True
 
@@ -163,6 +169,11 @@ class MiscResource:
         # been overridden.
         resp.set_header('allow', 'GET')
 
+    @capture
+    def on_query(self, req, resp):
+        """Handler for the custom QUERY method used in tests."""
+        resp.status = falcon.HTTP_204
+
 
 class GetWithFaultyPutResource:
     def __init__(self):
@@ -215,7 +226,7 @@ class TestHttpMethodRouting:
 
     def test_misc(self, client, resource_misc):
         client.app.add_route('/misc', resource_misc)
-        for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
+        for method in ['GET', 'HEAD', 'PUT', 'PATCH', 'QUERY']:
             resource_misc.called = False
             client.simulate_request(path='/misc', method=method)
             assert resource_misc.called
