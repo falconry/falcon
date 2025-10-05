@@ -25,13 +25,14 @@ framework itself. These functions are hoisted into the front-door
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import datetime
 import functools
 import http
 import inspect
 import os.path
 import re
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable
 import unicodedata
 
 from falcon import status_codes
@@ -106,7 +107,7 @@ else:
     _lru_cache_for_simple_logic = functools.lru_cache
 
 
-def is_python_func(func: Union[Callable, Any]) -> bool:
+def is_python_func(func: Callable | Any) -> bool:
     """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
@@ -220,7 +221,7 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
 
 def to_query_str(
-    params: Optional[Mapping[str, Any]],
+    params: Mapping[str, Any] | None,
     comma_delimited_lists: bool = True,
     prefix: bool = True,
 ) -> str:
@@ -281,7 +282,7 @@ def to_query_str(
     return query_str[:-1]
 
 
-def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[..., Any]]:
+def get_bound_method(obj: object, method_name: str) -> None | Callable[..., Any]:
     """Get a bound method of the given object by name.
 
     Args:
@@ -308,7 +309,7 @@ def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[...,
     return method
 
 
-def get_argnames(func: Callable[..., Any]) -> List[str]:
+def get_argnames(func: Callable[..., Any]) -> list[str]:
     """Introspect the arguments of a callable.
 
     Args:
@@ -337,7 +338,21 @@ def get_argnames(func: Callable[..., Any]) -> List[str]:
     return args
 
 
-def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
+@functools.lru_cache
+def _has_arg_name_cached(func: Callable[..., Any], name: str) -> bool:
+    return name in get_argnames(func)
+
+
+def _has_arg_name(func: Callable[..., Any], name: str) -> bool:
+    try:
+        return _has_arg_name_cached(func, name)
+    except TypeError:
+        # NOTE(vytas): Most probably the exception was thrown by the LRU cache
+        #   indicating that the func object was unhashable.
+        return name in get_argnames(func)
+
+
+def secure_filename(filename: str, max_length: int | None = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -403,7 +418,7 @@ def secure_filename(filename: str, max_length: Optional[int] = None) -> str:
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def http_status_to_code(status: Union[http.HTTPStatus, int, bytes, str]) -> int:
+def http_status_to_code(status: http.HTTPStatus | int | bytes | str) -> int:
     """Normalize an HTTP status to an integer code.
 
     This function takes a member of :class:`http.HTTPStatus`, an HTTP status
@@ -441,7 +456,7 @@ def http_status_to_code(status: Union[http.HTTPStatus, int, bytes, str]) -> int:
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
+def code_to_http_status(status: int | http.HTTPStatus | bytes | str) -> str:
     """Normalize an HTTP status to an HTTP status line string.
 
     This function takes a member of :class:`http.HTTPStatus`, an ``int`` status
@@ -488,7 +503,7 @@ def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
-def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
+def _encode_items_to_latin1(data: dict[str, str]) -> list[tuple[bytes, bytes]]:
     """Decode all key/values of a dict to Latin-1.
 
     Args:

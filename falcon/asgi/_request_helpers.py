@@ -13,7 +13,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from falcon.asgi import Request
@@ -33,7 +33,7 @@ def _header_property(header_name: str) -> Any:
 
     header_bytes = header_name.lower().encode()
 
-    def fget(self: Request) -> Optional[str]:
+    def fget(self: Request) -> str | None:
         try:
             # NOTE(vytas): Supporting ISO-8859-1 for historical reasons as per
             #   RFC 7230, Section 3.2.4; and to strive for maximum

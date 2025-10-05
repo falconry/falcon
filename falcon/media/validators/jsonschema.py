@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import wraps
 from inspect import iscoroutinefunction
-from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 import falcon
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     import falcon as wsgi
     from falcon import asgi
 
-Schema = Optional[Dict[str, Any]]
+Schema = Optional[dict[str, Any]]
 ResponderMethod = Callable[..., Any]
 
 

@@ -31,7 +31,6 @@ Request
 
 .. autoclass:: falcon.Request
     :members:
-    :exclude-members: media, context_type
 
 
 .. autoclass:: falcon.Forwarded
@@ -45,4 +44,4 @@ Response
 
 .. autoclass:: falcon.Response
     :members:
-    :exclude-members: context_type, add_link
+    :exclude-members: add_link

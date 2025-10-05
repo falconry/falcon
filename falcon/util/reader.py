@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import functools
 import io
-from typing import Callable, IO, List, Optional
+from typing import Callable, IO
 
 from falcon.errors import DelimiterError
 
@@ -33,7 +33,7 @@ class BufferedReader:
         self,
         read: Callable[[int], bytes],
         max_stream_len: int,
-        chunk_size: Optional[int] = None,
+        chunk_size: int | None = None,
     ):
         self._read_func = read
         self._chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
@@ -109,7 +109,7 @@ class BufferedReader:
 
         return self._buffer[self._buffer_pos : self._buffer_pos + size]
 
-    def _normalize_size(self, size: Optional[int]) -> int:
+    def _normalize_size(self, size: int | None) -> int:
         # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t result
         #   cdef Py_ssize_t max_size
@@ -120,7 +120,7 @@ class BufferedReader:
             return max_size
         return size
 
-    def read(self, size: Optional[int] = -1) -> bytes:
+    def read(self, size: int | None = -1) -> bytes:
         return self._read(self._normalize_size(size))
 
     def _read(self, size: int) -> bytes:
@@ -179,12 +179,12 @@ class BufferedReader:
     def _finalize_read_until(
         self,
         size: int,
-        backlog: List[bytes],
+        backlog: list[bytes],
         have_bytes: int,
         consume_bytes: int,
-        delimiter: Optional[bytes] = None,
+        delimiter: bytes | None = None,
         delimiter_pos: int = -1,
-        next_chunk: Optional[bytes] = None,
+        next_chunk: bytes | None = None,
         next_chunk_len: int = 0,
     ) -> bytes:
         if delimiter_pos < 0 and delimiter is not None:
@@ -235,7 +235,7 @@ class BufferedReader:
         #   cdef Py_ssize_t consume_bytes
         #   cdef Py_ssize_t offset
 
-        result: List[bytes] = []
+        result: list[bytes] = []
         have_bytes = 0
         delimiter_len_1 = len(delimiter) - 1
         delimiter_pos = -1
@@ -333,7 +333,7 @@ class BufferedReader:
             self._buffer_pos = 0
             self._buffer = next_chunk
 
-    def pipe(self, destination: Optional[IO] = None) -> None:
+    def pipe(self, destination: IO | None = None) -> None:
         while True:
             chunk = self.read(self._chunk_size)
             if not chunk:
@@ -345,9 +345,9 @@ class BufferedReader:
     def pipe_until(
         self,
         delimiter: bytes,
-        destination: Optional[IO] = None,
+        destination: IO | None = None,
         consume_delimiter: bool = False,
-        _size: Optional[int] = None,
+        _size: int | None = None,
     ) -> None:
         # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t remaining
@@ -385,7 +385,7 @@ class BufferedReader:
             return result + self.read(1)
         return result
 
-    def readlines(self, hint: int = -1) -> List[bytes]:
+    def readlines(self, hint: int = -1) -> list[bytes]:
         # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t read
         #   cdef list result = []

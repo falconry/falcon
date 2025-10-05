@@ -21,12 +21,12 @@ jobs:
           - build: "cp314-manylinux_s390x"
             os: ubuntu-latest
             emulation: true
-          - build: "cp38-manylinux_x86_64"
+          - build: "cp39-manylinux_x86_64"
             os: ubuntu-latest
           - build: "cp314-musllinux_x86_64"
             os: ubuntu-latest
           - build: "cp313-macosx_arm64"
-            os: macos-14
+            os: macos-15
           - build: "cp313-win_amd64"
             os: windows-latest
 

@@ -20,7 +20,7 @@ This module provides decorators to mark functions and classes as deprecated.
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 import warnings
 
 __all__ = (
@@ -44,7 +44,7 @@ class DeprecatedWarning(UserWarning):
 
 
 def deprecated(
-    instructions: str, is_property: bool = False, method_name: Optional[str] = None
+    instructions: str, is_property: bool = False, method_name: str | None = None
 ) -> Callable[[Callable[..., Any]], Any]:
     """Flag a method as deprecated.
 

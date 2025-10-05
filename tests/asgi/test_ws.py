@@ -1,5 +1,6 @@
 import asyncio
 from collections import deque
+from contextlib import nullcontext
 import functools
 import os
 
@@ -13,6 +14,7 @@ from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
 from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
+from falcon.util.deprecation import DeprecatedWarning
 
 try:
     import cbor2
@@ -1457,3 +1459,64 @@ async def test_max_receive_queue_sizes(conductor, max_receive_queue):
                 received.append(await ws.receive_text())
 
     assert len(received) == 6
+
+
+@pytest.mark.parametrize('sink', ['no-ws-arg', 'with-ws-arg', 'unhashable-obj'])
+async def test_sinks(conductor, sink):
+    async def say_hello(req, resp_or_ws, name):
+        greeting = f'Hello, {name}!'
+        if req.is_websocket:
+            await resp_or_ws.accept()
+            await resp_or_ws.send_text(greeting)
+
+            await resp_or_ws.receive_text()  # Receive /bye
+        else:
+            resp_or_ws.content_type = falcon.MEDIA_TEXT
+            resp_or_ws.text = greeting
+
+    async def sink_no_ws_arg(req, resp_or_ws, name):
+        assert resp_or_ws is not None
+        await say_hello(req, resp_or_ws, name)
+
+    async def sink_with_ws_arg(req, resp, name, ws=None):
+        if ws:
+            assert resp is None
+            await say_hello(req, ws, name)
+        else:
+            assert resp is not None
+            await say_hello(req, resp, name)
+
+    class Unhashable(list):
+        async def __call__(self, req, resp, name, ws=None):
+            await sink_with_ws_arg(req, resp, name, ws=ws)
+
+    sinks = {
+        'no-ws-arg': sink_no_ws_arg,
+        'with-ws-arg': sink_with_ws_arg,
+        'unhashable-obj': Unhashable(),
+    }
+    conductor.app.add_sink(sinks[sink], r'/ws/(?P<name>\w+)')
+
+    async with conductor as c:
+        resp = await c.simulate_get('/ws/World')
+        assert resp.status_code == 200
+        assert resp.text == 'Hello, World!'
+
+        expectation = (
+            pytest.warns(DeprecatedWarning) if sink == 'no-ws-arg' else nullcontext()
+        )
+        with expectation:
+            async with c.simulate_ws('/ws/World') as ws:
+                assert await ws.receive_text() == 'Hello, World!'
+                await ws.send_text('/bye')
+
+
+async def test_static_route(conductor, tmp_path):
+    conductor.app.add_static_route('/static', tmp_path)
+
+    async with conductor as c:
+        with pytest.raises(falcon.WebSocketDisconnected) as exc_info:
+            async with c.simulate_ws('/static/report.json'):
+                pass
+
+        assert exc_info.value.code == 3400

@@ -90,11 +90,31 @@ framework would expect an ``on_websocket()`` responder similar to this:
 
 .. code:: python
 
-    async def on_websocket(self, req: Request, ws: WebSocket, account_id: str):
+    async def on_websocket(self, req: Request, ws: WebSocket, account_id: str) -> None:
         pass
 
-If no route matches the path requested in the WebSocket handshake, control then
-passes to a default responder that simply raises an instance of
+Just like other HTTP requests, WebSocket connections can also be handled
+dynamically by :meth:`sinks <falcon.asgi.App.add_sink>`. In order to receive
+a :class:`~falcon.asgi.WebSocket` connection object, the sink method ought to
+define a `ws` keyword argument:
+
+.. code:: python
+
+    async def sink(
+        req: Request,
+        resp: Response | None,
+        ws: WebSocket | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if ws is not None:
+            # WebSocket connection (resp is None)
+            ...
+        else:
+            # Ordinary HTTP request (ws is None)
+            ...
+
+If no route or sink matches the path requested in the WebSocket handshake,
+control then passes to a default responder that simply raises an instance of
 :class:`~.HTTPRouteNotFound`. By default, this error will be rendered as a 403
 response with a 3404 close code. This behavior can be modified by adding a
 custom error handler (see also: :meth:`~falcon.asgi.App.add_error_handler`).

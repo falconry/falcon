@@ -9,7 +9,7 @@ from falcon.util.deprecation import DeprecatedWarning
 
 def capture_error(req, resp, ex, params):
     resp.status = falcon.HTTP_723
-    resp.text = 'error: %s' % str(ex)
+    resp.text = f'error: {str(ex)}'
 
 
 async def capture_error_async(*args):

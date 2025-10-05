@@ -1,0 +1,42 @@
+Changelog for Falcon 4.2.0
+==========================
+
+Summary
+-------
+
+Falcon 4.2 is in development. The progress is tracked via the
+`Version 4.2 milestone <https://github.com/falconry/falcon/milestone/44>`__
+on GitHub.
+
+
+Changes to Supported Platforms
+------------------------------
+
+- The end-of-life Python 3.8 is no longer supported.
+  (`#2527 <https://github.com/falconry/falcon/issues/2527>`__)
+
+- Although the Falcon 4.x series is only guaranteed to support Python 3.10+,
+  this release still supports the end-of-life Python 3.9 at runtime using the
+  pure Python wheel.
+
+  (Note that 3.9 is completely unsupported for new development of Falcon apps,
+  as type checking, building documentation, etc, are likely to fail outright.)
+
+- Pre-compiled wheels are no longer provided for the macOS x86_64 (Intel) platform.
+  Falcon will continue to :ref:`install <install>` (from the pure Python wheel)
+  and run on macOS Intel just fine.
+  You can also build the binary from *sdist* yourself.
+  (`#2536 <https://github.com/falconry/falcon/issues/2536>`__)
+
+.. towncrier release notes start
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all of our talented and stylish contributors for this release!
+
+- `CaselIT <https://github.com/CaselIT>`__
+- `kemingy <https://github.com/kemingy>`__
+- `sonephyo <https://github.com/sonephyo>`__
+- `vytas7 <https://github.com/vytas7>`__
+- `x612skm <https://github.com/x612skm>`__

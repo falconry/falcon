@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 import json
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Any, Callable
 
 from falcon import errors
 from falcon import http_error
@@ -157,12 +157,12 @@ class JSONHandler(BaseHandler):
 
     def __init__(
         self,
-        dumps: Optional[Callable[[Any], Union[str, bytes]]] = None,
-        loads: Optional[Callable[[str], Any]] = None,
+        dumps: Callable[[Any], str | bytes] | None = None,
+        loads: Callable[[str], Any] | None = None,
     ) -> None:
         self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self._loads = loads or json.loads
-        self._deserialization_errors: Tuple[Type[Exception], ...] = (ValueError,)
+        self._deserialization_errors: tuple[type[Exception], ...] = (ValueError,)
 
         # PERF(kgriffs): Test dumps once up front so we can set the
         #     proper serialize implementation.
@@ -201,37 +201,33 @@ class JSONHandler(BaseHandler):
     def deserialize(
         self,
         stream: ReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> Any:
         return self._deserialize(stream.read())
 
     async def deserialize_async(
         self,
         stream: AsyncReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> Any:
         return self._deserialize(await stream.read())
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def _serialize_s(self, media: Any, content_type: Optional[str] = None) -> bytes:
+    def _serialize_s(self, media: Any, content_type: str | None = None) -> bytes:
         return self._dumps(media).encode()  # type: ignore[union-attr]
 
-    async def _serialize_async_s(
-        self, media: Any, content_type: Optional[str]
-    ) -> bytes:
+    async def _serialize_async_s(self, media: Any, content_type: str | None) -> bytes:
         return self._dumps(media).encode()  # type: ignore[union-attr]
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def _serialize_b(self, media: Any, content_type: Optional[str] = None) -> bytes:
+    def _serialize_b(self, media: Any, content_type: str | None = None) -> bytes:
         return self._dumps(media)  # type: ignore[return-value]
 
-    async def _serialize_async_b(
-        self, media: Any, content_type: Optional[str]
-    ) -> bytes:
+    async def _serialize_async_b(self, media: Any, content_type: str | None) -> bytes:
         return self._dumps(media)  # type: ignore[return-value]
 
 
@@ -295,8 +291,8 @@ class JSONHandlerWS(TextBaseHandlerWS):
 
     def __init__(
         self,
-        dumps: Optional[Callable[[Any], str]] = None,
-        loads: Optional[Callable[[str], Any]] = None,
+        dumps: Callable[[Any], str] | None = None,
+        loads: Callable[[str], Any] | None = None,
     ) -> None:
         self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self._loads = loads or json.loads

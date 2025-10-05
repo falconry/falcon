@@ -20,17 +20,11 @@ from collections import UserDict
 from inspect import iscoroutinefunction
 import keyword
 import re
+from re import Pattern
 from threading import Lock
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
-    Optional,
-    Pattern,
-    Set,
-    Tuple,
-    Type,
     TYPE_CHECKING,
     Union,
 )
@@ -105,7 +99,7 @@ class CompiledRouter:
 
     def __init__(self) -> None:
         self._ast: _CxParent = _CxParent()
-        self._converters: List[converters.BaseConverter] = []
+        self._converters: list[converters.BaseConverter] = []
         self._finder_src: str = ''
 
         self._options = CompiledRouterOptions()
@@ -114,9 +108,9 @@ class CompiledRouter:
         # here to reduce lookup time.
         self._converter_map = self._options.converters.data
 
-        self._patterns: List[Pattern] = []
-        self._return_values: List[CompiledRouterNode] = []
-        self._roots: List[CompiledRouterNode] = []
+        self._patterns: list[Pattern] = []
+        self._return_values: list[CompiledRouterNode] = []
+        self._roots: list[CompiledRouterNode] = []
 
         # NOTE(caselit): set _find to the delayed compile method to ensure that
         # compile is called when the router is first used
@@ -223,11 +217,11 @@ class CompiledRouter:
 
         path = uri_template.lstrip('/').split('/')
 
-        used_names: Set[str] = set()
+        used_names: set[str] = set()
         for segment in path:
             self._validate_template_segment(segment, used_names)
 
-        def find_cmp_converter(node: CompiledRouterNode) -> Optional[Tuple[str, str]]:
+        def find_cmp_converter(node: CompiledRouterNode) -> tuple[str, str] | None:
             value = [
                 (field, converter)
                 for field, converter, _ in node.var_converter_map
@@ -240,7 +234,7 @@ class CompiledRouter:
             else:
                 return None
 
-        def insert(nodes: List[CompiledRouterNode], path_index: int = 0) -> None:
+        def insert(nodes: list[CompiledRouterNode], path_index: int = 0) -> None:
             for node in nodes:
                 segment = path[path_index]
                 if node.matches(segment):
@@ -308,8 +302,10 @@ class CompiledRouter:
     # NOTE(caselit): keep Request as string otherwise sphinx complains that it resolves
     # to multiple classes, since the symbol is imported only for type check.
     def find(
-        self, uri: str, req: Optional['Request'] = None
-    ) -> Optional[Tuple[object, MethodDict, Dict[str, Any], Optional[str]]]:
+        self,
+        uri: str,
+        req: 'Request' | None = None,  # noqa: UP037
+    ) -> tuple[object, MethodDict, dict[str, Any], str | None] | None:
         """Search for a route that matches the given partial URI.
 
         Args:
@@ -328,8 +324,8 @@ class CompiledRouter:
         """
 
         path = uri.lstrip('/').split('/')
-        params: Dict[str, Any] = {}
-        node: Optional[CompiledRouterNode] = self._find(
+        params: dict[str, Any] = {}
+        node: CompiledRouterNode | None = self._find(
             path, self._return_values, self._patterns, self._converters, params
         )
 
@@ -377,7 +373,7 @@ class CompiledRouter:
                 msg = msg.format(responder)
                 raise TypeError(msg)
 
-    def _validate_template_segment(self, segment: str, used_names: Set[str]) -> None:
+    def _validate_template_segment(self, segment: str, used_names: set[str]) -> None:
         """Validate a single path segment of a URI template.
 
         1. Ensure field names are valid Python identifiers, since they
@@ -431,11 +427,11 @@ class CompiledRouter:
 
     def _generate_ast(  # noqa: C901
         self,
-        nodes: List[CompiledRouterNode],
+        nodes: list[CompiledRouterNode],
         parent: _CxParent,
-        return_values: List[CompiledRouterNode],
-        patterns: List[Pattern],
-        params_stack: List[_CxElement],
+        return_values: list[CompiledRouterNode],
+        patterns: list[Pattern],
+        params_stack: list[_CxElement],
         level: int = 0,
         fast_return: bool = True,
     ) -> None:
@@ -612,7 +608,7 @@ class CompiledRouter:
         self,
         parent: _CxParent,
         node: CompiledRouterNode,
-        params_stack: List[_CxElement],
+        params_stack: list[_CxElement],
     ) -> _CxParent:
         # NOTE(kgriffs): Unroll the converter loop into
         # a series of nested "if" constructs.
@@ -683,7 +679,7 @@ class CompiledRouter:
         return scope['find']
 
     def _instantiate_converter(
-        self, klass: type, argstr: Optional[str] = None
+        self, klass: type, argstr: str | None = None
     ) -> converters.BaseConverter:
         if argstr is None:
             return klass()
@@ -694,7 +690,7 @@ class CompiledRouter:
 
     def _compile_and_find(
         self,
-        path: List[str],
+        path: list[str],
         _return_values: Any,
         _patterns: Any,
         _converters: Any,
@@ -737,11 +733,11 @@ class CompiledRouterNode:
     def __init__(
         self,
         raw_segment: str,
-        method_map: Optional[MethodDict] = None,
-        resource: Optional[object] = None,
-        uri_template: Optional[str] = None,
+        method_map: MethodDict | None = None,
+        resource: object | None = None,
+        uri_template: str | None = None,
     ) -> None:
-        self.children: List[CompiledRouterNode] = []
+        self.children: list[CompiledRouterNode] = []
 
         self.raw_segment = raw_segment
         self.method_map = method_map
@@ -754,9 +750,9 @@ class CompiledRouterNode:
 
         # TODO(kgriffs): Rename these since the docs talk about "fields"
         # or "field expressions", not "vars" or "variables".
-        self.var_name: Optional[str] = None
-        self.var_pattern: Optional[Pattern] = None
-        self.var_converter_map: List[Tuple[str, str, str]] = []
+        self.var_name: str | None = None
+        self.var_pattern: Pattern | None = None
+        self.var_converter_map: list[tuple[str, str, str]] = []
 
         # NOTE(kgriffs): CompiledRouter.add_route validates field names,
         # so here we can just assume they are OK and use the simple
@@ -893,9 +889,9 @@ class CompiledRouterNode:
 class ConverterDict(UserDict):
     """A dict-like class for storing field converters."""
 
-    data: Dict[str, Type[converters.BaseConverter]]
+    data: dict[str, type[converters.BaseConverter]]
 
-    def __setitem__(self, name: str, converter: Type[converters.BaseConverter]) -> None:
+    def __setitem__(self, name: str, converter: type[converters.BaseConverter]) -> None:
         self._validate(name)
         UserDict.__setitem__(self, name, converter)
 
@@ -971,7 +967,7 @@ class CompiledRouterOptions:
 
 class _CxParent:
     def __init__(self) -> None:
-        self._children: List[_CxElement] = []
+        self._children: list[_CxElement] = []
 
     def append_child(self, construct: _CxElement) -> None:
         self._children.append(construct)

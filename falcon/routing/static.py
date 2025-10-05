@@ -8,7 +8,8 @@ import io
 import os
 from pathlib import Path
 import re
-from typing import Any, ClassVar, IO, Optional, Pattern, Tuple, TYPE_CHECKING, Union
+from re import Pattern
+from typing import Any, ClassVar, IO, TYPE_CHECKING
 
 import falcon
 from falcon.typing import ReadableIO
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from falcon import Response
 
 
-def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_result]:
+def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result]:
     """Open a file for a static file request and read file stat.
 
     Args:
@@ -27,11 +28,11 @@ def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_
     Returns:
         tuple: Tuple of (BufferedReader, stat_result).
     """
-    fh: Optional[io.BufferedReader] = None
+    fh: io.BufferedReader | None = None
     try:
-        fh = io.open(file_path, 'rb')
+        fh = io.open(file_path, 'rb')  # noqa: UP020
         st = os.fstat(fh.fileno())
-    except IOError:
+    except OSError:
         if fh is not None:
             fh.close()
         raise falcon.HTTPNotFound()
@@ -39,8 +40,8 @@ def _open_file(file_path: Union[str, Path]) -> Tuple[io.BufferedReader, os.stat_
 
 
 def _set_range(
-    fh: io.BufferedReader, st: os.stat_result, req_range: Optional[Tuple[int, int]]
-) -> Tuple[ReadableIO, int, Optional[Tuple[int, int, int]]]:
+    fh: io.BufferedReader, st: os.stat_result, req_range: tuple[int, int] | None
+) -> tuple[ReadableIO, int, tuple[int, int, int] | None]:
     """Process file handle for a ranged request.
 
     Args:
@@ -127,7 +128,7 @@ class _BoundedFile:
         self.close = fh.close
         self.remaining = length
 
-    def read(self, size: Optional[int] = -1) -> bytes:
+    def read(self, size: int | None = -1) -> bytes:
         """Read the underlying file object, within the specified bounds."""
         if size is None or size < 0:
             size = self.remaining
@@ -175,7 +176,7 @@ class StaticRoute:
     )
 
     # NOTE(vytas): Match the behavior of the underlying os.path.normpath.
-    _DISALLOWED_NORMALIZED_PREFIXES: ClassVar[Tuple[str, ...]] = (
+    _DISALLOWED_NORMALIZED_PREFIXES: ClassVar[tuple[str, ...]] = (
         '..' + os.path.sep,
         os.path.sep,
     )
@@ -187,9 +188,9 @@ class StaticRoute:
     def __init__(
         self,
         prefix: str,
-        directory: Union[str, Path],
+        directory: str | Path,
         downloadable: bool = False,
-        fallback_filename: Optional[str] = None,
+        fallback_filename: str | None = None,
     ) -> None:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
@@ -295,7 +296,12 @@ class StaticRoute:
                 fh.close()
                 raise falcon.HTTPNotFound()
 
-            resp.set_stream(stream, length)
+        req_range = req.range if req.range_unit == 'bytes' else None
+        try:
+            stream, length, content_range = _set_range(fh, st, req_range)
+        except OSError:
+            fh.close()
+            raise falcon.HTTPNotFound()
 
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
@@ -313,7 +319,16 @@ class StaticRoute:
 class StaticRouteAsync(StaticRoute):
     """Subclass of StaticRoute with modifications to support ASGI apps."""
 
-    async def __call__(self, req: asgi.Request, resp: asgi.Response, **kw: Any) -> None:  # type: ignore[override]
+    async def __call__(  # type: ignore[override]
+        self,
+        req: asgi.Request,
+        resp: asgi.Response,
+        ws: asgi.WebSocket | None = None,
+        **kw: Any,
+    ) -> None:
+        if ws is not None:
+            raise falcon.HTTPBadRequest()
+
         super().__call__(req, resp, **kw)
         if resp.stream is not None:  # None when in an option request
             # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking

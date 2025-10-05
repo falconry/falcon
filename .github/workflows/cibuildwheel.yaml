@@ -77,9 +77,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: cibw-sdist
+          name: cibw-sdist
           path: dist
-          merge-multiple: true
 
       - name: Check collected artifacts
         run: |
@@ -109,9 +108,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: cibw-sdist
+          name: cibw-sdist
           path: dist
-          merge-multiple: true
 
       # NOTE(vytas): Normally, invoking pypi-publish more than once in the
       #   same job is not considered supported, however, the two steps below
@@ -145,10 +143,8 @@ jobs:
           - name: manylinux_s390x
             os: ubuntu-latest
             emulation: true
-          - name: macosx_x86_64
-            os: macos-13
           - name: macosx_arm64
-            os: macos-14
+            os: macos-15
           - name: win_amd64
             os: windows-latest
         python:

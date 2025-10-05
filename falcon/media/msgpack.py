@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, Protocol
+from typing import Any, Callable, Protocol
 
 from falcon import errors
 from falcon.media.base import BaseHandler
@@ -59,23 +59,23 @@ class MessagePackHandler(BaseHandler):
     def deserialize(
         self,
         stream: ReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> Any:
         return self._deserialize(stream.read())
 
     async def deserialize_async(
         self,
         stream: AsyncReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> Any:
         return self._deserialize(await stream.read())
 
-    def serialize(self, media: Any, content_type: Optional[str]) -> bytes:
+    def serialize(self, media: Any, content_type: str | None) -> bytes:
         return self._pack(media)
 
-    async def serialize_async(self, media: Any, content_type: Optional[str]) -> bytes:
+    async def serialize_async(self, media: Any, content_type: str | None) -> bytes:
         return self._pack(media)
 
 
