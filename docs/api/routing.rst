@@ -168,9 +168,6 @@ For ASGI apps, the responder must be a coroutine function::
     async def on_post(self, req, resp):
         pass
 
-
-
-
 The :class:`~.falcon.Request` object represents the incoming HTTP
 request. It exposes properties and methods for examining headers,
 query string parameters, and other metadata associated with
