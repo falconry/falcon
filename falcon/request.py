@@ -2345,7 +2345,7 @@ class Request:
         """Retrieve a query parameter as a dictionary.
 
         Supports OpenAPI's deep object style (`param[key]=value`)
-        and list-based key/value pairs (e.g., `param=a,b,c,d`).
+        and list-based key/value pairs (e.g., `param=k1,v1,k2,v2`).
 
         Args:
             name (str): Parameter name, case-sensitive (e.g, 'sort')
