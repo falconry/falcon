@@ -25,7 +25,8 @@ If an item doesn't apply to your pull request, **check it anyway** to make it ap
     - [ ] Updated all relevant supporting documentation files under `docs/`.
     - [ ] A copyright notice is included at the top of any new modules (using your own name or the name of your organization).
     - [ ] Changed/added classes/methods/functions have appropriate `versionadded`, `versionchanged`, or `deprecated` [directives](http://www.sphinx-doc.org/en/stable/usage/restructuredtext/directives.html?highlight=versionadded#directive-versionadded).
-- [ ] Changes (and possible deprecations) have [towncrier](https://towncrier.readthedocs.io/en/latest/tutorial.html#creating-news-fragments) news fragments under `docs/_newsfragments/`, with the file name format `{issue_number}.{fragment_type}.rst`. (Run `towncrier --draft` to ensure it renders correctly.)
+- [ ] Changes (and possible deprecations) have [towncrier news fragments](https://falcon.readthedocs.io/en/stable/community/contributing.html#changelog) under `docs/_newsfragments/`, with the file name format `{issue_number}.{fragment_type}.rst`. (Run `tox -e towncrier`, and inspect `docs/_build/html/changes/` in the browser to ensure it renders correctly.)
+- [ ] LLM output, if any, has been carefully reviewed and tested by a human developer. (See also: [Use of LLMs ("AI")](https://falcon.readthedocs.io/en/latest/community/contributing.html#use-of-llms-ai).)
 
 If you have *any* questions to *any* of the points above, just **submit and ask**! This checklist is here to *help* you, not to deter you from contributing!
 
