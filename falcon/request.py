@@ -2409,7 +2409,7 @@ class Request:
 
             else:
                 if len(values_list) % 2 != 0:
-                    msg = 'Invalid parameter format'
+                    msg = 'Invalid parameter format, list elements must be even'
                     raise errors.HTTPInvalidParam(msg, name)
                 output = dict(zip(values_list[::2], values_list[1::2]))
 
