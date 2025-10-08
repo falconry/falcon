@@ -731,11 +731,13 @@ class Request(request.Request):
                     decoded_query_string.encode('utf-8')
                 )
             else:
-                # Create an async-compatible stream from the decoded query string
+                # For handlers without sync deserializer, use the sync
+                # deserialize method since the query string is already in
+                # memory as a string
                 from io import BytesIO
 
                 query_stream = BytesIO(decoded_query_string.encode('utf-8'))
-                self._query_string_media = await handler.deserialize_async(
+                self._query_string_media = handler.deserialize(
                     query_stream,
                     media_type,
                     len(decoded_query_string.encode('utf-8')),
