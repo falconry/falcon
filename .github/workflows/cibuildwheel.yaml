@@ -143,10 +143,8 @@ jobs:
           - name: manylinux_s390x
             os: ubuntu-latest
             emulation: true
-          - name: macosx_x86_64
-            os: macos-13
           - name: macosx_arm64
-            os: macos-14
+            os: macos-15
           - name: win_amd64
             os: windows-latest
         python:

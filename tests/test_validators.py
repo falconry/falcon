@@ -6,10 +6,11 @@ import falcon
 from falcon import testing
 from falcon.media import validators
 
-try:
-    import jsonschema
-except ImportError:
-    jsonschema = None  # type: ignore
+
+@pytest.fixture(scope='session')
+def jsonschema():
+    return pytest.importorskip('jsonschema')
+
 
 _VALID_MEDIA = {'message': 'something'}
 _INVALID_MEDIA = {}  # type: typing.Dict[str, str]
@@ -24,11 +25,6 @@ _TEST_SCHEMA = {
     },
     'required': ['message'],
 }
-
-
-skip_missing_dep = pytest.mark.skipif(
-    jsonschema is None, reason='jsonschema dependency not found'
-)
 
 
 class Resource:
@@ -117,39 +113,34 @@ def call_method(asgi, method_name, *args):
     return getattr(resource, method_name)(*args)
 
 
-@skip_missing_dep
-def test_req_schema_validation_success(asgi):
+def test_req_schema_validation_success(asgi, jsonschema):
     data = MockResp()
     assert call_method(asgi, 'request_validated', MockReq(asgi), data) is data
 
 
-@skip_missing_dep
 @pytest.mark.parametrize(
     'exception_cls', [falcon.HTTPBadRequest, falcon.MediaValidationError]
 )
-def test_req_schema_validation_failure(asgi, exception_cls):
+def test_req_schema_validation_failure(asgi, exception_cls, jsonschema):
     with pytest.raises(exception_cls) as excinfo:
         call_method(asgi, 'request_validated', MockReq(asgi, False), None)
 
     assert excinfo.value.description == "'message' is a required property"
 
 
-@skip_missing_dep
-def test_resp_schema_validation_success(asgi):
+def test_resp_schema_validation_success(asgi, jsonschema):
     data = MockResp()
     assert call_method(asgi, 'response_validated', MockReq(asgi), data) is data
 
 
-@skip_missing_dep
-def test_resp_schema_validation_failure(asgi):
+def test_resp_schema_validation_failure(asgi, jsonschema):
     with pytest.raises(falcon.HTTPInternalServerError) as excinfo:
         call_method(asgi, 'response_validated', MockReq(asgi), MockResp(False))
 
     assert excinfo.value.title == 'Response data failed validation'
 
 
-@skip_missing_dep
-def test_both_schemas_validation_success(asgi, util):
+def test_both_schemas_validation_success(asgi, util, jsonschema):
     req = MockReq(asgi)
     resp = MockResp()
 
@@ -166,8 +157,7 @@ def test_both_schemas_validation_success(asgi, util):
     assert result.json == resp.media
 
 
-@skip_missing_dep
-def test_both_schemas_validation_failure(asgi, util):
+def test_both_schemas_validation_failure(asgi, util, jsonschema):
     bad_resp = MockResp(False)
 
     with pytest.raises(falcon.HTTPInternalServerError) as excinfo:
