@@ -104,8 +104,6 @@ class Request:
         'uri_template',
         '_media',
         '_media_error',
-        '_query_string_media',
-        '_query_string_media_error',
         'is_websocket',
     )
     _cookies: dict[str, list[str]] | None = None
@@ -1178,8 +1176,6 @@ class Request:
             data = req.get_query_string_as_media('application/json')
             # data == {'numbers': [1, 2]}
 
-        The result is cached and returned in subsequent calls.
-
         See also :ref:`media` for more information regarding media handling.
 
         Note:
@@ -1188,12 +1184,6 @@ class Request:
             return the value returned by the handler or propagate the exception
             raised by it. To instead return a different value in case of an
             exception by the handler, specify the argument ``default_when_empty``.
-
-        Warning:
-            The deserialized object is cached the first time this method is
-            called. Follow-up calls will retrieve the cached version,
-            regardless of the ``media_type`` or ``default_when_empty``
-            arguments passed.
 
         Args:
             media_type: Media type to use for deserialization
@@ -1205,8 +1195,7 @@ class Request:
             default_when_empty: Fallback value to return when there is no
                 query string and the media handler raises an error. By default,
                 Falcon uses the value returned by the media handler or
-                propagates the raised exception, if any. This value is not
-                cached, and will be used only for the current call.
+                propagates the raised exception, if any.
 
         Returns:
             object: The deserialized media representation of the query string.
@@ -1215,15 +1204,6 @@ class Request:
             https://spec.openapis.org/oas/latest.html#parameter-object-examples
 
         """
-        if self._query_string_media is not _UNSET:
-            return self._query_string_media
-        if self._query_string_media_error is not None:
-            if default_when_empty is not _UNSET and isinstance(
-                self._query_string_media_error, errors.MediaNotFoundError
-            ):
-                return default_when_empty
-            raise self._query_string_media_error
-
         if media_type is None:
             media_type = self.options.default_media_type
 
@@ -1238,19 +1218,13 @@ class Request:
         query_stream = BytesIO(decoded_query_string.encode('utf-8'))
 
         try:
-            self._query_string_media = handler.deserialize(
+            return handler.deserialize(
                 query_stream, media_type, len(decoded_query_string.encode('utf-8'))
             )
-        except errors.MediaNotFoundError as err:
-            self._query_string_media_error = err
+        except errors.MediaNotFoundError:
             if default_when_empty is not _UNSET:
                 return default_when_empty
             raise
-        except Exception as err:
-            self._query_string_media_error = err
-            raise
-
-        return self._query_string_media
 
     # ------------------------------------------------------------------------
     # Methods

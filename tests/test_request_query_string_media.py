@@ -63,24 +63,6 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'numbers': [1, 2], 'flag': None}
 
-    def test_cached_result(self, asgi, client):
-        """Test that the result is cached across multiple calls."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
-
-        json_data = '{"cached": true}'
-        query_string = quote(json_data, safe='')
-
-        client.simulate_get('/test', query_string=query_string)
-        first_result = resource.captured_media
-
-        # Call again - should get cached result
-        client.simulate_get('/test', query_string=query_string)
-        second_result = resource.captured_media
-
-        assert first_result == second_result
-        assert first_result == {'cached': True}
-
     def test_empty_query_string(self, asgi, client):
         """Test behavior with empty query string."""
 
@@ -319,66 +301,6 @@ class TestQueryStringAsMedia:
 
         # Should get the actual data, not the default
         assert resource.captured_media == {'actual': 'data'}
-
-    def test_cache_prevents_reprocessing(self, asgi, client):
-        """Test that cache prevents multiple calls to deserializer."""
-
-        call_count = {'value': 0}
-
-        class CountingHandler:
-            def __init__(self):
-                self.exhaust_stream = False
-
-            def deserialize(self, stream, content_type, content_length):
-                call_count['value'] += 1
-                data = stream.read().decode('utf-8')
-                import json
-
-                return json.loads(data)
-
-        class CountingHandlerAsync(CountingHandler):
-            async def deserialize_async(self, stream, content_type, content_length):
-                call_count['value'] += 1
-                data = (
-                    await stream.read()
-                    if hasattr(stream.read, '__call__')
-                    else stream.read()
-                )
-                if isinstance(data, bytes):
-                    data = data.decode('utf-8')
-                import json
-
-                return json.loads(data)
-
-        class ResourceMultipleCalls:
-            def on_get(self, req, resp):
-                # Call three times
-                self.first = req.get_query_string_as_media('application/json')
-                self.second = req.get_query_string_as_media('application/json')
-                self.third = req.get_query_string_as_media('application/json')
-
-        class ResourceMultipleCallsAsync:
-            async def on_get(self, req, resp):
-                # Call three times
-                self.first = await req.get_query_string_as_media('application/json')
-                self.second = await req.get_query_string_as_media('application/json')
-                self.third = await req.get_query_string_as_media('application/json')
-
-        resource = ResourceMultipleCallsAsync() if asgi else ResourceMultipleCalls()
-        handler = CountingHandlerAsync() if asgi else CountingHandler()
-
-        client.app.req_options.media_handlers['application/json'] = handler
-        client.app.add_route('/test', resource)
-
-        json_data = '{"cached": true}'
-        query_string = quote(json_data, safe='')
-
-        client.simulate_get('/test', query_string=query_string)
-
-        # Should only deserialize once due to caching
-        assert call_count['value'] == 1
-        assert resource.first == resource.second == resource.third
-        assert resource.first == {'cached': True}
 
     def test_error_propagation(self, asgi, client):
         """Test that non-MediaNotFoundError exceptions propagate correctly."""

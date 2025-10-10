@@ -97,8 +97,6 @@ class Request(request.Request):
     _cached_uri: str | None = None
     _media: UnsetOr[Any] = _UNSET
     _media_error: Exception | None = None
-    _query_string_media: UnsetOr[Any] = _UNSET
-    _query_string_media_error: Exception | None = None
     _stream: BoundedStream | None = None
 
     scope: dict[str, Any]
@@ -667,8 +665,6 @@ class Request(request.Request):
             data = await req.get_query_string_as_media('application/json')
             # data == {'numbers': [1, 2]}
 
-        The result is cached and returned in subsequent calls.
-
         See also :ref:`media` for more information regarding media handling.
 
         Note:
@@ -678,11 +674,9 @@ class Request(request.Request):
             raised by it. To instead return a different value in case of an
             exception by the handler, specify the argument ``default_when_empty``.
 
-        Warning:
-            The deserialized object is cached the first time this method is
-            called. Follow-up calls will retrieve the cached version,
-            regardless of the ``media_type`` or ``default_when_empty``
-            arguments passed.
+            This method always uses the synchronous media handler, even in ASGI,
+            since the query string is already in memory and does not require
+            async I/O operations.
 
         Args:
             media_type: Media type to use for deserialization
@@ -694,8 +688,7 @@ class Request(request.Request):
             default_when_empty: Fallback value to return when there is no
                 query string and the media handler raises an error. By default,
                 Falcon uses the value returned by the media handler or
-                propagates the raised exception, if any. This value is not
-                cached, and will be used only for the current call.
+                propagates the raised exception, if any.
 
         Returns:
             object: The deserialized media representation of the query string.
@@ -704,55 +697,11 @@ class Request(request.Request):
             https://spec.openapis.org/oas/latest.html#parameter-object-examples
 
         """
-        if self._query_string_media is not _UNSET:
-            return self._query_string_media
-        if self._query_string_media_error is not None:
-            if default_when_empty is not _UNSET and isinstance(
-                self._query_string_media_error, errors.MediaNotFoundError
-            ):
-                return default_when_empty
-            raise self._query_string_media_error
-
-        if media_type is None:
-            media_type = self.options.default_media_type
-
-        handler, _, deserialize_sync = self.options.media_handlers._resolve(
-            media_type, self.options.default_media_type
+        # Delegate to the parent class's synchronous implementation
+        # since the query string is already in memory
+        return request.Request.get_query_string_as_media(
+            self, media_type=media_type, default_when_empty=default_when_empty
         )
-
-        # URL-decode the query string
-        from falcon.util import uri
-
-        decoded_query_string = uri.decode(self.query_string, unquote_plus=False)
-
-        try:
-            if deserialize_sync:
-                self._query_string_media = deserialize_sync(
-                    decoded_query_string.encode('utf-8')
-                )
-            else:
-                # For handlers without sync deserializer, use the sync
-                # deserialize method since the query string is already in
-                # memory as a string
-                from io import BytesIO
-
-                query_stream = BytesIO(decoded_query_string.encode('utf-8'))
-                self._query_string_media = handler.deserialize(
-                    query_stream,
-                    media_type,
-                    len(decoded_query_string.encode('utf-8')),
-                )
-
-        except errors.MediaNotFoundError as err:
-            self._query_string_media_error = err
-            if default_when_empty is not _UNSET:
-                return default_when_empty
-            raise
-        except Exception as err:
-            self._query_string_media_error = err
-            raise
-
-        return self._query_string_media
 
     @property
     def if_match(self) -> list[ETag | Literal['*']] | None:
