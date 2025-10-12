@@ -5,7 +5,7 @@ import sys
 
 __all__ = (
     'HTTP_METHODS',
-    'HTTP_DRAFT_METHODS',
+    'HTTP_WG_DRAFT_METHODS',
     'WEBDAV_METHODS',
     'COMBINED_METHODS',
     'DEFAULT_MEDIA_TYPE',
@@ -61,8 +61,8 @@ HTTP_METHODS = [
     'TRACE',
 ]
 
-# HTTP methods from various HTTP WG drafts
-HTTP_DRAFT_METHODS = [
+# HTTP methods from HTTP WG drafts
+HTTP_WG_DRAFT_METHODS = [
     'QUERY',
 ]
 
@@ -98,7 +98,7 @@ _META_METHODS = [
 COMBINED_METHODS = (
     HTTP_METHODS
     + WEBDAV_METHODS
-    + HTTP_DRAFT_METHODS
+    + HTTP_WG_DRAFT_METHODS
     + FALCON_CUSTOM_HTTP_METHODS
     + _META_METHODS
 )

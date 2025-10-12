@@ -1,4 +1,1 @@
-Falcon now supports the retrieval-like ``QUERY`` HTTP method. Handlers can be
-implemented using ``on_query(req, resp, ...)`` on resources.
-
-.. seealso:: https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-11.html
+Falcon now supports the retrieval-like ``QUERY`` HTTP method. Handlers can be implemented using ``on_query(req, resp, ...)`` on resources (see also: https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-11.html).
