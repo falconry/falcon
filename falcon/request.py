@@ -2267,27 +2267,32 @@ class Request:
 
         return date
 
-    def get_param_as_json(
+    def get_param_as_media(
         self,
         name: str,
+        content_type: str = MEDIA_JSON,
         required: bool = False,
         store: StoreArg = None,
         default: Any | None = None,
     ) -> Any:
-        """Return the decoded JSON value of a query string parameter.
+        """Return the decoded content type value of a query string parameter.
 
-        Given a JSON value, decode it to an appropriate Python type,
+        Given a content type, decode it to an appropriate Python type,
         (e.g., ``dict``, ``list``, ``str``, ``int``, ``bool``, etc.)
 
         Warning:
-            If the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option is
-            set to ``True`` (default ``False``), the framework will
-            misinterpret any JSON values that include literal
-            (non-percent-encoded) commas. If the query string may include
-            JSON, you can use JSON array syntax in lieu of CSV as a workaround.
-
+        If the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option is set to ``True`` (default ``False``),
+        Falcon will automatically split query string parameter values on each comma.
+        This can cause problems for any content type (such as JSON, YAML, XML, or custom types)
+        whose parameter values may include literal (non-percent-encoded) commas.
+        To avoid this, consider one of the following workarounds:
+          - Percent-encode commas as ``%2C`` in your requests
+          - Disable CSV auto-parsing by setting ``auto_parse_qs_csv=False``
+          - Use array/object syntax that avoids ambiguity (for example, use JSON or YAML arrays instead of CSV lists)
+ 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
+            content_type (str): Media type to use for decoding(JSON, YAML, or other types).
 
         Keyword Args:
             required (bool): Set to ``True`` to raise ``HTTPBadRequest``
@@ -2305,7 +2310,7 @@ class Request:
 
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
-                the value could not be parsed as JSON.
+                the value could not be parsed as the content type.
         """
 
         param_value = self.get_param(name, required=required)
@@ -2314,25 +2319,44 @@ class Request:
             return default
 
         handler, _, _ = self.options.media_handlers._resolve(
-            MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+            content_type, content_type, raise_not_found=False
         )
         if handler is None:
-            handler = _DEFAULT_JSON_HANDLER
+            if content_type == MEDIA_JSON:
+                handler = _DEFAULT_JSON_HANDLER
 
         try:
             # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
             # interface is refactored. Possibly using the WS interface?
             val = handler.deserialize(
-                BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
+                BytesIO(param_value.encode()), content_type, len(param_value)
             )
         except errors.HTTPBadRequest:
-            msg = 'It could not be parsed as JSON.'
+            msg = f'It could not be parsed as {content_type}.'
             raise errors.HTTPInvalidParam(msg, name)
 
         if store is not None:
             store[name] = val
 
         return val
+
+
+        def get_param_as_json(
+            self,
+            name: str,
+            required: bool = False,
+            store: StoreArg = None,
+            default: Any | None = None,
+        ) -> Any:
+            """Return the value of a query string parameter as a JSON-decoded object."""
+            return self.get_param_as_media(
+                name,
+                content_type=MEDIA_JSON,
+                required=required,
+                store=store,
+                default=default,
+            )
+
 
     def has_param(self, name: str) -> bool:
         """Determine whether or not the query string parameter already exists.
