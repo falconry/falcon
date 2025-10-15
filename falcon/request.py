@@ -2267,7 +2267,7 @@ class Request:
 
         return date
 
-    def get_param_as_media(
+        def get_param_as_media(
         self,
         name: str,
         content_type: str = MEDIA_JSON,
@@ -2275,24 +2275,14 @@ class Request:
         store: StoreArg = None,
         default: Any | None = None,
     ) -> Any:
-        """Return the decoded content type value of a query string parameter.
+        """
+        Return the decoded content type value of a query string parameter.
 
-        Given a content type, decode it to an appropriate Python type,
-        (e.g., ``dict``, ``list``, ``str``, ``int``, ``bool``, etc.)
+        Given a content type, decode it to an appropriate Python type.
 
-        Warning:
-        If the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option is set to ``True`` (default ``False``),
-        Falcon will automatically split query string parameter values on each comma.
-        This can cause problems for any content type (such as JSON, YAML, XML, or custom types)
-        whose parameter values may include literal (non-percent-encoded) commas.
-        To avoid this, consider one of the following workarounds:
-          - Percent-encode commas as ``%2C`` in your requests
-          - Disable CSV auto-parsing by setting ``auto_parse_qs_csv=False``
-          - Use array/object syntax that avoids ambiguity (for example, use JSON or YAML arrays instead of CSV lists)
- 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
-            content_type (str): Media type to use for decoding(JSON, YAML, or other types).
+            content_type (str): Media type to use for decoding (JSON, YAML, etc.).
 
         Keyword Args:
             required (bool): Set to ``True`` to raise ``HTTPBadRequest``
@@ -2302,7 +2292,7 @@ class Request:
                 value of the param, but only if the param is found
                 (default ``None``).
             default (any): If the param is not found returns the
-                given value instead of ``None``
+                given value instead of ``None``.
 
         Returns:
             dict: The value of the param if it is found. Otherwise, returns
@@ -2312,36 +2302,7 @@ class Request:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed as the content type.
         """
-
-        param_value = self.get_param(name, required=required)
-
-        if param_value is None:
-            return default
-
-        handler, _, _ = self.options.media_handlers._resolve(
-            content_type, content_type, raise_not_found=False
-        )
-        if handler is None:
-            if content_type == MEDIA_JSON:
-                handler = _DEFAULT_JSON_HANDLER
-            else:
-                raise HTTPUnsupportedMediaType(
-                    description=f"Unsupported media type: {content_type}")                
-
-        try:
-            # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
-            # interface is refactored. Possibly using the WS interface?
-            val = handler.deserialize(
-                BytesIO(param_value.encode()), content_type, len(param_value)
-            )
-        except errors.HTTPBadRequest:
-            msg = f'It could not be parsed as {content_type}.'
-            raise errors.HTTPInvalidParam(msg, name)
-
-        if store is not None:
-            store[name] = val
-
-        return val
+        ...
 
 
         def get_param_as_json(
