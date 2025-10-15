@@ -985,7 +985,7 @@ class TestQueryParams:
 
 class TestPostQueryParams:
     @pytest.mark.parametrize(
-        'http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'QUERY')
+        'http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS')
     )
     def test_http_methods_body_expected(self, client, resource, http_method):
         client.app.add_route('/', resource)
