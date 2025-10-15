@@ -67,9 +67,7 @@ def deprecated(
     def decorator(func: Callable[..., Any]) -> Callable[[Callable[..., Any]], Any]:
         object_name = 'property' if is_property else 'function'
         post_name = '' if is_property else '(...)'
-        message = 'Call to deprecated {} {}{}. {}'.format(
-            object_name, method_name or func.__name__, post_name, instructions
-        )
+        message = f'Call to deprecated {object_name} {method_name or func.__name__}{post_name}. {instructions}'
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Callable[..., Any]:
@@ -98,7 +96,7 @@ def deprecated_args(
         'Calls to {{fn}}(...) with{arg_text} positional args are deprecated.'
         ' Please specify them as keyword arguments instead.'
     )
-    text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
+    text = f' more than {allowed_positional}' if allowed_positional else ''
     warn_text = template.format(arg_text=text)
     if is_method:
         allowed_positional += 1
@@ -108,7 +106,7 @@ def deprecated_args(
         def wraps(*args: Any, **kwargs: Any) -> Callable[..., Any]:
             if len(args) > allowed_positional:
                 warnings.warn(
-                    warn_text.format(fn=fn.__qualname__),
+                    warn_text.replace('{fn}', fn.__qualname__),
                     DeprecatedWarning,
                     stacklevel=2,
                 )
