@@ -2324,6 +2324,9 @@ class Request:
         if handler is None:
             if content_type == MEDIA_JSON:
                 handler = _DEFAULT_JSON_HANDLER
+            else:
+                raise HTTPUnsupportedMediaType(
+                    description=f"Unsupported media type: {content_type}")                
 
         try:
             # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
