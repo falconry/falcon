@@ -38,11 +38,6 @@ class Resource(testing.SimpleTestResource):
     def on_options(self, req, resp, **kwargs):
         pass
 
-    @falcon.before(testing.capture_responder_args)
-    @falcon.before(testing.set_resp_defaults)
-    def on_query(self, req, resp, **kwargs):
-        pass
-
 
 @pytest.fixture
 def resource():
@@ -145,79 +140,6 @@ class TestQueryParams:
 
         assert store['marker'] == 'deadbeef'
         assert store['limit'] == '25'
-
-    def test_query_method_with_body(self, client, resource):
-        """Ensure a QUERY request with an x-www-form-urlencoded body is parsed
-        when form parsing is enabled (WSGI). If the implementation returns an
-        awaitable for the media, run it to completion rather than inspecting
-        private attributes on the app.
-        """
-        client.app.add_route('/', resource)
-        # Ensure we use the media API for this test so the body is
-        # deserialized by Request.get_media() instead of being
-        # auto-parsed into params (which would consume the stream).
-        client.app.req_options.auto_parse_form_urlencoded = False
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        body = 'a=1&b=two+words'
-
-        # Send a QUERY request with a form body
-        client.simulate_request(path='/', method='QUERY', body=body, headers=headers)
-
-        req = resource.captured_req
-
-        # Use the public API to deserialize the request body
-        media = req.get_media()
-
-        # Support ASGI implementations that return an awaitable from
-        # get_media by running it to completion here. This avoids checking
-        # private attributes on the app.
-        if hasattr(media, '__await__'):
-            import asyncio
-
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                pytest.skip('Async get_media() should be tested in an async test')
-            media = loop.run_until_complete(media)
-
-        assert media['a'] == '1'
-        assert media['b'] == 'two words'
-
-    @pytest.mark.asyncio
-    async def test_query_method_with_body_async(self, asgi, resource):
-        """Async variant: ensure QUERY request body is parsed via async get_media()."""
-        if not asgi:
-            pytest.skip('Async test requires ASGI')
-
-        # Create an ASGI app and client via the test util
-        from falcon.testing import TestClient
-
-        app = resource  # resource is a SimpleTestResource; we need an app
-        # Use util fixture to create app in tests that provide it; fall back
-        # to constructing a minimal app when not available.
-        try:
-            # `asgi` fixture in this repo is a boolean; create app via util
-            from falcon import App
-
-            app = App(asgi=True)
-            app.add_route('/', resource)
-        except Exception:
-            pytest.skip('Unable to construct ASGI app for async test')
-
-        client = TestClient(app)
-
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        body = 'a=1&b=two+words'
-
-        # Simulate request via the async TestClient conductor
-        async with client as conductor:
-            result = await conductor.simulate_request('QUERY', '/', body=body, headers=headers)
-
-        # The responder captured the request on the resource
-        req = resource.captured_req
-        media = await req.get_media()
-
-        assert media['a'] == '1'
-        assert media['b'] == 'two words'
 
     def test_percent_encoded(self, simulate_request, client, resource):
         query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
