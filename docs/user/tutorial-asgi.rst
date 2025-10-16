@@ -312,25 +312,8 @@ test cases.
 
 Modify ``app.py`` to read as follows:
 
-.. code:: python
-
-    import falcon.asgi
-
-    from .config import Config
-    from .images import Images
-    from .store import Store
-
-
-    def create_app(config=None):
-        config = config or Config()
-        store = Store(config)
-        images = Images(config, store)
-
-        app = falcon.asgi.App()
-        app.add_route('/images', images)
-        app.add_route('/images/{image_id:uuid}.jpeg', images, suffix='image')
-
-        return app
+.. literalinclude:: ../../examples/asgilook/asgilook/app/app_01.py
+   :language: python
 
 As mentioned earlier, we need to use a route suffix for the ``Images`` class to
 distinguish between a GET for a single image vs. the entire collection of
@@ -668,7 +651,7 @@ For caching to take effect, we also need to modify ``app.py`` to add
 the ``RedisCache`` component to our application's middleware list.
 The final version of ``app.py`` should look something like this:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/app.py
+.. literalinclude:: ../../examples/asgilook/asgilook/app/app_02.py
     :language: python
 
 Now, subsequent access to ``/thumbnails`` should be cached, as indicated by the
