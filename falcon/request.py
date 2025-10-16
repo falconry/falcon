@@ -246,8 +246,6 @@ class Request:
         self.uri_template = None
         self._media: UnsetOr[Any] = _UNSET
         self._media_error: Exception | None = None
-        self._query_string_media: UnsetOr[Any] = _UNSET
-        self._query_string_media_error: Exception | None = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
@@ -1214,13 +1212,13 @@ class Request:
         # URL-decode the query string
         decoded_query_string = util.uri.decode(self.query_string, unquote_plus=False)
 
-        # Create a BytesIO stream from the decoded query string
-        query_stream = BytesIO(decoded_query_string.encode('utf-8'))
+        # Encode once and reuse bytes for BytesIO and length to avoid
+        # double-encoding the string.
+        query_bytes = decoded_query_string.encode('utf-8')
+        query_stream = BytesIO(query_bytes)
 
         try:
-            return handler.deserialize(
-                query_stream, media_type, len(decoded_query_string.encode('utf-8'))
-            )
+            return handler.deserialize(query_stream, media_type, len(query_bytes))
         except errors.MediaNotFoundError:
             if default_when_empty is not _UNSET:
                 return default_when_empty

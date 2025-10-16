@@ -674,9 +674,10 @@ class Request(request.Request):
             raised by it. To instead return a different value in case of an
             exception by the handler, specify the argument ``default_when_empty``.
 
-            This method always uses the synchronous media handler, even in ASGI,
-            since the query string is already in memory and does not require
-            async I/O operations.
+            We keep this method ``async`` in ASGI to preserve the option of
+            performing asynchronous I/O inside the future, but currently it
+            delegates to the synchronous implementation since the query string
+            is already in memory.
 
         Args:
             media_type: Media type to use for deserialization

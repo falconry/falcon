@@ -197,7 +197,7 @@ class TestQueryStringAsMedia:
         assert resource.captured_media == {'emoji': '🚀', 'chinese': '你好'}
 
     def test_error_caching(self, asgi, client):
-        """Test that errors are cached as well."""
+        """Test error behavior on repeated calls."""
 
         class ResourceErrorCaching:
             def __init__(self):
@@ -229,11 +229,10 @@ class TestQueryStringAsMedia:
 
         # First call
         client.simulate_get('/test', query_string=query_string)
-        # Second call - error should be cached
+        # Second call
         client.simulate_get('/test', query_string=query_string)
 
-        # Both calls should have been made, but the error should be raised
-        # from cache on the second call
+        # Both calls should have been made
         assert resource.call_count == 2
 
     def test_array_at_root(self, asgi, client):
@@ -362,16 +361,16 @@ class TestQueryStringAsMedia:
         assert resource.captured_media == {'uses': 'default'}
 
     def test_cached_error_with_default_when_empty(self, asgi, client):
-        """Test that cached error returns default on subsequent call."""
+        """Test that an error followed by default_when_empty returns default."""
 
         class ResourceCachedError:
             def on_get(self, req, resp):
-                # First call - will fail and cache the error
+                # First call - will fail
                 try:
                     req.get_query_string_as_media()
                 except Exception:
                     pass
-                # Second call - should use cached error and return default
+                # Second call - should return default
                 self.result = req.get_query_string_as_media(default_when_empty={})
 
         class ResourceCachedErrorAsync:
@@ -391,16 +390,16 @@ class TestQueryStringAsMedia:
         assert resource.result == {}
 
     def test_cached_error_reraises_without_default(self, asgi, client):
-        """Test that cached error is re-raised on subsequent calls."""
+        """Test that error is re-raised on subsequent calls."""
 
         class ResourceCachedErrorReraise:
             def on_get(self, req, resp):
-                # First call - will fail and cache the error
+                # First call - will fail
                 try:
                     req.get_query_string_as_media()
                 except falcon.MediaNotFoundError:
                     pass
-                # Second call - should re-raise cached error
+                # Second call - should re-raise error
                 try:
                     req.get_query_string_as_media()
                 except falcon.MediaNotFoundError as err:
