@@ -8,8 +8,9 @@ See also: https://opencollective.com/falcon
 
 * [GOVCERT.LU](https://www.govcert.lu/)
 
-## Gold Patron
+## Gold Patrons
 
+* [LambdaTest](https://www.lambdatest.com/?utm_source=falcon&utm_medium=sponsor)
 * [Sentry](https://sentry.io/)
 
 ## Past Commercial Patrons
