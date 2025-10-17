@@ -56,11 +56,8 @@ Next, :ref:`install Falcon <install>` into your *virtualenv*::
 You can then create a basic :class:`Falcon ASGI application <falcon.asgi.App>`
 by adding an ``asgilook/app.py`` module with the following contents:
 
-.. code:: python
-
-   import falcon.asgi
-
-   app = falcon.asgi.App()
+.. literalinclude:: ../../examples/asgilook/basic_falcon.py
+    :language: python
 
 As in the :ref:`WSGI tutorial's introduction <tutorial-first-steps>`,
 let's not forget to mark ``asgilook`` as a Python package:
@@ -134,7 +131,7 @@ might interfere with the user's logging setup.
 Here's how you can set up basic logging in your ASGI Falcon application via
 :func:`logging.basicConfig`:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/logging.py
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/logging.py
     :language: python
 
 When the above route is accessed, Falcon will catch the unhandled exception and
@@ -180,7 +177,7 @@ In this tutorial, we'll just pass around a ``Config`` instance to resource
 initializers for easier testing (coming later in this tutorial). Create a new
 module, ``config.py`` next to ``app.py``, and add the following code to it:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/config/base_config_01.py
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/config.py
     :language: python
 
 Image Store
@@ -200,7 +197,7 @@ all uploaded images to JPEG with the popular
 We can now implement a basic async image store. Save the following code as
 ``store.py`` next to ``app.py`` and ``config.py``:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store/store_01.py
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/store.py
     :language: python
 
 Here we store data using ``aiofiles``, and run ``Pillow`` image transformation
@@ -228,9 +225,7 @@ methods must be awaitable coroutines. Let's see how this works by
 implementing a resource to represent both a single image and a collection
 of images. Place the code below in a file named ``images.py``:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/images.py
-    :start-at: import aiofiles
-    :end-before: class Thumbnails:
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/images.py
     :language: python
 
 This module is an example of a Falcon "resource" class, as described in
@@ -312,7 +307,7 @@ test cases.
 
 Modify ``app.py`` to read as follows:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/app/app_01.py
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/app.py
    :language: python
 
 As mentioned earlier, we need to use a route suffix for the ``Images`` class to
@@ -330,7 +325,7 @@ section.
 In order to bootstrap an ASGI app instance for ``uvicorn`` to reference, we'll
 create a simple ``asgi.py`` module with the following contents:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/asgi.py
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/asgi.py
     :language: python
 
 Running the application is not too dissimilar from the previous command line::
@@ -421,7 +416,7 @@ purposes.
 Let's add a new method ``Store.make_thumbnail()`` to perform scaling on the
 fly:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
     :start-at: async def make_thumbnail(self, image, size):
     :end-at: return await loop.run_in_executor(None, self._resize, data, size)
     :language: python
@@ -431,7 +426,7 @@ We'll also add an internal helper to run the ``Pillow`` thumbnail operation that
 is offloaded to a threadpool executor, again, in hoping that Pillow can release
 the GIL for some operations:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
     :start-at: def _resize(self, data, size):
     :end-at: return resized.getvalue()
     :language: python
@@ -439,7 +434,7 @@ the GIL for some operations:
 
 The ``store.Image`` class can be extended to also return URIs to thumbnails:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
     :start-at: def thumbnails(self):
     :end-before: class Store:
     :language: python
@@ -455,7 +450,7 @@ You may wish to experiment with this resolution distribution.
 
 After updating ``store.py``, the module should now look like this:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store/store_02.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
     :language: python
 
 Furthermore, it is practical to impose a minimum resolution, as any potential
@@ -467,13 +462,13 @@ The :ref:`app configuration <asgi_tutorial_config>` will need to be updated
 to add the ``min_thumb_size`` option (by default initialized to 64 pixels)
 as follows:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/config/image_config_02.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/config.py
    :language: python
 
 Let's also add a ``Thumbnails`` resource to expose the new
 functionality. The final version of ``images.py`` reads:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/images.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/images.py
     :language: python
 
 .. note::
@@ -608,13 +603,11 @@ Let's implement the ``process_startup()`` and ``process_shutdown()`` handlers
 in our middleware to execute code upon our application's startup and shutdown,
 respectively:
 
-.. code:: python
-
-    async def process_startup(self, scope, event):
-        await self._redis.ping()
-
-    async def process_shutdown(self, scope, event):
-        await self._redis.close()
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/cache.py
+    :start-at:     async def process_startup(self, scope, event):
+    :end-at:         await self._redis.close()
+    :language: python
+    :dedent: 4
 
 .. warning::
     The Lifespan Protocol is an optional extension; please check if your ASGI
@@ -636,7 +629,7 @@ implementations for production and testing.
 Assuming we call our new :ref:`configuration <asgi_tutorial_config>` item
 ``redis_host`` the final version of ``config.py`` now reads:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/config/redis_config_03.py
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/config.py
     :language: python
 
 Let's complete the Redis cache component by implementing
@@ -644,14 +637,14 @@ two more middleware methods, in addition to ``process_startup()`` and
 ``process_shutdown()``. Create a ``cache.py`` module containing the following
 code:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/cache.py
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/cache.py
     :language: python
 
 For caching to take effect, we also need to modify ``app.py`` to add
 the ``RedisCache`` component to our application's middleware list.
 The final version of ``app.py`` should look something like this:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/app/app_02.py
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/app.py
     :language: python
 
 Now, subsequent access to ``/thumbnails`` should be cached, as indicated by the
@@ -749,7 +742,7 @@ Next, let's implement fixtures to replace ``uuid`` and ``redis``, and inject the
 into our tests via ``conftest.py`` (place your code in the newly created ``tests``
 directory):
 
-.. literalinclude:: ../../examples/asgilook/tests/conftest.py
+.. literalinclude:: ../../examples/asgilook/asgilook_tests/tests/conftest.py
     :language: python
 
 .. note::
@@ -776,13 +769,8 @@ With the groundwork in place, we can start with a simple test that will attempt
 to GET the ``/images`` resource. Place the following code in a new
 ``tests/test_images.py`` module:
 
-.. code:: python
-
-    def test_list_images(client):
-        resp = client.simulate_get('/images')
-
-        assert resp.status_code == 200
-        assert resp.json == []
+.. literalinclude:: ../../examples/asgilook/asgilook_tests/tests/test_images.py
+    :language: python
 
 Let's give it a try::
 
