@@ -4,6 +4,7 @@ import uuid
 
 import redis.asyncio
 
+
 class Config:
     DEFAULT_CONFIG_PATH = '/tmp/asgilook'
     DEFAULT_MIN_THUMB_SIZE = 64
