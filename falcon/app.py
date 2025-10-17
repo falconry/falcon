@@ -282,7 +282,7 @@ class App(Generic[_ReqT, _RespT]):
     _static_routes: list[
         tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
-    _unprepared_middleware: list[SyncMiddleware]
+    _unprepared_middleware: list[SyncMiddleware[_ReqT, _RespT]]
 
     # Attributes
     req_options: RequestOptions
@@ -361,7 +361,9 @@ class App(Generic[_ReqT, _RespT]):
         media_type: str = constants.DEFAULT_MEDIA_TYPE,
         request_type: type[_ReqT] | None = None,
         response_type: type[_RespT] | None = None,
-        middleware: SyncMiddleware | Iterable[SyncMiddleware] | None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = None,
         router: routing.CompiledRouter | None = None,
         independent_middleware: bool = True,
         cors_enable: bool = False,
@@ -589,7 +591,7 @@ class App(Generic[_ReqT, _RespT]):
             except TypeError:
                 # NOTE(kgriffs): Middleware is not iterable; assume it is just
                 #   one bare component.
-                middleware = [cast(SyncMiddleware, middleware)]
+                middleware = [cast(SyncMiddleware[_ReqT, _RespT], middleware)]
 
             if (
                 self._cors_enable
@@ -1087,7 +1089,9 @@ class App(Generic[_ReqT, _RespT]):
     # ------------------------------------------------------------------------
 
     def _prepare_middleware(
-        self, middleware: list[SyncMiddleware], independent_middleware: bool = False
+        self,
+        middleware: list[SyncMiddleware[_ReqT, _RespT]],
+        independent_middleware: bool = False,
     ) -> helpers.PreparedMiddlewareResult:
         return helpers.prepare_middleware(
             middleware=middleware, independent_middleware=independent_middleware

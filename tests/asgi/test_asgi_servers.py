@@ -11,16 +11,20 @@ import time
 
 import pytest
 
-try:
-    import httpx
-except ImportError:
-    httpx = None  # type: ignore
+from falcon import testing
 
-try:
-    import requests
-    import requests.exceptions
-except ImportError:
-    requests = None  # type: ignore
+from . import _asgi_test_app
+
+
+@pytest.fixture(scope='session')
+def httpx():
+    return pytest.importorskip('httpx')
+
+
+@pytest.fixture(scope='session')
+def requests():
+    return pytest.importorskip('requests')
+
 
 try:
     import websockets
@@ -29,10 +33,6 @@ try:
 except ImportError:
     websockets = None  # type: ignore
 
-
-from falcon import testing
-
-from . import _asgi_test_app
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -49,27 +49,24 @@ _STATUS_CONTROL_C_EXIT = 0xC000013A
 _REQUEST_TIMEOUT = 10
 
 
-@pytest.mark.skipif(
-    requests is None, reason='requests module is required for this test'
-)
 class TestASGIServer:
-    def test_get(self, server_base_url):
+    def test_get(self, server_base_url, requests):
         resp = requests.get(server_base_url, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == '127.0.0.1'
 
-    def test_put(self, server_base_url):
+    def test_put(self, server_base_url, requests):
         body = '{}'
         resp = requests.put(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == '{}'
 
-    def test_head_405(self, server_base_url):
+    def test_head_405(self, server_base_url, requests):
         body = '{}'
         resp = requests.head(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 405
 
-    def test_post_multipart_form(self, server_base_url):
+    def test_post_multipart_form(self, server_base_url, requests):
         size = random.randint(16 * _SIZE_1_MB, 32 * _SIZE_1_MB)
         data = os.urandom(size)
         digest = hashlib.sha1(data).hexdigest()
@@ -93,7 +90,7 @@ class TestASGIServer:
             },
         }
 
-    def test_post_multiple(self, server_base_url):
+    def test_post_multiple(self, server_base_url, requests):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
@@ -105,7 +102,7 @@ class TestASGIServer:
         resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.headers['X-Counter'] == '2002'
 
-    def test_post_invalid_content_length(self, server_base_url):
+    def test_post_invalid_content_length(self, server_base_url, requests):
         headers = {'Content-Length': 'invalid'}
 
         try:
@@ -124,7 +121,7 @@ class TestASGIServer:
             #   get a heads-up if the request is no longer blocked.
             pass
 
-    def test_post_read_bounded_stream(self, server_base_url):
+    def test_post_read_bounded_stream(self, server_base_url, requests):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(
             server_base_url + 'bucket', data=body, timeout=_REQUEST_TIMEOUT
@@ -132,7 +129,7 @@ class TestASGIServer:
         assert resp.status_code == 200
         assert resp.text == body
 
-    def test_post_read_bounded_stream_large(self, server_base_url):
+    def test_post_read_bounded_stream_large(self, server_base_url, requests):
         """Test that we can correctly read large bodies chunked server-side.
 
         ASGI servers typically employ some type of flow control to stream
@@ -152,11 +149,11 @@ class TestASGIServer:
         assert resp.json().get('drops') > size_mb
         assert resp.json().get('sha1') == hashlib.sha1(body).hexdigest()
 
-    def test_post_read_bounded_stream_no_body(self, server_base_url):
+    def test_post_read_bounded_stream_no_body(self, server_base_url, requests):
         resp = requests.post(server_base_url + 'bucket', timeout=_REQUEST_TIMEOUT)
         assert not resp.text
 
-    def test_sse(self, server_base_url):
+    def test_sse(self, server_base_url, requests):
         resp = requests.get(server_base_url + 'events', timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
 
@@ -167,7 +164,7 @@ class TestASGIServer:
 
         assert not events[-1]
 
-    def test_sse_client_disconnects_early(self, server_base_url):
+    def test_sse_client_disconnects_early(self, server_base_url, requests):
         """Test that when the client connection is lost, the server task does not hang.
 
         In the case of SSE, Falcon should detect when the client connection is
@@ -182,8 +179,7 @@ class TestASGIServer:
                 timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
 
-    @pytest.mark.skipif(httpx is None, reason='httpx is required for this test')
-    async def test_stream_chunked_request(self, server_base_url):
+    async def test_stream_chunked_request(self, server_base_url, httpx):
         """Regression test for https://github.com/falconry/falcon/issues/2024"""
 
         async def emitter():
@@ -201,9 +197,6 @@ class TestASGIServer:
 
 
 @pytest.mark.skipif(
-    requests is None, reason='requests module is required for this test'
-)
-@pytest.mark.skipif(
     websockets is None, reason='websockets is required for this test class'
 )
 class TestWebSocket:
@@ -217,6 +210,7 @@ class TestWebSocket:
         max_receive_queue,
         server_base_url,
         server_url_events_ws,
+        requests,
     ):
         resp = requests.patch(
             server_base_url + 'wsoptions', json={'max_receive_queue': max_receive_queue}
@@ -617,7 +611,7 @@ def _can_run(factory):
 
 
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory, _hypercorn_factory])
-def server_base_url(request):
+def server_base_url(request, requests):
     process_factory = request.param
     _can_run(process_factory)
 

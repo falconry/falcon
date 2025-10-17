@@ -96,9 +96,8 @@ Compiling on Mac OS
 ^^^^^^^^^^^^^^^^^^^
 
 .. tip::
-    Pre-compiled Falcon wheels are available for macOS on both Intel and Apple
-    Silicon chips, so normally you should be fine with just
-    ``pip install falcon``.
+    Pre-compiled Falcon wheels are available for macOS on Apple Silicon chips,
+    so normally you should be fine with just ``pip install falcon``.
 
 Xcode Command Line Tools are required to compile Cython. Install them
 with this command:
