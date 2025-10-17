@@ -1,4 +1,0 @@
-aiofiles>=0.4.0
-redis>=5.0
-msgpack
-Pillow>=6.0.0
