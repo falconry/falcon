@@ -119,6 +119,13 @@ def set_default_responders(
         method_map['OPTIONS'] = opt_responder  # type: ignore[assignment]
         allowed_methods.append('OPTIONS')
 
+    if 'WEBSOCKET' not in method_map:
+        # Explicitly assign 405 Method Not Allowed to avoid
+        # using the default responder for WEBSOCKET
+        method_map['WEBSOCKET'] = responders.create_method_not_allowed(
+            allowed_methods, asgi=asgi
+        )  # type: ignore[assignment]
+
     if default_responder is None:
         default_responder = responders.create_method_not_allowed(
             allowed_methods, asgi=asgi

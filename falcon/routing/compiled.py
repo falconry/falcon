@@ -985,8 +985,9 @@ class CompiledRouterOptions:
     that defines both `on_post` and `on_request` would only be handled by
     `on_post`.
 
-    This option does not override `on_options()`. In case `on_options()` needs
-    to be overriden, this can be done explicitly by aliasing::
+    This option does not override `on_options()` or `on_websocket()`.
+    In case `on_options()` needs to be overriden, this can be done explicitly
+    by aliasing::
 
         on_options = on_request
 

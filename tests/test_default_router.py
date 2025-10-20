@@ -750,7 +750,7 @@ def test_options_default_to_on_request_enabled():
         if isinstance(responder, MethodType):
             responder = responder.__func__
 
-        if method in ('GET', 'OPTIONS'):
+        if method in ('GET', 'OPTIONS', 'WEBSOCKET'):
             assert responder is not ResourceWithDefaultResponder.on_request
         else:
             assert responder is ResourceWithDefaultResponder.on_request
@@ -771,7 +771,7 @@ def test_on_request_suffix():
         if isinstance(responder, MethodType):
             responder = responder.__func__
 
-        if method == 'OPTIONS':
+        if method in ('OPTIONS', 'WEBSOCKET'):
             assert responder is not ResourceWithDefaultResponder.on_request_id
         else:
             assert responder is ResourceWithDefaultResponder.on_request_id
