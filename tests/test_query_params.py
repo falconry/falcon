@@ -969,6 +969,34 @@ class TestQueryParams:
         req = resource.captured_req
         assert req.get_param_as_json('payload') == {'foo': 'bar'}
 
+    def test_get_param_as_media_valid(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        payload_dict = {'foo': 'bar'}
+        query_string = f'payload={json.dumps(payload_dict)}'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+        assert (
+            req.get_param_as_media('payload', media_type=falcon.MEDIA_JSON)
+            == payload_dict
+        )
+
+    def test_get_param_as_media_missing(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        payload_dict = {'foo': 'bar'}
+        query_string = f'notthepayload={json.dumps(payload_dict)}'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+        assert req.get_param_as_media('payload', media_type=falcon.MEDIA_JSON) is None
+
+    def test_get_param_as_media_invalid(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        payload_dict = 'foobar'
+        query_string = f'payload={payload_dict}'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+        with pytest.raises(HTTPInvalidParam):
+            req.get_param_as_media('payload', media_type=falcon.MEDIA_JSON)
+
     def test_has_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         query_string = 'ant=1'

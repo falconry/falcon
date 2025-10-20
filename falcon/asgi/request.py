@@ -704,6 +704,28 @@ class Request(request.Request):
 
         return self._cached_headers
 
+    def get_param_as_media(
+        self,
+        name: str,
+        media_type: str | None = None,
+        required: bool = False,
+        store: StoreArg = None,
+        default: Any | None = None,
+    ) -> Any:
+        """Delegate to :meth:`~.Request.get_param_as_media`.
+
+        ASGI Requests reuse the synchronous implementation since parameter
+        values are already available in memory.
+        """
+        return request.Request.get_param_as_media(
+            self,
+            name=name,
+            media_type=media_type,
+            required=required,
+            store=store,
+            default=default,
+        )
+
     @property
     def headers_lower(self) -> Mapping[str, str]:
         """Alias for :attr:`headers` provided to expose a uniform way to
