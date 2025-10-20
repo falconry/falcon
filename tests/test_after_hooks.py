@@ -8,6 +8,11 @@ import falcon
 from falcon import app as wsgi
 from falcon import testing
 from falcon._typing import Resource
+import falcon.hooks
+
+# Monkey patch decorate_on_request to allow decorating
+# default responders when using class-level hooks
+falcon.hooks.decorate_on_request = True
 
 # --------------------------------------------------------------------
 # Fixtures
@@ -482,3 +487,35 @@ def test_default_responder(util, resource, asgi):
 
     assert result.status_code == 200
     assert result.text == 'smart'
+
+
+def test_decorate_on_response_disabled(util):
+    app = util.create_app(asgi=False)
+    app.router_options.default_to_on_request = True
+
+    falcon.hooks.decorate_on_request = False
+
+    @falcon.after(Smartness())
+    class WrappedClassDefaultResponderResource:
+        def on_request(self, req, resp):
+            pass
+
+        def on_request_id(self, req, resp, id):
+            pass
+
+    resource = WrappedClassDefaultResponderResource()
+
+    app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
+
+    # Test that on_request is not wrapped
+    result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert result.text == ''
+
+    # Test that on_request_id is not wrapped
+    result = testing.simulate_post(app, '/1')
+
+    assert result.status_code == 200
+    assert result.text == ''

@@ -216,17 +216,6 @@ class CompiledRouter:
             if suffix:
                 responder_name += '_' + suffix
 
-            # NOTE(gespyrop): If the resource has been decorated by a
-            # class-level hook, replace the responder with its decorated
-            # version. This is a hack to decorate default responders at runtime
-            # if default_to_on_request is enabled.
-            decorated_responder_name = '__decorated_' + responder_name + '__'
-            decorated_responder = getattr(resource, decorated_responder_name, None)
-
-            if decorated_responder:
-                setattr(resource, responder_name, decorated_responder)
-                delattr(resource.__class__, decorated_responder_name)
-
             default_responder = getattr(resource, responder_name, None)
 
         # NOTE(gespyrop): We do not verify whether the default responder is
@@ -1009,6 +998,22 @@ class CompiledRouterOptions:
     Note:
         In order for this option to take effect, it must be enabled before
         calling :meth:`.CompiledRouter.add_route`.
+
+    Warning:
+        Class-level hooks do not wrap default responders by default. Wrapping
+        default responders with class-level hooks can be enabled by setting
+        the value of ``falcon.hooks.decorate_on_request`` to ``True``.
+        For example::
+
+            import falcon.hooks
+            falcon.hooks.decorate_on_request = True
+
+        In case setting this value before decorating a resource is not
+        possible, wrapping default responders with class-level hooks can also
+        be enabled by setting the FALCON_DECORATE_ON_REQUEST environment
+        variable to 1. For example::
+
+            $ export FALCON_DECORATE_ON_REQUEST=1
 
     .. versionadded:: 4.2
     """
