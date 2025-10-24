@@ -2325,7 +2325,7 @@ class Request:
         store: StoreArg = None,
         default: Any | None = None,
     ) -> Any:
-        """Return the value of a query string parameter deserialized using a media handler.
+        """Return a query string parameter's value deserialized by a media handler.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
