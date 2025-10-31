@@ -534,14 +534,15 @@ def unquote_string(quoted: str) -> str:
     """Unquote an RFC 7320 "quoted-string".
 
     Args:
-        quoted (str): Original quoted string
+        quoted (str): Original quoted string.
 
     Returns:
-        str: unquoted string
+        str: The unquoted string, or the original string if not quoted.
 
     Raises:
-        TypeError: `quoted` was not a ``str``.
+        TypeError: If `quoted` is not a string.
     """
+
 
     if len(quoted) < 2:
         return quoted
