@@ -17,6 +17,8 @@ import json
 import random
 from urllib.parse import quote
 from urllib.parse import unquote_plus
+import pytest
+from falcon.uri import unquote_string
 
 import pytest
 
@@ -1598,3 +1600,20 @@ def test_TimezoneGMT():
     assert tz.tzname(None) == 'GMT'
     assert tz.dst(None) == z
     assert tz.utcoffset(None) == z
+
+def test_unquote_string_basic():
+    # Basic quoted string
+    assert unquote_string('"hello"') == 'hello'
+
+    # Escaped quote inside string
+    assert unquote_string('"he\\"llo"') == 'he\\"llo'
+
+    # No quotes → should return as is
+    assert unquote_string('hello') == 'hello'
+
+    # Empty string
+    assert unquote_string('') == ''
+
+    # Non-string input should raise TypeError
+    with pytest.raises(TypeError):
+        unquote_string(None)
