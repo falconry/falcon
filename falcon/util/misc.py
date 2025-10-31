@@ -504,15 +504,22 @@ def code_to_http_status(status: int | http.HTTPStatus | bytes | str) -> str:
 
 
 def _encode_items_to_latin1(data: dict[str, str]) -> list[tuple[bytes, bytes]]:
-    """Decode all key/values of a dict to Latin-1.
+    """Encode all key/value pairs of a dictionary to Latin-1 bytes.
+
+    This helper is used to convert HTTP header or query parameter dictionaries
+    into byte-encoded lists suitable for WSGI or low-level HTTP operations.
 
     Args:
-        data (dict): A dict of string key/values to encode to a list of
-        bytestring items.
+        data (dict[str, str]): Dictionary of string key/value pairs to encode.
 
     Returns:
-        A list of (bytes, bytes) tuples.
+        list[tuple[bytes, bytes]]: Encoded (key, value) pairs as byte tuples.
+
+    Example:
+        >>> _encode_items_to_latin1({'Content-Type': 'text/html'})
+        [(b'Content-Type', b'text/html')]
     """
+
     result = []
 
     for key, value in data.items():
