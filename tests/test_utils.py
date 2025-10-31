@@ -1,3 +1,11 @@
+
+"""Unit tests for Falcon utility functions.
+
+This module contains tests for Falcon's helper utilities such as URI parsing,
+header handling, and miscellaneous helpers.
+"""
+
+
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
