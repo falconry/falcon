@@ -1,13 +1,17 @@
 <script>
-$(document).ready(function() {
-    var onComplete = function(data) {
+$(document).ready(() => {
+    const onComplete = (data) => {
         if (data && data.length !== 0) {
-            $('#sidebarSupportFalcon').html(data)
+            $('#sidebarSupportFalcon').html(data);
         }
-    }
+    };
 
-    $.get('https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/sidebar-sponsors.html', onComplete)
+    $.get(
+        'https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/sidebar-sponsors.html',
+        onComplete
+    );
 });
+
 </script>
 
 <div id="sidebarSupportFalcon">
