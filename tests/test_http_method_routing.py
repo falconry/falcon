@@ -1,4 +1,6 @@
+from contextlib import nullcontext
 from functools import wraps
+from wsgiref.validate import WSGIWarning
 
 import pytest
 
@@ -17,6 +19,7 @@ HTTP_METHODS = [
     'POST',
     'PUT',
     'TRACE',
+    'QUERY',
 ]
 
 # RFC 2518 and 4918 methods
@@ -154,6 +157,10 @@ class MiscResource:
     def on_patch(self, req, resp):
         pass
 
+    @capture
+    def on_query(self, req, resp):
+        resp.status = falcon.HTTP_500
+
     def on_options(self, req, resp):
         # NOTE(kgriffs): The default responder returns 200
         resp.status = falcon.HTTP_204
@@ -180,6 +187,16 @@ class FaultyDecoratedResource:
     @selfless_decorator
     def on_get(self, req, resp):
         pass
+
+
+@pytest.fixture
+def catch_wsgiref_query_warning(asgi):
+    if asgi:
+        ctx = nullcontext()
+    else:
+        ctx = pytest.warns(WSGIWarning, match="Unknown REQUEST_METHOD: 'QUERY'")
+    with ctx:
+        yield
 
 
 class TestHttpMethodRouting:
@@ -213,9 +230,9 @@ class TestHttpMethodRouting:
         assert response.status == falcon.HTTP_204
         assert resource_things.called
 
-    def test_misc(self, client, resource_misc):
+    def test_misc(self, client, resource_misc, catch_wsgiref_query_warning):
         client.app.add_route('/misc', resource_misc)
-        for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
+        for method in ['GET', 'HEAD', 'PUT', 'PATCH', 'QUERY']:
             resource_misc.called = False
             client.simulate_request(path='/misc', method=method)
             assert resource_misc.called
@@ -227,7 +244,9 @@ class TestHttpMethodRouting:
             response = client.simulate_request(path='/stonewall', method=method)
             assert response.status == falcon.HTTP_405
 
-    def test_methods_not_allowed_complex(self, client, resource_things):
+    def test_methods_not_allowed_complex(
+        self, client, resource_things, catch_wsgiref_query_warning
+    ):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         for method in HTTP_METHODS + WEBDAV_METHODS:
@@ -245,7 +264,9 @@ class TestHttpMethodRouting:
             headers = response.headers
             assert headers['allow'] == 'GET, HEAD, PUT, REPORT, OPTIONS'
 
-    def test_method_not_allowed_with_param(self, client, resource_get_with_faulty_put):
+    def test_method_not_allowed_with_param(
+        self, client, resource_get_with_faulty_put, catch_wsgiref_query_warning
+    ):
         client.app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
         for method in HTTP_METHODS + WEBDAV_METHODS:
             if method in ('GET', 'PUT', 'OPTIONS'):

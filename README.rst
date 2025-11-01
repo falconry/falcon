@@ -84,7 +84,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-|Backer:GovCert| |Backer:Sentry|
+|Backer:LambdaTest| |Backer:GovCert| |Backer:Sentry|
 
 Has Falcon helped you make an awesome app? Show your support today with a
 one-time donation or by becoming a patron.
@@ -989,6 +989,10 @@ limitations under the License.
     :target: https://pypi.org/project/falcon/
 .. |Python versions| image:: https://img.shields.io/pypi/pyversions/falcon.svg
     :target: https://pypi.org/project/falcon/
+.. |Backer:LambdaTest| image:: https://falconframework.org/assets/lambdatest.png
+    :alt: LambdaTest
+    :height: 64px
+    :target: https://www.lambdatest.com/?utm_source=falcon&utm_medium=sponsor
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px
