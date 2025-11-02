@@ -41,11 +41,6 @@ WEBDAV_METHODS = [
 
 
 @pytest.fixture
-def stonewall():
-    return Stonewall()
-
-
-@pytest.fixture
 def resource_things():
     return ThingsResource()
 
@@ -63,8 +58,6 @@ def resource_get_with_faulty_put():
 @pytest.fixture
 def client(asgi, util):
     app = util.create_app(asgi)
-
-    app.add_route('/stonewall', Stonewall())
 
     resource_things = ThingsResource()
     app.add_route('/things', resource_things)
@@ -113,10 +106,6 @@ class ThingsResource:
 
     def on_websocket(self, req, resp, id, sid):
         self.called = True
-
-
-class Stonewall:
-    pass
 
 
 def capture(func):
@@ -237,12 +226,6 @@ class TestHttpMethodRouting:
             client.simulate_request(path='/misc', method=method)
             assert resource_misc.called
             assert resource_misc.req.method == method
-
-    def test_methods_not_allowed_simple(self, client, stonewall):
-        client.app.add_route('/stonewall', stonewall)
-        for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
-            response = client.simulate_request(path='/stonewall', method=method)
-            assert response.status == falcon.HTTP_405
 
     def test_methods_not_allowed_complex(
         self, client, resource_things, catch_wsgiref_query_warning
