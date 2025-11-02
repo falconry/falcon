@@ -14,7 +14,7 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.routing.util import SuffixedMethodNotFoundError
+from falcon.routing.util import MethodNotFoundError
 
 _TEST_UUID = uuid.uuid4()
 _TEST_UUID_2 = uuid.uuid4()
@@ -596,9 +596,17 @@ def test_with_and_without_trailing_slash(client, reverse):
 
 def test_custom_error_on_suffix_route_not_found(client):
     resource_with_suffix_routes = ResourceWithSuffixRoutes()
-    with pytest.raises(SuffixedMethodNotFoundError):
+    with pytest.raises(MethodNotFoundError):
         client.app.add_route(
             '/collections/{collection_id}/items',
             resource_with_suffix_routes,
             suffix='bad-alt',
         )
+
+
+def test_custom_error_route_not_found(client):
+    class EmptyResource:
+        pass
+
+    with pytest.raises(MethodNotFoundError):
+        client.app.add_route('/empty', EmptyResource())
