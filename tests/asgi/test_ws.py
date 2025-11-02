@@ -1087,7 +1087,8 @@ async def test_ws_simulator_client_require_accepted(conductor):
 
 async def test_ws_simulator_collect_edge_cases(conductor):
     class Resource:
-        pass
+        async def on_websocket(self, req, ws):
+            pass
 
     conductor.app.add_route('/', Resource())
 
