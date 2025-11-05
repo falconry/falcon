@@ -108,29 +108,40 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
                 [platform['name'] for platform in platforms], matrix['python']
             )
         )
-        supported.update((item['platform']['name'], item['python']) for item in
-                         include if not item['python'].endswith('t'))
+        supported.update(
+            (item['platform']['name'], item['python'])
+            for item in include
+            if not item['python'].endswith('t')
+        )
         cpythons = sorted(
             {cp for _, cp in supported} | _EXTEND_CPYTHONS,
             key=lambda val: (len(val), val),
         )
         # TODO(vytas): Currently free-threading is always configured via include.
-        free_threading = {(item['platform']['name'], item['python'].rstrip('t'))
-                          for item in include if item['python'].endswith('t')}
+        free_threading = {
+            (item['platform']['name'], item['python'].rstrip('t'))
+            for item in include
+            if item['python'].endswith('t')
+        }
 
         header = ['Platform / CPython version']
         table = [header + [cp.replace('cp3', '3.') for cp in cpythons]]
         table.extend(
             [description]
-            + [self._render_cell((name, cp) in supported, (name, cp) in free_threading) for cp in cpythons]
+            + [
+                self._render_cell((name, cp) in supported, (name, cp) in free_threading)
+                for cp in cpythons
+            ]
             for name, description in _CPYTHON_PLATFORMS.items()
         )
 
         content = '\n'.join(self.content) + '\n\n' + self._emit_table(table)
 
         if free_threading:
-            content += ('\n\n:sup:`1`\\ '
-                        '*A binary wheel is also available for free-threaded CPython.*')
+            content += (
+                '\n\n:sup:`1`\\ '
+                '*A binary wheel is also available for free-threaded CPython.*'
+            )
 
         return self.parse_text_to_nodes(content)
 
