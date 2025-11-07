@@ -162,6 +162,14 @@ jobs:
               name: musllinux_x86_64
               os: ubuntu-latest
             python: cp314t
+          - platform:
+              name: manylinux_aarch64
+              os: ubuntu-latest
+            python: cp314t
+          - platform:
+              name: musllinux_aarch64
+              os: ubuntu-latest
+            python: cp314t
 
     defaults:
       run:
