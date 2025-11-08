@@ -1365,10 +1365,32 @@ def redirected(
 ) -> Iterator[None]:
     """Redirect stdout or stderr temporarily.
 
-    e.g.:
+    For instance, this helper can be used to capture output from Falcon
+    reources under tests::
 
-    with redirected(stderr=os.devnull):
-        ...
+        import io
+
+        import falcon
+        import falcon.testing
+
+
+        class MediaPrinter:
+            def on_post(self, req, resp):
+                print(req.get_media())
+
+
+        client = falcon.testing.TestClient(falcon.App())
+        client.app.add_route('/print', MediaPrinter())
+
+        output = io.StringIO()
+        with falcon.testing.redirected(stdout=output):
+            client.simulate_post('/print', json={'message': 'Hello'})
+
+        assert output.getvalue() == "{'message': 'Hello'}\\n"
+
+    Tip:
+        The popular `pytest <pytest.https://docs.pytest.org/>`__ also captures
+        and suppresses output from successful tests by default.
     """
 
     old_stdout, old_stderr = sys.stdout, sys.stderr
