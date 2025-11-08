@@ -35,8 +35,11 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `AyanAhmedKhan <https://github.com/AyanAhmedKhan>`__
 - `CaselIT <https://github.com/CaselIT>`__
 - `kemingy <https://github.com/kemingy>`__
+- `MannXo <https://github.com/MannXo>`__
 - `sonephyo <https://github.com/sonephyo>`__
+- `TudorGR <https://github.com/TudorGR>`__
 - `vytas7 <https://github.com/vytas7>`__
 - `x612skm <https://github.com/x612skm>`__
