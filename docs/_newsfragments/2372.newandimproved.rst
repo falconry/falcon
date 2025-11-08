@@ -1,5 +1,0 @@
-:class:`falcon.App` and :class:`falcon.asgi.App` have been converted to
-:class:`generic types <typing.Generic>` parametrized by the request and
-response types, and popular type checkers such as Mypy and Pyright should now
-correctly infer the use of custom subclasses passed by `request_type` and
-`response_type`, respectively.
