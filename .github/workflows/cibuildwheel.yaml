@@ -164,11 +164,11 @@ jobs:
             python: cp314t
           - platform:
               name: manylinux_aarch64
-              os: ubuntu-latest
+              os: ubuntu-24.04-arm
             python: cp314t
           - platform:
               name: musllinux_aarch64
-              os: ubuntu-latest
+              os: ubuntu-24.04-arm
             python: cp314t
 
     defaults:
