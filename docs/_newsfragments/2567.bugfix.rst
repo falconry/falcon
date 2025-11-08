@@ -1,5 +1,0 @@
-Falcon's documentation build process was not fully reproducible, as the output
-could vary with the build system's date. The issue was addressed by adding
-support for setting the build date via the
-`SOURCE_DATE_EPOCH <https://reproducible-builds.org/docs/source-date-epoch/>`__
-standardized environment variable.

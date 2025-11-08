@@ -4,9 +4,15 @@ Changelog for Falcon 4.2.0
 Summary
 -------
 
-Falcon 4.2 is in development. The progress is tracked via the
-`Version 4.2 milestone <https://github.com/falconry/falcon/milestone/44>`__
-on GitHub.
+This is the first release candidate of Falcon 4.2.0.
+
+We would greatly appreciate it if you could help us with testing on your apps,
+and :ref:`let us know <chat>` if you run into any issues!
+
+As always, you can grab this pre-release
+`from PyPI <https://pypi.org/project/falcon/4.2.0rc1/>`__::
+
+    pip install falcon==4.2.0rc1
 
 
 Changes to Supported Platforms
@@ -34,7 +40,43 @@ Changes to Supported Platforms
   (See also: :ref:`faq_free_threading`)
   (`#2501 <https://github.com/falconry/falcon/issues/2501>`__)
 
-.. towncrier release notes start
+
+New & Improved
+--------------
+
+- The URI encoding functions :func:`~falcon.uri.encode`,
+  :func:`~falcon.uri.encode_check_escaped`, :func:`~falcon.uri.encode_value`, and
+  :func:`~falcon.uri.encode_value_check_escaped` have been reimplemented in
+  Cython, leading to a significant speed bump under CPython (provided Falcon is
+  :ref:`installed <install>` from a binary wheel, or cythonized from a source
+  distribution).
+
+  The performance improvement can reach an order of magnitude, although the
+  actual numbers vary depending on the input data. For instance, on CPython 3.12,
+  calling :func:`~falcon.uri.encode_value` with
+  ``'no-reply@falconframework.org'`` would be sped up ~9x, and using the already
+  encoded value ``'no-reply%40falconframework.org'`` with
+  :func:`~falcon.uri.encode_value_check_escaped` could yield a ~12x speed boost. (`#1169 <https://github.com/falconry/falcon/issues/1169>`__)
+- :class:`falcon.App` and :class:`falcon.asgi.App` have been converted to
+  :class:`generic types <typing.Generic>` parametrized by the request and
+  response types, and popular type checkers such as Mypy and Pyright should now
+  correctly infer the use of custom subclasses passed by `request_type` and
+  `response_type`, respectively. (`#2372 <https://github.com/falconry/falcon/issues/2372>`__)
+- Falcon now supports the retrieval-like ``QUERY`` HTTP method; handlers can be
+  implemented using ``on_query(req, resp, ...)`` on resources.
+  See the IETF draft for details: https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-11.html.
+  (`#2539 <https://github.com/falconry/falcon/issues/2539>`__)
+
+
+Fixed
+-----
+
+- Falcon's documentation build process was not fully reproducible, as the output
+  could vary with the build system's date. The issue was addressed by adding
+  support for setting the build date via the
+  `SOURCE_DATE_EPOCH <https://reproducible-builds.org/docs/source-date-epoch/>`__
+  standardized environment variable. (`#2567 <https://github.com/falconry/falcon/issues/2567>`__)
+
 
 Contributors to this Release
 ----------------------------
