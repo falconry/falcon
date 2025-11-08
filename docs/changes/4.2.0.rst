@@ -28,6 +28,12 @@ Changes to Supported Platforms
   You can also build the binary from *sdist* yourself.
   (`#2536 <https://github.com/falconry/falcon/issues/2536>`__)
 
+- Pre-compiled wheels are now available for the
+  `free-threaded <https://docs.python.org/3/howto/free-threading-python.html>`__
+  CPython 3.14 build on selected Linux platforms.
+  (See also: :ref:`faq_free_threading`)
+  (`#2501 <https://github.com/falconry/falcon/issues/2501>`__)
+
 .. towncrier release notes start
 
 Contributors to this Release
@@ -35,8 +41,11 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `AyanAhmedKhan <https://github.com/AyanAhmedKhan>`__
 - `CaselIT <https://github.com/CaselIT>`__
 - `kemingy <https://github.com/kemingy>`__
+- `MannXo <https://github.com/MannXo>`__
 - `sonephyo <https://github.com/sonephyo>`__
+- `TudorGR <https://github.com/TudorGR>`__
 - `vytas7 <https://github.com/vytas7>`__
 - `x612skm <https://github.com/x612skm>`__
