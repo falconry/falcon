@@ -1,14 +1,12 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "Falcon - Python 3.13",
-	"image": "mcr.microsoft.com/devcontainers/python:3.13",
-	"features": {
-		"ghcr.io/devcontainers-contrib/features/tox:1": {}
-	},
+	"name": "Falcon (CPython 3.14)",
+	"image": "mcr.microsoft.com/devcontainers/python:3.14",
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip install --upgrade pip && pip install tox && pip install -e .",
+	// NOTE(vytas): Using pipx as it is recommended in the Python README (see above).
+	"postCreateCommand": "pipx install ruff && pipx install tox",
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -22,11 +20,16 @@
 				"python.defaultInterpreterPath": "/usr/local/bin/python",
 				"python.linting.enabled": true,
 				"python.testing.pytestEnabled": true,
-				"python.testing.unittestEnabled": false
+				"python.testing.unittestEnabled": false,
+				// NOTE(vytas): Disable automatic random port-forwarding as running tox doesn't need it.
+				"remote.autoForwardPorts": false
 			}
 		}
 	}
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// NOTE(vytas): You will probably want to connect as root on rootless Docker/Podman/etc.
+	//   In rootless setups, the current user is typically mapped to root's UID inside the container.
+	//   (You may run into permission problems otherwise as the vscode user gets mapped to an ephemeral UID.)
 	// "remoteUser": "root"
 }
