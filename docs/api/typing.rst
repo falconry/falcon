@@ -29,6 +29,8 @@ runtime behavior, but may surface new or different errors with type checkers.
     missing from the public interface!
 
 
+.. _generic_app_types:
+
 App Types
 ---------
 

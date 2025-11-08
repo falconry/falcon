@@ -6,8 +6,10 @@ Summary
 
 This is the first release candidate of Falcon 4.2.0.
 
-We would greatly appreciate it if you could help us with testing on your apps,
-and :ref:`let us know <chat>` if you run into any issues!
+We would greatly appreciate it if you could help us with testing on your apps!
+If you use type checking, please also check how the new
+:ref:`generic App types <generic_app_types>` (and other typing improvements)
+work for you. :ref:`Let us know <chat>` if you run into any issues!
 
 As always, you can grab this pre-release
 `from PyPI <https://pypi.org/project/falcon/4.2.0rc1/>`__::
