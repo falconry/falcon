@@ -195,9 +195,6 @@ httpnow = _util.deprecated(
     'Use `falcon.util.http_now` instead.'
 )(_util.http_now)
 
-# NOTE(vytas): Deprecated in Falcon 4.2
-# TODO(vytas): Remove in Falcon 5.0.
-redirected = _util.deprecated(
-    'This context manager is deprecated and will be removed in Falcon 5.0. '
-    'Please use `contextlib.redirect_stdout` and `contextlib.redirect_stderr` instead.'
-)(_redirected)
+# NOTE(TudorGR): Deprecated in Falcon 4.2
+# TODO(TudorGR): Remove in Falcon 5.0.
+redirected = _redirected

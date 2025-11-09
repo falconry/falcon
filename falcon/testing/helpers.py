@@ -1359,6 +1359,12 @@ def create_asgi_req(
     return req_type(scope, req_event_emitter, options=options)
 
 
+# NOTE(TudorGR): Deprecated in Falcon 4.2
+# TODO(TudorGR): Remove in Falcon 5.0.
+@falcon.util.deprecated(
+    'This context manager is deprecated and will be removed in Falcon 5.0. '
+    'Please use `contextlib.redirect_stdout` and `contextlib.redirect_stderr` instead.'
+)
 @contextlib.contextmanager
 def redirected(
     stdout: TextIO = sys.stdout, stderr: TextIO = sys.stderr
