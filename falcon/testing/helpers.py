@@ -1395,7 +1395,7 @@ def redirected(
         assert output.getvalue() == "{'message': 'Hello'}\\n"
 
     Tip:
-        The popular `pytest <pytest.https://docs.pytest.org/>`__ also captures
+        The popular `pytest <https://docs.pytest.org/>`__ also captures
         and suppresses output from successful tests by default.
     """
 
