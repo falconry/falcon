@@ -101,24 +101,24 @@ app are also thread-safe, your WSGI app as a whole will be thread-safe.
 Can I run Falcon on free-threaded CPython?
 ------------------------------------------
 
-At the time of this writing, Falcon has not been extensively evaluated without
-the GIL yet.
+Starting with Falcon :doc:`4.2 </changes/4.2.0>`, we began to ship binary
+wheels for the free-threaded CPython 3.14 build (in the first iteration, only
+on selected Linux x86 and ARM platforms).
 
-We load-tested the WSGI flavor of the framework via
-:class:`~wsgiref.simple_server.WSGIServer` +
-:class:`~socketserver.ThreadingMixIn` on
-`free-threaded CPython 3.13.0
-<https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
-(under ``PYTHON_GIL=0``), and observed no issues that would point toward
-Falcon's reliance on the GIL. Thus, we would like to think that Falcon is still
-:ref:`thread-safe <faq_thread_safety>` even in free-threaded execution,
-but it is too early to provide a definite answer.
+We load-tested the WSGI flavor of the framework using Gunicorn 23.0.0 on
+`free-threaded <https://docs.python.org/3/howto/free-threading-python.html>`__
+CPython 3.14.0, and observed no issues that would point toward
+Falcon's reliance on the GIL. Moreover, the throughput scaled almost linearly
+with the number of threads (up to the number of available cores on the system).
 
-If you experimented with free-threading of Falcon or other Python web services,
-please :ref:`share your experience <chat>`!
+Thus, we would like to think that Falcon is still :ref:`thread-safe
+<faq_thread_safety>` even in free-threaded execution, but we are awaiting more
+community feedback. If you experimented with free-threading of Falcon
+applications, or even deployed it in production, please
+:ref:`share your experience <chat>`!
 
 Does Falcon support asyncio?
-------------------------------
+----------------------------
 
 Starting with version 3.0, the `ASGI <https://asgi.readthedocs.io/en/latest/>`_
 flavor of Falcon now proudly supports :any:`asyncio`!

@@ -32,7 +32,7 @@ WSGI tutorial::
       └── app.py
 
 We'll create a *virtualenv* using the ``venv`` module from the standard library
-(Falcon requires Python 3.8+)::
+(Falcon requires Python 3.9+)::
 
   $ mkdir asgilook
   $ python3 -m venv asgilook/.venv
@@ -961,7 +961,7 @@ Let's give it a try::
   $ pytest tests/test_images.py
 
   ========================= test session starts ==========================
-  platform linux -- Python 3.8.0, pytest-6.2.1, py-1.10.0, pluggy-0.13.1
+  platform linux -- Python 3.12.11, pytest-8.4.1, pluggy-1.6.0
   rootdir: /falcon/tutorials/asgilook
   collected 1 item
 

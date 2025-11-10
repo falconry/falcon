@@ -166,22 +166,22 @@ class SimpleTestResource:
             responses
     """
 
-    captured_req: typing.Optional[typing.Union[wsgi.Request, asgi.Request]]
+    captured_req: wsgi.Request | asgi.Request | None
     """The last Request object passed into any one of the responder methods."""
-    captured_resp: typing.Optional[typing.Union[wsgi.Response, asgi.Response]]
+    captured_resp: wsgi.Response | asgi.Response | None
     """The last Response object passed into any one of the responder methods."""
 
-    captured_kwargs: typing.Optional[typing.Any]
+    captured_kwargs: typing.Any | None
     """The last dictionary of kwargs, beyond ``req`` and ``resp``, that were
     passed into any one of the responder methods."""
 
-    captured_req_media: typing.Optional[typing.Any]
+    captured_req_media: typing.Any | None
     """The last Request media provided to any one of the responder methods.
 
     This value is only captured when the ``'capture-req-media'`` header is
     set on the request.
     """
-    captured_req_body: typing.Optional[bytes]
+    captured_req_body: bytes | None
     """The last Request body provided to any one of the responder methods.
 
     This value is only captured when the ``'capture-req-body-bytes'`` header is
@@ -190,10 +190,10 @@ class SimpleTestResource:
 
     def __init__(
         self,
-        status: typing.Optional[str] = None,
-        body: typing.Optional[str] = None,
-        json: typing.Optional[dict[str, str]] = None,
-        headers: typing.Optional[HeaderArg] = None,
+        status: str | None = None,
+        body: str | None = None,
+        json: dict[str, str] | None = None,
+        headers: HeaderArg | None = None,
     ) -> None:
         self._default_status = status
         self._default_headers = headers
@@ -203,9 +203,7 @@ class SimpleTestResource:
                 msg = 'Either json or body may be specified, but not both'
                 raise ValueError(msg)
 
-            self._default_body: typing.Optional[str] = json_dumps(
-                json, ensure_ascii=False
-            )
+            self._default_body: str | None = json_dumps(json, ensure_ascii=False)
 
         else:
             self._default_body = body

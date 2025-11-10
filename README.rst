@@ -19,7 +19,7 @@ clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
-champ under CPython 3.8+ and PyPy 3.8+.
+champ under CPython 3.9+ and PyPy 3.9+.
 
 Quick Links
 -----------
@@ -75,7 +75,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic HTTP error responses
 - Straightforward exception handling
 - Snappy testing with WSGI/ASGI helpers and mocks
-- CPython 3.8+ and PyPy 3.8+ support
+- CPython 3.9+ and PyPy 3.9+ support
 
 .. Patron list starts here. For Python package, we substitute this section with:
    Support Falcon Development
@@ -84,7 +84,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-|Backer:GovCert| |Backer:Sentry|
+|Backer:LambdaTest| |Backer:GovCert| |Backer:Sentry|
 
 Has Falcon helped you make an awesome app? Show your support today with a
 one-time donation or by becoming a patron.
@@ -187,7 +187,7 @@ PyPy
 ^^^^
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.8+ is supported as of PyPy v7.3.7+.
+PyPy3.9+ is supported as of PyPy v7.3.10+.
 
 .. code:: bash
 
@@ -203,7 +203,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.8+.
+`CPython <https://www.python.org/downloads/>`__ 3.9+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
@@ -989,6 +989,10 @@ limitations under the License.
     :target: https://pypi.org/project/falcon/
 .. |Python versions| image:: https://img.shields.io/pypi/pyversions/falcon.svg
     :target: https://pypi.org/project/falcon/
+.. |Backer:LambdaTest| image:: https://falconframework.org/assets/lambdatest.png
+    :alt: LambdaTest
+    :height: 64px
+    :target: https://www.lambdatest.com/?utm_source=falcon&utm_medium=sponsor
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px

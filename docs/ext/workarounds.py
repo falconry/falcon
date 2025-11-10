@@ -14,7 +14,24 @@
 
 """Hacks and workarounds for Sphinx bugs."""
 
+import sphinx.pycode.parser
 import sphinx.util.inspect
+
+
+def patch_overload_processing(cls: type) -> None:
+    """Disable all ``@overload`` processing.
+
+    See also: https://github.com/sphinx-doc/sphinx/issues/10351.
+
+    Note:
+        This workaround was ported almost verbatim from @zzzeek's
+        https://github.com/sqlalchemyorg/zzzeeksphinx (see cbd9baf therein).
+    """
+
+    def add_overload_entry(self, func):
+        pass
+
+    cls.add_overload_entry = add_overload_entry
 
 
 def patch_type_alias_forward_ref(cls: type) -> None:
@@ -30,6 +47,7 @@ def patch_type_alias_forward_ref(cls: type) -> None:
 
 
 def setup(app):
+    patch_overload_processing(sphinx.pycode.parser.VariableCommentPicker)
     patch_type_alias_forward_ref(sphinx.util.inspect.TypeAliasForwardRef)
 
     return {

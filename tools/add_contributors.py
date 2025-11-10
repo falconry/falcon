@@ -66,13 +66,13 @@ def aggregate_contributors(until=None, headers=None):
 
 
 def _get_towncrier_filename():
-    with open(ROOT / 'pyproject.toml', 'r') as pyproject_toml:
+    with open(ROOT / 'pyproject.toml') as pyproject_toml:
         project = toml.load(pyproject_toml)
     return project['tool']['towncrier']['filename']
 
 
 def _update_authors(contributors):
-    with open(ROOT / 'AUTHORS', 'r') as authors_file:
+    with open(ROOT / 'AUTHORS') as authors_file:
         content = authors_file.read()
 
     authors, separator, footer = content.partition(AUTHORS_SEPARATOR)
@@ -102,7 +102,7 @@ def _update_authors(contributors):
 
 
 def _update_towncrier_template(template, contributors):
-    with open(template, 'r') as template_file:
+    with open(template) as template_file:
         content = template_file.read()
 
     content, *matches = re.split(RST_CONTRIBUTOR_LINE, content)

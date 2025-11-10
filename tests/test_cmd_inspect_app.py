@@ -120,7 +120,7 @@ class TestLoadApp:
     def test_load_app(self, name):
         parser = inspect_app.make_parser()
         args = Namespace(
-            app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False
+            app_module=f'{_MODULE}:{name}', route_only=False, verbose=False
         )
         app = inspect_app.load_app(parser, args)
         assert isinstance(app, App)
@@ -137,7 +137,7 @@ class TestLoadApp:
     def test_load_app_error(self, name):
         parser = inspect_app.make_parser()
         args = Namespace(
-            app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False
+            app_module=f'{_MODULE}:{name}', route_only=False, verbose=False
         )
         with pytest.raises(SystemExit):
             inspect_app.load_app(parser, args)

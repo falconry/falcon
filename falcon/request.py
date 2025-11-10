@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from collections.abc import Mapping
 from datetime import date as py_date
 from datetime import datetime
 from io import BytesIO
@@ -21,18 +23,10 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    Iterable,
-    List,
     Literal,
-    Mapping,
-    Optional,
     overload,
     TextIO,
-    Tuple,
-    Type,
     TypeVar,
-    Union,
 )
 from uuid import UUID
 import warnings
@@ -112,13 +106,13 @@ class Request:
         '_media_error',
         'is_websocket',
     )
-    _cookies: Optional[Dict[str, List[str]]] = None
-    _cookies_collapsed: Optional[Dict[str, str]] = None
-    _cached_if_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
-    _cached_if_none_match: UnsetOr[Optional[List[Union[ETag, Literal['*']]]]] = _UNSET
+    _cookies: dict[str, list[str]] | None = None
+    _cookies_collapsed: dict[str, str] | None = None
+    _cached_if_match: UnsetOr[list[ETag | Literal['*']] | None] = _UNSET
+    _cached_if_none_match: UnsetOr[list[ETag | Literal['*']] | None] = _UNSET
 
     # Child classes may override this
-    context_type: ClassVar[Type[structures.Context]] = structures.Context
+    context_type: ClassVar[type] = structures.Context
     """Class variable that determines the factory or
     type to use for initializing the `context` attribute. By default,
     the framework will instantiate bare objects (instances of the bare
@@ -136,7 +130,7 @@ class Request:
     """
 
     # Attribute declaration
-    env: Dict[str, Any]
+    env: dict[str, Any]
     """Reference to the WSGI environ ``dict`` passed in from the
     server. (See also PEP-3333.)
     """
@@ -174,7 +168,7 @@ class Request:
     """Query string portion of the request URI, without the preceding
     '?' character.
     """
-    uri_template: Optional[str]
+    uri_template: str | None
     """The template for the route that was matched for
     this request. May be ``None`` if the request has not yet been
     routed, as would be the case for ``process_request()`` middleware
@@ -182,7 +176,7 @@ class Request:
     engine and the engine does not provide the URI template when
     resolving a route.
     """
-    content_type: Optional[str]
+    content_type: str | None
     """Value of the Content-Type header, or ``None`` if the header is missing."""
     stream: ReadableIO
     """File-like input object for reading the body of the
@@ -239,7 +233,7 @@ class Request:
     """Always ``False`` in a sync ``Request``."""
 
     def __init__(
-        self, env: Dict[str, Any], options: Optional[RequestOptions] = None
+        self, env: dict[str, Any], options: RequestOptions | None = None
     ) -> None:
         self.is_websocket: bool = False
 
@@ -251,7 +245,7 @@ class Request:
 
         self.uri_template = None
         self._media: UnsetOr[Any] = _UNSET
-        self._media_error: Optional[Exception] = None
+        self._media_error: Exception | None = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
@@ -288,7 +282,7 @@ class Request:
             self.query_string = env['QUERY_STRING']
         except KeyError:
             self.query_string = ''
-            self._params: Dict[str, Union[str, List[str]]] = {}
+            self._params: dict[str, str | list[str]] = {}
         else:
             if self.query_string:
                 self._params = parse_query_string(
@@ -300,15 +294,15 @@ class Request:
             else:
                 self._params = {}
 
-        self._cached_access_route: Optional[List[str]] = None
-        self._cached_forwarded: Optional[List[Forwarded]] = None
-        self._cached_forwarded_prefix: Optional[str] = None
-        self._cached_forwarded_uri: Optional[str] = None
-        self._cached_headers: Optional[Dict[str, str]] = None
-        self._cached_headers_lower: Optional[Dict[str, str]] = None
-        self._cached_prefix: Optional[str] = None
-        self._cached_relative_uri: Optional[str] = None
-        self._cached_uri: Optional[str] = None
+        self._cached_access_route: list[str] | None = None
+        self._cached_forwarded: list[Forwarded] | None = None
+        self._cached_forwarded_prefix: str | None = None
+        self._cached_forwarded_uri: str | None = None
+        self._cached_headers: dict[str, str] | None = None
+        self._cached_headers_lower: dict[str, str] | None = None
+        self._cached_prefix: str | None = None
+        self._cached_relative_uri: str | None = None
+        self._cached_uri: str | None = None
 
         try:
             self.content_type = self.env['CONTENT_TYPE']
@@ -316,7 +310,7 @@ class Request:
             self.content_type = None
 
         self.stream = env['wsgi.input']
-        self._bounded_stream: Optional[BoundedStream] = None  # Lazy wrapping
+        self._bounded_stream: BoundedStream | None = None  # Lazy wrapping
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
@@ -343,19 +337,19 @@ class Request:
     # Properties
     # ------------------------------------------------------------------------
 
-    user_agent: Optional[str] = helpers._header_property('HTTP_USER_AGENT')
+    user_agent: str | None = helpers._header_property('HTTP_USER_AGENT')
     """Value of the User-Agent header, or ``None`` if the header is missing."""
-    auth: Optional[str] = helpers._header_property('HTTP_AUTHORIZATION')
+    auth: str | None = helpers._header_property('HTTP_AUTHORIZATION')
     """Value of the Authorization header, or ``None`` if the header is missing."""
-    expect: Optional[str] = helpers._header_property('HTTP_EXPECT')
+    expect: str | None = helpers._header_property('HTTP_EXPECT')
     """Value of the Expect header, or ``None`` if the header is missing."""
-    if_range: Optional[str] = helpers._header_property('HTTP_IF_RANGE')
+    if_range: str | None = helpers._header_property('HTTP_IF_RANGE')
     """Value of the If-Range header, or ``None`` if the header is missing."""
-    referer: Optional[str] = helpers._header_property('HTTP_REFERER')
+    referer: str | None = helpers._header_property('HTTP_REFERER')
     """Value of the Referer header, or ``None`` if the header is missing."""
 
     @property
-    def forwarded(self) -> Optional[List[Forwarded]]:
+    def forwarded(self) -> list[Forwarded] | None:
         """Value of the Forwarded header, as a parsed list
         of :class:`falcon.Forwarded` objects, or ``None`` if the header
         is missing. If the header value is malformed, Falcon will
@@ -412,7 +406,7 @@ class Request:
             return '*/*'
 
     @property
-    def content_length(self) -> Optional[int]:
+    def content_length(self) -> int | None:
         """Value of the Content-Length header converted to an ``int``.
 
         Returns ``None`` if the header is missing.
@@ -468,7 +462,7 @@ class Request:
         return self._bounded_stream
 
     @property
-    def date(self) -> Optional[datetime]:
+    def date(self) -> datetime | None:
         """Value of the Date header, converted to a ``datetime`` instance.
 
         The header value is assumed to conform to RFC 1123.
@@ -480,7 +474,7 @@ class Request:
         return self.get_header_as_datetime('Date')
 
     @property
-    def if_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
+    def if_match(self) -> list[ETag | Literal['*']] | None:
         """Value of the If-Match header, as a parsed list of
         :class:`falcon.ETag` objects or ``None`` if the header is missing
         or its value is blank.
@@ -504,7 +498,7 @@ class Request:
         return self._cached_if_match
 
     @property
-    def if_none_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
+    def if_none_match(self) -> list[ETag | Literal['*']] | None:
         """Value of the If-None-Match header, as a parsed
         list of :class:`falcon.ETag` objects or ``None`` if the header is
         missing or its value is blank.
@@ -525,7 +519,7 @@ class Request:
         return self._cached_if_none_match
 
     @property
-    def if_modified_since(self) -> Optional[datetime]:
+    def if_modified_since(self) -> datetime | None:
         """Value of the If-Modified-Since header.
 
         Returns ``None`` if the header is missing.
@@ -537,7 +531,7 @@ class Request:
         return self.get_header_as_datetime('If-Modified-Since')
 
     @property
-    def if_unmodified_since(self) -> Optional[datetime]:
+    def if_unmodified_since(self) -> datetime | None:
         """Value of the If-Unmodified-Since header.
 
         Returns ``None`` if the header is missing.
@@ -549,7 +543,7 @@ class Request:
         return self.get_header_as_datetime('If-Unmodified-Since')
 
     @property
-    def range(self) -> Optional[Tuple[int, int]]:
+    def range(self) -> tuple[int, int] | None:
         """A 2-member ``tuple`` parsed from the value of the
         Range header, or ``None`` if the header is missing.
 
@@ -606,7 +600,7 @@ class Request:
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
 
     @property
-    def range_unit(self) -> Optional[str]:
+    def range_unit(self) -> str | None:
         """Unit of the range parsed from the value of the Range header.
 
         Returns ``None`` if the header is missing.
@@ -849,7 +843,7 @@ class Request:
         return host
 
     @property
-    def subdomain(self) -> Optional[str]:
+    def subdomain(self) -> str | None:
         """Leftmost (i.e., most specific) subdomain from the hostname.
 
         If only a single domain name is given, `subdomain` will be ``None``.
@@ -910,7 +904,7 @@ class Request:
         return self._cached_headers_lower
 
     @property
-    def params(self) -> Mapping[str, Union[str, List[str]]]:
+    def params(self) -> Mapping[str, str | list[str]]:
         """The mapping of request query parameter names to their values.
 
         Where the parameter appears multiple times in the query
@@ -943,7 +937,7 @@ class Request:
         return self._cookies_collapsed
 
     @property
-    def access_route(self) -> List[str]:
+    def access_route(self) -> list[str]:
         """IP address of the original client, as well
         as any known addresses of proxies fronting the WSGI server.
 
@@ -1155,6 +1149,9 @@ class Request:
 
         # Equivalent to: deserialized_media = req.get_media()
         deserialized_media = req.media
+
+    New WSGI apps are encouraged to use :meth:`~.get_media` directly instead of
+    this property.
     """
 
     # ------------------------------------------------------------------------
@@ -1186,7 +1183,7 @@ class Request:
         except ValueError:
             return False
 
-    def client_prefers(self, media_types: Iterable[str]) -> Optional[str]:
+    def client_prefers(self, media_types: Iterable[str]) -> str | None:
         """Return the client's preferred media type, given several choices.
 
         Args:
@@ -1211,7 +1208,7 @@ class Request:
 
     @overload
     def get_header(
-        self, name: str, required: Literal[True], default: Optional[str] = ...
+        self, name: str, required: Literal[True], default: str | None = ...
     ) -> str: ...
 
     @overload
@@ -1219,12 +1216,12 @@ class Request:
 
     @overload
     def get_header(
-        self, name: str, required: bool = ..., default: Optional[str] = ...
-    ) -> Optional[str]: ...
+        self, name: str, required: bool = ..., default: str | None = ...
+    ) -> str | None: ...
 
     def get_header(
-        self, name: str, required: bool = False, default: Optional[str] = None
-    ) -> Optional[str]:
+        self, name: str, required: bool = False, default: str | None = None
+    ) -> str | None:
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -1277,9 +1274,9 @@ class Request:
     def get_header_as_int(self, header: str, required: Literal[True]) -> int: ...
 
     @overload
-    def get_header_as_int(self, header: str, required: bool = ...) -> Optional[int]: ...
+    def get_header_as_int(self, header: str, required: bool = ...) -> int | None: ...
 
-    def get_header_as_int(self, header: str, required: bool = False) -> Optional[int]:
+    def get_header_as_int(self, header: str, required: bool = False) -> int | None:
         """Retrieve the int value for the given header.
 
         Args:
@@ -1317,11 +1314,11 @@ class Request:
     @overload
     def get_header_as_datetime(
         self, header: str, required: bool = ..., obs_date: bool = ...
-    ) -> Optional[datetime]: ...
+    ) -> datetime | None: ...
 
     def get_header_as_datetime(
         self, header: str, required: bool = False, obs_date: bool = False
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """Return an HTTP header with HTTP-Date values as a datetime.
 
         Args:
@@ -1359,7 +1356,7 @@ class Request:
             msg = 'It must be formatted according to RFC 7231, Section 7.1.1.1'
             raise errors.HTTPInvalidHeader(msg, header)
 
-    def get_cookie_values(self, name: str) -> Optional[List[str]]:
+    def get_cookie_values(self, name: str) -> list[str] | None:
         """Return all values provided in the Cookie header for the named cookie.
 
         (See also: :ref:`Getting Cookies <getting-cookies>`)
@@ -1396,7 +1393,7 @@ class Request:
         name: str,
         required: Literal[True],
         store: StoreArg = ...,
-        default: Optional[str] = ...,
+        default: str | None = ...,
     ) -> str: ...
 
     @overload
@@ -1415,16 +1412,16 @@ class Request:
         name: str,
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[str] = None,
-    ) -> Optional[str]: ...
+        default: str | None = None,
+    ) -> str | None: ...
 
     def get_param(
         self,
         name: str,
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[str] = None,
-    ) -> Optional[str]:
+        default: str | None = None,
+    ) -> str | None:
         """Return the raw value of a query string parameter as a string.
 
         Note:
@@ -1505,10 +1502,10 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        min_value: Optional[int] = ...,
-        max_value: Optional[int] = ...,
+        min_value: int | None = ...,
+        max_value: int | None = ...,
         store: StoreArg = ...,
-        default: Optional[int] = ...,
+        default: int | None = ...,
     ) -> int: ...
 
     @overload
@@ -1516,8 +1513,8 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        min_value: Optional[int] = ...,
-        max_value: Optional[int] = ...,
+        min_value: int | None = ...,
+        max_value: int | None = ...,
         store: StoreArg = ...,
         *,
         default: int,
@@ -1528,21 +1525,21 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        min_value: Optional[int] = ...,
-        max_value: Optional[int] = ...,
+        min_value: int | None = ...,
+        max_value: int | None = ...,
         store: StoreArg = ...,
-        default: Optional[int] = ...,
-    ) -> Optional[int]: ...
+        default: int | None = ...,
+    ) -> int | None: ...
 
     def get_param_as_int(
         self,
         name: str,
         required: bool = False,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
         store: StoreArg = None,
-        default: Optional[int] = None,
-    ) -> Optional[int]:
+        default: int | None = None,
+    ) -> int | None:
         """Return the value of a query string parameter as an int.
 
         Args:
@@ -1570,13 +1567,13 @@ class Request:
             an ``int``. If the param is not found, returns ``None``, unless
             `required` is ``True``.
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there, or it was found but could not
-                be converted to an ``int``. Also raised if the param's value
-                falls outside the given interval, i.e., the value must be in
-                the interval: min_value <= value <= max_value to avoid
-                triggering an error.
+        Raises:
+            HTTPBadRequest: The param was not found in the request, even
+                though it was required to be there, or it was found but
+                could not be converted to an ``int``. Also raised if the
+                param's value falls outside the given interval, i.e., the
+                value must be in the interval: min_value <= value <=
+                max_value to avoid triggering an error.
 
         """
 
@@ -1618,10 +1615,10 @@ class Request:
         self,
         name: str,
         required: Literal[True],
-        min_value: Optional[float] = ...,
-        max_value: Optional[float] = ...,
+        min_value: float | None = ...,
+        max_value: float | None = ...,
         store: StoreArg = ...,
-        default: Optional[float] = ...,
+        default: float | None = ...,
     ) -> float: ...
 
     @overload
@@ -1629,8 +1626,8 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        min_value: Optional[float] = ...,
-        max_value: Optional[float] = ...,
+        min_value: float | None = ...,
+        max_value: float | None = ...,
         store: StoreArg = ...,
         *,
         default: float,
@@ -1641,21 +1638,21 @@ class Request:
         self,
         name: str,
         required: bool = ...,
-        min_value: Optional[float] = ...,
-        max_value: Optional[float] = ...,
+        min_value: float | None = ...,
+        max_value: float | None = ...,
         store: StoreArg = ...,
-        default: Optional[float] = ...,
-    ) -> Optional[float]: ...
+        default: float | None = ...,
+    ) -> float | None: ...
 
     def get_param_as_float(
         self,
         name: str,
         required: bool = False,
-        min_value: Optional[float] = None,
-        max_value: Optional[float] = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
         store: StoreArg = None,
-        default: Optional[float] = None,
-    ) -> Optional[float]:
+        default: float | None = None,
+    ) -> float | None:
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1683,13 +1680,13 @@ class Request:
             an ``float``. If the param is not found, returns ``None``, unless
             `required` is ``True``.
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there, or it was found but could not
-                be converted to an ``float``. Also raised if the param's value
-                falls outside the given interval, i.e., the value must be in
-                the interval: min_value <= value <= max_value to avoid
-                triggering an error.
+        Raises:
+            HTTPBadRequest: The param was not found in the request, even
+                though it was required to be there, or it was found but
+                could not be converted to an ``float``. Also raised if the
+                param's value falls outside the given interval, i.e., the
+                value must be in the interval: min_value <= value <=
+                max_value to avoid triggering an error.
 
         """
 
@@ -1732,7 +1729,7 @@ class Request:
         name: str,
         required: Literal[True],
         store: StoreArg = ...,
-        default: Optional[UUID] = ...,
+        default: UUID | None = ...,
     ) -> UUID: ...
 
     @overload
@@ -1751,16 +1748,16 @@ class Request:
         name: str,
         required: bool = ...,
         store: StoreArg = ...,
-        default: Optional[UUID] = ...,
-    ) -> Optional[UUID]: ...
+        default: UUID | None = ...,
+    ) -> UUID | None: ...
 
     def get_param_as_uuid(
         self,
         name: str,
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[UUID] = None,
-    ) -> Optional[UUID]:
+        default: UUID | None = None,
+    ) -> UUID | None:
         """Return the value of a query string parameter as an UUID.
 
         The value to convert must conform to the standard UUID string
@@ -1795,10 +1792,10 @@ class Request:
             a ``UUID``. If the param is not found, returns
             ``default`` (default ``None``), unless `required` is ``True``.
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there, or it was found but could not
-                be converted to a ``UUID``.
+        Raises:
+            HTTPBadRequest: The param was not found in the request, even
+                though it was required to be there, or it was found but
+                could not be converted to a ``UUID``.
         """
 
         params = self._params
@@ -1833,7 +1830,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         blank_as_true: bool = ...,
-        default: Optional[bool] = ...,
+        default: bool | None = ...,
     ) -> bool: ...
 
     @overload
@@ -1854,8 +1851,8 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         blank_as_true: bool = ...,
-        default: Optional[bool] = ...,
-    ) -> Optional[bool]: ...
+        default: bool | None = ...,
+    ) -> bool | None: ...
 
     def get_param_as_bool(
         self,
@@ -1863,8 +1860,8 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         blank_as_true: bool = True,
-        default: Optional[bool] = None,
-    ) -> Optional[bool]:
+        default: bool | None = None,
+    ) -> bool | None:
         """Return the value of a query string parameter as a boolean.
 
         This method treats valueless parameters as flags. By default, if no
@@ -1946,8 +1943,8 @@ class Request:
         *,
         required: Literal[True],
         store: StoreArg = ...,
-        default: Optional[List[str]] = ...,
-    ) -> List[str]: ...
+        default: list[str] | None = ...,
+    ) -> list[str]: ...
 
     @overload
     def get_param_as_list(
@@ -1956,8 +1953,8 @@ class Request:
         transform: Callable[[str], _T],
         required: Literal[True],
         store: StoreArg = ...,
-        default: Optional[List[_T]] = ...,
-    ) -> List[_T]: ...
+        default: list[_T] | None = ...,
+    ) -> list[_T]: ...
 
     @overload
     def get_param_as_list(
@@ -1967,8 +1964,8 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         *,
-        default: List[str],
-    ) -> List[str]: ...
+        default: list[str],
+    ) -> list[str]: ...
 
     @overload
     def get_param_as_list(
@@ -1978,8 +1975,8 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         *,
-        default: List[_T],
-    ) -> List[_T]: ...
+        default: list[_T],
+    ) -> list[_T]: ...
 
     @overload
     def get_param_as_list(
@@ -1988,8 +1985,8 @@ class Request:
         transform: None = ...,
         required: bool = ...,
         store: StoreArg = ...,
-        default: Optional[List[str]] = ...,
-    ) -> Optional[List[str]]: ...
+        default: list[str] | None = ...,
+    ) -> list[str] | None: ...
 
     @overload
     def get_param_as_list(
@@ -1998,17 +1995,17 @@ class Request:
         transform: Callable[[str], _T],
         required: bool = ...,
         store: StoreArg = ...,
-        default: Optional[List[_T]] = ...,
-    ) -> Optional[List[_T]]: ...
+        default: list[_T] | None = ...,
+    ) -> list[_T] | None: ...
 
     def get_param_as_list(
         self,
         name: str,
-        transform: Optional[Callable[[str], _T]] = None,
+        transform: Callable[[str], _T] | None = None,
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[List[_T]] = None,
-    ) -> Optional[List[_T] | List[str]]:
+        default: list[_T] | None = None,
+    ) -> list[_T] | list[str] | None:
         """Return the value of a query string parameter as a list.
 
         List items must be comma-separated or must be provided
@@ -2075,7 +2072,7 @@ class Request:
             if not isinstance(items, list):
                 items = [items]
 
-            items_ret: List[str] | List[_T]
+            items_ret: list[str] | list[_T]
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
             # function calling overhead.
@@ -2107,7 +2104,7 @@ class Request:
         *,
         required: Literal[True],
         store: StoreArg = ...,
-        default: Optional[datetime] = ...,
+        default: datetime | None = ...,
     ) -> datetime: ...
 
     @overload
@@ -2128,8 +2125,8 @@ class Request:
         format_string: str = ...,
         required: bool = ...,
         store: StoreArg = ...,
-        default: Optional[datetime] = ...,
-    ) -> Optional[datetime]: ...
+        default: datetime | None = ...,
+    ) -> datetime | None: ...
 
     def get_param_as_datetime(
         self,
@@ -2137,8 +2134,8 @@ class Request:
         format_string: str = '%Y-%m-%dT%H:%M:%S%z',
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[datetime] = None,
-    ) -> Optional[datetime]:
+        default: datetime | None = None,
+    ) -> datetime | None:
         """Return the value of a query string parameter as a datetime.
 
         Args:
@@ -2199,7 +2196,7 @@ class Request:
         *,
         required: Literal[True],
         store: StoreArg = ...,
-        default: Optional[py_date] = ...,
+        default: py_date | None = ...,
     ) -> py_date: ...
 
     @overload
@@ -2220,8 +2217,8 @@ class Request:
         format_string: str = ...,
         required: bool = ...,
         store: StoreArg = ...,
-        default: Optional[py_date] = ...,
-    ) -> Optional[py_date]: ...
+        default: py_date | None = ...,
+    ) -> py_date | None: ...
 
     def get_param_as_date(
         self,
@@ -2229,8 +2226,8 @@ class Request:
         format_string: str = '%Y-%m-%d',
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[py_date] = None,
-    ) -> Optional[py_date]:
+        default: py_date | None = None,
+    ) -> py_date | None:
         """Return the value of a query string parameter as a date.
 
         Args:
@@ -2275,7 +2272,7 @@ class Request:
         name: str,
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[Any] = None,
+        default: Any | None = None,
     ) -> Any:
         """Return the decoded JSON value of a query string parameter.
 

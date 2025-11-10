@@ -5,6 +5,7 @@ import sys
 
 __all__ = (
     'HTTP_METHODS',
+    'HTTP_WG_DRAFT_METHODS',
     'WEBDAV_METHODS',
     'COMBINED_METHODS',
     'DEFAULT_MEDIA_TYPE',
@@ -31,12 +32,12 @@ PYPY = sys.implementation.name == 'pypy'
 PYTHON_VERSION = tuple(sys.version_info[:3])
 """Python version information triplet: (major, minor, micro)."""
 
-FALCON_SUPPORTED = PYTHON_VERSION >= (3, 8, 0)
+FALCON_SUPPORTED = PYTHON_VERSION >= (3, 9, 0)
 """Whether this version of Falcon supports the current Python version."""
 
 if not FALCON_SUPPORTED:  # pragma: nocover
     raise ImportError(
-        'Falcon requires Python 3.8+. '
+        'Falcon requires Python 3.9+. '
         '(Recent Pip should automatically pick a suitable Falcon version.)'
     )
 
@@ -58,6 +59,11 @@ HTTP_METHODS = [
     'POST',
     'PUT',
     'TRACE',
+]
+
+# HTTP methods from HTTP WG drafts
+HTTP_WG_DRAFT_METHODS = [
+    'QUERY',
 ]
 
 # RFC 2518 and 4918 methods
@@ -90,7 +96,11 @@ _META_METHODS = [
 ]
 
 COMBINED_METHODS = (
-    HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS + _META_METHODS
+    HTTP_METHODS
+    + WEBDAV_METHODS
+    + HTTP_WG_DRAFT_METHODS
+    + FALCON_CUSTOM_HTTP_METHODS
+    + _META_METHODS
 )
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume

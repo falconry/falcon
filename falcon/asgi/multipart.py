@@ -16,12 +16,10 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from collections.abc import Awaitable
 from typing import (
     Any,
-    AsyncIterator,
-    Awaitable,
-    Dict,
-    Optional,
     TYPE_CHECKING,
 )
 
@@ -43,7 +41,7 @@ MultipartParseError = multipart.MultipartParseError
 
 
 class BodyPart(multipart.BodyPart):
-    """Represents a body part in a multipart form in a ASGI application.
+    """Represents a body part in a multipart form in an ASGI application.
 
     Note:
         :class:`BodyPart` is meant to be instantiated directly only by the
@@ -55,7 +53,7 @@ class BodyPart(multipart.BodyPart):
         def __init__(
             self,
             stream: BufferedReader,
-            headers: Dict[bytes, bytes],
+            headers: dict[bytes, bytes],
             parse_options: MultipartParseOptions,
         ): ...
 
@@ -117,7 +115,7 @@ class BodyPart(multipart.BodyPart):
 
         return self._media
 
-    async def get_text(self) -> Optional[str]:  # type: ignore[override]
+    async def get_text(self) -> str | None:  # type: ignore[override]
         content_type, options = parse_header(self.content_type)
         if content_type != 'text/plain':
             return None
@@ -182,7 +180,7 @@ class MultipartForm:
         self,
         stream: AsyncReadableIO,
         boundary: bytes,
-        content_length: Optional[int],
+        content_length: int | None,
         parse_options: MultipartParseOptions,
     ) -> None:
         self._stream = (

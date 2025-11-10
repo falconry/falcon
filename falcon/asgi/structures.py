@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from falcon.constants import MEDIA_JSON
 from falcon.media import BaseHandler
 from falcon.media.json import _DEFAULT_JSON_HANDLER
@@ -51,11 +49,11 @@ class SSEvent:
         'comment',
     ]
 
-    data: Optional[bytes]
+    data: bytes | None
     """Raw byte string to use as the ``data`` field for the event message.
     Takes precedence over both `text` and `json`.
     """
-    text: Optional[str]
+    text: str | None
     """String to use for the ``data`` field in the message.
     Will be encoded as UTF-8 in the event. Takes precedence over `json`.
     """
@@ -63,18 +61,18 @@ class SSEvent:
     """JSON-serializable object to be converted to JSON and used as the ``data``
     field in the event message.
     """
-    event: Optional[str]
+    event: str | None
     """A string identifying the event type (AKA event name)."""
-    event_id: Optional[str]
+    event_id: str | None
     """The event ID that the User Agent should use for the `EventSource` object's
     last event ID value.
     """
-    retry: Optional[int]
+    retry: int | None
     """The reconnection time to use when attempting to send the event.
 
     This must be an integer, specifying the reconnection time in milliseconds.
     """
-    comment: Optional[str]
+    comment: str | None
     """Comment to include in the event message.
 
     This is normally ignored by the user agent, but is useful when composing a periodic
@@ -86,13 +84,13 @@ class SSEvent:
 
     def __init__(
         self,
-        data: Optional[bytes] = None,
-        text: Optional[str] = None,
-        json: Optional[object] = None,
-        event: Optional[str] = None,
-        event_id: Optional[str] = None,
-        retry: Optional[int] = None,
-        comment: Optional[str] = None,
+        data: bytes | None = None,
+        text: str | None = None,
+        json: object | None = None,
+        event: str | None = None,
+        event_id: str | None = None,
+        retry: int | None = None,
+        comment: str | None = None,
     ) -> None:
         # NOTE(kgriffs): Check up front since this makes it a lot easier
         #   to debug the source of the problem in the app vs. waiting for
@@ -126,7 +124,7 @@ class SSEvent:
 
         self.comment = comment
 
-    def serialize(self, handler: Optional[BaseHandler] = None) -> bytes:
+    def serialize(self, handler: BaseHandler | None = None) -> bytes:
         """Serialize this event to string.
 
         Args:

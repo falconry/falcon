@@ -17,7 +17,7 @@ class Emitter:
         self._done: bool = False
         self._queue: asyncio.Queue[SSEvent] = asyncio.Queue()
 
-    async def events(self) -> typing.AsyncGenerator[typing.Optional[SSEvent], None]:
+    async def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
         try:
             yield SSEvent(text='SSE CONNECTED')
 
@@ -69,7 +69,7 @@ class Hub:
             # TODO(vytas): What if this overlaps with another ongoing send?
             await ws.send_text(text)
 
-    def events(self) -> typing.AsyncGenerator[typing.Optional[SSEvent], None]:
+    def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
         emitter = Emitter()
         self._update_emitters()
         self._emitters.add(emitter)
