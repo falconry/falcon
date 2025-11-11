@@ -21,11 +21,13 @@ from typing import TYPE_CHECKING
 from falcon import constants
 from falcon import responders
 
+import warnings
+
 if TYPE_CHECKING:
     from falcon._typing import MethodDict
 
 
-class MethodNotFoundError(Exception):
+class SuffixedMethodNotFoundError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)
         self.message = message
@@ -73,13 +75,13 @@ def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
     if not method_map:
         resource_name = resource.__class__.__name__
         if suffix:
-            raise MethodNotFoundError(
+            raise SuffixedMethodNotFoundError(
                 f'No responders found for the specified resource: '
                 f'{resource_name} and suffix: {suffix}'
             )
         else:
-            raise MethodNotFoundError(
-                f'No responders found for the specified resource: {resource_name}'
+            warnings.warn(
+                f'No responders (on_get, on_post, etc.) found for the specified resource: {resource_name}'
             )
 
     return method_map
