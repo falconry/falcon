@@ -17,11 +17,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import warnings
 
 from falcon import constants
 from falcon import responders
-
-import warnings
 
 if TYPE_CHECKING:
     from falcon._typing import MethodDict
@@ -81,7 +80,8 @@ def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
             )
         else:
             warnings.warn(
-                f'No responders (on_get, on_post, etc.) found for the specified resource: {resource_name}'
+                'No responders (on_get, on_post, etc.) '
+                + f'found for the specified resource: {resource_name}'
             )
 
     return method_map
