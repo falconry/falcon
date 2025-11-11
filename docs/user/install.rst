@@ -133,18 +133,13 @@ courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/>`__.
    The following table summarizes the wheel availability on different
    combinations of CPython versions vs CPython platforms:
 
-.. warning::
-    The `free-threaded build
-    <https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
-    flag is not yet enabled for our wheels at this time.
+.. note::
+    As of Falcon :doc:`4.2.0 </changes/4.2.0>`, `free-threaded build
+    <https://docs.python.org/3/howto/free-threading-python.html>`__ was
+    enabled for selected Linux x86 wheels. Other CPython platforms can still
+    utilize free-threading using the pure Python wheel.
 
-    If you wish to experiment with
-    :ref:`running Falcon in the free-threaded mode <faq_free_threading>`, you
-    will need to explicitly tell the interpreter to disable GIL (via the
-    ``PYTHON_GIL`` environment variable, or the ``-X gil=0`` option).
-    It is also advisable to :ref:`recompile Falcon from source <cythonize>` on
-    a free-threaded CPython 3.13+ build before proceeding.
-    :ref:`Let us know how it went <chat>`!
+    See also: :ref:`faq_free_threading`
 
 While we believe that our build configuration covers the most common
 development and deployment scenarios, :ref:`let us know <chat>` if you are
