@@ -166,6 +166,10 @@ command to start the Dev Container which will run a headless VS Code Server
 process. In the connected Terminal, you can run the above referenced ``ruff``
 and ``tox`` commands inside the container (both tools are already pre-installed).
 
+VS Code test collection also works, both in the container and without it.
+Open the "Testing" View, and you should see all the ~300 (at the time of
+writing) tests discovered via ``pytest``.
+
 (If needed, the Dev Container's configuration can be tweaked via
 [devcontainer.json][devcontainer].)
 

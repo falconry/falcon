@@ -10,7 +10,7 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// NOTE(vytas): We install pytest not via pipx or features so that test collection works via the default interpreter.
-	"postCreateCommand": "pip install --upgrade pip pytest && pip install -e .",
+	"postCreateCommand": "pip install --upgrade pip pytest && FALCON_DISABLE_CYTHON=y pip install -e .",
 
 	// Configure tool-specific properties.
 	"customizations": {
