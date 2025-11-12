@@ -1,7 +1,7 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
-    "setuptools>=61",
+    "setuptools>=77.0.3",
     "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
 ]
 
@@ -15,14 +15,14 @@ description = "The ultra-reliable, fast ASGI+WSGI framework for building data pl
 authors = [
   {name = "Kurt Griffiths", email = "mail@kgriffs.com"},
 ]
-license = {text = "Apache 2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Web Environment",
     "Natural Language :: English",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
@@ -73,7 +73,6 @@ Chat = "https://gitter.im/falconry/user"
 
 [tool.setuptools]
 include-package-data = true
-license-files = ["LICENSE"]
 zip-safe = false
 
 [tool.setuptools.dynamic]
@@ -118,7 +117,7 @@ ignore_missing_imports = true
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "docs/changes/4.2.0.rst"
+    filename = "docs/changes/4.3.0.rst"
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
