@@ -1,20 +1,31 @@
 Changelog for Falcon 4.2.0
 ==========================
 
+.. falcon-release: 2025-11-10
+
 Summary
 -------
 
-This is the first release candidate of Falcon 4.2.0.
+Falcon 4.2.0 primarily contains typing enhancements and performance
+optimizations. This release also marks the debut of pre-compiled wheels for the
+:ref:`free-threaded <faq_free_threading>` CPython 3.14 build.
+:ref:`Let us know <chat>` if you are experimenting with scaling Falcon
+applications using free-threading!
 
-We would greatly appreciate it if you could help us with testing on your apps!
-If you use type checking, please also check how the new
-:ref:`generic App types <generic_app_types>` (and other typing improvements)
-work for you. :ref:`Let us know <chat>` if you run into any issues!
+The typing improvements focus on making the WSGI and ASGI App types
+:ref:`generic <generic_app_types>` (parametrized by the request and response
+types). This should make it significantly easier to properly annotate
+applications that leverage custom request and/or response types.
 
-As always, you can grab this pre-release
-`from PyPI <https://pypi.org/project/falcon/4.2.0rc1/>`__::
+Additionally, we have fixed a reproducibility issue (thanks to
+`@bmwiedemann <https://github.com/bmwiedemann>`__ from openSUSE for reporting!)
+in our documentation build process. Regarding packaging Falcon for
+distributions in general, we would like to remind you of the
+:doc:`/community/packaging` that was published with the previous Falcon release
+(4.1.0). We hope this guide proves useful.
 
-    pip install falcon==4.2.0rc1
+This release also incorporates a number of pull requests submitted by our
+community. Sincere thanks to all 8 contributors who made this release possible!
 
 
 Changes to Supported Platforms
