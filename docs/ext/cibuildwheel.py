@@ -70,7 +70,7 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
         for row in data:
             for cell in row:
                 # NOTE(vytas): Emojis take two spaces...
-                padded_width = width - 1 if cell == _CHECKBOX else width
+                padded_width = width - 1 if _CHECKBOX in cell else width
                 output.append('|' + cell.center(padded_width))
             output.append('|\n')
 
@@ -78,6 +78,13 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
             output.append(hline.replace('-', '=') if header_line else hline)
 
         return ''.join(output)
+
+    @classmethod
+    def _render_cell(cls, supported, free_threading):
+        cell = _CHECKBOX if supported else ''
+        if cell and free_threading:
+            cell += '\\ :sup:`1`'
+        return cell
 
     def run(self):
         workflow_path = pathlib.Path(self.arguments[0])
@@ -101,21 +108,41 @@ class WheelsDirective(sphinx.util.docutils.SphinxDirective):
                 [platform['name'] for platform in platforms], matrix['python']
             )
         )
-        supported.update((item['platform']['name'], item['python']) for item in include)
+        supported.update(
+            (item['platform']['name'], item['python'])
+            for item in include
+            if not item['python'].endswith('t')
+        )
         cpythons = sorted(
             {cp for _, cp in supported} | _EXTEND_CPYTHONS,
             key=lambda val: (len(val), val),
         )
+        # TODO(vytas): Currently free-threading is always configured via include.
+        free_threading = {
+            (item['platform']['name'], item['python'].rstrip('t'))
+            for item in include
+            if item['python'].endswith('t')
+        }
 
         header = ['Platform / CPython version']
         table = [header + [cp.replace('cp3', '3.') for cp in cpythons]]
         table.extend(
             [description]
-            + [(_CHECKBOX if (name, cp) in supported else '') for cp in cpythons]
+            + [
+                self._render_cell((name, cp) in supported, (name, cp) in free_threading)
+                for cp in cpythons
+            ]
             for name, description in _CPYTHON_PLATFORMS.items()
         )
 
         content = '\n'.join(self.content) + '\n\n' + self._emit_table(table)
+
+        if free_threading:
+            content += (
+                '\n\n:sup:`1`\\ '
+                '*A binary wheel is also available for free-threaded CPython.*'
+            )
+
         return self.parse_text_to_nodes(content)
 
 

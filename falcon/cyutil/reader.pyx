@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# cython: freethreading_compatible = True
+
 """Buffered stream reader (cythonized variant)."""
 
 from libc.stdint cimport uint32_t
