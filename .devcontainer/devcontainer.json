@@ -3,10 +3,14 @@
 {
 	"name": "Falcon (CPython 3.14)",
 	"image": "mcr.microsoft.com/devcontainers/python:3.14",
+	"features": {
+		"ghcr.io/devcontainers-extra/features/ruff:1": {},
+		"ghcr.io/devcontainers-extra/features/tox:2": {}
+	},
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// NOTE(vytas): Using pipx as it is recommended in the Python README (see above).
-	"postCreateCommand": "pipx install ruff && pipx install tox",
+	// NOTE(vytas): We install pytest not via pipx or features so that test collection works via the default interpreter.
+	"postCreateCommand": "pip install --upgrade pip pytest && pip install -e .",
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -25,11 +29,11 @@
 				"remote.autoForwardPorts": false
 			}
 		}
-	}
+	},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// NOTE(vytas): You will probably want to connect as root on rootless Docker/Podman/etc.
 	//   In rootless setups, the current user is typically mapped to root's UID inside the container.
 	//   (You may run into permission problems otherwise as the vscode user gets mapped to an ephemeral UID.)
-	// "remoteUser": "root"
+	"remoteUser": "root"
 }
