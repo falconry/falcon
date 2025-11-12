@@ -29,11 +29,11 @@
 				"remote.autoForwardPorts": false
 			}
 		}
-	},
+	}
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// NOTE(vytas): You will probably want to connect as root on rootless Docker/Podman/etc.
 	//   In rootless setups, the current user is typically mapped to root's UID inside the container.
 	//   (You may run into permission problems otherwise as the vscode user gets mapped to an ephemeral UID.)
-	"remoteUser": "root"
+	// "remoteUser": "root"
 }
