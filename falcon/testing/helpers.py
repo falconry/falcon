@@ -1359,11 +1359,11 @@ def create_asgi_req(
     return req_type(scope, req_event_emitter, options=options)
 
 
-# NOTE(TudorGR): Deprecated in Falcon 4.2
+# NOTE(TudorGR): Deprecated in Falcon 4.3.
 # TODO(TudorGR): Remove in Falcon 5.0.
 @falcon.util.deprecated(
     'This context manager is deprecated and will be removed in Falcon 5.0. '
-    'Please use `contextlib.redirect_stdout` and `contextlib.redirect_stderr` instead.'
+    'Please use contextlib.redirect_stdout and contextlib.redirect_stderr instead.'
 )
 @contextlib.contextmanager
 def redirected(
@@ -1397,6 +1397,10 @@ def redirected(
     Tip:
         The popular `pytest <https://docs.pytest.org/>`__ also captures
         and suppresses output from successful tests by default.
+
+    .. deprecated:: 4.3
+        Use the stlib's :func:`contextlib.redirect_stdout` and
+        :func:`contextlib.redirect_stderr` instead.
     """
 
     old_stdout, old_stderr = sys.stdout, sys.stderr
