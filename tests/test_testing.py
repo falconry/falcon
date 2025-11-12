@@ -239,8 +239,8 @@ def test_deprecated_httpnow():
 def test_deprecated_redirected():
     with pytest.warns(
         falcon.util.DeprecatedWarning,
-        match='Please use `contextlib.redirect_stdout` and '
-        '`contextlib.redirect_stderr` instead.',
+        match='Please use contextlib.redirect_stdout and '
+        'contextlib.redirect_stderr instead.',
     ):
         output = io.StringIO()
         with testing.redirected(stdout=output):
