@@ -131,7 +131,7 @@ from falcon.testing.helpers import DEFAULT_UA
 from falcon.testing.helpers import get_encoding_from_headers
 from falcon.testing.helpers import get_unused_port
 from falcon.testing.helpers import rand_string
-from falcon.testing.helpers import redirected as _redirected
+from falcon.testing.helpers import redirected
 from falcon.testing.resource import capture_responder_args
 from falcon.testing.resource import capture_responder_args_async
 from falcon.testing.resource import set_resp_defaults
@@ -194,7 +194,3 @@ httpnow = _util.deprecated(
     'This method is deprecated and will be removed in Falcon 5.0. '
     'Use `falcon.util.http_now` instead.'
 )(_util.http_now)
-
-# NOTE(TudorGR): Deprecated in Falcon 4.2
-# TODO(TudorGR): Remove in Falcon 5.0.
-redirected = _redirected
