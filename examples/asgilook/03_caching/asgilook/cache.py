@@ -24,7 +24,7 @@ class RedisCache:
         await self._redis.ping()
 
     async def process_shutdown(self, scope, event):
-        await self._redis.aclose()
+        await self._redis.close()
 
     async def process_request(self, req, resp):
         resp.context.cached = False
