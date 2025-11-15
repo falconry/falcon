@@ -1,3 +1,0 @@
-Update `test_examples.py` to include testing of POST requests for the "things_advanced" example; 
-Update `things_advanced.py` example to add `req.content_length` to `req.stream.read()`; 
-Add an entry to the FAQ describing how to customize header values for tests
