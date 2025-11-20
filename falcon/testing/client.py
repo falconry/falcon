@@ -563,24 +563,7 @@ def simulate_request(
 
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
-            may be pas(If you already have it, skip this step.)
-
-Step 2: Fetch the latest changes from the original repository
-Bash
-￼
-￼
-Copiar
-git fetch upstream
-Step 3: Go to your local branch that the PR is based on
-Bash
-￼
-￼
-Copiar
-git checkout your-branch-name
-# or the default branch of your fork if the PR is from main/master
-git checkout main   # or master
-Step 4: Rebase (or merge) your branch onto the latest upstream main/master
-sed, in which case it will be used as-is.
+            may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
@@ -617,6 +600,13 @@ sed, in which case it will be used as-is.
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -633,7 +623,6 @@ sed, in which case it will be used as-is.
             content_type=content_type,
             body=body,
             json=json,
-            msgpack=msgpack,
             params=params,
             params_csv=params_csv,
             protocol=protocol,
@@ -646,6 +635,7 @@ sed, in which case it will be used as-is.
             asgi_chunk_size=asgi_chunk_size,
             asgi_disconnect_ttl=asgi_disconnect_ttl,
             cookies=cookies,
+            msgpack=msgpack,
         )
 
     path, query_string, headers, body, extras = _prepare_sim_args(
@@ -657,8 +647,8 @@ sed, in which case it will be used as-is.
         headers,
         body,
         json,
-        msgpack,
         extras,
+        msgpack,
     )
 
     env = helpers.create_environ(
@@ -853,7 +843,7 @@ async def _simulate_request_asgi(
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
-            the `content_type` or `headers` arguments.        
+            the `content_type` or `headers` arguments.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -900,7 +890,7 @@ async def _simulate_request_asgi(
         body,
         json,
         extras,
-        msgpack
+        msgpack,
     )
 
     # ---------------------------------------------------------------------
@@ -2069,7 +2059,7 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
         cookies (dict): Cookies as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
-            for the 'Set-Cookie' header.        
+            for the 'Set-Cookie' header.
         msgpack(Msgpack serializable): A Msgpack document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
