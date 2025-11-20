@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from collections.abc import Mapping
 from datetime import datetime
 from datetime import timezone
 import functools
@@ -23,17 +25,9 @@ import mimetypes
 from typing import (
     Any,
     ClassVar,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
     NoReturn,
-    Optional,
     overload,
-    Tuple,
-    Type,
     TYPE_CHECKING,
-    Union,
 )
 import warnings
 
@@ -94,15 +88,15 @@ class Response:
         '__dict__',
     )
 
-    _cookies: Optional[http_cookies.SimpleCookie]
-    _data: Optional[bytes]
-    _extra_headers: Optional[List[Tuple[str, str]]]
+    _cookies: http_cookies.SimpleCookie | None
+    _data: bytes | None
+    _extra_headers: list[tuple[str, str]] | None
     _headers: Headers
-    _media: Optional[Any]
+    _media: Any | None
     _media_rendered: UnsetOr[bytes]
 
     # Child classes may override this
-    context_type: ClassVar[Type[structures.Context]] = structures.Context
+    context_type: ClassVar[type] = structures.Context
     """Class variable that determines the factory or
     type to use for initializing the `context` attribute. By default,
     the framework will instantiate bare objects (instances of the bare
@@ -124,7 +118,7 @@ class Response:
     request processing should be short-circuited (see also
     :ref:`Middleware <middleware>`).
     """
-    status: Union[str, int, http.HTTPStatus]
+    status: str | int | http.HTTPStatus
     """HTTP status code or line (e.g., ``'200 OK'``).
 
     This may be set to a member of :class:`http.HTTPStatus`, an HTTP status line
@@ -135,14 +129,14 @@ class Response:
         common status codes. They all start with the ``HTTP_`` prefix,
         as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
     """
-    text: Optional[str]
+    text: str | None
     """String representing response content.
 
     Note:
         Falcon will encode the given text as UTF-8 in the response. If the content
         is already a byte string, use the :attr:`data` attribute instead (it's faster).
     """
-    stream: Union[ReadableIO, Iterable[bytes], None]
+    stream: ReadableIO | Iterable[bytes] | None
     """Either a file-like object with a `read()` method that takes an optional size
     argument and returns a block of bytes, or an iterable object, representing response
     content, and yielding blocks as byte strings. Falcon will use *wsgi.file_wrapper*,
@@ -168,7 +162,7 @@ class Response:
     options: ResponseOptions
     """Set of global options passed in from the App handler."""
 
-    def __init__(self, options: Optional[ResponseOptions] = None) -> None:
+    def __init__(self, options: ResponseOptions | None = None) -> None:
         self.status = '200 OK'
         self._headers = {}
 
@@ -226,7 +220,7 @@ class Response:
         )
 
     @property
-    def data(self) -> Optional[bytes]:
+    def data(self) -> bytes | None:
         """Byte string representing response content.
 
         Use this attribute in lieu of `text` when your content is
@@ -241,7 +235,7 @@ class Response:
         return self._data
 
     @data.setter
-    def data(self, value: Optional[bytes]) -> None:
+    def data(self, value: bytes | None) -> None:
         self._data = value
 
     @property
@@ -269,7 +263,7 @@ class Response:
         self._media = value
         self._media_rendered = _UNSET
 
-    def render_body(self) -> Optional[bytes]:
+    def render_body(self) -> bytes | None:
         """Get the raw bytestring content for the response body.
 
         This method returns the raw data for the HTTP response body, taking
@@ -286,7 +280,7 @@ class Response:
             finally the serialized value of the `media` attribute. If
             none of these attributes are set, ``None`` is returned.
         """
-        data: Optional[bytes]
+        data: bytes | None
         text = self.text
         if text is None:
             data = self._data
@@ -321,7 +315,7 @@ class Response:
         return f'<{self.__class__.__name__}: {self.status}>'
 
     def set_stream(
-        self, stream: Union[ReadableIO, Iterable[bytes]], content_length: int
+        self, stream: ReadableIO | Iterable[bytes], content_length: int
     ) -> None:
         """Set both `stream` and `content_length`.
 
@@ -356,13 +350,13 @@ class Response:
         self,
         name: str,
         value: str,
-        expires: Optional[datetime] = None,
-        max_age: Optional[int] = None,
-        domain: Optional[str] = None,
-        path: Optional[str] = None,
-        secure: Optional[bool] = None,
+        expires: datetime | None = None,
+        max_age: int | None = None,
+        domain: str | None = None,
+        path: str | None = None,
+        secure: bool | None = None,
         http_only: bool = True,
-        same_site: Optional[str] = None,
+        same_site: str | None = None,
         partitioned: bool = False,
     ) -> None:
         """Set a response cookie.
@@ -565,10 +559,10 @@ class Response:
     def unset_cookie(
         self,
         name: str,
-        domain: Optional[str] = None,
-        path: Optional[str] = None,
+        domain: str | None = None,
+        path: str | None = None,
         same_site: str = 'Lax',
-        samesite: Optional[str] = None,
+        samesite: str | None = None,
     ) -> None:
         """Unset a cookie in the response.
 
@@ -669,9 +663,9 @@ class Response:
     def get_header(self, name: str, default: str) -> str: ...
 
     @overload
-    def get_header(self, name: str, default: Optional[str] = ...) -> Optional[str]: ...
+    def get_header(self, name: str, default: str | None = ...) -> str | None: ...
 
-    def get_header(self, name: str, default: Optional[str] = None) -> Optional[str]:
+    def get_header(self, name: str, default: str | None = None) -> str | None:
         """Retrieve the raw string value for the given header.
 
         Normally, when a header has multiple values, they will be
@@ -814,7 +808,7 @@ class Response:
             self._headers[name] = value
 
     def set_headers(
-        self, headers: Union[Mapping[str, str], Iterable[Tuple[str, str]]]
+        self, headers: Mapping[str, str] | Iterable[tuple[str, str]]
     ) -> None:
         """Set several headers at once.
 
@@ -873,13 +867,13 @@ class Response:
         self,
         target: str,
         rel: str,
-        title: Optional[str] = None,
-        title_star: Optional[Tuple[str, str]] = None,
-        anchor: Optional[str] = None,
-        hreflang: Optional[Union[str, Iterable[str]]] = None,
-        type_hint: Optional[str] = None,
-        crossorigin: Optional[str] = None,
-        link_extension: Optional[Iterable[Tuple[str, str]]] = None,
+        title: str | None = None,
+        title_star: tuple[str, str] | None = None,
+        anchor: str | None = None,
+        hreflang: str | Iterable[str] | None = None,
+        type_hint: str | None = None,
+        crossorigin: str | None = None,
+        link_extension: Iterable[tuple[str, str]] | None = None,
     ) -> None:
         """Append a link header to the response.
 
@@ -1014,7 +1008,7 @@ class Response:
             'Please use append_link() instead.'
         )
 
-    cache_control: Union[str, Iterable[str], None] = _header_property(
+    cache_control: str | Iterable[str] | None = _header_property(
         'Cache-Control',
         """Set the Cache-Control header.
 
@@ -1031,7 +1025,7 @@ class Response:
     the value for the header.
     """
 
-    content_location: Optional[str] = _header_property(
+    content_location: str | None = _header_property(
         'Content-Location',
         """Set the Content-Location header.
 
@@ -1048,7 +1042,7 @@ class Response:
     header should be set manually using the set_header method.
     """
 
-    content_length: Union[str, int, None] = _header_property(
+    content_length: str | int | None = _header_property(
         'Content-Length',
         """Set the Content-Length header.
 
@@ -1086,7 +1080,7 @@ class Response:
 
     """
 
-    content_range: Union[str, RangeSetHeader, None] = _header_property(
+    content_range: str | RangeSetHeader | None = _header_property(
         'Content-Range',
         """A tuple to use in constructing a value for the Content-Range header.
 
@@ -1123,7 +1117,7 @@ class Response:
     (See also: RFC 7233, Section 4.2)
     """
 
-    content_type: Optional[str] = _header_property(
+    content_type: str | None = _header_property(
         'Content-Type',
         """Sets the Content-Type header.
 
@@ -1147,7 +1141,7 @@ class Response:
     and ``falcon.MEDIA_GIF``.
     """
 
-    downloadable_as: Optional[str] = _header_property(
+    downloadable_as: str | None = _header_property(
         'Content-Disposition',
         """Set the Content-Disposition header using the given filename.
 
@@ -1174,7 +1168,7 @@ class Response:
     ASCII fallback.
     """
 
-    viewable_as: Optional[str] = _header_property(
+    viewable_as: str | None = _header_property(
         'Content-Disposition',
         """Set an inline Content-Disposition header using the given filename.
 
@@ -1205,7 +1199,7 @@ class Response:
     .. versionadded:: 3.1
     """
 
-    etag: Optional[str] = _header_property(
+    etag: str | None = _header_property(
         'ETag',
         """Set the ETag header.
 
@@ -1220,7 +1214,7 @@ class Response:
     the user didn't pass it.
     """
 
-    expires: Union[str, datetime, None] = _header_property(
+    expires: str | datetime | None = _header_property(
         'Expires',
         """Set the Expires header. Set to a ``datetime`` (UTC) instance.
 
@@ -1235,7 +1229,7 @@ class Response:
         Falcon will format the ``datetime`` as an HTTP date string.
     """
 
-    last_modified: Union[str, datetime, None] = _header_property(
+    last_modified: str | datetime | None = _header_property(
         'Last-Modified',
         """Set the Last-Modified header. Set to a ``datetime`` (UTC) instance.
 
@@ -1250,7 +1244,7 @@ class Response:
         Falcon will format the ``datetime`` as an HTTP date string.
     """
 
-    location: Optional[str] = _header_property(
+    location: str | None = _header_property(
         'Location',
         """Set the Location header.
 
@@ -1267,7 +1261,7 @@ class Response:
     header should be set manually using the set_header method.
     """
 
-    retry_after: Union[int, str, None] = _header_property(
+    retry_after: int | str | None = _header_property(
         'Retry-After',
         """Set the Retry-After header.
 
@@ -1281,7 +1275,7 @@ class Response:
     value for the header. The HTTP-date syntax is not supported.
     """
 
-    vary: Union[str, Iterable[str], None] = _header_property(
+    vary: str | Iterable[str] | None = _header_property(
         'Vary',
         """Value to use for the Vary header.
 
@@ -1316,7 +1310,7 @@ class Response:
     (See also: RFC 7231, Section 7.1.4)
     """
 
-    accept_ranges: Optional[str] = _header_property(
+    accept_ranges: str | None = _header_property(
         'Accept-Ranges',
         """Set the Accept-Ranges header.
 
@@ -1350,7 +1344,7 @@ class Response:
 
     """
 
-    def _set_media_type(self, media_type: Optional[str] = None) -> None:
+    def _set_media_type(self, media_type: str | None = None) -> None:
         """Set a content-type; wrapper around set_header.
 
         Args:
@@ -1365,7 +1359,7 @@ class Response:
         if media_type is not None and 'content-type' not in self._headers:
             self._headers['content-type'] = media_type
 
-    def _wsgi_headers(self, media_type: Optional[str] = None) -> list[tuple[str, str]]:
+    def _wsgi_headers(self, media_type: str | None = None) -> list[tuple[str, str]]:
         """Convert headers into the format expected by WSGI servers.
 
         Args:
@@ -1429,7 +1423,7 @@ class ResponseOptions:
     Default handlers are provided for the ``application/json``,
     ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
     """
-    static_media_types: Dict[str, str]
+    static_media_types: dict[str, str]
     """A mapping of dot-prefixed file extensions to Internet media types (RFC 2046).
 
     Defaults to ``mimetypes.types_map`` after calling ``mimetypes.init()``.

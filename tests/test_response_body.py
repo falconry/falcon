@@ -21,7 +21,7 @@ def test_append_body(resp):
 
 
 def test_response_repr(resp):
-    _repr = '<%s: %s>' % (resp.__class__.__name__, resp.status)
+    _repr = f'<{resp.__class__.__name__}: {resp.status}>'
     assert resp.__repr__() == _repr
 
 

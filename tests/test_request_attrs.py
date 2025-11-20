@@ -906,7 +906,7 @@ class TestRequestAttributes:
         )
 
         assert req.port == port
-        assert req.netloc == '{}:{}'.format(host, port)
+        assert req.netloc == f'{host}:{port}'
 
     def test_app_present(self, asgi):
         req = create_req(asgi, root_path='/moving-pictures')
@@ -1023,7 +1023,7 @@ class TestRequestAttributes:
 
         try:
             getattr(req, attr_name)
-            pytest.fail('{} not raised'.format(error_type.__name__))
+            pytest.fail(f'{error_type.__name__} not raised')
         except error_type as ex:
             assert ex.title == title
             assert ex.description == description

@@ -16,19 +16,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
+from collections.abc import Mapping
 from typing import (
     Any,
-    Awaitable,
     cast,
-    Dict,
-    List,
     Literal,
-    Mapping,
     NoReturn,
-    Optional,
     overload,
-    Tuple,
-    Union,
 )
 
 from falcon import errors
@@ -90,21 +85,21 @@ class Request(request.Request):
     # PERF(vytas): These boilerplates values will be shadowed when set on an
     #   instance. Avoiding a statement per each of those values allows to speed
     #   up __init__ substantially.
-    _asgi_server_cached: Optional[Tuple[str, int]] = None
-    _cached_access_route: Optional[List[str]] = None
-    _cached_forwarded: Optional[List[Forwarded]] = None
-    _cached_forwarded_prefix: Optional[str] = None
-    _cached_forwarded_uri: Optional[str] = None
-    _cached_headers: Optional[Dict[str, str]] = None
+    _asgi_server_cached: tuple[str, int] | None = None
+    _cached_access_route: list[str] | None = None
+    _cached_forwarded: list[Forwarded] | None = None
+    _cached_forwarded_prefix: str | None = None
+    _cached_forwarded_uri: str | None = None
+    _cached_headers: dict[str, str] | None = None
     # NOTE: _cached_headers_lower is not used
-    _cached_prefix: Optional[str] = None
-    _cached_relative_uri: Optional[str] = None
-    _cached_uri: Optional[str] = None
+    _cached_prefix: str | None = None
+    _cached_relative_uri: str | None = None
+    _cached_uri: str | None = None
     _media: UnsetOr[Any] = _UNSET
-    _media_error: Optional[Exception] = None
-    _stream: Optional[BoundedStream] = None
+    _media_error: Exception | None = None
+    _stream: BoundedStream | None = None
 
-    scope: Dict[str, Any]
+    scope: dict[str, Any]
     """Reference to the ASGI HTTP connection scope passed in
     from the server (see also: `Connection Scope`_).
 
@@ -116,16 +111,16 @@ class Request(request.Request):
 
     def __init__(
         self,
-        scope: Dict[str, Any],
+        scope: dict[str, Any],
         receive: AsgiReceive,
-        first_event: Optional[AsgiEvent] = None,
-        options: Optional[request.RequestOptions] = None,
+        first_event: AsgiEvent | None = None,
+        options: request.RequestOptions | None = None,
     ):
         # =====================================================================
         # Prepare headers
         # =====================================================================
 
-        req_headers: Dict[bytes, bytes] = {}
+        req_headers: dict[bytes, bytes] = {}
         for header_name, header_value in scope['headers']:
             # NOTE(kgriffs): According to ASGI 3.0, header names are always
             #   lowercased, and both name and value are byte strings. Although
@@ -150,7 +145,7 @@ class Request(request.Request):
             else:
                 req_headers[header_name] += b',' + header_value
 
-        self._asgi_headers: Dict[bytes, bytes] = req_headers
+        self._asgi_headers: dict[bytes, bytes] = req_headers
         # PERF(vytas): Fall back to class variable(s) when unset.
         # self._cached_headers = None
 
@@ -241,7 +236,7 @@ class Request(request.Request):
         # PERF(vytas): Fall back to class variable(s) when unset.
         # self._stream = None
         self._receive: AsgiReceive = receive
-        self._first_event: Optional[AsgiEvent] = first_event
+        self._first_event: AsgiEvent | None = first_event
 
         # =====================================================================
         # Create a context object
@@ -260,11 +255,11 @@ class Request(request.Request):
     # trouble.
     # ------------------------------------------------------------------------
 
-    auth: Optional[str] = asgi_helpers._header_property('Authorization')
-    expect: Optional[str] = asgi_helpers._header_property('Expect')
-    if_range: Optional[str] = asgi_helpers._header_property('If-Range')
-    referer: Optional[str] = asgi_helpers._header_property('Referer')
-    user_agent: Optional[str] = asgi_helpers._header_property('User-Agent')
+    auth: str | None = asgi_helpers._header_property('Authorization')
+    expect: str | None = asgi_helpers._header_property('Expect')
+    if_range: str | None = asgi_helpers._header_property('If-Range')
+    referer: str | None = asgi_helpers._header_property('Referer')
+    user_agent: str | None = asgi_helpers._header_property('User-Agent')
 
     @property
     def accept(self) -> str:
@@ -276,7 +271,7 @@ class Request(request.Request):
             return '*/*'
 
     @property
-    def content_length(self) -> Optional[int]:
+    def content_length(self) -> int | None:
         try:
             value = self._asgi_headers[b'content-length']
         except KeyError:
@@ -454,7 +449,7 @@ class Request(request.Request):
         return host
 
     @property
-    def access_route(self) -> List[str]:
+    def access_route(self) -> list[str]:
         """IP address of the original client (if known), as
         well as any known addresses of proxies fronting the ASGI server.
 
@@ -651,7 +646,7 @@ class Request(request.Request):
     """
 
     @property
-    def if_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
+    def if_match(self) -> list[ETag | Literal['*']] | None:
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
         #   pattern for us.
@@ -667,7 +662,7 @@ class Request(request.Request):
         return self._cached_if_match
 
     @property
-    def if_none_match(self) -> Optional[List[Union[ETag, Literal['*']]]]:
+    def if_none_match(self) -> list[ETag | Literal['*']] | None:
         if self._cached_if_none_match is _UNSET:
             header_value = self._asgi_headers.get(b'if-none-match')
             if header_value:
@@ -722,7 +717,7 @@ class Request(request.Request):
 
     @overload
     def get_header(
-        self, name: str, required: Literal[True], default: Optional[str] = ...
+        self, name: str, required: Literal[True], default: str | None = ...
     ) -> str: ...
 
     @overload
@@ -730,20 +725,21 @@ class Request(request.Request):
 
     @overload
     def get_header(
-        self, name: str, required: bool = False, default: Optional[str] = ...
-    ) -> Optional[str]: ...
+        self, name: str, required: bool = False, default: str | None = ...
+    ) -> str | None: ...
 
     # PERF(kgriffs): Using kwarg cache, in lieu of @lru_cache on a helper method
     #   that is then called from get_header(), was benchmarked to be more
     #   efficient across CPython 3.6/3.8 (regardless of cythonization) and
     #   PyPy 3.6.
+    # TODO(vytas): Verify whether this is still the case on 3.12+.
     def get_header(
         self,
         name: str,
         required: bool = False,
-        default: Optional[str] = None,
-        _name_cache: Dict[str, bytes] = {},
-    ) -> Optional[str]:
+        default: str | None = None,
+        _name_cache: dict[str, bytes] = {},
+    ) -> str | None:
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -793,7 +789,7 @@ class Request(request.Request):
         name: str,
         required: Literal[True],
         store: StoreArg = ...,
-        default: Optional[str] = ...,
+        default: str | None = ...,
     ) -> str: ...
 
     @overload
@@ -812,16 +808,16 @@ class Request(request.Request):
         name: str,
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[str] = None,
-    ) -> Optional[str]: ...
+        default: str | None = None,
+    ) -> str | None: ...
 
     def get_param(
         self,
         name: str,
         required: bool = False,
         store: StoreArg = None,
-        default: Optional[str] = None,
-    ) -> Optional[str]:
+        default: str | None = None,
+    ) -> str | None:
         """Return the raw value of a query string parameter as a string.
 
         Note:
@@ -900,7 +896,7 @@ class Request(request.Request):
     # ------------------------------------------------------------------------
 
     @property
-    def _asgi_server(self) -> Tuple[str, int]:
+    def _asgi_server(self) -> tuple[str, int]:
         if not self._asgi_server_cached:
             try:
                 # NOTE(kgriffs): Since the ASGI spec states that 'server'

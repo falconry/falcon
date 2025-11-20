@@ -77,9 +77,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: cibw-sdist
+          name: cibw-sdist
           path: dist
-          merge-multiple: true
 
       - name: Check collected artifacts
         run: |
@@ -109,9 +108,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: cibw-sdist
+          name: cibw-sdist
           path: dist
-          merge-multiple: true
 
       # NOTE(vytas): Normally, invoking pypi-publish more than once in the
       #   same job is not considered supported, however, the two steps below
@@ -145,10 +143,8 @@ jobs:
           - name: manylinux_s390x
             os: ubuntu-latest
             emulation: true
-          - name: macosx_x86_64
-            os: macos-13
           - name: macosx_arm64
-            os: macos-14
+            os: macos-15
           - name: win_amd64
             os: windows-latest
         python:
@@ -157,6 +153,23 @@ jobs:
           - cp312
           - cp313
           - cp314
+        include:
+          - platform:
+              name: manylinux_x86_64
+              os: ubuntu-latest
+            python: cp314t
+          - platform:
+              name: musllinux_x86_64
+              os: ubuntu-latest
+            python: cp314t
+          - platform:
+              name: manylinux_aarch64
+              os: ubuntu-24.04-arm
+            python: cp314t
+          - platform:
+              name: musllinux_aarch64
+              os: ubuntu-24.04-arm
+            python: cp314t
 
     defaults:
       run:
@@ -175,7 +188,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.0
+        uses: pypa/cibuildwheel@v3.2.1
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).

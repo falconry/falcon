@@ -31,6 +31,11 @@ decorate the resource class:
 
 .. code:: python
 
+    def extract_project_id(req, resp, resource, params):
+        params['project_id'] = None
+        if req.content_type == falcon.MEDIA_JSON:
+            params['project_id'] = req.get_media().get('projectId')
+
     @falcon.before(extract_project_id)
     class Message:
         def on_post(self, req, resp, project_id):
@@ -38,6 +43,10 @@ decorate the resource class:
 
         def on_get(self, req, resp, project_id):
             pass
+
+In addition to just running your logic before all responders of this
+resource, the ``extract_project_id`` hook also injects the `project_id`
+parameter -- see :func:`falcon.before` for a more elaborate explanation.
 
 .. note::
     When decorating an entire resource class, all method names that resemble
@@ -89,6 +98,62 @@ requests.
     use the ``req.context`` and ``resp.context`` objects. These context objects
     are intended to hold request and response data specific to your app as it
     passes through the framework.
+
+You can also create your own decorators to wrap responder methods without needing to use hooks.
+
+Here's an example of a custom decorator that logs request/response information:
+
+.. code:: python
+
+    def log_access(responder):
+        @functools.wraps(responder)
+        def wrapper(resource, req, resp, *args, **kwargs) -> None:
+            # Call the original responder
+            responder(resource, req, resp, *args, **kwargs)
+
+            # Log after the responder has been called
+            logging.info(
+                f'[{type(resource).__name__}] {req.method} {req.relative_uri}'
+                f' => HTTP {resp.status_code}'
+            )
+
+        return wrapper
+
+    class HelloResource:
+        @log_access
+        def on_get(self, req, resp) -> None:
+            resp.media = {"Hello": "World"}
+
+In this example, the ``log_access`` decorator will log information about each
+request after the responder completes.
+
+.. note::
+    The ``@functools.wraps(responder)`` ensures that the wrapper function preserves the original method's name and attributes.
+
+You can also create parameterized decorators:
+
+.. code:: python
+
+    def log_access(level=logging.INFO):
+        def decorator(responder):
+            @functools.wraps(responder)
+            def wrapper(resource, req, resp, *args, **kwargs) -> None:
+                responder(resource, req, resp, *args, **kwargs)
+
+                logging.log(
+                    level,
+                    f'[{type(resource).__name__}] {req.method} {req.relative_uri}'
+                    f' => HTTP {resp.status_code}'
+                )
+
+            return wrapper
+
+        return decorator
+
+    class HelloResource:
+        @log_access(level=logging.DEBUG)
+        def on_get(self, req, resp) -> None:
+            resp.media = {"Hello": "World"}
 
 Before Hooks
 ------------

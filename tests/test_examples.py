@@ -1,16 +1,16 @@
 import pytest
 
-try:
-    import httpx
-except ImportError:
-    httpx = None  # type: ignore
-
-try:
-    import requests
-except ImportError:
-    requests = None  # type: ignore
-
 import falcon.testing as testing
+
+
+@pytest.fixture(scope='session')
+def httpx():
+    return pytest.importorskip('httpx')
+
+
+@pytest.fixture(scope='session')
+def requests():
+    return pytest.importorskip('requests')
 
 
 def test_quote(util):
@@ -38,13 +38,7 @@ def test_things(asgi, util):
     )
 
 
-@pytest.mark.skipif(
-    httpx is None, reason='things_advanced_asgi.py requires httpx [not found]'
-)
-@pytest.mark.skipif(
-    requests is None, reason='things_advanced.py requires requests [not found]'
-)
-def test_things_advanced(asgi, util):
+def test_things_advanced(asgi, util, httpx, requests):
     suffix = '_asgi' if asgi else ''
     advanced = util.load_module(f'examples/things_advanced{suffix}.py')
 
@@ -64,3 +58,23 @@ def test_things_advanced(asgi, util):
     assert resp2.status_code == 200
     assert len(resp2.json) == 1
     assert resp2.json[0]['color'] == 'green'
+
+    resp3 = testing.simulate_post(
+        advanced.app,
+        '/1337/things',
+        headers={'Authorization': 'custom-token', 'Content-Type': 'application/json'},
+        body='{"key": "value"}',
+    )
+    assert resp3.status_code == 201
+
+    resp4 = testing.simulate_post(
+        advanced.app,
+        '/1337/things',
+        headers={
+            'Authorization': 'custom-token',
+            'Content-Type': 'application/json',
+            'Content-Length': '1',
+        },
+        body='',
+    )
+    assert resp4.status_code == 400

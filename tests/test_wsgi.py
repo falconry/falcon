@@ -1,8 +1,9 @@
 import multiprocessing
 import os
 import os.path
+import platform
 import time
-from wsgiref.simple_server import make_server
+import wsgiref.simple_server
 
 import pytest
 
@@ -11,55 +12,58 @@ import falcon.testing as testing
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = 'localhost'
-_SERVER_PORT = 9800 + os.getpid() % 100  # Facilitates parallel test execution
-_SERVER_BASE_URL = 'http://{}:{}/'.format(_SERVER_HOST, _SERVER_PORT)
 _SIZE_1_KB = 1024
+_STARTUP_TIMEOUT = 10
+_START_ATTEMPTS = 3
 
 
-@pytest.mark.usefixtures('_setup_wsgi_server')
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason='Non-deterministic issues with macos-15 GitHub Actions runners',
+)
 class TestWSGIServer:
-    def test_get(self, requests_lite):
-        resp = requests_lite.get(_SERVER_BASE_URL)
+    def test_get(self, requests_lite, server_base_url):
+        resp = requests_lite.get(server_base_url)
         assert resp.status_code == 200
         assert resp.text == '127.0.0.1'
 
-    def test_get_file(self, requests_lite):
+    def test_get_file(self, requests_lite, server_base_url):
         # NOTE(vytas): There was a breaking change in the behaviour of
         #   ntpath.isabs() in CPython 3.13, let us verify basic file serving.
-        resp = requests_lite.get(_SERVER_BASE_URL + 'tests/test_wsgi.py')
+        resp = requests_lite.get(server_base_url + 'tests/test_wsgi.py')
         assert resp.status_code == 200
         assert 'class TestWSGIServer:' in resp.text
 
-    def test_put(self, requests_lite):
+    def test_put(self, requests_lite, server_base_url):
         body = '{}'
-        resp = requests_lite.put(_SERVER_BASE_URL, data=body)
+        resp = requests_lite.put(server_base_url, data=body)
         assert resp.status_code == 200
         assert resp.text == '{}'
 
-    def test_head_405(self, requests_lite):
+    def test_head_405(self, requests_lite, server_base_url):
         body = '{}'
-        resp = requests_lite.head(_SERVER_BASE_URL, data=body)
+        resp = requests_lite.head(server_base_url, data=body)
         assert resp.status_code == 405
 
-    def test_post(self, requests_lite):
+    def test_post(self, requests_lite, server_base_url):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
-        resp = requests_lite.post(_SERVER_BASE_URL, data=body)
+        resp = requests_lite.post(server_base_url, data=body)
         assert resp.status_code == 200
         assert resp.text == body
 
-    def test_post_invalid_content_length(self, requests_lite):
+    def test_post_invalid_content_length(self, requests_lite, server_base_url):
         headers = {'Content-Length': 'invalid'}
-        resp = requests_lite.post(_SERVER_BASE_URL, headers=headers)
+        resp = requests_lite.post(server_base_url, headers=headers)
         assert resp.status_code == 400
 
-    def test_post_read_bounded_stream(self, requests_lite):
+    def test_post_read_bounded_stream(self, requests_lite, server_base_url):
         body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
-        resp = requests_lite.post(_SERVER_BASE_URL + 'bucket', data=body)
+        resp = requests_lite.post(server_base_url + 'bucket', data=body)
         assert resp.status_code == 200
         assert resp.text == body
 
-    def test_post_read_bounded_stream_no_body(self, requests_lite):
-        resp = requests_lite.post(_SERVER_BASE_URL + 'bucket')
+    def test_post_read_bounded_stream_no_body(self, requests_lite, server_base_url):
+        resp = requests_lite.post(server_base_url + 'bucket')
         assert not resp.text
 
 
@@ -101,44 +105,65 @@ def _run_server(stop_event, host, port):
     api.add_route('/bucket', Bucket())
     api.add_static_route('/tests', _HERE)
 
-    server = make_server(host, port, application)
+    print(f'wsgiref server is starting on {host}:{port}...')
+    server = wsgiref.simple_server.make_server(host, port, application)
 
     while not stop_event.is_set():
         server.handle_request()
 
+    print('wsgiref server is exiting (stop event set)...')
 
-@pytest.fixture(scope='module')
-def _setup_wsgi_server(requests_lite):
+
+def _start_server(port, base_url, requests_lite):
     stop_event = multiprocessing.Event()
     process = multiprocessing.Process(
         target=_run_server,
-        daemon=True,
         # NOTE(kgriffs): Pass these explicitly since if multiprocessing is
         #   using the 'spawn' start method, we can't depend on closures.
-        args=(stop_event, _SERVER_HOST, _SERVER_PORT),
+        args=(stop_event, _SERVER_HOST, port),
+        daemon=True,
     )
 
     process.start()
 
     # NOTE(vytas): Give the server some time to start.
-    for attempt in range(3):
+    start_time = time.time()
+    while time.time() - start_time < _STARTUP_TIMEOUT:
         try:
-            requests_lite.get(_SERVER_BASE_URL, timeout=1)
-            break
+            requests_lite.get(base_url, timeout=1.0)
         except OSError:
-            pass
+            time.sleep(0.2)
+        else:
+            break
+    else:
+        if process.is_alive():
+            pytest.fail('server {base_url} is not responding to requests')
+        else:
+            return None
 
-        time.sleep(attempt + 0.2)
+    return process, stop_event
 
-    yield
 
+@pytest.fixture(scope='module')
+def server_base_url(requests_lite):
+    for attempt in range(_START_ATTEMPTS):
+        server_port = testing.get_unused_port()
+        base_url = f'http://{_SERVER_HOST}:{server_port}/'
+        if server_details := _start_server(server_port, base_url, requests_lite):
+            break
+    else:
+        pytest.fail(f'could not start a wsgiref server in {_START_ATTEMPTS} attempts.')
+
+    yield base_url
+
+    process, stop_event = server_details
     stop_event.set()
 
     # NOTE(kgriffs): Pump the request handler loop in case execution
     # made it to the next server.handle_request() before we sent the
     # event.
     try:
-        requests_lite.get(_SERVER_BASE_URL)
+        requests_lite.get(base_url, timeout=1.0)
     except OSError:
         pass  # Process already exited
 

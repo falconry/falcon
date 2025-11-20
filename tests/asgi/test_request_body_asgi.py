@@ -106,5 +106,5 @@ class TestRequestBody:
         req_event_emitter = testing.ASGIRequestEventEmitter(b'', disconnect_at=0)
         req = falcon.asgi.Request(scope, req_event_emitter)
 
-        _repr = '<%s: %s %r>' % (req.__class__.__name__, req.method, req.url)
+        _repr = f'<{req.__class__.__name__}: {req.method} {req.url!r}>'
         assert req.__repr__() == _repr

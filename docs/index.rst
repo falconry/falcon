@@ -75,7 +75,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic :ref:`HTTP error <errors>` responses
 - Straightforward exception handling
 - Snappy :ref:`testing <testing>` with WSGI/ASGI helpers and mocks
-- CPython 3.8+ and PyPy 3.8+ support
+- CPython 3.9+ and PyPy 3.9+ support
 
 Who's Using Falcon?
 -------------------

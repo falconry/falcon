@@ -21,6 +21,11 @@ WSGI callable, without having to stand up a WSGI server.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable
+from collections.abc import Coroutine
+from collections.abc import Iterable
+from collections.abc import Mapping
+from collections.abc import Sequence
 import datetime as dt
 from http.cookies import Morsel
 import inspect
@@ -28,23 +33,13 @@ import json as json_module
 import time
 from typing import (
     Any,
-    Awaitable,
     Callable,
     cast,
-    Coroutine,
-    Dict,
-    Iterable,
-    List,
     Literal,
-    Mapping,
-    Optional,
     overload,
-    Sequence,
     TextIO,
-    Tuple,
     TYPE_CHECKING,
     TypeVar,
-    Union,
 )
 import warnings
 import wsgiref.validate
@@ -86,7 +81,7 @@ _T = TypeVar('_T', bound=Callable[..., Any])
 
 
 def _simulate_method_alias(
-    method: _T, version_added: str = '3.1', replace_name: Optional[str] = None
+    method: _T, version_added: str = '3.1', replace_name: str | None = None
 ) -> _T:
     def alias(client: Any, *args: Any, **kwargs: Any) -> Any:
         return method(client, *args, **kwargs)
@@ -116,14 +111,14 @@ class Cookie:
         morsel: A ``Morsel`` object from which to derive the cookie data.
     """
 
-    _expires: Optional[str]
+    _expires: str | None
     _path: str
     _domain: str
-    _max_age: Optional[str]
-    _secure: Optional[str]
-    _httponly: Optional[str]
-    _samesite: Optional[str]
-    _partitioned: Optional[str]
+    _max_age: str | None
+    _secure: str | None
+    _httponly: str | None
+    _samesite: str | None
+    _partitioned: str | None
 
     def __init__(self, morsel: Morsel) -> None:
         self._name = morsel.key
@@ -153,7 +148,7 @@ class Cookie:
         return self._value
 
     @property
-    def expires(self) -> Optional[dt.datetime]:
+    def expires(self) -> dt.datetime | None:
         """Expiration timestamp for the cookie, or ``None`` if not specified.
 
         .. versionchanged:: 4.0
@@ -182,7 +177,7 @@ class Cookie:
         return self._domain
 
     @property
-    def max_age(self) -> Optional[int]:
+    def max_age(self) -> int | None:
         """The lifetime of the cookie in seconds, or ``None`` if not specified."""
         return int(self._max_age) if self._max_age else None
 
@@ -199,7 +194,7 @@ class Cookie:
         return bool(self._httponly)
 
     @property
-    def same_site(self) -> Optional[str]:
+    def same_site(self) -> str | None:
         """Specifies whether cookies are send in cross-site requests.
 
         Possible values are 'Lax', 'Strict' and 'None'. ``None`` if not specified.
@@ -262,7 +257,7 @@ class _ResultBase:
         return self._headers  # type: ignore[return-value]
 
     @property
-    def cookies(self) -> Dict[str, Cookie]:
+    def cookies(self) -> dict[str, Cookie]:
         """A dictionary of :class:`falcon.testing.Cookie` values parsed from
         the response, by name.
 
@@ -275,7 +270,7 @@ class _ResultBase:
         return self._cookies
 
     @property
-    def encoding(self) -> Optional[str]:
+    def encoding(self) -> str | None:
         """Text encoding of the response body.
 
         Returns ``None`` if the encoding can not be determined.
@@ -283,7 +278,7 @@ class _ResultBase:
         return self._encoding
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         """Return the ``Content-Type`` header or ``None`` if missing."""
         return self.headers.get('Content-Type')
 
@@ -342,7 +337,7 @@ class Result(_ResultBase):
     ) -> None:
         super().__init__(status, headers)
 
-        self._text: Optional[str] = None
+        self._text: str | None = None
         self._content = b''.join(iterable)
 
     @property
@@ -407,7 +402,7 @@ class Result(_ResultBase):
 
         return result_template.format(status_color, status, content_type, content)
 
-    def _prepare_repr_args(self) -> List[str]:
+    def _prepare_repr_args(self) -> list[str]:
         content_type = self.content_type or ''
 
         if len(self.content) > 40:
@@ -478,26 +473,26 @@ def simulate_request(
     app: Callable[..., Any],  # accept any asgi/wsgi app
     method: str = 'GET',
     path: str = '/',
-    query_string: Optional[str] = None,
-    headers: Optional[HeaderArg] = None,
-    content_type: Optional[str] = None,
-    body: Optional[Union[str, bytes]] = None,
-    json: Optional[Any] = None,
-    msgpack: Optional[Any] = None,
-    file_wrapper: Optional[Callable[..., Any]] = None,
-    wsgierrors: Optional[TextIO] = None,
-    params: Optional[Mapping[str, Any]] = None,
+    query_string: str | None = None,
+    headers: HeaderArg | None = None,
+    content_type: str | None = None,
+    body: str | bytes | None = None,
+    json: Any | None = None,
+    file_wrapper: Callable[..., Any] | None = None,
+    wsgierrors: TextIO | None = None,
+    params: Mapping[str, Any] | None = None,
     params_csv: bool = False,
     protocol: str = 'http',
     host: str = helpers.DEFAULT_HOST,
-    remote_addr: Optional[str] = None,
-    extras: Optional[Mapping[str, Any]] = None,
+    remote_addr: str | None = None,
+    extras: Mapping[str, Any] | None = None,
     http_version: str = '1.1',
-    port: Optional[int] = None,
-    root_path: Optional[str] = None,
-    cookies: Optional[CookieArg] = None,
+    port: int | None = None,
+    root_path: str | None = None,
+    cookies: CookieArg | None = None,
     asgi_chunk_size: int = 4096,
     asgi_disconnect_ttl: int = 300,
+    msgpack: Any | None = None,
 ) -> Result:
     """Simulate a request to a WSGI or ASGI application.
 
@@ -568,7 +563,24 @@ def simulate_request(
 
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
-            may be passed, in which case it will be used as-is.
+            may be pas(If you already have it, skip this step.)
+
+Step 2: Fetch the latest changes from the original repository
+Bash
+￼
+￼
+Copiar
+git fetch upstream
+Step 3: Go to your local branch that the PR is based on
+Bash
+￼
+￼
+Copiar
+git checkout your-branch-name
+# or the default branch of your fork if the PR is from main/master
+git checkout main   # or master
+Step 4: Rebase (or merge) your branch onto the latest upstream main/master
+sed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
@@ -693,26 +705,26 @@ async def _simulate_request_asgi(
     app: Callable[..., Coroutine[Any, Any, Any]],
     method: str = ...,
     path: str = ...,
-    query_string: Optional[str] = ...,
-    headers: Optional[HeaderArg] = ...,
-    content_type: Optional[str] = ...,
-    body: Optional[Union[str, bytes]] = ...,
-    json: Optional[Any] = ...,
-    msgpack: Optional[Any] = ...,
-    params: Optional[Mapping[str, Any]] = ...,
+    query_string: str | None = ...,
+    headers: HeaderArg | None = ...,
+    content_type: str | None = ...,
+    body: str | bytes | None = ...,
+    json: Any | None = ...,
+    params: Mapping[str, Any] | None = ...,
     params_csv: bool = ...,
     protocol: str = ...,
     host: str = ...,
-    remote_addr: Optional[str] = ...,
-    extras: Optional[Mapping[str, Any]] = ...,
+    remote_addr: str | None = ...,
+    extras: Mapping[str, Any] | None = ...,
     http_version: str = ...,
-    port: Optional[int] = ...,
-    root_path: Optional[str] = ...,
+    port: int | None = ...,
+    root_path: str | None = ...,
     asgi_chunk_size: int = ...,
     asgi_disconnect_ttl: int = ...,
-    cookies: Optional[CookieArg] = ...,
+    cookies: CookieArg | None = ...,
     _one_shot: Literal[False] = ...,
     _stream_result: Literal[True] = ...,
+    msgpack: Any | None = ...,
 ) -> StreamedResult: ...
 
 
@@ -721,26 +733,26 @@ async def _simulate_request_asgi(
     app: Callable[..., Coroutine[Any, Any, Any]],
     method: str = ...,
     path: str = ...,
-    query_string: Optional[str] = ...,
-    headers: Optional[HeaderArg] = ...,
-    content_type: Optional[str] = ...,
-    body: Optional[Union[str, bytes]] = ...,
-    json: Optional[Any] = ...,
-    msgpack: Optional[Any] = ...,
-    params: Optional[Mapping[str, Any]] = ...,
+    query_string: str | None = ...,
+    headers: HeaderArg | None = ...,
+    content_type: str | None = ...,
+    body: str | bytes | None = ...,
+    json: Any | None = ...,
+    params: Mapping[str, Any] | None = ...,
     params_csv: bool = ...,
     protocol: str = ...,
     host: str = ...,
-    remote_addr: Optional[str] = ...,
-    extras: Optional[Mapping[str, Any]] = ...,
+    remote_addr: str | None = ...,
+    extras: Mapping[str, Any] | None = ...,
     http_version: str = ...,
-    port: Optional[int] = ...,
-    root_path: Optional[str] = ...,
+    port: int | None = ...,
+    root_path: str | None = ...,
     asgi_chunk_size: int = ...,
     asgi_disconnect_ttl: int = ...,
-    cookies: Optional[CookieArg] = ...,
+    cookies: CookieArg | None = ...,
     _one_shot: Literal[True] = ...,
     _stream_result: bool = ...,
+    msgpack: Any | None = ...,
 ) -> Result: ...
 
 
@@ -752,24 +764,23 @@ async def _simulate_request_asgi(
     app: Callable[..., Coroutine[Any, Any, Any]],  # accept any asgi app
     method: str = 'GET',
     path: str = '/',
-    query_string: Optional[str] = None,
-    headers: Optional[HeaderArg] = None,
-    content_type: Optional[str] = None,
-    body: Optional[Union[str, bytes]] = None,
-    json: Optional[Any] = None,
-    msgpack: Optional[Any] = None,
-    params: Optional[Mapping[str, Any]] = None,
+    query_string: str | None = None,
+    headers: HeaderArg | None = None,
+    content_type: str | None = None,
+    body: str | bytes | None = None,
+    json: Any | None = None,
+    params: Mapping[str, Any] | None = None,
     params_csv: bool = False,
     protocol: str = 'http',
     host: str = helpers.DEFAULT_HOST,
-    remote_addr: Optional[str] = None,
-    extras: Optional[Mapping[str, Any]] = None,
+    remote_addr: str | None = None,
+    extras: Mapping[str, Any] | None = None,
     http_version: str = '1.1',
-    port: Optional[int] = None,
-    root_path: Optional[str] = None,
+    port: int | None = None,
+    root_path: str | None = None,
     asgi_chunk_size: int = 4096,
     asgi_disconnect_ttl: int = 300,
-    cookies: Optional[CookieArg] = None,
+    cookies: CookieArg | None = None,
     # NOTE(kgriffs): These are undocumented because they are only
     #   meant to be used internally by the framework (i.e., they are
     #   not part of the public interface.) In case we ever expose
@@ -777,7 +788,8 @@ async def _simulate_request_asgi(
     #   don't want these kwargs to be documented.
     _one_shot: bool = True,
     _stream_result: bool = False,
-) -> Union[Result, StreamedResult]:
+    msgpack: Any | None = None,
+) -> Result | StreamedResult:
     """Simulate a request to an ASGI application.
 
     Keyword Args:
@@ -841,14 +853,7 @@ async def _simulate_request_asgi(
             body of the request (default: ``None``). If specified,
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
-            the `content_type` or `headers` arguments.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as `
-            `'application/msgpack'``.
+            the `content_type` or `headers` arguments.        
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -873,6 +878,13 @@ async def _simulate_request_asgi(
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as `
+            `'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -887,8 +899,8 @@ async def _simulate_request_asgi(
         headers,
         body,
         json,
-        msgpack,
         extras,
+        msgpack
     )
 
     # ---------------------------------------------------------------------
@@ -1111,7 +1123,7 @@ class ASGIConductor:
     def __init__(
         self,
         app: Callable[..., Any],  # accept any asgi app
-        headers: Optional[HeaderMapping] = None,
+        headers: HeaderMapping | None = None,
     ):
         if not _is_asgi_app(app):
             raise CompatibilityError('ASGIConductor may only be used with an ASGI app')
@@ -1121,7 +1133,7 @@ class ASGIConductor:
 
         self._shutting_down = asyncio.Condition()
         self._lifespan_event_collector = helpers.ASGIResponseEventCollector()
-        self._lifespan_task: Optional[asyncio.Task] = None
+        self._lifespan_task: asyncio.Task | None = None
 
     async def __aenter__(self) -> ASGIConductor:
         lifespan_scope = {
@@ -1285,7 +1297,7 @@ class ASGIConductor:
 
     async def simulate_request(
         self, *args: Any, **kwargs: Any
-    ) -> Union[Result, StreamedResult]:
+    ) -> Result | StreamedResult:
         """Simulate a request to an ASGI application.
 
         Wraps :meth:`falcon.testing.simulate_request` to perform an
@@ -1593,13 +1605,6 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1632,6 +1637,13 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -1711,13 +1723,6 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1750,6 +1755,13 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -1918,13 +1930,6 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1952,6 +1957,13 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -2031,13 +2043,6 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2064,7 +2069,14 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
         cookies (dict): Cookies as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
-            for the 'Set-Cookie' header.
+            for the 'Set-Cookie' header.        
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -2141,11 +2153,11 @@ class TestClient:
     def __init__(
         self,
         app: Callable[..., Any],  # accept any asgi/wsgi app
-        headers: Optional[HeaderMapping] = None,
+        headers: HeaderMapping | None = None,
     ) -> None:
         self.app = app  # type: ignore[assignment]
         self._default_headers = headers
-        self._conductor: Optional[ASGIConductor] = None
+        self._conductor: ASGIConductor | None = None
 
     async def __aenter__(self) -> ASGIConductor:
         if not _is_asgi_app(self.app):
@@ -2260,7 +2272,7 @@ class TestClient:
 class _AsyncContextManager:
     def __init__(self, coro: Awaitable[StreamedResult]):
         self._coro = coro
-        self._obj: Optional[StreamedResult] = None
+        self._obj: StreamedResult | None = None
 
     async def __aenter__(self) -> StreamedResult:
         self._obj = await self._coro
@@ -2311,18 +2323,16 @@ class _WSContextManager:
 
 def _prepare_sim_args(
     path: str,
-    query_string: Optional[str],
-    params: Optional[Mapping[str, Any]],
+    query_string: str | None,
+    params: Mapping[str, Any] | None,
     params_csv: bool,
-    content_type: Optional[str],
-    headers: Optional[HeaderArg],
-    body: Optional[Union[str, bytes]],
-    json: Optional[Any],
-    msgpack: Optional[Any],
-    extras: Optional[Mapping[str, Any]],
-) -> Tuple[
-    str, str, Optional[HeaderArg], Optional[Union[str, bytes]], Mapping[str, Any]
-]:
+    content_type: str | None,
+    headers: HeaderArg | None,
+    body: str | bytes | None,
+    json: Any | None,
+    extras: Mapping[str, Any] | None,
+    msgpack: Any | None,
+) -> tuple[str, str, HeaderArg | None, str | bytes | None, Mapping[str, Any]]:
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
 

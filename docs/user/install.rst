@@ -7,7 +7,7 @@ PyPy
 ----
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.8+ is supported as of PyPy v7.3.7.
+PyPy3.9+ is supported as of PyPy v7.3.10.
 
 .. code:: bash
 
@@ -23,7 +23,7 @@ CPython
 -------
 
 Falcon fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.8+.
+`CPython <https://www.python.org/downloads/>`__ 3.9+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
@@ -96,9 +96,8 @@ Compiling on Mac OS
 ^^^^^^^^^^^^^^^^^^^
 
 .. tip::
-    Pre-compiled Falcon wheels are available for macOS on both Intel and Apple
-    Silicon chips, so normally you should be fine with just
-    ``pip install falcon``.
+    Pre-compiled Falcon wheels are available for macOS on Apple Silicon chips,
+    so normally you should be fine with just ``pip install falcon``.
 
 Xcode Command Line Tools are required to compile Cython. Install them
 with this command:
@@ -134,18 +133,13 @@ courtesy of `cibuildwheel <https://cibuildwheel.pypa.io/>`__.
    The following table summarizes the wheel availability on different
    combinations of CPython versions vs CPython platforms:
 
-.. warning::
-    The `free-threaded build
-    <https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
-    flag is not yet enabled for our wheels at this time.
+.. note::
+    As of Falcon :doc:`4.2.0 </changes/4.2.0>`, `free-threaded build
+    <https://docs.python.org/3/howto/free-threading-python.html>`__ was
+    enabled for selected Linux x86 wheels. Other CPython platforms can still
+    utilize free-threading using the pure Python wheel.
 
-    If you wish to experiment with
-    :ref:`running Falcon in the free-threaded mode <faq_free_threading>`, you
-    will need to explicitly tell the interpreter to disable GIL (via the
-    ``PYTHON_GIL`` environment variable, or the ``-X gil=0`` option).
-    It is also advisable to :ref:`recompile Falcon from source <cythonize>` on
-    a free-threaded CPython 3.13+ build before proceeding.
-    :ref:`Let us know how it went <chat>`!
+    See also: :ref:`faq_free_threading`
 
 While we believe that our build configuration covers the most common
 development and deployment scenarios, :ref:`let us know <chat>` if you are

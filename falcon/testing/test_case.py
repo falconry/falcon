@@ -80,7 +80,7 @@ class TestCase(unittest.TestCase, TestClient):
     """
 
     def setUp(self) -> None:
-        super(TestCase, self).setUp()
+        super().setUp()
 
         app = falcon.App()
 

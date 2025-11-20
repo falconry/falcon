@@ -9,10 +9,10 @@ from falcon import testing
 from falcon import util
 import falcon.asgi
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
 
 
 def create_client(asgi, handlers=None, resource=None):
@@ -104,8 +104,7 @@ def test_json(client, media_type):
         ('application/x-msgpack'),
     ],
 )
-@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-def test_msgpack(asgi, media_type):
+def test_msgpack(asgi, media_type, msgpack):
     client = create_client(
         asgi,
         {
@@ -151,14 +150,13 @@ def test_unknown_media_type(asgi, media_type):
     )
 
     title_msg = '415 Unsupported Media Type'
-    description_msg = '{} is an unsupported media type.'.format(media_type)
+    description_msg = f'{media_type} is an unsupported media type.'
     assert client.resource.captured_error.value.title == title_msg
     assert client.resource.captured_error.value.description == description_msg
 
 
 @pytest.mark.parametrize('media_type', ['application/json', 'application/msgpack'])
-@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-def test_empty_body(asgi, media_type):
+def test_empty_body(asgi, media_type, msgpack):
     client = _create_client_invalid_media(
         asgi,
         errors.HTTPBadRequest,
@@ -198,8 +196,7 @@ def test_invalid_json(asgi):
         assert str(client.resource.captured_error.value.__cause__) == str(e)
 
 
-@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-def test_invalid_msgpack(asgi):
+def test_invalid_msgpack(asgi, msgpack):
     handlers = {'application/msgpack': media.MessagePackHandler()}
     client = _create_client_invalid_media(
         asgi, errors.HTTPBadRequest, handlers=handlers

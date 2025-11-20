@@ -19,7 +19,7 @@ clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
-champ under CPython 3.8+ and PyPy 3.8+.
+champ under CPython 3.9+ and PyPy 3.9+.
 
 Quick Links
 -----------
@@ -75,7 +75,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic HTTP error responses
 - Straightforward exception handling
 - Snappy testing with WSGI/ASGI helpers and mocks
-- CPython 3.8+ and PyPy 3.8+ support
+- CPython 3.9+ and PyPy 3.9+ support
 
 .. Patron list starts here. For Python package, we substitute this section with:
    Support Falcon Development
@@ -84,7 +84,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-|Backer:GovCert| |Backer:Sentry|
+|Backer:LambdaTest| |Backer:GovCert| |Backer:Sentry|
 
 Has Falcon helped you make an awesome app? Show your support today with a
 one-time donation or by becoming a patron.
@@ -187,7 +187,7 @@ PyPy
 ^^^^
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.8+ is supported as of PyPy v7.3.7+.
+PyPy3.9+ is supported as of PyPy v7.3.10+.
 
 .. code:: bash
 
@@ -203,7 +203,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.8+.
+`CPython <https://www.python.org/downloads/>`__ 3.9+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
@@ -444,12 +444,12 @@ Note that this example assumes that the
     import uuid
     from wsgiref import simple_server
 
-    import falcon
     import requests
+
+    import falcon
 
 
     class StorageEngine:
-
         def get_things(self, marker, limit):
             return [{'id': str(uuid.uuid4()), 'color': 'green'}]
 
@@ -459,15 +459,13 @@ Note that this example assumes that the
 
 
     class StorageError(Exception):
-
         @staticmethod
-        def handle(ex, req, resp, params):
+        def handle(req, resp, ex, params):
             # TODO: Log the error, clean up, etc. before raising
             raise falcon.HTTPInternalServerError()
 
 
     class SinkAdapter:
-
         engines = {
             'ddg': 'https://duckduckgo.com',
             'y': 'https://search.yahoo.com/search',
@@ -478,13 +476,12 @@ Note that this example assumes that the
             params = {'q': req.get_param('q', True)}
             result = requests.get(url, params=params)
 
-            resp.status = str(result.status_code) + ' ' + result.reason
+            resp.status = falcon.code_to_http_status(result.status_code)
             resp.content_type = result.headers['content-type']
             resp.text = result.text
 
 
     class AuthMiddleware:
-
         def process_request(self, req, resp):
             token = req.get_header('Authorization')
             account_id = req.get_header('Account-ID')
@@ -492,40 +489,46 @@ Note that this example assumes that the
             challenges = ['Token type="Fernet"']
 
             if token is None:
-                description = ('Please provide an auth token '
-                               'as part of the request.')
+                description = 'Please provide an auth token as part of the request.'
 
-                raise falcon.HTTPUnauthorized(title='Auth token required',
-                                              description=description,
-                                              challenges=challenges,
-                                              href='http://docs.example.com/auth')
+                raise falcon.HTTPUnauthorized(
+                    title='Auth token required',
+                    description=description,
+                    challenges=challenges,
+                    href='http://docs.example.com/auth',
+                )
 
             if not self._token_is_valid(token, account_id):
-                description = ('The provided auth token is not valid. '
-                               'Please request a new token and try again.')
+                description = (
+                    'The provided auth token is not valid. '
+                    'Please request a new token and try again.'
+                )
 
-                raise falcon.HTTPUnauthorized(title='Authentication required',
-                                              description=description,
-                                              challenges=challenges,
-                                              href='http://docs.example.com/auth')
+                raise falcon.HTTPUnauthorized(
+                    title='Authentication required',
+                    description=description,
+                    challenges=challenges,
+                    href='http://docs.example.com/auth',
+                )
 
         def _token_is_valid(self, token, account_id):
             return True  # Suuuuuure it's valid...
 
 
     class RequireJSON:
-
         def process_request(self, req, resp):
             if not req.client_accepts_json:
                 raise falcon.HTTPNotAcceptable(
                     description='This API only supports responses encoded as JSON.',
-                    href='http://docs.examples.com/api/json')
+                    href='http://docs.examples.com/api/json',
+                )
 
             if req.method in ('POST', 'PUT'):
                 if 'application/json' not in req.content_type:
                     raise falcon.HTTPUnsupportedMediaType(
                         title='This API only supports requests encoded as JSON.',
-                        href='http://docs.examples.com/api/json')
+                        href='http://docs.examples.com/api/json',
+                    )
 
 
     class JSONTranslator:
@@ -542,21 +545,24 @@ Note that this example assumes that the
                 # Nothing to do
                 return
 
-            body = req.stream.read()
+            body = req.bounded_stream.read()
             if not body:
-                raise falcon.HTTPBadRequest(title='Empty request body',
-                                            description='A valid JSON document is required.')
+                raise falcon.HTTPBadRequest(
+                    title='Empty request body',
+                    description='A valid JSON document is required.',
+                )
 
             try:
                 req.context.doc = json.loads(body.decode('utf-8'))
 
             except (ValueError, UnicodeDecodeError):
-                description = ('Could not decode the request body. The '
-                               'JSON was incorrect or not encoded as '
-                               'UTF-8.')
+                description = (
+                    'Could not decode the request body. The '
+                    'JSON was incorrect or not encoded as '
+                    'UTF-8.'
+                )
 
-                raise falcon.HTTPBadRequest(title='Malformed JSON',
-                                            description=description)
+                raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
 
         def process_response(self, req, resp, resource, req_succeeded):
             if not hasattr(resp.context, 'result'):
@@ -566,21 +572,22 @@ Note that this example assumes that the
 
 
     def max_body(limit):
-
         def hook(req, resp, resource, params):
             length = req.content_length
             if length is not None and length > limit:
-                msg = ('The size of the request is too large. The body must not '
-                       'exceed ' + str(limit) + ' bytes in length.')
+                msg = (
+                    'The size of the request is too large. The body must not '
+                    'exceed ' + str(limit) + ' bytes in length.'
+                )
 
                 raise falcon.HTTPContentTooLarge(
-                    title='Request body is too large', description=msg)
+                    title='Request body is too large', description=msg
+                )
 
         return hook
 
 
     class ThingsResource:
-
         def __init__(self, db):
             self.db = db
             self.logger = logging.getLogger('thingsapp.' + __name__)
@@ -594,14 +601,15 @@ Note that this example assumes that the
             except Exception as ex:
                 self.logger.error(ex)
 
-                description = ('Aliens have attacked our base! We will '
-                               'be back as soon as we fight them off. '
-                               'We appreciate your patience.')
+                description = (
+                    'Aliens have attacked our base! We will '
+                    'be back as soon as we fight them off. '
+                    'We appreciate your patience.'
+                )
 
                 raise falcon.HTTPServiceUnavailable(
-                    title='Service Outage',
-                    description=description,
-                    retry_after=30)
+                    title='Service Outage', description=description, retry_after=30
+                )
 
             # NOTE: Normally you would use resp.media for this sort of thing;
             # this example serves only to demonstrate how the context can be
@@ -619,19 +627,23 @@ Note that this example assumes that the
             except AttributeError:
                 raise falcon.HTTPBadRequest(
                     title='Missing thing',
-                    description='A thing must be submitted in the request body.')
+                    description='A thing must be submitted in the request body.',
+                )
 
             proper_thing = self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
+            resp.location = '/{}/things/{}'.format(user_id, proper_thing['id'])
+
 
     # Configure your WSGI server to load "things.app" (app is a WSGI callable)
-    app = falcon.App(middleware=[
-        AuthMiddleware(),
-        RequireJSON(),
-        JSONTranslator(),
-    ])
+    app = falcon.App(
+        middleware=[
+            AuthMiddleware(),
+            RequireJSON(),
+            JSONTranslator(),
+        ]
+    )
 
     db = StorageEngine()
     things = ThingsResource(db)
@@ -989,6 +1001,10 @@ limitations under the License.
     :target: https://pypi.org/project/falcon/
 .. |Python versions| image:: https://img.shields.io/pypi/pyversions/falcon.svg
     :target: https://pypi.org/project/falcon/
+.. |Backer:LambdaTest| image:: https://falconframework.org/assets/lambdatest.png
+    :alt: LambdaTest
+    :height: 64px
+    :target: https://www.lambdatest.com/?utm_source=falcon&utm_medium=sponsor
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px

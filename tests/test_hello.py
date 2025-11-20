@@ -74,7 +74,7 @@ class ClosingBytesIO(io.BytesIO):
     close_called = False
 
     def close(self):
-        super(ClosingBytesIO, self).close()
+        super().close()
         self.close_called = True
 
 

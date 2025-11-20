@@ -6,7 +6,7 @@ def application(environ, start_response):
     body = '\n{\n'
     for key, value in environ.items():
         # if isinstance(value, str):
-        body += '    "{0}": "{1}",\n'.format(key, value)
+        body += f'    "{key}": "{value}",\n'
 
     body += '}\n\n'
 

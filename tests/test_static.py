@@ -483,7 +483,7 @@ def test_fallback_filename(
 ):
     def validate(path):
         if normalize_path(default) not in path:
-            raise IOError()
+            raise OSError()
 
     patch_open(validate=validate)
 
@@ -541,7 +541,7 @@ def test_e2e_fallback_filename(
 ):
     def validate(path):
         if 'index' not in path or 'raise' in path:
-            raise IOError()
+            raise OSError()
 
     patch_open(validate=validate)
 
@@ -675,7 +675,7 @@ def test_fstat_error(client, patch_open):
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     with mock.patch('os.fstat') as m:
-        m.side_effect = IOError
+        m.side_effect = OSError
         resp = client.simulate_request(path='/assets/css/main.css')
 
     assert resp.status == falcon.HTTP_404
@@ -689,7 +689,7 @@ def test_set_range_error(client, patch_open):
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     with mock.patch('falcon.routing.static._set_range') as m:
-        m.side_effect = IOError()
+        m.side_effect = OSError()
         resp = client.simulate_request(path='/assets/css/main.css')
 
     assert resp.status == falcon.HTTP_404

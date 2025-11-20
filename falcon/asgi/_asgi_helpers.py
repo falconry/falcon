@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import functools
 import inspect
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, TypeVar
 
 from falcon.errors import UnsupportedError
 from falcon.errors import UnsupportedScopeError
@@ -24,7 +24,7 @@ from falcon.errors import UnsupportedScopeError
 
 @functools.lru_cache(maxsize=16)
 def _validate_asgi_scope(
-    scope_type: str, spec_version: Optional[str], http_version: str
+    scope_type: str, spec_version: str | None, http_version: str
 ) -> str:
     if scope_type == 'http':
         spec_version = spec_version or '2.0'

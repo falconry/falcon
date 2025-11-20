@@ -388,29 +388,23 @@ class TestStringVisitor:
         sv = inspect.StringVisitor(False, internal)
         rm = inspect.inspect_routes(make_app())[0].methods[0]
 
-        assert sv.process(rm) == '{0.method} - {0.function_name}'.format(rm)
+        assert sv.process(rm) == f'{rm.method} - {rm.function_name}'
 
     def test_route_method_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
         rm = inspect.inspect_routes(make_app())[0].methods[0]
 
-        assert sv.process(
-            rm
-        ) == '{0.method} - {0.function_name} ({0.source_info})'.format(rm)
+        assert sv.process(rm) == f'{rm.method} - {rm.function_name} ({rm.source_info})'
 
     def test_route(self, internal):
         sv = inspect.StringVisitor(False, internal)
         r = inspect.inspect_routes(make_app())[0]
 
         ml = [
-            '   ├── {}'.format(sv.process(m))
-            for m in r.methods
-            if not m.internal or internal
+            f'   ├── {sv.process(m)}' for m in r.methods if not m.internal or internal
         ][:-1]
         ml += [
-            '   └── {}'.format(sv.process(m))
-            for m in r.methods
-            if not m.internal or internal
+            f'   └── {sv.process(m)}' for m in r.methods if not m.internal or internal
         ][-1:]
 
         exp = '⇒ {0.path} - {0.class_name}:\n{1}'.format(r, '\n'.join(ml))
@@ -421,14 +415,10 @@ class TestStringVisitor:
         r = inspect.inspect_routes(make_app())[0]
 
         ml = [
-            '   ├── {}'.format(sv.process(m))
-            for m in r.methods
-            if not m.internal or internal
+            f'   ├── {sv.process(m)}' for m in r.methods if not m.internal or internal
         ][:-1]
         ml += [
-            '   └── {}'.format(sv.process(m))
-            for m in r.methods
-            if not m.internal or internal
+            f'   └── {sv.process(m)}' for m in r.methods if not m.internal or internal
         ][-1:]
 
         exp = '⇒ {0.path} - {0.class_name} ({0.source_info}):\n{1}'.format(
@@ -440,7 +430,7 @@ class TestStringVisitor:
         sv = inspect.StringVisitor(False, internal)
         r = inspect.inspect_routes(make_app())[0]
         r.methods.clear()
-        exp = '⇒ {0.path} - {0.class_name}'.format(r)
+        exp = f'⇒ {r.path} - {r.class_name}'
         assert sv.process(r) == exp
 
     @pytest.mark.parametrize('verbose', (True, False))
@@ -448,63 +438,63 @@ class TestStringVisitor:
         sv = inspect.StringVisitor(verbose, internal)
         sr = inspect.inspect_static_routes(make_app())
         no_file = sr[1]
-        assert sv.process(no_file) == '↦ {0.prefix} {0.directory}'.format(no_file)
+        assert sv.process(no_file) == f'↦ {no_file.prefix} {no_file.directory}'
         with_file = sr[0]
-        exp = '↦ {0.prefix} {0.directory} [{0.fallback_filename}]'.format(with_file)
+        exp = f'↦ {with_file.prefix} {with_file.directory} [{with_file.fallback_filename}]'  # noqa: E501
         assert sv.process(with_file) == exp
 
     def test_sink(self, internal):
         sv = inspect.StringVisitor(False, internal)
         s = inspect.inspect_sinks(make_app())[0]
 
-        assert sv.process(s) == '⇥ {0.prefix} {0.name}'.format(s)
+        assert sv.process(s) == f'⇥ {s.prefix} {s.name}'
 
     def test_sink_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
         s = inspect.inspect_sinks(make_app())[0]
 
-        assert sv.process(s) == '⇥ {0.prefix} {0.name} ({0.source_info})'.format(s)
+        assert sv.process(s) == f'⇥ {s.prefix} {s.name} ({s.source_info})'
 
     def test_error_handler(self, internal):
         sv = inspect.StringVisitor(False, internal)
         e = inspect.inspect_error_handlers(make_app())[0]
 
-        assert sv.process(e) == '⇜ {0.error} {0.name}'.format(e)
+        assert sv.process(e) == f'⇜ {e.error} {e.name}'
 
     def test_error_handler_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
         e = inspect.inspect_error_handlers(make_app())[0]
 
-        assert sv.process(e) == '⇜ {0.error} {0.name} ({0.source_info})'.format(e)
+        assert sv.process(e) == f'⇜ {e.error} {e.name} ({e.source_info})'
 
     def test_middleware_method(self, internal):
         sv = inspect.StringVisitor(False, internal)
         mm = inspect.inspect_middleware(make_app()).middleware_classes[0].methods[0]
 
-        assert sv.process(mm) == '{0.function_name}'.format(mm)
+        assert sv.process(mm) == f'{mm.function_name}'
 
     def test_middleware_method_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
         mm = inspect.inspect_middleware(make_app()).middleware_classes[0].methods[0]
 
-        assert sv.process(mm) == '{0.function_name} ({0.source_info})'.format(mm)
+        assert sv.process(mm) == f'{mm.function_name} ({mm.source_info})'
 
     def test_middleware_class(self, internal):
         sv = inspect.StringVisitor(False, internal)
         mc = inspect.inspect_middleware(make_app()).middleware_classes[0]
 
-        mml = ['   ├── {}'.format(sv.process(m)) for m in mc.methods][:-1]
-        mml += ['   └── {}'.format(sv.process(m)) for m in mc.methods][-1:]
+        mml = [f'   ├── {sv.process(m)}' for m in mc.methods][:-1]
+        mml += [f'   └── {sv.process(m)}' for m in mc.methods][-1:]
 
-        exp = '↣ {0.name}:\n{1}'.format(mc, '\n'.join(mml))
+        exp = '↣ {.name}:\n{}'.format(mc, '\n'.join(mml))
         assert sv.process(mc) == exp
 
     def test_middleware_class_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
         mc = inspect.inspect_middleware(make_app()).middleware_classes[0]
 
-        mml = ['   ├── {}'.format(sv.process(m)) for m in mc.methods][:-1]
-        mml += ['   └── {}'.format(sv.process(m)) for m in mc.methods][-1:]
+        mml = [f'   ├── {sv.process(m)}' for m in mc.methods][:-1]
+        mml += [f'   └── {sv.process(m)}' for m in mc.methods][-1:]
 
         exp = '↣ {0.name} ({0.source_info}):\n{1}'.format(mc, '\n'.join(mml))
         assert sv.process(mc) == exp
@@ -513,7 +503,7 @@ class TestStringVisitor:
         sv = inspect.StringVisitor(False, internal)
         mc = inspect.inspect_middleware(make_app()).middleware_classes[0]
         mc.methods.clear()
-        exp = '↣ {0.name}'.format(mc)
+        exp = f'↣ {mc.name}'
         assert sv.process(mc) == exp
 
     @pytest.mark.parametrize('verbose', (True, False))
@@ -525,7 +515,7 @@ class TestStringVisitor:
             (mt.resource[0], '↣'),
             (mt.response[0], '↢'),
         ):
-            assert sv.process(r) == '{0} {1.class_name}.{1.name}'.format(s, r)
+            assert sv.process(r) == f'{s} {r.class_name}.{r.name}'
 
     @pytest.mark.parametrize('verbose', (True, False))
     def test_middleware_tree(self, verbose, internal):
@@ -614,7 +604,7 @@ class TestStringVisitor:
         mt = sv.process(m.middleware_tree)
         sv.indent += 4
         mc = '\n'.join(sv.process(cls) for cls in m.middleware_classes)
-        exp = '{}\n- Middleware classes:\n{}'.format(mt, mc)
+        exp = f'{mt}\n- Middleware classes:\n{mc}'
         assert inspect.StringVisitor(True).process(m) == exp
 
     def make(self, sv, app, v, i, r=True, m=True, sr=True, s=True, e=True):
@@ -626,19 +616,17 @@ class TestStringVisitor:
             )
         if m:
             mt = sv.process(app.middleware)
-            text += '\n• Middleware ({}):\n{}'.format(
-                app.middleware.independent_text, mt
-            )
+            text += f'\n• Middleware ({app.middleware.independent_text}):\n{mt}'
         if sr:
             sr = '\n'.join(sv.process(sr) for sr in app.static_routes)
-            text += '\n• Static routes:\n{}'.format(sr)
+            text += f'\n• Static routes:\n{sr}'
         if s:
             text += '\n• Sinks:\n{}'.format('\n'.join(sv.process(s) for s in app.sinks))
         if e:
             err = '\n'.join(
                 sv.process(e) for e in app.error_handlers if not e.internal or i
             )
-            text += '\n• Error handlers:\n{}'.format(err)
+            text += f'\n• Error handlers:\n{err}'
         return text
 
     @pytest.mark.parametrize('verbose', (True, False))

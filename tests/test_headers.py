@@ -401,7 +401,7 @@ class TestHeaders:
 
         # Exercise any result caching and associated abuse mitigations
         for i in range(10000):
-            assert req.get_header('X-Not-Found-{0}'.format(i)) is None
+            assert req.get_header(f'X-Not-Found-{i}') is None
 
     @pytest.mark.parametrize('with_double_quotes', [True, False])
     def test_unset_header(self, client, with_double_quotes):
