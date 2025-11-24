@@ -20,6 +20,7 @@ from collections.abc import Awaitable
 from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
+import os
 import re
 from typing import (
     Any,
@@ -29,6 +30,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import warnings
 
 from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
@@ -52,6 +54,8 @@ _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
 _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
 )
+
+decorate_on_request = bool(int(os.environ.get('FALCON_DECORATE_ON_REQUEST', '0')))
 
 
 def before(
@@ -110,6 +114,28 @@ def before(
 
                     setattr(responder_or_resource, responder_name, do_before_all)
 
+                if re.compile(r'^on_request(_\w+)?$').match(responder_name):
+                    # Only wrap default responders if decorate_on_request is set to True
+                    if decorate_on_request:
+                        responder = cast('Responder', responder)
+                        do_before_all = _wrap_with_before(
+                            responder, action, args, kwargs
+                        )
+
+                        setattr(responder_or_resource, responder_name, do_before_all)
+                    else:
+                        warnings.warn(
+                            f'Skipping decoration of default responder '
+                            f"'{responder_name}' on resource "
+                            f"'{responder_or_resource.__name__}'. "
+                            f'To enable decorating default responders with '
+                            f'class-level hooks set '
+                            f'falcon.hooks.decorate_on_request=True '
+                            f'or set the environment variable '
+                            f'FALCON_DECORATE_ON_REQUEST=1.',
+                            UserWarning,
+                        )
+
             return cast(_R, responder_or_resource)
 
         else:
@@ -156,6 +182,26 @@ def after(
                     do_after_all = _wrap_with_after(responder, action, args, kwargs)
 
                     setattr(responder_or_resource, responder_name, do_after_all)
+
+                if re.compile(r'^on_request(_\w+)?$').match(responder_name):
+                    # Only wrap default responders if decorate_on_request is set to True
+                    if decorate_on_request:
+                        responder = cast('Responder', responder)
+                        do_after_all = _wrap_with_after(responder, action, args, kwargs)
+
+                        setattr(responder_or_resource, responder_name, do_after_all)
+                    else:
+                        warnings.warn(
+                            f'Skipping decoration of default responder '
+                            f"'{responder_name}' on resource "
+                            f"'{responder_or_resource.__name__}'. "
+                            f'To enable decorating default responders with '
+                            f'class-level hooks set '
+                            f'falcon.hooks.decorate_on_request=True '
+                            f'or set the environment variable '
+                            f'FALCON_DECORATE_ON_REQUEST=1.',
+                            UserWarning,
+                        )
 
             return cast(_R, responder_or_resource)
 
