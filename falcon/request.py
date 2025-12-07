@@ -1567,13 +1567,13 @@ class Request:
             an ``int``. If the param is not found, returns ``None``, unless
             `required` is ``True``.
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there, or it was found but could not
-                be converted to an ``int``. Also raised if the param's value
-                falls outside the given interval, i.e., the value must be in
-                the interval: min_value <= value <= max_value to avoid
-                triggering an error.
+        Raises:
+            HTTPBadRequest: The param was not found in the request, even
+                though it was required to be there, or it was found but
+                could not be converted to an ``int``. Also raised if the
+                param's value falls outside the given interval, i.e., the
+                value must be in the interval: min_value <= value <=
+                max_value to avoid triggering an error.
 
         """
 
@@ -1680,13 +1680,13 @@ class Request:
             an ``float``. If the param is not found, returns ``None``, unless
             `required` is ``True``.
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there, or it was found but could not
-                be converted to an ``float``. Also raised if the param's value
-                falls outside the given interval, i.e., the value must be in
-                the interval: min_value <= value <= max_value to avoid
-                triggering an error.
+        Raises:
+            HTTPBadRequest: The param was not found in the request, even
+                though it was required to be there, or it was found but
+                could not be converted to an ``float``. Also raised if the
+                param's value falls outside the given interval, i.e., the
+                value must be in the interval: min_value <= value <=
+                max_value to avoid triggering an error.
 
         """
 
@@ -1792,10 +1792,10 @@ class Request:
             a ``UUID``. If the param is not found, returns
             ``default`` (default ``None``), unless `required` is ``True``.
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there, or it was found but could not
-                be converted to a ``UUID``.
+        Raises:
+            HTTPBadRequest: The param was not found in the request, even
+                though it was required to be there, or it was found but
+                could not be converted to a ``UUID``.
         """
 
         params = self._params
