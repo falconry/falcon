@@ -1,0 +1,3 @@
+Resources without responder methods now emit a ``UserWarning`` for non-suffix responders.
+Resources must define at least one responder method (e.g., ``on_get()``, ``on_post()``).
+This will raise an error in Falcon 5.0.
