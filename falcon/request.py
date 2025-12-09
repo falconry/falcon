@@ -58,6 +58,14 @@ TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
 FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 
+_PARAM_VALUE_DELIMITERS = {
+    ',': ',',
+    '|': '|',
+    ' ': ' ',
+    'pipeDelimited': '|',
+    'spaceDelimited': ' ',
+}
+
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
 strptime = datetime.strptime
 now = datetime.now
@@ -2014,6 +2022,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: list[str] | None = ...,
+        delimiter: str | None = None,
     ) -> list[str]: ...
 
     @overload
@@ -2024,6 +2033,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: list[_T] | None = ...,
+        delimiter: str | None = None,
     ) -> list[_T]: ...
 
     @overload
@@ -2035,6 +2045,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: list[str],
+        delimiter: str | None = None,
     ) -> list[str]: ...
 
     @overload
@@ -2046,6 +2057,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: list[_T],
+        delimiter: str | None = None,
     ) -> list[_T]: ...
 
     @overload
@@ -2056,6 +2068,7 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         default: list[str] | None = ...,
+        delimiter: str | None = None,
     ) -> list[str] | None: ...
 
     @overload
@@ -2066,6 +2079,7 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         default: list[_T] | None = ...,
+        delimiter: str | None = None,
     ) -> list[_T] | None: ...
 
     def get_param_as_list(
@@ -2075,6 +2089,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: list[_T] | None = None,
+        delimiter: str | None = None,
     ) -> list[_T] | list[str] | None:
         """Return the value of a query string parameter as a list.
 
@@ -2103,7 +2118,33 @@ class Request:
                 the value of the param, but only if the param is found (default
                 ``None``).
             default (any): If the param is not found returns the
-                given value instead of ``None``
+                given value instead of ``None``.
+            delimiter(str): An optional character for splitting a parameter
+                value into a list. In addition to the ``','``, ``' '``, and
+                ``'|'`` characters, the ``'spaceDelimited'`` and
+                ``'pipeDelimited'`` symbolic constants from the
+                `OpenAPI v3 parameter specification
+                <https://spec.openapis.org/oas/v3.2.0.html#style-values>`__
+                are also supported.
+
+                Note:
+                    If the parameter was already passed as an array, e.g., as
+                    multiple instances (the OAS ``'explode'`` style), the
+                    `delimiter` argument has no effect.
+
+                Note:
+                    In contrast to the automatic splitting of comma-separated
+                    values via the
+                    :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option,
+                    values are split by `delimiter` **after** percent-decoding
+                    the query string.
+
+                    The :attr:`~falcon.RequestOptions.keep_blank_qs_values`
+                    option has no effect on the secondary splitting by
+                    `delimiter` either.
+
+                .. versionadded:: 4.3
+                    The `delimiter` keyword argument.
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
@@ -2123,6 +2164,15 @@ class Request:
             :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option must be
             set to ``True``.
 
+            Even if the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option
+            is set (by default) to ``False``, a value can also be split into
+            list elements by using an OpenAPI spec-compatible delimiter, e.g.:
+
+            >>> req
+            <Request: GET 'http://falconframework.org/?colors=blue%7Cblack%7Cbrown'>
+            >>> req.get_param_as_list('colors', delimiter='pipeDelimited')
+            ['blue', 'black', 'brown']
+
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 a transform function raised an instance of ``ValueError``.
@@ -2135,6 +2185,16 @@ class Request:
         #       know how likely params are to be specified by clients.
         if name in params:
             items = params[name]
+
+            # NOTE(bricklayer25): If a delimiter is specified AND the param is
+            #   a single string, split it.
+            if delimiter is not None and isinstance(items, str):
+                if delimiter not in _PARAM_VALUE_DELIMITERS:
+                    raise ValueError(
+                        f'Unsupported delimiter value: {delimiter!r};'
+                        f' supported: {tuple(_PARAM_VALUE_DELIMITERS)}'
+                    )
+                items = items.split(_PARAM_VALUE_DELIMITERS[delimiter])
 
             # NOTE(warsaw): When a key appears multiple times in the request
             # query, it will already be represented internally as a list.

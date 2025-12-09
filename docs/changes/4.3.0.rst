@@ -1,0 +1,28 @@
+Changelog for Falcon 4.3.0
+==========================
+
+Summary
+-------
+
+Falcon 4.3 is in development. The progress is tracked via the
+`Version 4.3 milestone <https://github.com/falconry/falcon/milestone/45>`__
+on GitHub.
+
+
+.. Changes to Supported Platforms
+.. ------------------------------
+
+.. NOTE(vytas): No changes to the supported platforms (yet).
+
+
+.. towncrier release notes start
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all of our talented and stylish contributors for this release!
+
+- `0x1618 <https://github.com/0x1618>`__
+- `thisisrick25 <https://github.com/thisisrick25>`__
+- `TudorGR <https://github.com/TudorGR>`__
+- `vytas7 <https://github.com/vytas7>`__
