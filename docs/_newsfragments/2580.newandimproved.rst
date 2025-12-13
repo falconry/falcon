@@ -1,0 +1,1 @@
+Introduce a new request header property, ``req.last_event_id``, as a nicer way to read out the value of the ``Last-Event-ID`` header.

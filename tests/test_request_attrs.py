@@ -1058,6 +1058,15 @@ class TestRequestAttributes:
         result = req.get_param_as_list('phrase', delimiter=delimiter)
         assert result == ['quick brown fox', 'lazy dog']
 
+    def test_last_event_id(self, asgi):
+        # Case 1: Header is present
+        req = create_req(asgi, headers={'Last-Event-ID': '12345'})
+        assert req.last_event_id == '12345'
+
+        # Case 2: Header is missing
+        req = create_req(asgi)
+        assert req.last_event_id is None
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
