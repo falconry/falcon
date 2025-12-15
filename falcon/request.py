@@ -355,20 +355,8 @@ class Request:
     """Value of the If-Range header, or ``None`` if the header is missing."""
     referer: str | None = helpers._header_property('HTTP_REFERER')
     """Value of the Referer header, or ``None`` if the header is missing."""
-
-    @property
-    def last_event_id(self) -> str | None:
-        """Return the value of the Last-Event-ID header, or None if missing.
-
-        This header is sent by the client (browser) when reconnecting to a
-        Server-Sent Events (SSE) stream, allowing the server to resume sending
-        events from a specific point.
-
-        Returns:
-            str: The value of the Last-Event-ID header, or None if the
-            header was not present in the request.
-        """
-        return self.get_header('Last-Event-ID')
+    last_event_id: str | None = helpers._header_property('HTTP_LAST_EVENT_ID')
+    """Value of the Last-Event-ID header, or ``None`` if the header is missing."""
 
     @property
     def forwarded(self) -> list[Forwarded] | None:

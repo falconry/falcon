@@ -1,1 +1,3 @@
-Introduce a new request header property, ``req.last_event_id``, as a nicer way to read out the value of the ``Last-Event-ID`` header.
+The :attr:`req.last_event_id <falcon.Request.last_event_id>` property was added to provide convenient access to the 
+``Last-Event-ID`` header. This header is commonly sent by clients when reconnecting to a Server-Sent Events stream,
+and this addition aligns the API with other standard header properties. 
