@@ -20,8 +20,10 @@ if TYPE_CHECKING:
     from falcon import Response
 
 
-def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result]:
-    """Open a file for a static file request and read file stat.
+def _open_and_stat_file(
+    file_path: str | Path, only_stat: bool = False
+) -> tuple[io.BufferedReader, os.stat_result]:
+    """Open(optionally) a file for a static file request and read file stat.
 
     Args:
         file_path (Union[str, Path]): Path to the file to open.
@@ -29,13 +31,17 @@ def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result
         tuple: Tuple of (BufferedReader, stat_result).
     """
     fh: io.BufferedReader | None = None
-    try:
-        fh = io.open(file_path, 'rb')  # noqa: UP020
-        st = os.fstat(fh.fileno())
-    except OSError:
-        if fh is not None:
-            fh.close()
-        raise falcon.HTTPNotFound()
+
+    if only_stat:
+        st, fh = os.stat(file_path), io.BufferedReader(io.BytesIO())
+    else:
+        try:
+            fh = io.open(file_path, 'rb')  # noqa: UP020
+            st = os.fstat(fh.fileno())
+        except OSError:
+            if fh is not None:
+                fh.close()
+            raise falcon.HTTPNotFound()
     return fh, st
 
 
@@ -263,38 +269,31 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        if req.method == 'GET':
-            # for HEAD requests, we won't do operations like open/stat
-            if self._fallback_filename is None:
-                fh, st = _open_file(file_path)
-            else:
-                try:
-                    fh, st = _open_file(file_path)
-                except falcon.HTTPNotFound:
-                    fh, st = _open_file(self._fallback_filename)
-                    file_path = self._fallback_filename
+        only_stat = req.method == 'HEAD'
 
-            etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
-            resp.etag = etag
-
-            last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
-            # NOTE(vytas): Strip the microsecond part because that is not reflected
-            #   in HTTP date, and when the client passes a previous value via
-            #   If-Modified-Since, it will look as if our copy is ostensibly newer.
-            last_modified = last_modified.replace(microsecond=0)
-            resp.last_modified = last_modified
-
-            if _is_not_modified(req, etag, last_modified):
-                fh.close()
-                resp.status = falcon.HTTP_304
-                return
-
-            req_range = req.range if req.range_unit == 'bytes' else None
+        if self._fallback_filename is None:
+            fh, st = _open_and_stat_file(file_path, only_stat)
+        else:
             try:
-                stream, length, content_range = _set_range(fh, st, req_range)
-            except IOError:
-                fh.close()
-                raise falcon.HTTPNotFound()
+                fh, st = _open_and_stat_file(file_path, only_stat)
+            except falcon.HTTPNotFound:
+                fh, st = _open_and_stat_file(self._fallback_filename, only_stat)
+                file_path = self._fallback_filename
+
+        etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
+        resp.etag = etag
+
+        last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
+        # NOTE(vytas): Strip the microsecond part because that is not reflected
+        #   in HTTP date, and when the client passes a previous value via
+        #   If-Modified-Since, it will look as if our copy is ostensibly newer.
+        last_modified = last_modified.replace(microsecond=0)
+        resp.last_modified = last_modified
+
+        if _is_not_modified(req, etag, last_modified):
+            fh.close()
+            resp.status = falcon.HTTP_304
+            return
 
         req_range = req.range if req.range_unit == 'bytes' else None
         try:
@@ -303,6 +302,7 @@ class StaticRoute:
             fh.close()
             raise falcon.HTTPNotFound()
 
+        resp.set_stream(stream, length)
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
             suffix, 'application/octet-stream'
