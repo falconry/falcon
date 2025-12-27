@@ -52,7 +52,9 @@ from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
 from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_MSGPACK
 from falcon.errors import CompatibilityError
+from falcon.media import MessagePackHandler
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.typing import Headers
@@ -490,6 +492,7 @@ def simulate_request(
     cookies: CookieArg | None = None,
     asgi_chunk_size: int = 4096,
     asgi_disconnect_ttl: int = 300,
+    msgpack: Any | None = None,
 ) -> Result:
     """Simulate a request to a WSGI or ASGI application.
 
@@ -597,6 +600,13 @@ def simulate_request(
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -625,6 +635,7 @@ def simulate_request(
             asgi_chunk_size=asgi_chunk_size,
             asgi_disconnect_ttl=asgi_disconnect_ttl,
             cookies=cookies,
+            msgpack=msgpack,
         )
 
     path, query_string, headers, body, extras = _prepare_sim_args(
@@ -637,6 +648,7 @@ def simulate_request(
         body,
         json,
         extras,
+        msgpack,
     )
 
     env = helpers.create_environ(
@@ -702,6 +714,7 @@ async def _simulate_request_asgi(
     cookies: CookieArg | None = ...,
     _one_shot: Literal[False] = ...,
     _stream_result: Literal[True] = ...,
+    msgpack: Any | None = ...,
 ) -> StreamedResult: ...
 
 
@@ -729,6 +742,7 @@ async def _simulate_request_asgi(
     cookies: CookieArg | None = ...,
     _one_shot: Literal[True] = ...,
     _stream_result: bool = ...,
+    msgpack: Any | None = ...,
 ) -> Result: ...
 
 
@@ -764,6 +778,7 @@ async def _simulate_request_asgi(
     #   don't want these kwargs to be documented.
     _one_shot: bool = True,
     _stream_result: bool = False,
+    msgpack: Any | None = None,
 ) -> Result | StreamedResult:
     """Simulate a request to an ASGI application.
 
@@ -853,6 +868,13 @@ async def _simulate_request_asgi(
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as `
+            `'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -868,6 +890,7 @@ async def _simulate_request_asgi(
         body,
         json,
         extras,
+        msgpack,
     )
 
     # ---------------------------------------------------------------------
@@ -1604,6 +1627,13 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -1715,6 +1745,13 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -1910,6 +1947,13 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -2016,6 +2060,13 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
+        msgpack(Msgpack serializable): A Msgpack document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and sets the Content-Type header to
+            ``'application/msgpack'``, overriding any value specified by
+            either the `content_type` or `headers` arguments. If msgpack and json
+            are both specified, the Content-Type header will be set as
+            ``'application/msgpack'``.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -2270,6 +2321,7 @@ def _prepare_sim_args(
     body: str | bytes | None,
     json: Any | None,
     extras: Mapping[str, Any] | None,
+    msgpack: Any | None,
 ) -> tuple[str, str, HeaderArg | None, str | bytes | None, Mapping[str, Any]]:
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
@@ -2302,6 +2354,11 @@ def _prepare_sim_args(
         body = json_module.dumps(json, ensure_ascii=False)
         headers = dict(headers or {})
         headers['Content-Type'] = MEDIA_JSON
+
+    if msgpack is not None:
+        body = MessagePackHandler().serialize(content_type=None, media=msgpack)
+        headers = dict(headers or {})
+        headers['Content-Type'] = MEDIA_MSGPACK
 
     return path, query_string, headers, body, extras
 
