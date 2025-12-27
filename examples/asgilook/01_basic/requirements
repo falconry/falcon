@@ -1,0 +1,5 @@
+falcon
+uvicorn
+httpie
+aiofiles
+Pillow
