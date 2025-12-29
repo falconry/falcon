@@ -1372,7 +1372,7 @@ def redirected(
     """Redirect stdout or stderr temporarily.
 
     For instance, this helper can be used to capture output from Falcon
-    reources under tests::
+    resources under tests::
 
         import io
 

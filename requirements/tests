@@ -2,7 +2,6 @@ coverage >= 4.1
 pytest >= 7.0
 pyyaml
 requests
-testtools
 
 # ASGI Specific (Daphne & Hypercorn are installed in their own tox env)
 aiofiles
