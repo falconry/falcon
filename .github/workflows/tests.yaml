@@ -119,7 +119,7 @@ jobs:
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         if: ${{ matrix.tox.coverage }}
         with:
           env_vars: PYTHON
