@@ -1213,9 +1213,16 @@ class Request:
         if media_type is None:
             media_type = self.options.default_media_type
 
-        handler, _, _ = self.options.media_handlers._resolve(
-            media_type, self.options.default_media_type
-        )
+        try:
+            handler, _, _ = self.options.media_handlers._resolve(
+                media_type, self.options.default_media_type
+            )
+        except errors.HTTPUnsupportedMediaType:
+            raise ValueError(
+                f'No media handler is configured for {media_type!r}. '
+                'Please ensure the media type is registered in '
+                'RequestOptions.media_handlers.'
+            )
 
         # URL-decode the query string
         decoded_query_string = util.uri.decode(self.query_string, unquote_plus=False)

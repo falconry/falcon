@@ -1,17 +1,8 @@
 from urllib.parse import quote
 
-import pytest
-
 import falcon
 from falcon import errors
 from falcon import testing
-
-
-@pytest.fixture
-def client(asgi):
-    app_cls = falcon.asgi.App if asgi else falcon.App
-    app = app_cls()
-    return testing.TestClient(app)
 
 
 class CaptureQueryStringMedia:
@@ -24,23 +15,15 @@ class CaptureQueryStringMedia:
         self.captured_media = req.get_query_string_as_media('application/json')
 
 
-class CaptureQueryStringMediaAsync:
-    """Async resource that captures the deserialized query string media."""
-
-    async def on_get(self, req, resp):
-        self.captured_media = await req.get_query_string_as_media()
-
-    async def on_post(self, req, resp):
-        self.captured_media = await req.get_query_string_as_media('application/json')
-
-
 class TestQueryStringAsMedia:
     """Test query string deserialization as media."""
 
-    def test_simple_json_query_string(self, asgi, client):
+    def test_simple_json_query_string(self, asgi, util):
         """Test deserializing a simple JSON query string."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         # Query string: {"key": "value"}
         json_data = '{"key": "value"}'
@@ -50,10 +33,12 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'key': 'value'}
 
-    def test_complex_json_query_string(self, asgi, client):
+    def test_complex_json_query_string(self, asgi, util):
         """Test OpenAPI 3.2 example with complex JSON."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         # Query string: {"numbers":[1,2],"flag":null}
         json_data = '{"numbers":[1,2],"flag":null}'
@@ -63,7 +48,7 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'numbers': [1, 2], 'flag': None}
 
-    def test_empty_query_string(self, asgi, client):
+    def test_empty_query_string(self, asgi, util):
         """Test behavior with empty query string."""
 
         class ResourceWithDefault:
@@ -72,21 +57,17 @@ class TestQueryStringAsMedia:
                     default_when_empty={'default': 'value'}
                 )
 
-        class ResourceWithDefaultAsync:
-            async def on_get(self, req, resp):
-                self.captured_media = await req.get_query_string_as_media(
-                    default_when_empty={'default': 'value'}
-                )
-
-        resource = ResourceWithDefaultAsync() if asgi else ResourceWithDefault()
-        client.app.add_route('/test', resource)
+        resource = ResourceWithDefault()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         client.simulate_get('/test')
 
         # Should return the default value when empty and handler raises error
         assert resource.captured_media == {'default': 'value'}
 
-    def test_invalid_json_query_string(self, asgi, client):
+    def test_invalid_json_query_string(self, asgi, util):
         """Test error handling with invalid JSON."""
 
         class ResourceInvalidJSON:
@@ -98,17 +79,10 @@ class TestQueryStringAsMedia:
                 else:
                     self.error_caught = False
 
-        class ResourceInvalidJSONAsync:
-            async def on_get(self, req, resp):
-                try:
-                    await req.get_query_string_as_media()
-                except errors.HTTPBadRequest:
-                    self.error_caught = True
-                else:
-                    self.error_caught = False
-
-        resource = ResourceInvalidJSONAsync() if asgi else ResourceInvalidJSON()
-        client.app.add_route('/test', resource)
+        resource = ResourceInvalidJSON()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         # Invalid JSON
         invalid_json = '{"incomplete"'
@@ -118,10 +92,12 @@ class TestQueryStringAsMedia:
 
         assert resource.error_caught
 
-    def test_explicit_media_type(self, asgi, client):
+    def test_explicit_media_type(self, asgi, util):
         """Test specifying an explicit media type."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         json_data = '{"explicit": "type"}'
         query_string = quote(json_data, safe='')
@@ -130,10 +106,12 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'explicit': 'type'}
 
-    def test_special_characters_in_json(self, asgi, client):
+    def test_special_characters_in_json(self, asgi, util):
         """Test JSON with special characters."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         # JSON with special characters
         json_data = '{"name": "Test & Demo", "value": "100%"}'
@@ -143,10 +121,12 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'name': 'Test & Demo', 'value': '100%'}
 
-    def test_nested_json_structures(self, asgi, client):
+    def test_nested_json_structures(self, asgi, util):
         """Test deeply nested JSON structures."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         json_data = '{"level1": {"level2": {"level3": ["a", "b", "c"]}}}'
         query_string = quote(json_data, safe='')
@@ -156,7 +136,7 @@ class TestQueryStringAsMedia:
         expected = {'level1': {'level2': {'level3': ['a', 'b', 'c']}}}
         assert resource.captured_media == expected
 
-    def test_different_media_types(self, asgi, client):
+    def test_different_media_types(self, asgi, util):
         """Test with different media type handlers."""
 
         class ResourceCustomMediaType:
@@ -166,14 +146,10 @@ class TestQueryStringAsMedia:
                     'application/x-www-form-urlencoded'
                 )
 
-        class ResourceCustomMediaTypeAsync:
-            async def on_get(self, req, resp):
-                self.captured_media = await req.get_query_string_as_media(
-                    'application/x-www-form-urlencoded'
-                )
-
-        resource = ResourceCustomMediaTypeAsync() if asgi else ResourceCustomMediaType()
-        client.app.add_route('/test', resource)
+        resource = ResourceCustomMediaType()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         # URL-encoded form data
         query_string = quote('key1=value1&key2=value2', safe='')
@@ -183,10 +159,12 @@ class TestQueryStringAsMedia:
         # URLEncodedFormHandler should parse this
         assert isinstance(resource.captured_media, dict)
 
-    def test_unicode_in_query_string(self, asgi, client):
+    def test_unicode_in_query_string(self, asgi, util):
         """Test JSON with Unicode characters."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         # JSON with Unicode
         json_data = '{"emoji": "🚀", "chinese": "你好"}'
@@ -196,7 +174,7 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'emoji': '🚀', 'chinese': '你好'}
 
-    def test_error_caching(self, asgi, client):
+    def test_error_caching(self, asgi, util):
         """Test error behavior on repeated calls."""
 
         class ResourceErrorCaching:
@@ -210,19 +188,10 @@ class TestQueryStringAsMedia:
                 except errors.HTTPBadRequest:
                     pass
 
-        class ResourceErrorCachingAsync:
-            def __init__(self):
-                self.call_count = 0
-
-            async def on_get(self, req, resp):
-                self.call_count += 1
-                try:
-                    await req.get_query_string_as_media()
-                except errors.HTTPBadRequest:
-                    pass
-
-        resource = ResourceErrorCachingAsync() if asgi else ResourceErrorCaching()
-        client.app.add_route('/test', resource)
+        resource = ResourceErrorCaching()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         invalid_json = '{"bad"'
         query_string = quote(invalid_json, safe='')
@@ -235,10 +204,12 @@ class TestQueryStringAsMedia:
         # Both calls should have been made
         assert resource.call_count == 2
 
-    def test_array_at_root(self, asgi, client):
+    def test_array_at_root(self, asgi, util):
         """Test JSON array at root level."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         json_data = '[1, 2, 3, 4, 5]'
         query_string = quote(json_data, safe='')
@@ -247,10 +218,12 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == [1, 2, 3, 4, 5]
 
-    def test_boolean_and_null_values(self, asgi, client):
+    def test_boolean_and_null_values(self, asgi, util):
         """Test JSON with boolean and null values."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         json_data = '{"active": true, "inactive": false, "empty": null}'
         query_string = quote(json_data, safe='')
@@ -263,10 +236,12 @@ class TestQueryStringAsMedia:
             'empty': None,
         }
 
-    def test_numeric_values(self, asgi, client):
+    def test_numeric_values(self, asgi, util):
         """Test JSON with various numeric values."""
-        resource = CaptureQueryStringMediaAsync() if asgi else CaptureQueryStringMedia()
-        client.app.add_route('/test', resource)
+        resource = CaptureQueryStringMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         json_data = '{"int": 42, "float": 3.14, "negative": -10}'
         query_string = quote(json_data, safe='')
@@ -275,7 +250,7 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'int': 42, 'float': 3.14, 'negative': -10}
 
-    def test_default_when_empty_not_used_for_valid_data(self, asgi, client):
+    def test_default_when_empty_not_used_for_valid_data(self, asgi, util):
         """Test that default_when_empty is not used when data is valid."""
 
         class ResourceWithDefault:
@@ -284,14 +259,10 @@ class TestQueryStringAsMedia:
                     default_when_empty={'should': 'not see this'}
                 )
 
-        class ResourceWithDefaultAsync:
-            async def on_get(self, req, resp):
-                self.captured_media = await req.get_query_string_as_media(
-                    default_when_empty={'should': 'not see this'}
-                )
-
-        resource = ResourceWithDefaultAsync() if asgi else ResourceWithDefault()
-        client.app.add_route('/test', resource)
+        resource = ResourceWithDefault()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         json_data = '{"actual": "data"}'
         query_string = quote(json_data, safe='')
@@ -301,17 +272,13 @@ class TestQueryStringAsMedia:
         # Should get the actual data, not the default
         assert resource.captured_media == {'actual': 'data'}
 
-    def test_error_propagation(self, asgi, client):
+    def test_error_propagation(self, asgi, util):
         """Test that non-MediaNotFoundError exceptions propagate correctly."""
 
         class FailingHandler:
             exhaust_stream = False
 
             def deserialize(self, stream, content_type, content_length):
-                raise ValueError('Custom error')
-
-        class FailingHandlerAsync(FailingHandler):
-            async def deserialize_async(self, stream, content_type, content_length):
                 raise ValueError('Custom error')
 
         class ResourceErrorCheck:
@@ -321,24 +288,19 @@ class TestQueryStringAsMedia:
                 except ValueError as e:
                     self.error_message = str(e)
 
-        class ResourceErrorCheckAsync:
-            async def on_get(self, req, resp):
-                try:
-                    await req.get_query_string_as_media('application/custom')
-                except ValueError as e:
-                    self.error_message = str(e)
+        resource = ResourceErrorCheck()
+        handler = FailingHandler()
 
-        resource = ResourceErrorCheckAsync() if asgi else ResourceErrorCheck()
-        handler = FailingHandlerAsync() if asgi else FailingHandler()
-
-        client.app.req_options.media_handlers['application/custom'] = handler
-        client.app.add_route('/test', resource)
+        app = util.create_app(asgi)
+        app.req_options.media_handlers['application/custom'] = handler
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         client.simulate_get('/test', query_string='data')
 
         assert resource.error_message == 'Custom error'
 
-    def test_uses_default_media_type_when_none_specified(self, asgi, client):
+    def test_uses_default_media_type_when_none_specified(self, asgi, util):
         """Test that default media type is used when media_type is None."""
 
         class ResourceDefaultType:
@@ -346,12 +308,10 @@ class TestQueryStringAsMedia:
                 # Don't specify media_type, should use default (application/json)
                 self.captured_media = req.get_query_string_as_media()
 
-        class ResourceDefaultTypeAsync:
-            async def on_get(self, req, resp):
-                self.captured_media = await req.get_query_string_as_media()
-
-        resource = ResourceDefaultTypeAsync() if asgi else ResourceDefaultType()
-        client.app.add_route('/test', resource)
+        resource = ResourceDefaultType()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         json_data = '{"uses": "default"}'
         query_string = quote(json_data, safe='')
@@ -360,7 +320,7 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'uses': 'default'}
 
-    def test_cached_error_with_default_when_empty(self, asgi, client):
+    def test_cached_error_with_default_when_empty(self, asgi, util):
         """Test that an error followed by default_when_empty returns default."""
 
         class ResourceCachedError:
@@ -373,23 +333,17 @@ class TestQueryStringAsMedia:
                 # Second call - should return default
                 self.result = req.get_query_string_as_media(default_when_empty={})
 
-        class ResourceCachedErrorAsync:
-            async def on_get(self, req, resp):
-                try:
-                    await req.get_query_string_as_media()
-                except Exception:
-                    pass
-                self.result = await req.get_query_string_as_media(default_when_empty={})
-
-        resource = ResourceCachedErrorAsync() if asgi else ResourceCachedError()
-        client.app.add_route('/test', resource)
+        resource = ResourceCachedError()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         # Empty query string will cause MediaNotFoundError
         client.simulate_get('/test', query_string='')
 
         assert resource.result == {}
 
-    def test_cached_error_reraises_without_default(self, asgi, client):
+    def test_cached_error_reraises_without_default(self, asgi, util):
         """Test that error is re-raised on subsequent calls."""
 
         class ResourceCachedErrorReraise:
@@ -405,22 +359,39 @@ class TestQueryStringAsMedia:
                 except falcon.MediaNotFoundError as err:
                     self.error_caught = str(err)
 
-        class ResourceCachedErrorReraiseAsync:
-            async def on_get(self, req, resp):
-                try:
-                    await req.get_query_string_as_media()
-                except falcon.MediaNotFoundError:
-                    pass
-                try:
-                    await req.get_query_string_as_media()
-                except falcon.MediaNotFoundError as err:
-                    self.error_caught = str(err)
-
-        resource = (
-            ResourceCachedErrorReraiseAsync() if asgi else ResourceCachedErrorReraise()
-        )
-        client.app.add_route('/test', resource)
+        resource = ResourceCachedErrorReraise()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
 
         client.simulate_get('/test', query_string='')
 
         assert 'MediaNotFoundError' in resource.error_caught
+
+    def test_unsupported_media_type_raises_value_error(self, asgi, util):
+        """Test unsupported media type raises ValueError."""
+
+        class ResourceUnsupportedMedia:
+            def on_get(self, req, resp):
+                try:
+                    # Request a media type that doesn't exist
+                    req.get_query_string_as_media('application/x-nonexistent')
+                except ValueError as e:
+                    self.error_caught = True
+                    self.error_message = str(e)
+                except Exception:
+                    self.error_caught = False
+
+        resource = ResourceUnsupportedMedia()
+        app = util.create_app(asgi)
+        app.add_route('/test', resource)
+        client = testing.TestClient(app)
+
+        json_data = '{"test": "data"}'
+        query_string = quote(json_data, safe='')
+
+        client.simulate_get('/test', query_string=query_string)
+
+        assert resource.error_caught
+        assert 'No media handler is configured' in resource.error_message
+        assert 'application/x-nonexistent' in resource.error_message

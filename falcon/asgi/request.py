@@ -650,65 +650,6 @@ class Request(request.Request):
         deserialized_media = await req.media
     """
 
-    async def get_query_string_as_media(
-        self, media_type: str | None = None, default_when_empty: UnsetOr[Any] = _UNSET
-    ) -> Any:
-        """Deserialize the query string as a media object.
-
-        This method URL-decodes the query string and then deserializes it
-        as a media object using the specified media type handler. This is
-        useful for implementing OpenAPI 3.2 `Parameter Object with content`_
-        where the entire query string is treated as serialized content.
-
-        For example, if the query string is
-        ``%7B%22numbers%22%3A%5B1%2C2%5D%2C%22flag%22%3Anull%7D``, this
-        method will URL-decode it to ``{"numbers":[1,2],"flag":null}`` and
-        then deserialize it as JSON (assuming ``media_type`` is set to
-        ``'application/json'``)::
-
-            # Query string: ?%7B%22numbers%22%3A%5B1%2C2%5D%7D
-            data = await req.get_query_string_as_media('application/json')
-            # data == {'numbers': [1, 2]}
-
-        See also :ref:`media` for more information regarding media handling.
-
-        Note:
-            When called on a request with an empty query string, Falcon will
-            let the media handler try to deserialize the empty string and will
-            return the value returned by the handler or propagate the exception
-            raised by it. To instead return a different value in case of an
-            exception by the handler, specify the argument ``default_when_empty``.
-
-            We keep this method ``async`` in ASGI to preserve the option of
-            performing asynchronous I/O inside the future, but currently it
-            delegates to the synchronous implementation since the query string
-            is already in memory.
-
-        Args:
-            media_type: Media type to use for deserialization
-                (e.g., ``'application/json'``). If not specified, the
-                ``default_media_type`` from :class:`falcon.RequestOptions`
-                will be used (default ``'application/json'``).
-
-        Keyword Args:
-            default_when_empty: Fallback value to return when there is no
-                query string and the media handler raises an error. By default,
-                Falcon uses the value returned by the media handler or
-                propagates the raised exception, if any.
-
-        Returns:
-            object: The deserialized media representation of the query string.
-
-        .. _Parameter Object with content:
-            https://spec.openapis.org/oas/latest.html#parameter-object-examples
-
-        """
-        # Delegate to the parent class's synchronous implementation
-        # since the query string is already in memory
-        return request.Request.get_query_string_as_media(
-            self, media_type=media_type, default_when_empty=default_when_empty
-        )
-
     @property
     def if_match(self) -> list[ETag | Literal['*']] | None:
         # TODO(kgriffs): It may make sense at some point to create a
