@@ -1213,11 +1213,10 @@ class Request:
         if media_type is None:
             media_type = self.options.default_media_type
 
-        try:
-            handler, _, _ = self.options.media_handlers._resolve(
-                media_type, self.options.default_media_type
-            )
-        except errors.HTTPUnsupportedMediaType:
+        handler, _, _ = self.options.media_handlers._resolve(
+            media_type, self.options.default_media_type, raise_not_found=False
+        )
+        if handler is None:
             raise ValueError(
                 f'No media handler is configured for {media_type!r}. '
                 'Please ensure the media type is registered in '

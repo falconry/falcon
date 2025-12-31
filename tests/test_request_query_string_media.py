@@ -1,5 +1,7 @@
 from urllib.parse import quote
 
+import pytest
+
 import falcon
 from falcon import errors
 from falcon import testing
@@ -15,15 +17,21 @@ class CaptureQueryStringMedia:
         self.captured_media = req.get_query_string_as_media('application/json')
 
 
+@pytest.fixture()
+def standard_client(asgi, util):
+    """Fixture providing a test client with CaptureQueryStringMedia resource."""
+    resource = CaptureQueryStringMedia()
+    app = util.create_app(asgi)
+    app.add_route('/test', resource)
+    return testing.TestClient(app), resource
+
+
 class TestQueryStringAsMedia:
     """Test query string deserialization as media."""
 
-    def test_simple_json_query_string(self, asgi, util):
+    def test_simple_json_query_string(self, standard_client):
         """Test deserializing a simple JSON query string."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         # Query string: {"key": "value"}
         json_data = '{"key": "value"}'
@@ -33,12 +41,9 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'key': 'value'}
 
-    def test_complex_json_query_string(self, asgi, util):
+    def test_complex_json_query_string(self, standard_client):
         """Test OpenAPI 3.2 example with complex JSON."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         # Query string: {"numbers":[1,2],"flag":null}
         json_data = '{"numbers":[1,2],"flag":null}'
@@ -92,12 +97,9 @@ class TestQueryStringAsMedia:
 
         assert resource.error_caught
 
-    def test_explicit_media_type(self, asgi, util):
+    def test_explicit_media_type(self, standard_client):
         """Test specifying an explicit media type."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         json_data = '{"explicit": "type"}'
         query_string = quote(json_data, safe='')
@@ -106,12 +108,9 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'explicit': 'type'}
 
-    def test_special_characters_in_json(self, asgi, util):
+    def test_special_characters_in_json(self, standard_client):
         """Test JSON with special characters."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         # JSON with special characters
         json_data = '{"name": "Test & Demo", "value": "100%"}'
@@ -121,12 +120,9 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == {'name': 'Test & Demo', 'value': '100%'}
 
-    def test_nested_json_structures(self, asgi, util):
+    def test_nested_json_structures(self, standard_client):
         """Test deeply nested JSON structures."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         json_data = '{"level1": {"level2": {"level3": ["a", "b", "c"]}}}'
         query_string = quote(json_data, safe='')
@@ -159,12 +155,9 @@ class TestQueryStringAsMedia:
         # URLEncodedFormHandler should parse this
         assert isinstance(resource.captured_media, dict)
 
-    def test_unicode_in_query_string(self, asgi, util):
+    def test_unicode_in_query_string(self, standard_client):
         """Test JSON with Unicode characters."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         # JSON with Unicode
         json_data = '{"emoji": "🚀", "chinese": "你好"}'
@@ -204,12 +197,9 @@ class TestQueryStringAsMedia:
         # Both calls should have been made
         assert resource.call_count == 2
 
-    def test_array_at_root(self, asgi, util):
+    def test_array_at_root(self, standard_client):
         """Test JSON array at root level."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         json_data = '[1, 2, 3, 4, 5]'
         query_string = quote(json_data, safe='')
@@ -218,12 +208,9 @@ class TestQueryStringAsMedia:
 
         assert resource.captured_media == [1, 2, 3, 4, 5]
 
-    def test_boolean_and_null_values(self, asgi, util):
+    def test_boolean_and_null_values(self, standard_client):
         """Test JSON with boolean and null values."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         json_data = '{"active": true, "inactive": false, "empty": null}'
         query_string = quote(json_data, safe='')
@@ -236,12 +223,9 @@ class TestQueryStringAsMedia:
             'empty': None,
         }
 
-    def test_numeric_values(self, asgi, util):
+    def test_numeric_values(self, standard_client):
         """Test JSON with various numeric values."""
-        resource = CaptureQueryStringMedia()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
+        client, resource = standard_client
 
         json_data = '{"int": 42, "float": 3.14, "negative": -10}'
         query_string = quote(json_data, safe='')
