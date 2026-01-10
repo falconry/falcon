@@ -1058,6 +1058,17 @@ class TestRequestAttributes:
         result = req.get_param_as_list('phrase', delimiter=delimiter)
         assert result == ['quick brown fox', 'lazy dog']
 
+    @pytest.mark.parametrize('value', ['12345', '1768042793-1337'])
+    def test_last_event_id(self, asgi, value):
+        req = create_req(asgi, headers={'Last-Event-ID': value})
+        assert req.last_event_id == value
+
+    @pytest.mark.parametrize('value', [None, '', ' '])
+    def test_last_event_id_missing(self, asgi, value):
+        headers = {'Last-Event-ID': value} if value is not None else {}
+        req = create_req(asgi, headers=headers)
+        assert req.last_event_id is None
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------

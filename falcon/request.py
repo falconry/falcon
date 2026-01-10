@@ -355,6 +355,8 @@ class Request:
     """Value of the If-Range header, or ``None`` if the header is missing."""
     referer: str | None = helpers._header_property('HTTP_REFERER')
     """Value of the Referer header, or ``None`` if the header is missing."""
+    last_event_id: str | None = helpers._header_property('HTTP_LAST_EVENT_ID')
+    """Value of the Last-Event-ID header, or ``None`` if the header is missing."""
 
     @property
     def forwarded(self) -> list[Forwarded] | None:
