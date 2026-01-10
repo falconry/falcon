@@ -52,6 +52,7 @@ from falcon._typing import SinkPrefix
 from falcon._typing import StartResponse
 from falcon._typing import SyncMiddleware
 from falcon._typing import WSGIEnvironment
+from falcon._typing import _ReqT, _RespT, _ExcT
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPInternalServerError
@@ -85,10 +86,6 @@ _TYPELESS_STATUS_CODES = frozenset(
         status.HTTP_304,
     ]
 )
-
-_ExcT = TypeVar('_ExcT', bound=Exception)
-_ReqT = TypeVar('_ReqT', bound=Request, contravariant=True)
-_RespT = TypeVar('_RespT', bound=Response, contravariant=True)
 
 
 class App(Generic[_ReqT, _RespT]):
@@ -268,17 +265,17 @@ class App(Generic[_ReqT, _RespT]):
     # NOTE(caselit): this should actually be a protocol of the methods required
     # by a router, hardcoded to CompiledRouter for convenience for now.
     _router: routing.CompiledRouter
-    _serialize_error: ErrorSerializer
+    _serialize_error: ErrorSerializer[_ReqT, _RespT]
     _sink_and_static_routes: tuple[
         tuple[
             Pattern[str] | routing.StaticRoute,
-            SinkCallable | AsgiSinkCallable | routing.StaticRoute,
+            SinkCallable[_ReqT, _RespT] | routing.StaticRoute,
             bool,
         ],
         ...,
     ]
     _sink_before_static_route: bool
-    _sinks: list[tuple[Pattern[str], SinkCallable | AsgiSinkCallable, Literal[True]]]
+    _sinks: list[tuple[Pattern[str], SinkCallable[_ReqT, _RespT], Literal[True]]]
     _static_routes: list[
         tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
@@ -1220,7 +1217,7 @@ class App(Generic[_ReqT, _RespT]):
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
 
-    def _find_error_handler(self, ex: Exception) -> ErrorHandler | None:
+    def _find_error_handler(self, ex: Exception) -> ErrorHandler[_ReqT, _RespT] | None:
         # NOTE(csojinb): The `__mro__` class attribute returns the method
         # resolution order tuple, i.e. the complete linear inheritance chain
         # ``(type(ex), ..., object)``. For a valid exception class, the last
