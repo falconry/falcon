@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Private type aliases used internally by Falcon.."""
+"""Private type aliases used internally by Falcon."""
 
 from __future__ import annotations
 
@@ -63,10 +63,23 @@ _T = TypeVar('_T')
 _UNSET = _Unset.UNSET
 UnsetOr = Union[Literal[_Unset.UNSET], _T]
 
-_ReqT = TypeVar('_ReqT', bound='Request', contravariant=True)
-_RespT = TypeVar('_RespT', bound='Response', contravariant=True)
-_AReqT = TypeVar('_AReqT', bound='AsgiRequest', contravariant=True)
-_ARespT = TypeVar('_ARespT', bound='AsgiResponse', contravariant=True)
+# NOTE(vytas,jap): TypeVar's "default" argument is only available on 3.13+.
+if sys.version_info >= (3, 13):
+    _ExcT = TypeVar('_ExcT', bound=Exception, default=Exception)
+    _ReqT = TypeVar('_ReqT', bound='Request', contravariant=True, default='Request')
+    _RespT = TypeVar('_RespT', bound='Response', contravariant=True, default='Response')
+    _AReqT = TypeVar(
+        '_AReqT', bound='AsgiRequest', contravariant=True, default='AsgiRequest'
+    )
+    _ARespT = TypeVar(
+        '_ARespT', bound='AsgiResponse', contravariant=True, default='AsgiResponse'
+    )
+else:
+    _ExcT = TypeVar('_ExcT', bound=Exception)
+    _ReqT = TypeVar('_ReqT', bound='Request', contravariant=True)
+    _RespT = TypeVar('_RespT', bound='Response', contravariant=True)
+    _AReqT = TypeVar('_AReqT', bound='AsgiRequest', contravariant=True)
+    _ARespT = TypeVar('_ARespT', bound='AsgiResponse', contravariant=True)
 
 Link = dict[str, str]
 CookieArg = Mapping[str, Union[str, Cookie]]
