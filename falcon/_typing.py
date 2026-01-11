@@ -68,8 +68,12 @@ if sys.version_info >= (3, 13):
     _ExcT = TypeVar('_ExcT', bound=Exception, default=Exception)
     _ReqT = TypeVar('_ReqT', bound='Request', contravariant=True, default='Request')
     _RespT = TypeVar('_RespT', bound='Response', contravariant=True, default='Response')
-    _AReqT = TypeVar('_AReqT', bound='AsgiRequest', contravariant=True, default='AsgiRequest')
-    _ARespT = TypeVar('_ARespT', bound='AsgiResponse', contravariant=True, default='AsgiResponse')
+    _AReqT = TypeVar(
+        '_AReqT', bound='AsgiRequest', contravariant=True, default='AsgiRequest'
+    )
+    _ARespT = TypeVar(
+        '_ARespT', bound='AsgiResponse', contravariant=True, default='AsgiResponse'
+    )
 else:
     _ExcT = TypeVar('_ExcT', bound=Exception)
     _ReqT = TypeVar('_ReqT', bound='Request', contravariant=True)

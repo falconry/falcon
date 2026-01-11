@@ -31,7 +31,6 @@ from typing import (
     Generic,
     Literal,
     overload,
-    TypeVar,
 )
 import warnings
 
@@ -39,9 +38,11 @@ from falcon import app_helpers as helpers
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import _ExcT
+from falcon._typing import _ReqT
+from falcon._typing import _RespT
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
-from falcon._typing import AsgiSinkCallable
 from falcon._typing import ErrorHandler
 from falcon._typing import ErrorSerializer
 from falcon._typing import FindMethod
@@ -52,7 +53,6 @@ from falcon._typing import SinkPrefix
 from falcon._typing import StartResponse
 from falcon._typing import SyncMiddleware
 from falcon._typing import WSGIEnvironment
-from falcon._typing import _ReqT, _RespT, _ExcT
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPInternalServerError
@@ -1164,7 +1164,7 @@ class App(Generic[_ReqT, _RespT]):
                 if m:
                     if is_sink:
                         params = m.groupdict()  # type: ignore[union-attr]
-                    responder = obj
+                    responder = obj  # type: ignore[assignment,unused-ignore]
 
                     break
             else:
