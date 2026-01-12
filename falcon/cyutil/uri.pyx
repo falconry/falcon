@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# cython: freethreading_compatible = True
+
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.string cimport memcpy

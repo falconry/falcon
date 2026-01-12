@@ -1,7 +1,7 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
-    "setuptools>=61",
+    "setuptools>=77.0.3",
     "cython>=3.0.8; python_implementation == 'CPython'", # Skip cython when using pypy
 ]
 
@@ -15,14 +15,14 @@ description = "The ultra-reliable, fast ASGI+WSGI framework for building data pl
 authors = [
   {name = "Kurt Griffiths", email = "mail@kgriffs.com"},
 ]
-license = {text = "Apache 2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Web Environment",
     "Natural Language :: English",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
@@ -38,6 +38,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Free Threading",
+    "Programming Language :: Python :: Free Threading :: 2 - Beta",
     "Programming Language :: Cython",
     "Typing :: Typed",
 ]
@@ -71,7 +73,6 @@ Chat = "https://gitter.im/falconry/user"
 
 [tool.setuptools]
 include-package-data = true
-license-files = ["LICENSE"]
 zip-safe = false
 
 [tool.setuptools.dynamic]
@@ -114,37 +115,37 @@ module = [
 ignore_missing_imports = true
 
 [tool.towncrier]
-    package = "falcon"
-    package_dir = ""
-    filename = "docs/changes/4.2.0.rst"
-    directory = "docs/_newsfragments"
-    issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
+package = "falcon"
+package_dir = ""
+filename = "docs/changes/4.3.0.rst"
+directory = "docs/_newsfragments"
+issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
-    # TODO(vytas): title_format = false seems to have no effect in towncrier==21.3.0.
-    #   For now, we just have to remember to check the rendered changelog, and,
-    #   if needed, remove the unwanted auto-generated title.
-    #   See also: https://github.com/twisted/towncrier/issues/345.
-    title_format = false
+# TODO(vytas): title_format = false seems to have no effect in towncrier==21.3.0.
+#   For now, we just have to remember to check the rendered changelog, and,
+#   if needed, remove the unwanted auto-generated title.
+#   See also: https://github.com/twisted/towncrier/issues/345.
+title_format = false
 
-    [[tool.towncrier.type]]
-        directory = "breakingchange"
-        name = "Breaking Changes"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "breakingchange"
+name = "Breaking Changes"
+showcontent = true
 
-    [[tool.towncrier.type]]
-        directory = "newandimproved"
-        name = "New & Improved"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "newandimproved"
+name = "New & Improved"
+showcontent = true
 
-    [[tool.towncrier.type]]
-        directory = "bugfix"
-        name = "Fixed"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Fixed"
+showcontent = true
 
-    [[tool.towncrier.type]]
-        directory = "misc"
-        name = "Misc"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Misc"
+showcontent = true
 
 [tool.black]
 # this is kept to avoid reformatting all the code if one were to

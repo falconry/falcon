@@ -21,6 +21,7 @@ import datetime
 import multiprocessing
 import os
 import sys
+import time
 
 try:
     import falconry_pygments_theme
@@ -65,9 +66,15 @@ _prerelease_version = any(
     for component in _version_components
 )
 
+# NOTE(vytas): Afford overriding the current date with SOURCE_DATE_EPOCH for
+#   reproducible documentation builds.
+#   (See also: https://reproducible-builds.org/docs/source-date-epoch/)
+build_date = datetime.datetime.fromtimestamp(
+    int(os.environ.get('SOURCE_DATE_EPOCH', time.time())), tz=datetime.timezone.utc
+)
 
 project = 'Falcon'
-copyright = f'{datetime.datetime.now().year} Falcon Contributors'
+copyright = f'{build_date.year} Falcon Contributors'
 author = 'Kurt Griffiths et al.'
 version = '.'.join(_version_components[0:2])
 release = falcon.__version__

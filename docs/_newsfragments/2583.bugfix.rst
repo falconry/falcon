@@ -1,0 +1,9 @@
+Due to the differences in interpretation of the ASGI specification, Uvicorn
+could set `client` in the HTTP connection scope in a way that broke
+:meth:`req.access_route <falcon.asgi.Request.access_route>` and
+:meth:`req.remote_addr <falcon.asgi.Request.remote_addr>` when the app server
+was bound to a Unix domain socket.
+
+This discrepancy was addressed, and Falcon should now fall back to the same
+default value (``'127.0.0.1'``) in this case as if `client` was missing
+altogether.

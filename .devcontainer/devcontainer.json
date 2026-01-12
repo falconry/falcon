@@ -1,24 +1,39 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "Python 3",
-	"image": "mcr.microsoft.com/devcontainers/python:3.11",
+	"name": "Falcon (CPython 3.14)",
+	"image": "mcr.microsoft.com/devcontainers/python:3.14",
 	"features": {
-		"ghcr.io/devcontainers-contrib/features/tox:1": {}
-	}
-
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+		"ghcr.io/devcontainers-extra/features/ruff:1": {},
+		"ghcr.io/devcontainers-extra/features/tox:2": {}
+	},
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip3 install --user -r requirements.txt",
+	// NOTE(vytas): We install pytest not via pipx or features so that test collection works via the default interpreter.
+	"postCreateCommand": "pip install --upgrade pip pytest && FALCON_DISABLE_CYTHON=y pip install -e .",
 
 	// Configure tool-specific properties.
-	// "customizations": {},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"charliermarsh.ruff"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python",
+				"python.linting.enabled": true,
+				"python.testing.pytestEnabled": true,
+				"python.testing.unittestEnabled": false,
+				// NOTE(vytas): Disable automatic random port-forwarding as running tox doesn't need it.
+				"remote.autoForwardPorts": false
+			}
+		}
+	}
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// NOTE(vytas): You will probably want to connect as root on rootless Docker/Podman/etc.
+	//   In rootless setups, the current user is typically mapped to root's UID inside the container.
+	//   (You may run into permission problems otherwise as the vscode user gets mapped to an ephemeral UID.)
 	// "remoteUser": "root"
 }

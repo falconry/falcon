@@ -260,6 +260,7 @@ class Request(request.Request):
     if_range: str | None = asgi_helpers._header_property('If-Range')
     referer: str | None = asgi_helpers._header_property('Referer')
     user_agent: str | None = asgi_helpers._header_property('User-Agent')
+    last_event_id: str | None = asgi_helpers._header_property('Last-Event-ID')
 
     @property
     def accept(self) -> str:
@@ -489,7 +490,12 @@ class Request(request.Request):
                 #   effectively what we are doing since we only ever
                 #   access this field when setting self._cached_access_route
                 client, __ = self.scope['client']
-            except KeyError:
+            # NOTE(vytas): Uvicorn may explicitly set scope['client'] to None.
+            #   According to the spec, it does default to None when missing,
+            #   but it is unclear whether it can be explicitly set to None, or
+            #   it must be a valid iterable when present. In any case, we
+            #   simply catch TypeError here too to account for this scenario.
+            except (KeyError, TypeError):
                 # NOTE(kgriffs): Default to localhost so that app logic does
                 #   note have to special-case the handling of a missing
                 #   client field in the connection scope. This should be
