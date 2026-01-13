@@ -260,6 +260,7 @@ class Request(request.Request):
     if_range: str | None = asgi_helpers._header_property('If-Range')
     referer: str | None = asgi_helpers._header_property('Referer')
     user_agent: str | None = asgi_helpers._header_property('User-Agent')
+    last_event_id: str | None = asgi_helpers._header_property('Last-Event-ID')
 
     @property
     def accept(self) -> str:
