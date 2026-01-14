@@ -1,0 +1,5 @@
+The :meth:`req.get_param_as_list <falcon.Request.get_param_as_list>` method now
+supports a new argument, `delimiter`, for splitting of values.
+In line with the OpenAPI v3 parameter specification, the supported delimiters
+currently include the ``'pipeDelimited'`` and ``'spaceDelimited'`` symbolic
+constants, as well as the literal ``','``, ``'|'``, and ``' '`` characters.

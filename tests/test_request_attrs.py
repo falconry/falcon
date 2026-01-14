@@ -1012,6 +1012,63 @@ class TestRequestAttributes:
 
         assert _parse_etags(header_value) is None
 
+    def test_get_param_as_list_comma_delimited(self, asgi):
+        req = create_req(asgi, query_string='names=Luke,Leia,Han')
+        result = req.get_param_as_list('names', delimiter=',')
+        assert result == ['Luke', 'Leia', 'Han']
+
+    @pytest.mark.parametrize('delimiter', [' ', 'spaceDelimited'])
+    def test_get_param_as_list_space_delimited(self, asgi, delimiter):
+        req = create_req(asgi, query_string='names=Luke%20Leia%20Han')
+        result = req.get_param_as_list('names', delimiter=delimiter)
+        assert result == ['Luke', 'Leia', 'Han']
+
+    @pytest.mark.parametrize(
+        'query_string', ['names=Luke|Leia|Han', 'names=Luke%7CLeia%7CHan']
+    )
+    @pytest.mark.parametrize('delimiter', ['|', 'pipeDelimited'])
+    def test_get_param_as_list_pipe_delimited(self, asgi, query_string, delimiter):
+        req = create_req(asgi, query_string=query_string)
+        result = req.get_param_as_list('names', delimiter=delimiter)
+        assert result == ['Luke', 'Leia', 'Han']
+
+    def test_get_param_as_list_unsupported_delimiter(self, asgi):
+        req = create_req(asgi, query_string='names=Luke;Leia;Han')
+        with pytest.raises(ValueError):
+            req.get_param_as_list('names', delimiter=';')
+
+    @pytest.mark.parametrize('delimiter', ['pipeDelimited', 'spaceDelimited'])
+    def test_get_param_as_list_parse_qs_csv_vs_delimiter(self, asgi, delimiter):
+        options = falcon.RequestOptions()
+        options.auto_parse_qs_csv = True
+
+        req = create_req(
+            asgi, query_string='names=value 1,value|2,value 3', options=options
+        )
+
+        result = req.get_param_as_list('names', delimiter=delimiter)
+
+        assert result == ['value 1', 'value|2', 'value 3']
+
+    @pytest.mark.parametrize('delimiter', [' ', 'spaceDelimited'])
+    def test_get_param_as_list_multiple_values_vs_delimiter(self, asgi, delimiter):
+        req = create_req(
+            asgi, query_string='phrase=quick%20brown%20fox&phrase=lazy%20dog'
+        )
+        result = req.get_param_as_list('phrase', delimiter=delimiter)
+        assert result == ['quick brown fox', 'lazy dog']
+
+    @pytest.mark.parametrize('value', ['12345', '1768042793-1337'])
+    def test_last_event_id(self, asgi, value):
+        req = create_req(asgi, headers={'Last-Event-ID': value})
+        assert req.last_event_id == value
+
+    @pytest.mark.parametrize('value', [None, '', ' '])
+    def test_last_event_id_missing(self, asgi, value):
+        headers = {'Last-Event-ID': value} if value is not None else {}
+        req = create_req(asgi, headers=headers)
+        assert req.last_event_id is None
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
