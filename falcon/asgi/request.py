@@ -874,9 +874,9 @@ class Request(request.Request):
 
     @property
     def env(self) -> NoReturn:  # type:ignore[override]
-        """The env property is not available in ASGI. Use :attr:`~.store` instead."""
+        """The env property is not available in ASGI. Use :attr:`~.scope` instead."""
         raise AttributeError(
-            'The env property is not available in ASGI. Use :attr:`~.store` instead'
+            'The env property is not available in ASGI. Use req.scope instead.'
         )
 
     def log_error(self, message: str) -> NoReturn:
