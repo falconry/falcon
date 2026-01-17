@@ -67,9 +67,11 @@ def test_single_event():
     assert result.text == ': ping\n\n'
 
 
-# TODO(vytas): Investigate: raises "cannot reuse already awaited coroutine".
+# TODO(vytas): Remove later during the CPython 3.15 dev cycle.
+#   See also: https://github.com/python/cpython/issues/143939.
 @pytest.mark.skipif(
-    sys.version_info >= (3, 15, 0), reason='Started failing on 3.15.0a4+'
+    sys.version_info[:4] == (3, 15, 0, 'alpha'),
+    reason='Raises "cannot reuse already awaited coroutine", CPython bug gh-143939',
 )
 def test_multiple_events():
     expected_result_text = (
@@ -156,9 +158,11 @@ def test_multiple_events():
     falcon.async_to_sync(_test)
 
 
-# TODO(vytas): Investigate: raises "cannot reuse already awaited coroutine".
+# TODO(vytas): Remove later during the CPython 3.15 dev cycle.
+#   See also: https://github.com/python/cpython/issues/143939.
 @pytest.mark.skipif(
-    sys.version_info >= (3, 15, 0), reason='Started failing on 3.15.0a4+'
+    sys.version_info[:4] == (3, 15, 0, 'alpha'),
+    reason='Raises "cannot reuse already awaited coroutine", CPython bug gh-143939',
 )
 def test_multiple_events_early_disconnect():
     class SomeResource:
