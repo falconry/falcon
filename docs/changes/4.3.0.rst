@@ -24,8 +24,9 @@ Many thanks to all of our talented and stylish contributors for this release!
 
 - `0x1618 <https://github.com/0x1618>`__
 - `0xMattB <https://github.com/0xMattB>`__
-- `bricklayer25 <https://github.com/bricklayer25>`__
+- `granuels <https://github.com/granuels>`__
 - `jap <https://github.com/jap>`__
+- `rushevich <https://github.com/rushevich>`__
 - `thisisrick25 <https://github.com/thisisrick25>`__
 - `TudorGR <https://github.com/TudorGR>`__
 - `vytas7 <https://github.com/vytas7>`__
