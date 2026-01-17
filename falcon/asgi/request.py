@@ -255,12 +255,20 @@ class Request(request.Request):
     # trouble.
     # ------------------------------------------------------------------------
 
+    # NOTE(vytas): Duplicating docstrings from the WSGI flavor here, otherwise
+    #   Sphinx doesn't seem to pick them up.
     auth: str | None = asgi_helpers._header_property('Authorization')
+    """Value of the Authorization header, or ``None`` if the header is missing."""
     expect: str | None = asgi_helpers._header_property('Expect')
+    """Value of the Expect header, or ``None`` if the header is missing."""
     if_range: str | None = asgi_helpers._header_property('If-Range')
-    referer: str | None = asgi_helpers._header_property('Referer')
-    user_agent: str | None = asgi_helpers._header_property('User-Agent')
+    """Value of the If-Range header, or ``None`` if the header is missing."""
     last_event_id: str | None = asgi_helpers._header_property('Last-Event-ID')
+    """Value of the Last-Event-ID header, or ``None`` if the header is missing."""
+    referer: str | None = asgi_helpers._header_property('Referer')
+    """Value of the Referer header, or ``None`` if the header is missing."""
+    user_agent: str | None = asgi_helpers._header_property('User-Agent')
+    """Value of the User-Agent header, or ``None`` if the header is missing."""
 
     @property
     def accept(self) -> str:
@@ -874,9 +882,9 @@ class Request(request.Request):
 
     @property
     def env(self) -> NoReturn:  # type:ignore[override]
-        """The env property is not available in ASGI. Use :attr:`~.store` instead."""
+        """The env property is not available in ASGI. Use :attr:`~.scope` instead."""
         raise AttributeError(
-            'The env property is not available in ASGI. Use :attr:`~.store` instead'
+            'The env property is not available in ASGI. Use req.scope instead.'
         )
 
     def log_error(self, message: str) -> NoReturn:
