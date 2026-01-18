@@ -129,8 +129,13 @@ Unlike WSGI, the ASGI specification has no standard mechanism for logging
 errors back to the application server, so Falcon falls back to the stdlib's
 :mod:`logging` (using the ``falcon`` :class:`logger <logging.Logger>`).
 
-As a well-behaved library, Falcon does not configure any loggers since that
+As a well-behaved library, Falcon does not preconfigure any loggers since that
 might interfere with the user's logging setup.
+(Starting with Falcon :doc:`4.3 </changes/4.3.0>`, however, the framework no
+longer adds an instance of :class:`logging.NullHandler` to the ``falcon``
+logger, so error tracebacks may still reach ``sys.stderr`` via the
+:any:`logging.lastResort` handler.)
+
 Here's how you can set up basic logging in your ASGI Falcon application via
 :func:`logging.basicConfig`:
 
@@ -164,6 +169,23 @@ might look like:
       File "/path/to/your/app.py", line 7, in on_get
         raise Exception("Something went wrong!")
     Exception: Something went wrong!
+
+Your ASGI application server may also provide means to configure logging.
+For instance, Uvicorn (that we are using in this tutorial) can be pointed to a
+logging configuration via the ``--log-config`` command line parameter (or via
+its config file)::
+
+  uvicorn --log-config logging.yaml asgilook.app:app
+
+A suitable logging configuration (including the ``falcon`` logger) for Uvicorn
+could look like:
+
+.. literalinclude:: ../../examples/asgilook/logging.yaml
+    :caption: logging.yaml
+    :language: python
+
+Falcon's tracebacks should now blend into Uvicorn's own logs seamlessly.
+You can also configure logging to files, syslog, or other destinations, in this way.
 
 .. note::
     While logging is helpful for development and debugging, be mindful of
