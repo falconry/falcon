@@ -1414,7 +1414,7 @@ is non-zero, we can overwrite that value in the header.
 Why do I see no error tracebacks in my ASGI application?
 --------------------------------------------------------
 
-When using Falcon with an ASGI server like Uvicorn,
+When using Falcon with an ASGI server,
 you might notice that server errors do not include any traceback by default.
 This behavior differs from WSGI, where the PEP-3333 specification defines the
 `wsgi.errors <https://peps.python.org/pep-3333/#environ-variables>`__ stream
@@ -1424,8 +1424,17 @@ This behavior differs from WSGI, where the PEP-3333 specification defines the
 Since there is no standardized way to log errors back to the ASGI server,
 the framework simply opts to log them using the ``falcon``
 :class:`logger <logging.Logger>`.
+As a well-behaved library, Falcon does not preconfigure any loggers since that
+might interfere with the user's logging setup.
 
-The easiest way to get started is configuring the root logger via
+Starting with Falcon :doc:`4.3 </changes/4.3.0>`, however, the framework no
+longer adds an instance of :class:`logging.NullHandler` to the ``falcon``
+logger, so error tracebacks may still reach ``sys.stderr`` via the
+:any:`logging.lastResort` handler (but it depends on the existing logging
+configuration of the ASGI server in question).
+
+If you are seeing an HTTP 500 error response without any corresponding
+traceback, the easiest way to get started is configuring the root logger via
 :func:`logging.basicConfig`:
 
 .. code:: python
@@ -1451,4 +1460,4 @@ By adding the above logging configuration, you should now see tracebacks logged
 to :any:`stderr <sys.stderr>` when accessing ``/things``.
 
 For additional details on this topic,
-please refer to :ref:`debugging_asgi_applications`.
+please refer to the ASGI tutorial: :ref:`debugging_asgi_applications`.
