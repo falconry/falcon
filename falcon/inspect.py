@@ -382,7 +382,7 @@ class ErrorHandlerInfo(_Traversable):
     """Describes an error handler.
 
     Args:
-        error (name): The name of the error type.
+        error (str): The name of the error type.
         name (str): The name of the handler.
         source_info (str): The source path where this error handler was defined.
         internal (bool): Whether or not this is a default error handler added by
