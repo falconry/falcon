@@ -83,7 +83,7 @@ include:
 For a simple tutorial application like ours, any of the above should do.
 Let's pick the popular ``uvicorn`` for now::
 
-  $ pip install uvicorn
+  $ pip install uvicorn[standard]
 
 See also: :ref:`ASGI Server Installation <install_asgi_server>`.
 
