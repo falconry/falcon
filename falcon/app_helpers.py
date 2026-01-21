@@ -21,6 +21,8 @@ from inspect import iscoroutinefunction
 from typing import IO, Literal, Optional, overload, Union
 
 from falcon import util
+from falcon._typing import _AReqT
+from falcon._typing import _ARespT
 from falcon._typing import _ReqT
 from falcon._typing import _RespT
 from falcon._typing import AsgiProcessRequestMethod as APRequest
@@ -75,7 +77,7 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: Iterable[AsyncMiddleware],
+    middleware: Iterable[AsyncMiddleware[_AReqT, _ARespT]],
     independent_middleware: bool = ...,
     *,
     asgi: Literal[True],
@@ -84,14 +86,16 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]] | Iterable[AsyncMiddleware],
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]]
+    | Iterable[AsyncMiddleware[_AReqT, _ARespT]],
     independent_middleware: bool = ...,
     asgi: bool = ...,
 ) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult: ...
 
 
 def prepare_middleware(
-    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]] | Iterable[AsyncMiddleware],
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]]
+    | Iterable[AsyncMiddleware[_AReqT, _ARespT]],
     independent_middleware: bool = False,
     asgi: bool = False,
 ) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult:
@@ -225,7 +229,7 @@ AsyncPreparedMiddlewareWsResult = tuple[
 
 
 def prepare_middleware_ws(
-    middleware: Iterable[AsyncMiddleware],
+    middleware: Iterable[AsyncMiddleware[_AReqT, _ARespT]],
 ) -> AsyncPreparedMiddlewareWsResult:
     """Check middleware interfaces and prepare WebSocket methods for request handling.
 
