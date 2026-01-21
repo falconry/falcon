@@ -28,13 +28,15 @@ from typing import (
     ClassVar,
     overload,
     TYPE_CHECKING,
-    TypeVar,
 )
 import warnings
 
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import _AReqT as _ReqT
+from falcon._typing import _ARespT as _RespT
+from falcon._typing import _ExcT
 from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
 from falcon._typing import AsgiReceive
@@ -84,7 +86,7 @@ __all__ = (
     'Response',
 )
 
-# TODO(vytas): Clean up these foul workarounds before the 4.0 release.
+# TODO(vytas): Clean up these foul workarounds before the 5.0 release.
 MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm
 
 _EVT_RESP_EOF: AsgiSendMsg = {'type': EventType.HTTP_RESPONSE_BODY}
@@ -94,10 +96,6 @@ _BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 _TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
-
-_ExcT = TypeVar('_ExcT', bound=Exception)
-_ReqT = TypeVar('_ReqT', bound=Request, contravariant=True)
-_RespT = TypeVar('_RespT', bound=Response, contravariant=True)
 
 
 class App(falcon.app.App[_ReqT, _RespT]):

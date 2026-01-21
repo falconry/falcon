@@ -86,20 +86,16 @@ def prepare_middleware(
 
 @overload
 def prepare_middleware(
-    middleware: (
-        Iterable[SyncMiddleware[_ReqT, _RespT]]
-        | Iterable[AsyncMiddleware[_AReqT, _ARespT]]
-    ),
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]]
+    | Iterable[AsyncMiddleware[_AReqT, _ARespT]],
     independent_middleware: bool = ...,
     asgi: bool = ...,
 ) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult: ...
 
 
 def prepare_middleware(
-    middleware: (
-        Iterable[SyncMiddleware[_ReqT, _RespT]]
-        | Iterable[AsyncMiddleware[_AReqT, _ARespT]]
-    ),
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]]
+    | Iterable[AsyncMiddleware[_AReqT, _ARespT]],
     independent_middleware: bool = False,
     asgi: bool = False,
 ) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult:
