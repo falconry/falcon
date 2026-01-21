@@ -161,7 +161,7 @@ class HTTPError(Exception):
         """HTTP status code normalized from the ``status`` argument passed
         to the initializer.
         """  # noqa: D205
-        return misc.http_status_to_code(self.status)
+        return int(misc.http_status_to_code(self.status))
 
     def to_dict(
         self, obj_type: type[MutableMapping[str, str | int | None | Link]] = dict
@@ -234,8 +234,9 @@ class HTTPError(Exception):
             for key in ('text', 'href', 'rel'):
                 et.SubElement(link_element, key).text = self.link[key]
 
-        return b'<?xml version="1.0" encoding="UTF-8"?>' + et.tostring(
-            error_element, encoding='utf-8'
+        return bytes(
+            b'<?xml version="1.0" encoding="UTF-8"?>'
+            + et.tostring(error_element, encoding='utf-8')
         )
 
     @deprecation.deprecated(

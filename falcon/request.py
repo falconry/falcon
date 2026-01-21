@@ -52,6 +52,8 @@ from falcon.util import structures
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 
+__all__ = ('Forwarded',)
+
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
 TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
@@ -644,7 +646,7 @@ class Request:
         # empty string, uwsgi, gunicorn, waitress, and wsgiref all
         # include it even in that case.
         try:
-            return self.env['SCRIPT_NAME']
+            return '{}'.format(self.env['SCRIPT_NAME'])
         except KeyError:
             return ''
 
@@ -669,7 +671,7 @@ class Request:
             :attr:`forwarded_scheme` can be used, instead,
             to handle such cases.
         """
-        return self.env['wsgi.url_scheme']
+        return '{}'.format(self.env['wsgi.url_scheme'])
 
     @property
     def forwarded_scheme(self) -> str:
@@ -1262,7 +1264,7 @@ class Request:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self.env['HTTP_' + wsgi_name]
+            return '{}'.format(self.env['HTTP_' + wsgi_name])
 
         except KeyError:
             # NOTE(kgriffs): There are a couple headers that do not
@@ -1271,7 +1273,7 @@ class Request:
             # to access these instead of .get_header.
             if wsgi_name in WSGI_CONTENT_HEADERS:
                 try:
-                    return self.env[wsgi_name]
+                    return '{}'.format(self.env[wsgi_name])
                 except KeyError:
                     pass
 

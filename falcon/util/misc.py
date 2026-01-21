@@ -88,8 +88,10 @@ utcnow: Callable[[], datetime.datetime] = deprecated(
 # NOTE(kgriffs,vytas): This is tested in the PyPy gate but we do not want devs
 #   to have to install PyPy to check coverage on their workstations, so we use
 #   the nocover pragma here.
-def _lru_cache_nop(maxsize: int) -> Callable[[Callable], Callable]:  # pragma: nocover
-    def decorator(func: Callable) -> Callable:
+def _lru_cache_nop(
+    maxsize: int,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:  # pragma: nocover
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
         func.cache_clear = lambda: None  # type: ignore
@@ -107,7 +109,7 @@ else:
     _lru_cache_for_simple_logic = functools.lru_cache
 
 
-def is_python_func(func: Callable | Any) -> bool:
+def is_python_func(func: Callable[..., Any] | Any) -> bool:
     """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
@@ -498,7 +500,7 @@ def code_to_http_status(status: int | http.HTTPStatus | bytes | str) -> str:
     try:
         # NOTE(kgriffs): We do this instead of using http.HTTPStatus since
         #   the Falcon module defines a larger number of codes.
-        return getattr(status_codes, 'HTTP_' + str(code))
+        return '{}'.format(getattr(status_codes, 'HTTP_' + str(code)))
     except AttributeError:
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 

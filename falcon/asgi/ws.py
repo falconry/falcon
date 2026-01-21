@@ -417,7 +417,7 @@ class WebSocket:
         if text is None:
             raise errors.PayloadTypeError('Missing TEXT (0x01) payload')
 
-        return text
+        return '{}'.format(text)
 
     async def receive_data(self) -> bytes:
         """Receive a message from the client with a binary data payload.
@@ -441,7 +441,7 @@ class WebSocket:
         if data is None:
             raise errors.PayloadTypeError('Missing BINARY (0x02) payload')
 
-        return data
+        return bytes(data)
 
     async def receive_media(self) -> object:
         """Receive a deserialized object from the client.

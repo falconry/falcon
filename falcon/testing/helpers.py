@@ -146,14 +146,14 @@ class ASGIRequestEventEmitter:
 
     def __init__(
         self,
-        body: str | bytes | None = None,
+        body: str | bytes | memoryview | None = None,
         chunk_size: int | None = None,
         disconnect_at: int | float | None = None,
     ) -> None:
         if body is None:
             body = b''
         elif not isinstance(body, bytes):
-            body = body.encode()
+            body = body.encode()  # type: ignore[union-attr]
 
         body = memoryview(body)
 
@@ -610,7 +610,7 @@ class ASGIWebSocketSimulator:
                 'Expected TEXT payload but got BINARY instead'
             )
 
-        return text
+        return '{}'.format(text)
 
     async def receive_data(self) -> bytes:
         """Receive a message from the app with a binary data payload.
@@ -634,7 +634,7 @@ class ASGIWebSocketSimulator:
                 'Expected BINARY payload but got TEXT instead'
             )
 
-        return data
+        return bytes(data)
 
     async def receive_json(self) -> Any:
         """Receive a message from the app with a JSON-encoded TEXT payload.
@@ -882,7 +882,7 @@ def get_unused_port() -> int:
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(('localhost', 0))
-        return s.getsockname()[1]
+        return int(s.getsockname()[1])
 
 
 def rand_string(min: int, max: int) -> str:

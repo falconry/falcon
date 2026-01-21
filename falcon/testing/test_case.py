@@ -31,7 +31,7 @@ from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
 
-class TestCase(unittest.TestCase, TestClient):
+class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
@@ -50,7 +50,7 @@ class TestCase(unittest.TestCase, TestClient):
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
-    app: falcon.App
+    app: falcon.App  # type: ignore[type-arg]
     """A WSGI or ASGI application to target when simulating
     requests (defaults to ``falcon.App()``). When testing your
     application, you will need to set this to your own instance

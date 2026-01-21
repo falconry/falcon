@@ -345,7 +345,7 @@ class Request(request.Request):
         #   empty string, at least uvicorn still includes it explicitly in
         #   that case.
         try:
-            return self.scope['root_path']
+            return '{}'.format(self.scope['root_path'])
         except KeyError:
             pass
 
@@ -379,7 +379,7 @@ class Request(request.Request):
         # PERF(kgriffs): Use try...except because we normally expect the
         #   key to be present.
         try:
-            return self.scope['scheme']
+            return '{}'.format(self.scope['scheme'])
         except KeyError:
             pass
 

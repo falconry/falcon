@@ -199,7 +199,7 @@ class Response:
             if resp.status_code >= 400:
                 log.warning(f'returning error response: {resp.status_code}')
         """
-        return http_status_to_code(self.status)
+        return int(http_status_to_code(self.status))
 
     @status_code.setter
     def status_code(self, value: int) -> None:

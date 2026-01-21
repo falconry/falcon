@@ -12,7 +12,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 STATIC = HERE.parent / 'static'
 
 
-def create_app() -> falcon.asgi.App:
+def create_app() -> falcon.asgi.App:  # type: ignore[type-arg]
     app = falcon.asgi.App()
 
     # NOTE(vytas): E2E tests run Uvicorn, and the latest versions support ASGI

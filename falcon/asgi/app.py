@@ -78,8 +78,11 @@ from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
 
-__all__ = ('App',)
-
+__all__ = (
+    'App',
+    'Request',
+    'Response',
+)
 
 # TODO(vytas): Clean up these foul workarounds before the 4.0 release.
 MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm
@@ -524,7 +527,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         resource: Resource | None = None
         params: dict[str, Any] = {}
 
-        dependent_mw_resp_stack: list = []
+        dependent_mw_resp_stack: list[Any] = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -1258,7 +1261,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                     # NOTE(vytas): We could add the ws=None parameter to the
                     #   default responders, but let's keep it simple for now,
                     #   and skip the warning part.
-                    if on_websocket not in (
+                    if on_websocket not in (  # type: ignore[comparison-overlap]
                         cls._default_responder_bad_request,
                         cls._default_responder_path_not_found,
                     ):

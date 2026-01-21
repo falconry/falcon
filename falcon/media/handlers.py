@@ -74,7 +74,7 @@ class ResolverMethod(Protocol):
     ) -> tuple[None, None, None] | _ResolverMethodReturnTuple: ...
 
 
-class Handlers(UserDict):
+class Handlers(UserDict[str, BaseHandler]):
     """A :class:`dict`-like object that manages Internet media type handlers."""
 
     data: dict[str, BaseHandler]
