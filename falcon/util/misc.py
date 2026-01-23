@@ -500,7 +500,8 @@ def code_to_http_status(status: int | http.HTTPStatus | bytes | str) -> str:
     try:
         # NOTE(kgriffs): We do this instead of using http.HTTPStatus since
         #   the Falcon module defines a larger number of codes.
-        return '{}'.format(getattr(status_codes, 'HTTP_' + str(code)))
+        # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+        return getattr(status_codes, 'HTTP_' + str(code))  # type: ignore[no-any-return]
     except AttributeError:
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 

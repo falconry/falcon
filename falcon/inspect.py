@@ -580,9 +580,10 @@ class InspectVisitor:
             instance (_Traversable): The instance to process.
         """
         try:
-            return '{}'.format(
-                getattr(self, 'visit_{}'.format(instance.__visit_name__))(instance)
-            )
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            return getattr(  # type: ignore[no-any-return]
+                self, 'visit_{}'.format(instance.__visit_name__)
+            )(instance)
         except AttributeError as e:
             raise RuntimeError(
                 'This visitor does not support {}'.format(type(instance))
