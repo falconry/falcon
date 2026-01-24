@@ -25,6 +25,7 @@ from threading import Lock
 from typing import (
     Any,
     Callable,
+    cast,
     TYPE_CHECKING,
     Union,
 )
@@ -108,7 +109,7 @@ class CompiledRouter:
         # here to reduce lookup time.
         self._converter_map = self._options.converters.data
 
-        self._patterns: list[Pattern] = []
+        self._patterns: list[Pattern[Any]] = []
         self._return_values: list[CompiledRouterNode] = []
         self._roots: list[CompiledRouterNode] = []
 
@@ -430,7 +431,7 @@ class CompiledRouter:
         nodes: list[CompiledRouterNode],
         parent: _CxParent,
         return_values: list[CompiledRouterNode],
-        patterns: list[Pattern],
+        patterns: list[Pattern[Any]],
         params_stack: list[_CxElement],
         level: int = 0,
         fast_return: bool = True,
@@ -645,7 +646,7 @@ class CompiledRouter:
 
         return parent
 
-    def _compile(self) -> Callable:
+    def _compile(self) -> Callable[..., Any]:
         """Generate Python code for the entire routing tree.
 
         The generated code is compiled and the resulting Python method
@@ -682,11 +683,11 @@ class CompiledRouter:
         self, klass: type, argstr: str | None = None
     ) -> converters.BaseConverter:
         if argstr is None:
-            return klass()
+            return cast(converters.BaseConverter, klass())
 
         # NOTE(kgriffs): Don't try this at home. ;)
         src = '{0}({1})'.format(klass.__name__, argstr)
-        return eval(src, {klass.__name__: klass})
+        return cast(converters.BaseConverter, eval(src, {klass.__name__: klass}))
 
     def _compile_and_find(
         self,
@@ -751,7 +752,7 @@ class CompiledRouterNode:
         # TODO(kgriffs): Rename these since the docs talk about "fields"
         # or "field expressions", not "vars" or "variables".
         self.var_name: str | None = None
-        self.var_pattern: Pattern | None = None
+        self.var_pattern: Pattern[Any] | None = None
         self.var_converter_map: list[tuple[str, str, str]] = []
 
         # NOTE(kgriffs): CompiledRouter.add_route validates field names,
@@ -886,7 +887,7 @@ class CompiledRouterNode:
         return False
 
 
-class ConverterDict(UserDict):
+class ConverterDict(UserDict[str, type[converters.BaseConverter]]):
     """A dict-like class for storing field converters."""
 
     data: dict[str, type[converters.BaseConverter]]

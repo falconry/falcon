@@ -26,12 +26,14 @@ from typing import (
 )
 
 from falcon import app_helpers
+from falcon.app import _ReqT
+from falcon.app import _RespT
 from falcon.app import App
 from falcon.routing import CompiledRouter
 from falcon.routing.compiled import CompiledRouterNode
 
 
-def inspect_app(app: App) -> AppInfo:
+def inspect_app(app: App[_ReqT, _RespT]) -> AppInfo:
     """Inspects an application.
 
     Args:
@@ -51,7 +53,7 @@ def inspect_app(app: App) -> AppInfo:
     return AppInfo(routes, middleware, static, sinks, error_handlers, app._ASGI)
 
 
-def inspect_routes(app: App) -> list[RouteInfo]:
+def inspect_routes(app: App[_ReqT, _RespT]) -> list[RouteInfo]:
     """Inspects the routes of an application.
 
     Args:
@@ -70,7 +72,7 @@ def inspect_routes(app: App) -> list[RouteInfo]:
             'to register a function that can inspect the router '
             'used by the provided application'.format(type(router))
         )
-    return inspect_function(router)
+    return cast(list[RouteInfo], inspect_function(router))
 
 
 def register_router(
@@ -109,7 +111,7 @@ def register_router(
 _supported_routers: dict[type, Callable[..., Any]] = {}
 
 
-def inspect_static_routes(app: App) -> list[StaticRouteInfo]:
+def inspect_static_routes(app: App[_ReqT, _RespT]) -> list[StaticRouteInfo]:
     """Inspects the static routes of an application.
 
     Args:
@@ -127,7 +129,7 @@ def inspect_static_routes(app: App) -> list[StaticRouteInfo]:
     return routes
 
 
-def inspect_sinks(app: App) -> list[SinkInfo]:
+def inspect_sinks(app: App[_ReqT, _RespT]) -> list[SinkInfo]:
     """Inspects the sinks of an application.
 
     Args:
@@ -146,7 +148,7 @@ def inspect_sinks(app: App) -> list[SinkInfo]:
     return sinks
 
 
-def inspect_error_handlers(app: App) -> list[ErrorHandlerInfo]:
+def inspect_error_handlers(app: App[_ReqT, _RespT]) -> list[ErrorHandlerInfo]:
     """Inspects the error handlers of an application.
 
     Args:
@@ -166,7 +168,7 @@ def inspect_error_handlers(app: App) -> list[ErrorHandlerInfo]:
     return errors
 
 
-def inspect_middleware(app: App) -> MiddlewareInfo:
+def inspect_middleware(app: App[_ReqT, _RespT]) -> MiddlewareInfo:
     """Inspects the middleware components of an application.
 
     Args:
@@ -578,7 +580,10 @@ class InspectVisitor:
             instance (_Traversable): The instance to process.
         """
         try:
-            return getattr(self, 'visit_{}'.format(instance.__visit_name__))(instance)
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            return getattr(  # type: ignore[no-any-return]
+                self, 'visit_{}'.format(instance.__visit_name__)
+            )(instance)
         except AttributeError as e:
             raise RuntimeError(
                 'This visitor does not support {}'.format(type(instance))

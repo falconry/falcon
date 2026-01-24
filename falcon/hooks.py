@@ -110,7 +110,7 @@ def before(
 
                     setattr(responder_or_resource, responder_name, do_before_all)
 
-            return cast(_R, responder_or_resource)
+            return responder_or_resource
 
         else:
             responder = cast('Responder', responder_or_resource)
@@ -157,7 +157,7 @@ def after(
 
                     setattr(responder_or_resource, responder_name, do_after_all)
 
-            return cast(_R, responder_or_resource)
+            return responder_or_resource
 
         else:
             responder = cast('Responder', responder_or_resource)

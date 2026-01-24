@@ -118,7 +118,7 @@ class Cookie:
     _samesite: str | None
     _partitioned: str | None
 
-    def __init__(self, morsel: Morsel) -> None:
+    def __init__(self, morsel: Morsel[str]) -> None:
         self._name = morsel.key
         self._value = morsel.value
 
@@ -229,7 +229,7 @@ class _ResultBase:
             (morsel.key, Cookie(morsel)) for morsel in cookies.values()
         )
 
-        self._encoding = helpers.get_encoding_from_headers(self._headers)
+        self._encoding = helpers.get_encoding_from_headers(self._headers)  # type: ignore[arg-type]
 
     @property
     def status(self) -> str:
@@ -438,7 +438,7 @@ class StreamedResult(_ResultBase):
         body_chunks: Sequence[bytes],
         status: str,
         headers: HeaderIter,
-        task: asyncio.Task,
+        task: asyncio.Task[Any],
         req_event_emitter: helpers.ASGIRequestEventEmitter,
     ):
         super().__init__(status, headers)
@@ -1084,7 +1084,7 @@ class ASGIConductor:
 
     # NOTE(caseit): while any asgi app is accept, type this as a falcon
     # asgi app for user convenience
-    app: asgi.App
+    app: asgi.App  # type: ignore[type-arg]
     """The app that this client instance was configured to use."""
 
     def __init__(
@@ -1100,7 +1100,7 @@ class ASGIConductor:
 
         self._shutting_down = asyncio.Condition()
         self._lifespan_event_collector = helpers.ASGIResponseEventCollector()
-        self._lifespan_task: asyncio.Task | None = None
+        self._lifespan_task: asyncio.Task[Any] | None = None
 
     async def __aenter__(self) -> ASGIConductor:
         lifespan_scope = {
@@ -1146,7 +1146,7 @@ class ASGIConductor:
 
         (See also: :meth:`falcon.testing.simulate_get`)
         """
-        return await self.simulate_request('GET', path, **kwargs)
+        return await self.simulate_request('GET', path, **kwargs)  # type: ignore[no-any-return]
 
     def simulate_get_stream(
         self, path: str = '/', **kwargs: Any
@@ -1217,42 +1217,42 @@ class ASGIConductor:
 
         (See also: :meth:`falcon.testing.simulate_head`)
         """
-        return await self.simulate_request('HEAD', path, **kwargs)
+        return await self.simulate_request('HEAD', path, **kwargs)  # type: ignore[no-any-return]
 
     async def simulate_post(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a POST request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_post`)
         """
-        return await self.simulate_request('POST', path, **kwargs)
+        return await self.simulate_request('POST', path, **kwargs)  # type: ignore[no-any-return]
 
     async def simulate_put(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PUT request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_put`)
         """
-        return await self.simulate_request('PUT', path, **kwargs)
+        return await self.simulate_request('PUT', path, **kwargs)  # type: ignore[no-any-return]
 
     async def simulate_options(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate an OPTIONS request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_options`)
         """
-        return await self.simulate_request('OPTIONS', path, **kwargs)
+        return await self.simulate_request('OPTIONS', path, **kwargs)  # type: ignore[no-any-return]
 
     async def simulate_patch(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a PATCH request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_patch`)
         """
-        return await self.simulate_request('PATCH', path, **kwargs)
+        return await self.simulate_request('PATCH', path, **kwargs)  # type: ignore[no-any-return]
 
     async def simulate_delete(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a DELETE request to an ASGI application.
 
         (See also: :meth:`falcon.testing.simulate_delete`)
         """
-        return await self.simulate_request('DELETE', path, **kwargs)
+        return await self.simulate_request('DELETE', path, **kwargs)  # type: ignore[no-any-return]
 
     @overload
     async def simulate_request(
@@ -1286,7 +1286,7 @@ class ASGIConductor:
         # NOTE(kgriffs): The conductor takes care of startup/shutdown
         kwargs['_one_shot'] = False
 
-        return await _simulate_request_asgi(self.app, *args, **kwargs)
+        return await _simulate_request_asgi(self.app, *args, **kwargs)  # type: ignore[no-any-return]
 
     delete = _simulate_method_alias(simulate_delete)
     get = _simulate_method_alias(simulate_get)
@@ -2086,7 +2086,7 @@ class TestClient:
 
     # NOTE(caseit): while any asgi/wsgi app is accept, type this as a falcon
     # app for user convenience
-    app: falcon.App
+    app: falcon.App  # type: ignore[type-arg]
     """The app that this client instance was configured to use."""
 
     def __init__(
@@ -2225,7 +2225,7 @@ class _AsyncContextManager:
 
 class _WSContextManager:
     def __init__(
-        self, ws: helpers.ASGIWebSocketSimulator, task_req: asyncio.Task
+        self, ws: helpers.ASGIWebSocketSimulator, task_req: asyncio.Task[Any]
     ) -> None:
         self._ws = ws
         self._task_req = task_req

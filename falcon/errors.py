@@ -57,6 +57,7 @@ __all__ = (
     'HTTPBadGateway',
     'HTTPBadRequest',
     'HTTPConflict',
+    'HTTPError',
     'HTTPFailedDependency',
     'HTTPForbidden',
     'HTTPGatewayTimeout',

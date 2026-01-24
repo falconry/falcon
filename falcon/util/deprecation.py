@@ -20,7 +20,7 @@ This module provides decorators to mark functions and classes as deprecated.
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable
+from typing import Any, Callable, cast
 import warnings
 
 __all__ = (
@@ -75,7 +75,7 @@ def deprecated(
         def wrapper(*args: Any, **kwargs: Any) -> Callable[..., Any]:
             warnings.warn(message, category=DeprecatedWarning, stacklevel=2)
 
-            return func(*args, **kwargs)
+            return cast(Callable[..., Any], func(*args, **kwargs))
 
         return wrapper
 
@@ -112,7 +112,7 @@ def deprecated_args(
                     DeprecatedWarning,
                     stacklevel=2,
                 )
-            return fn(*args, **kwargs)
+            return cast(Callable[..., Any], fn(*args, **kwargs))
 
         return wraps
 

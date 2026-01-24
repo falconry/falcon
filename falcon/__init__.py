@@ -644,7 +644,7 @@ from falcon.util import wrap_sync_to_async
 from falcon.util import wrap_sync_to_async_unsafe
 
 # Package version
-from falcon.version import __version__  # NOQA: F401
+from falcon.version import __version__ as __version__  # NOQA: F401
 
 # NOTE(kgriffs): Only to be used internally on the rare occasion that we
 #   need to log something that we can't communicate any other way.
