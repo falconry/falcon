@@ -1003,7 +1003,7 @@ limitations under the License.
     :target: https://pypi.org/project/falcon/
 .. |Backer:TestMuAI| image:: https://falconframework.org/assets/testmu-ai-black.png
     :alt: TestMu AI
-    :height: 64px
+    :height: 60px
     :target: https://www.testmu.ai/?utm_source=falcon&utm_medium=sponsor
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
