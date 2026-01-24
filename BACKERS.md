@@ -10,7 +10,7 @@ See also: https://opencollective.com/falcon
 
 ## Gold Patrons
 
-* [LambdaTest](https://www.lambdatest.com/?utm_source=falcon&utm_medium=sponsor)
+* [TestMu AI](https://www.testmu.ai/)
 * [Sentry](https://sentry.io/)
 
 ## Past Commercial Patrons
@@ -26,6 +26,7 @@ See also: https://opencollective.com/falcon
 
 ## Our Talented and Stylish Community Patrons
 
+* Aaron Bishop
 * Andrei Drang
 * Gerardo Cardenas
 * Hagar Marmari
