@@ -55,6 +55,7 @@ _R = TypeVar('_R', bound=Union['Responder', 'Resource'])
 _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
 )
+_DECORABLE_ON_REQUEST_METHOD_NAME = re.compile(r'^on_request(_\w+)?$')
 
 _ON_REQUEST_SKIPPED_WARNING = (
     'Skipping decoration of default responder {responder_name!r} on resource '
@@ -141,7 +142,7 @@ def before(
 
                     setattr(responder_or_resource, responder_name, do_before_all)
 
-                if re.compile(r'^on_request(_\w+)?$').match(responder_name):
+                if _DECORABLE_ON_REQUEST_METHOD_NAME.match(responder_name):
                     # Only wrap default responders if decorate_on_request is set to True
                     if decorate_on_request:
                         responder = cast('Responder', responder)
@@ -206,7 +207,7 @@ def after(
 
                     setattr(responder_or_resource, responder_name, do_after_all)
 
-                if re.compile(r'^on_request(_\w+)?$').match(responder_name):
+                if _DECORABLE_ON_REQUEST_METHOD_NAME.match(responder_name):
                     # Only wrap default responders if decorate_on_request is set to True
                     if decorate_on_request:
                         responder = cast('Responder', responder)
