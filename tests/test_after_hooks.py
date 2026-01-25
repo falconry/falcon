@@ -10,10 +10,6 @@ from falcon import testing
 from falcon._typing import Resource
 import falcon.hooks
 
-# Monkey patch decorate_on_request to allow decorating
-# default responders when using class-level hooks
-falcon.hooks.decorate_on_request = True
-
 # --------------------------------------------------------------------
 # Fixtures
 # --------------------------------------------------------------------
@@ -168,44 +164,6 @@ class WrappedClassResource:
     def on_head(self, req, resp):
         self.req = req
         self.resp = resp
-
-
-class WrappedDefaultResponderResource:
-    @falcon.after(Smartness())
-    def on_request(self, req, resp):
-        pass
-
-    @falcon.after(Smartness())
-    def on_request_id(self, req, resp, id):
-        pass
-
-
-@falcon.after(Smartness())
-class WrappedClassDefaultResponderResource:
-    def on_request(self, req, resp):
-        pass
-
-    def on_request_id(self, req, resp, id):
-        pass
-
-
-class WrappedDefaultResponderResourceAsync:
-    @falcon.after(Smartness())
-    async def on_request(self, req, resp):
-        pass
-
-    @falcon.after(Smartness())
-    async def on_request_id(self, req, resp, id):
-        pass
-
-
-@falcon.after(Smartness())
-class WrappedClassDefaultResponderResourceAsync:
-    async def on_request(self, req, resp):
-        pass
-
-    async def on_request_id(self, req, resp, id):
-        pass
 
 
 class WrappedClassResourceChild(WrappedClassResource):
@@ -460,18 +418,64 @@ def test_after_hooks_on_suffixed_resource(game_client, seed, uri, expected):
     assert resp.headers['X-Hook-Game'] == expected
 
 
+@pytest.fixture()
+def resources_with_on_request(monkeypatch):
+    monkeypatch.setattr(falcon.hooks, 'decorate_on_request', True)
+
+    class namespace:
+        class WrappedDefaultResponderResource:
+            @falcon.after(Smartness())
+            def on_request(self, req, resp):
+                pass
+
+            @falcon.after(Smartness())
+            def on_request_id(self, req, resp, id):
+                pass
+
+        @falcon.after(Smartness())
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, resp, id):
+                pass
+
+        class WrappedDefaultResponderResourceAsync:
+            @falcon.after(Smartness())
+            async def on_request(self, req, resp):
+                pass
+
+            @falcon.after(Smartness())
+            async def on_request_id(self, req, resp, id):
+                pass
+
+        @falcon.after(Smartness())
+        class WrappedClassDefaultResponderResourceAsync:
+            async def on_request(self, req, resp):
+                pass
+
+            async def on_request_id(self, req, resp, id):
+                pass
+
+    return namespace
+
+
 @pytest.mark.parametrize(
-    'resource, asgi',
+    'resource_cls, asgi',
     (
-        (WrappedDefaultResponderResource(), False),
-        (WrappedClassDefaultResponderResource(), False),
-        (WrappedDefaultResponderResourceAsync(), True),
-        (WrappedClassDefaultResponderResourceAsync(), True),
+        ('WrappedDefaultResponderResource', False),
+        ('WrappedClassDefaultResponderResource', False),
+        ('WrappedDefaultResponderResourceAsync', True),
+        ('WrappedClassDefaultResponderResourceAsync', True),
     ),
 )
-def test_default_responder(util, resource, asgi):
+def test_decorate_default_responder(
+    util, asgi, resources_with_on_request, resource_cls
+):
     app = util.create_app(asgi=asgi)
     app.router_options.default_to_on_request = True
+
+    resource = getattr(resources_with_on_request, resource_cls)()
 
     app.add_route('/', resource)
     app.add_route('/{id}', resource, suffix='id')
@@ -489,19 +493,21 @@ def test_default_responder(util, resource, asgi):
     assert result.text == 'smart'
 
 
-def test_decorate_on_response_disabled(util):
+def test_decorate_on_request_disabled(util):
+    # NOTE(vytas): falcon.hooks.decorate_on_request is False by default.
+
     app = util.create_app(asgi=False)
     app.router_options.default_to_on_request = True
 
-    falcon.hooks.decorate_on_request = False
+    with pytest.warns(UserWarning):
 
-    @falcon.after(Smartness())
-    class WrappedClassDefaultResponderResource:
-        def on_request(self, req, resp):
-            pass
+        @falcon.after(Smartness())
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
 
-        def on_request_id(self, req, resp, id):
-            pass
+            def on_request_id(self, req, resp, id):
+                pass
 
     resource = WrappedClassDefaultResponderResource()
 

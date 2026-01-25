@@ -8,10 +8,6 @@ import falcon
 import falcon.hooks
 import falcon.testing as testing
 
-# Monkey patch decorate_on_request to allow decorating
-# default responders when using class-level hooks
-falcon.hooks.decorate_on_request = True
-
 
 def validate(req, resp, resource, params):
     assert resource
@@ -481,44 +477,6 @@ class PiggybackingCollectionAsync(PiggybackingCollection):
         resp.status = falcon.HTTP_CREATED
 
 
-class WrappedDefaultResponderResource:
-    @falcon.before(header_hook)
-    def on_request(self, req, resp):
-        pass
-
-    @falcon.before(header_hook)
-    def on_request_id(self, req, res, id):
-        pass
-
-
-@falcon.before(header_hook)
-class WrappedClassDefaultResponderResource:
-    def on_request(self, req, resp):
-        pass
-
-    def on_request_id(self, req, res, id):
-        pass
-
-
-class WrappedDefaultResponderResourceAsync:
-    @falcon.before(header_hook)
-    async def on_request(self, req, resp):
-        pass
-
-    @falcon.before(header_hook)
-    async def on_request_id(self, req, res, id):
-        pass
-
-
-@falcon.before(header_hook)
-class WrappedClassDefaultResponderResourceAsync:
-    async def on_request(self, req, resp):
-        pass
-
-    async def on_request_id(self, req, res, id):
-        pass
-
-
 @pytest.fixture()
 def app_client(asgi, util):
     items = PiggybackingCollectionAsync() if asgi else PiggybackingCollection()
@@ -576,18 +534,62 @@ def test_decorable_name_pattern():
     assert resource.on_header() == 'I shall not be decorated.'
 
 
+@pytest.fixture()
+def resources_with_on_request(monkeypatch):
+    monkeypatch.setattr(falcon.hooks, 'decorate_on_request', True)
+
+    class namespace:
+        class WrappedDefaultResponderResource:
+            @falcon.before(header_hook)
+            def on_request(self, req, resp):
+                pass
+
+            @falcon.before(header_hook)
+            def on_request_id(self, req, res, id):
+                pass
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, res, id):
+                pass
+
+        class WrappedDefaultResponderResourceAsync:
+            @falcon.before(header_hook)
+            async def on_request(self, req, resp):
+                pass
+
+            @falcon.before(header_hook)
+            async def on_request_id(self, req, res, id):
+                pass
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResourceAsync:
+            async def on_request(self, req, resp):
+                pass
+
+            async def on_request_id(self, req, res, id):
+                pass
+
+    return namespace
+
+
 @pytest.mark.parametrize(
-    'resource, asgi',
+    'resource_cls, asgi',
     (
-        (WrappedDefaultResponderResource(), False),
-        (WrappedClassDefaultResponderResource(), False),
-        (WrappedDefaultResponderResourceAsync(), True),
-        (WrappedClassDefaultResponderResourceAsync(), True),
+        ('WrappedDefaultResponderResource', False),
+        ('WrappedClassDefaultResponderResource', False),
+        ('WrappedDefaultResponderResourceAsync', True),
+        ('WrappedClassDefaultResponderResourceAsync', True),
     ),
 )
-def test_default_responder(util, resource, asgi):
+def test_default_responder(util, asgi, resources_with_on_request, resource_cls):
     app = util.create_app(asgi=asgi)
     app.router_options.default_to_on_request = True
+
+    resource = getattr(resources_with_on_request, resource_cls)()
 
     app.add_route('/', resource)
     app.add_route('/{id}', resource, suffix='id')
@@ -606,18 +608,20 @@ def test_default_responder(util, resource, asgi):
 
 
 def test_decorate_on_response_disabled(util):
+    # NOTE(vytas): falcon.hooks.decorate_on_request is False by default.
+
     app = util.create_app(asgi=False)
     app.router_options.default_to_on_request = True
 
-    falcon.hooks.decorate_on_request = False
+    with pytest.warns(UserWarning):
 
-    @falcon.before(header_hook)
-    class WrappedClassDefaultResponderResource:
-        def on_request(self, req, resp):
-            pass
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
 
-        def on_request_id(self, req, res, id):
-            pass
+            def on_request_id(self, req, res, id):
+                pass
 
     resource = WrappedClassDefaultResponderResource()
 

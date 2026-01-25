@@ -33,6 +33,7 @@ from typing import (
 import warnings
 
 from falcon.constants import COMBINED_METHODS
+from falcon.constants import TRUE_STRINGS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
@@ -55,7 +56,33 @@ _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
 )
 
-decorate_on_request = bool(int(os.environ.get('FALCON_DECORATE_ON_REQUEST', '0')))
+_ON_REQUEST_SKIPPED_WARNING = (
+    'Skipping decoration of default responder {responder_name!r} on resource '
+    '{resource_name!r}. To enable decorating default responders with '
+    'class-level hooks, set falcon.hooks.decorate_on_request to True '
+    '(or set the environment variable FALCON_DECORATE_ON_REQUEST=1).'
+)
+
+decorate_on_request = os.environ.get('FALCON_DECORATE_ON_REQUEST', '0') in TRUE_STRINGS
+"""Apply class-level hooks to ``on_request`` (and ``on_request_{suffix}``) methods.
+
+This module-level attribute is disabled by default; wrapping default responders
+with class-level hooks can be enabled by setting the value of
+`decorate_on_request` to ``True``::
+
+    import falcon.hooks
+    falcon.hooks.decorate_on_request = True
+
+The value of this attribute must be patched before importing a module where
+resource classes are actually decorated. In the case setting this value
+beforehand is not possible, wrapping default responders with class-level hooks
+can also be enabled by setting the ``FALCON_DECORATE_ON_REQUEST`` environment
+variable to a truthy value. For example:
+
+.. code:: bash
+
+    $ export FALCON_DECORATE_ON_REQUEST=1
+"""
 
 
 def before(
@@ -125,14 +152,10 @@ def before(
                         setattr(responder_or_resource, responder_name, do_before_all)
                     else:
                         warnings.warn(
-                            f'Skipping decoration of default responder '
-                            f"'{responder_name}' on resource "
-                            f"'{responder_or_resource.__name__}'. "
-                            f'To enable decorating default responders with '
-                            f'class-level hooks set '
-                            f'falcon.hooks.decorate_on_request=True '
-                            f'or set the environment variable '
-                            f'FALCON_DECORATE_ON_REQUEST=1.',
+                            _ON_REQUEST_SKIPPED_WARNING.format(
+                                responder_name=responder_name,
+                                resource_name=responder_or_resource.__name__,
+                            ),
                             UserWarning,
                         )
 
@@ -192,14 +215,10 @@ def after(
                         setattr(responder_or_resource, responder_name, do_after_all)
                     else:
                         warnings.warn(
-                            f'Skipping decoration of default responder '
-                            f"'{responder_name}' on resource "
-                            f"'{responder_or_resource.__name__}'. "
-                            f'To enable decorating default responders with '
-                            f'class-level hooks set '
-                            f'falcon.hooks.decorate_on_request=True '
-                            f'or set the environment variable '
-                            f'FALCON_DECORATE_ON_REQUEST=1.',
+                            _ON_REQUEST_SKIPPED_WARNING.format(
+                                responder_name=responder_name,
+                                resource_name=responder_or_resource.__name__,
+                            ),
                             UserWarning,
                         )
 

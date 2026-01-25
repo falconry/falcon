@@ -1003,20 +1003,12 @@ class CompiledRouterOptions:
     Warning:
         Class-level hooks do not wrap default responders by default. Wrapping
         default responders with class-level hooks can be enabled by setting
-        the value of ``falcon.hooks.decorate_on_request`` to ``True``.
-        For example::
+        the value of :data:`falcon.hooks.decorate_on_request` to ``True``::
 
             import falcon.hooks
             falcon.hooks.decorate_on_request = True
 
-        In case setting this value before decorating a resource is not
-        possible, wrapping default responders with class-level hooks can also
-        be enabled by setting the FALCON_DECORATE_ON_REQUEST environment
-        variable to 1. For example::
-
-            $ export FALCON_DECORATE_ON_REQUEST=1
-
-    .. versionadded:: 4.2
+    .. versionadded:: 4.3
     """
 
     __slots__ = ('converters', 'default_to_on_request')
