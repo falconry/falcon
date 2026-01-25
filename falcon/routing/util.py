@@ -105,7 +105,9 @@ def set_default_responders(
             (default ``False``).
         default_responder: An optional default responder for unimplemented
             resource methods (default: ``None``). If not provided, a new
-            responder for "405 Method Not Allowed" is constructed.
+            responder for
+            :class:`"405 Method Not Allowed" <falcon.HTTPMethodNotAllowed>`
+            is constructed.
     """
 
     # Attach a resource for unsupported HTTP methods
