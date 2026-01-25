@@ -1,4 +1,5 @@
 import textwrap
+from types import MethodType
 
 import pytest
 
@@ -101,6 +102,28 @@ class ResourceWithId:
 
     def on_get(self, req, resp):
         resp.text = self.resource_id
+
+
+class ResourceWithDefaultResponder:
+    def on_get(self, req, resp):
+        pass
+
+    def on_request(self, req, resp):
+        pass
+
+    def on_request_id(self, req, res, id):
+        pass
+
+
+class ResourceWithDefaultResponderAsgi:
+    async def on_get(self, req, resp):
+        pass
+
+    async def on_request(self, req, resp):
+        pass
+
+    async def on_request_id(self, req, res, id):
+        pass
 
 
 class SpamConverter:
@@ -692,6 +715,101 @@ def test_options_converters_invalid_name_on_update(router):
                 'valid_name': SpamConverter,
                 '7eleven': SpamConverter,
             }
+        )
+
+
+def test_options_default_to_on_request_disabled():
+    router = DefaultRouter()
+    router.add_route('/default', ResourceWithDefaultResponder())
+
+    __, method_map, __, __ = router.find('/default')
+
+    for responder in method_map.values():
+        # NOTE(gespyrop): Responders defined within the resource class create
+        # a new bound method wrapper every time they are accessed.
+        # We reference the underlying function for comparison.
+        # (see also: https://docs.python.org/3/reference/datamodel.html#instance-methods)
+        if isinstance(responder, MethodType):
+            responder = responder.__func__
+
+        assert responder is not ResourceWithDefaultResponder.on_request
+
+
+def test_options_default_to_on_request_enabled():
+    router = DefaultRouter()
+    router.options.default_to_on_request = True
+    router.add_route('/default', ResourceWithDefaultResponder())
+
+    __, method_map, __, __ = router.find('/default')
+
+    for method, responder in method_map.items():
+        # NOTE(gespyrop): Responders defined within the resource class create
+        # a new bound method wrapper every time they are accessed.
+        # We reference the underlying function for comparison.
+        # (see also: https://docs.python.org/3/reference/datamodel.html#instance-methods)
+        if isinstance(responder, MethodType):
+            responder = responder.__func__
+
+        if method in ('GET', 'OPTIONS', 'WEBSOCKET'):
+            assert responder is not ResourceWithDefaultResponder.on_request
+        else:
+            assert responder is ResourceWithDefaultResponder.on_request
+
+
+def test_on_request_suffix():
+    router = DefaultRouter()
+    router.options.default_to_on_request = True
+    router.add_route('/default/{id}', ResourceWithDefaultResponder(), suffix='id')
+
+    __, method_map, __, __ = router.find('/default/1')
+
+    for method, responder in method_map.items():
+        # NOTE(gespyrop): Responders defined within the resource class create
+        # a new bound method wrapper every time they are accessed.
+        # We reference the underlying function for comparison.
+        # (see also: https://docs.python.org/3/reference/datamodel.html#instance-methods)
+        if isinstance(responder, MethodType):
+            responder = responder.__func__
+
+        if method in ('OPTIONS', 'WEBSOCKET'):
+            assert responder is not ResourceWithDefaultResponder.on_request_id
+        else:
+            assert responder is ResourceWithDefaultResponder.on_request_id
+
+
+def test_synchronous_in_asgi(util):
+    router = DefaultRouter()
+    router.options.default_to_on_request = True
+    kwargs = {'_asgi': True}
+
+    with util.disable_asgi_non_coroutine_wrapping():
+        with pytest.raises(
+            TypeError,
+            match='responder must be a non-blocking '
+            'async coroutine \\(i.e., defined using async def\\) to '
+            'avoid blocking the main request thread.',
+        ):
+            router.add_route('/default', ResourceWithDefaultResponder(), **kwargs)
+
+
+def test_coroutine_in_wsgi():
+    router = DefaultRouter()
+    router.options.default_to_on_request = True
+
+    with pytest.raises(
+        TypeError,
+        match='responder must be a regular synchronous '
+        'method to be used with a WSGI app.',
+    ):
+        router.add_route('/default', ResourceWithDefaultResponderAsgi())
+
+    with pytest.raises(
+        TypeError,
+        match='responder must be a regular synchronous '
+        'method to be used with a WSGI app.',
+    ):
+        router.add_route(
+            '/default/{id}', ResourceWithDefaultResponderAsgi(), suffix='id'
         )
 
 
