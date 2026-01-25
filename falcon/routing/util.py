@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import warnings
 
 from falcon import constants
 from falcon import responders
@@ -69,11 +70,19 @@ def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
             if callable(responder):
                 method_map[method] = responder
 
-    # If suffix is specified and doesn't map to any methods, raise an error
-    if suffix and not method_map:
-        raise SuffixedMethodNotFoundError(
-            'No responders found for the specified suffix'
-        )
+    # If doesn't map to any methods, raise an error
+    if not method_map:
+        resource_name = resource.__class__.__name__
+        if suffix:
+            raise SuffixedMethodNotFoundError(
+                f'No responders found for the specified resource: '
+                f'{resource_name} and suffix: {suffix}'
+            )
+        else:
+            warnings.warn(
+                'No responders (on_get, on_post, etc.) '
+                + f'found for the specified resource: {resource_name}'
+            )
 
     return method_map
 
