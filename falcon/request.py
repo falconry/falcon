@@ -1208,6 +1208,10 @@ class Request:
         Returns:
             object: The deserialized media representation of the query string.
 
+        Raises:
+            ValueError: No media handler is configured for the specified
+                media type.
+
         .. _Parameter Object with content:
             https://spec.openapis.org/oas/latest.html#parameter-object-examples
 

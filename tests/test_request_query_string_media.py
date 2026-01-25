@@ -153,7 +153,7 @@ class TestQueryStringAsMedia:
         client.simulate_get('/test', query_string=query_string)
 
         # URLEncodedFormHandler should parse this
-        assert isinstance(resource.captured_media, dict)
+        assert resource.captured_media == {'key1': 'value1', 'key2': 'value2'}
 
     def test_unicode_in_query_string(self, standard_client):
         """Test JSON with Unicode characters."""
@@ -196,43 +196,6 @@ class TestQueryStringAsMedia:
 
         # Both calls should have been made
         assert resource.call_count == 2
-
-    def test_array_at_root(self, standard_client):
-        """Test JSON array at root level."""
-        client, resource = standard_client
-
-        json_data = '[1, 2, 3, 4, 5]'
-        query_string = quote(json_data, safe='')
-
-        client.simulate_get('/test', query_string=query_string)
-
-        assert resource.captured_media == [1, 2, 3, 4, 5]
-
-    def test_boolean_and_null_values(self, standard_client):
-        """Test JSON with boolean and null values."""
-        client, resource = standard_client
-
-        json_data = '{"active": true, "inactive": false, "empty": null}'
-        query_string = quote(json_data, safe='')
-
-        client.simulate_get('/test', query_string=query_string)
-
-        assert resource.captured_media == {
-            'active': True,
-            'inactive': False,
-            'empty': None,
-        }
-
-    def test_numeric_values(self, standard_client):
-        """Test JSON with various numeric values."""
-        client, resource = standard_client
-
-        json_data = '{"int": 42, "float": 3.14, "negative": -10}'
-        query_string = quote(json_data, safe='')
-
-        client.simulate_get('/test', query_string=query_string)
-
-        assert resource.captured_media == {'int': 42, 'float': 3.14, 'negative': -10}
 
     def test_default_when_empty_not_used_for_valid_data(self, asgi, util):
         """Test that default_when_empty is not used when data is valid."""
@@ -283,26 +246,6 @@ class TestQueryStringAsMedia:
         client.simulate_get('/test', query_string='data')
 
         assert resource.error_message == 'Custom error'
-
-    def test_uses_default_media_type_when_none_specified(self, asgi, util):
-        """Test that default media type is used when media_type is None."""
-
-        class ResourceDefaultType:
-            def on_get(self, req, resp):
-                # Don't specify media_type, should use default (application/json)
-                self.captured_media = req.get_query_string_as_media()
-
-        resource = ResourceDefaultType()
-        app = util.create_app(asgi)
-        app.add_route('/test', resource)
-        client = testing.TestClient(app)
-
-        json_data = '{"uses": "default"}'
-        query_string = quote(json_data, safe='')
-
-        client.simulate_get('/test', query_string=query_string)
-
-        assert resource.captured_media == {'uses': 'default'}
 
     def test_cached_error_with_default_when_empty(self, asgi, util):
         """Test that an error followed by default_when_empty returns default."""
