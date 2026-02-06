@@ -38,7 +38,9 @@ from falcon._typing import _UNSET
 from falcon._typing import StoreArg
 from falcon._typing import UnsetOr
 from falcon.constants import DEFAULT_MEDIA_TYPE
+from falcon.constants import FALSE_STRINGS
 from falcon.constants import MEDIA_JSON
+from falcon.constants import TRUE_STRINGS
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded
 from falcon.media import Handlers
@@ -56,8 +58,6 @@ __all__ = ('Forwarded',)
 
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
-TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
-FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 
 _PARAM_VALUE_DELIMITERS = {

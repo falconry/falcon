@@ -5,6 +5,7 @@ import json
 import pytest
 
 import falcon
+import falcon.hooks
 import falcon.testing as testing
 
 
@@ -531,3 +532,110 @@ def test_decorable_name_pattern():
     resource = PiggybackingCollection()
     assert resource.on_head_() == 'I shall not be decorated.'
     assert resource.on_header() == 'I shall not be decorated.'
+
+
+@pytest.fixture()
+def resources_with_on_request(monkeypatch):
+    monkeypatch.setattr(falcon.hooks, 'decorate_on_request', True)
+
+    class namespace:
+        class WrappedDefaultResponderResource:
+            @falcon.before(header_hook)
+            def on_request(self, req, resp):
+                pass
+
+            @falcon.before(header_hook)
+            def on_request_id(self, req, res, id):
+                pass
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, res, id):
+                pass
+
+        class WrappedDefaultResponderResourceAsync:
+            @falcon.before(header_hook)
+            async def on_request(self, req, resp):
+                pass
+
+            @falcon.before(header_hook)
+            async def on_request_id(self, req, res, id):
+                pass
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResourceAsync:
+            async def on_request(self, req, resp):
+                pass
+
+            async def on_request_id(self, req, res, id):
+                pass
+
+    return namespace
+
+
+@pytest.mark.parametrize(
+    'resource_cls, asgi',
+    (
+        ('WrappedDefaultResponderResource', False),
+        ('WrappedClassDefaultResponderResource', False),
+        ('WrappedDefaultResponderResourceAsync', True),
+        ('WrappedClassDefaultResponderResourceAsync', True),
+    ),
+)
+def test_default_responder(util, asgi, resources_with_on_request, resource_cls):
+    app = util.create_app(asgi=asgi)
+    app.router_options.default_to_on_request = True
+
+    resource = getattr(resources_with_on_request, resource_cls)()
+
+    app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
+
+    # Test that on_request is wrapped
+    result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert result.headers['X-Hook-Applied'] == '1'
+
+    # Test that on_request_id is wrapped
+    result = testing.simulate_post(app, '/1')
+
+    assert result.status_code == 200
+    assert result.headers['X-Hook-Applied'] == '1'
+
+
+def test_decorate_on_response_disabled(util):
+    # NOTE(vytas): falcon.hooks.decorate_on_request is False by default.
+
+    app = util.create_app(asgi=False)
+    app.router_options.default_to_on_request = True
+
+    with pytest.warns(UserWarning):
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, res, id):
+                pass
+
+    resource = WrappedClassDefaultResponderResource()
+
+    app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
+
+    # Test that on_request is not wrapped
+    result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert 'X-Hook-Applied' not in result.headers
+
+    # Test that on_request_id is not wrapped
+    result = testing.simulate_post(app, '/1')
+
+    assert result.status_code == 200
+    assert 'X-Hook-Applied' not in result.headers
