@@ -72,6 +72,8 @@ from falcon.util.misc import code_to_http_status
 __all__ = (
     'Request',
     'Response',
+    '_ReqT',
+    '_RespT',
 )
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
@@ -271,7 +273,7 @@ class App(Generic[_ReqT, _RespT]):
     # by a router, hardcoded to CompiledRouter for convenience for now.
     _router: routing.CompiledRouter
     _serialize_error: ErrorSerializer[_ReqT, _RespT]
-    _sink_and_static_routes: tuple[  # type: ignore[type-arg]
+    _sink_and_static_routes: tuple[
         tuple[
             Pattern[str] | routing.StaticRoute,
             SinkCallable[_ReqT, _RespT] | routing.StaticRoute,

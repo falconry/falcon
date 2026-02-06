@@ -1084,7 +1084,7 @@ class ASGIConductor:
 
     # NOTE(caseit): while any asgi app is accept, type this as a falcon
     # asgi app for user convenience
-    app: asgi.App  # type: ignore[type-arg]
+    app: asgi.App
     """The app that this client instance was configured to use."""
 
     def __init__(
@@ -2086,7 +2086,7 @@ class TestClient:
 
     # NOTE(caseit): while any asgi/wsgi app is accept, type this as a falcon
     # app for user convenience
-    app: falcon.App  # type: ignore[type-arg]
+    app: falcon.App
     """The app that this client instance was configured to use."""
 
     def __init__(

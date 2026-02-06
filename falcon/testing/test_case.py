@@ -50,7 +50,7 @@ class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
-    app: falcon.App  # type: ignore[type-arg]
+    app: falcon.App
     """A WSGI or ASGI application to target when simulating
     requests (defaults to ``falcon.App()``). When testing your
     application, you will need to set this to your own instance
