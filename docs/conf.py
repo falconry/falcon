@@ -89,6 +89,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_copybutton',
     'sphinx_design',
+    'sphinx_llms_txt',
     'myst_parser',
     # Falcon-specific extensions
     'ext.autodoc_customizations',
@@ -107,6 +108,14 @@ exclude_patterns = ['_build', '_newsfragments']
 # NOTE(vytas): The PyData theme uses separate Pygments style settings for HTML,
 #   so we specify a print-friendly theme here for the likes of latexpdf.
 pygments_style = 'bw'
+
+# llms.txt configuration (https://llmstxt.org/)
+llms_txt_summary = (
+    'Falcon is a minimalist ASGI/WSGI framework for building mission-critical '
+    'REST APIs and microservices, with a focus on reliability, correctness, '
+    'and performance at scale.'
+)
+llms_txt_exclude = ['changes/*', 'api/api']
 
 # myst configuration
 myst_enable_extensions = ['tasklist']
