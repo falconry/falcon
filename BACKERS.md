@@ -10,7 +10,7 @@ See also: https://opencollective.com/falcon
 
 ## Gold Patrons
 
-* [TestMu AI](https://www.testmu.ai/)
+* [TestMu AI](https://www.testmuai.com/)
 * [Sentry](https://sentry.io/)
 
 ## Past Commercial Patrons
