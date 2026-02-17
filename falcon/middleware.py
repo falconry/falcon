@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
+from ._typing import _AReqT
+from ._typing import _ARespT
 from ._typing import UniversalMiddlewareWithProcessResponse
 
 if TYPE_CHECKING:
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
     from .response import Response
 
 
-class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
+class CORSMiddleware(UniversalMiddlewareWithProcessResponse[_AReqT, _ARespT]):
     """CORS Middleware.
 
     This middleware provides a simple out-of-the box CORS policy, including handling

@@ -417,7 +417,8 @@ class WebSocket:
         if text is None:
             raise errors.PayloadTypeError('Missing TEXT (0x01) payload')
 
-        return text
+        # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+        return text  # type: ignore[no-any-return]
 
     async def receive_data(self) -> bytes:
         """Receive a message from the client with a binary data payload.
@@ -441,7 +442,7 @@ class WebSocket:
         if data is None:
             raise errors.PayloadTypeError('Missing BINARY (0x02) payload')
 
-        return data
+        return data  # type: ignore[no-any-return]
 
     async def receive_media(self) -> object:
         """Receive a deserialized object from the client.

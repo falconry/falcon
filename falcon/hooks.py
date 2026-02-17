@@ -142,25 +142,7 @@ def before(
 
                     setattr(responder_or_resource, responder_name, do_before_all)
 
-                if _DECORABLE_ON_REQUEST_METHOD_NAME.match(responder_name):
-                    # Only wrap default responders if decorate_on_request is set to True
-                    if decorate_on_request:
-                        responder = cast('Responder', responder)
-                        do_before_all = _wrap_with_before(
-                            responder, action, args, kwargs
-                        )
-
-                        setattr(responder_or_resource, responder_name, do_before_all)
-                    else:
-                        warnings.warn(
-                            _ON_REQUEST_SKIPPED_WARNING.format(
-                                responder_name=responder_name,
-                                resource_name=responder_or_resource.__name__,
-                            ),
-                            UserWarning,
-                        )
-
-            return cast(_R, responder_or_resource)
+            return responder_or_resource
 
         else:
             responder = cast('Responder', responder_or_resource)
@@ -207,23 +189,7 @@ def after(
 
                     setattr(responder_or_resource, responder_name, do_after_all)
 
-                if _DECORABLE_ON_REQUEST_METHOD_NAME.match(responder_name):
-                    # Only wrap default responders if decorate_on_request is set to True
-                    if decorate_on_request:
-                        responder = cast('Responder', responder)
-                        do_after_all = _wrap_with_after(responder, action, args, kwargs)
-
-                        setattr(responder_or_resource, responder_name, do_after_all)
-                    else:
-                        warnings.warn(
-                            _ON_REQUEST_SKIPPED_WARNING.format(
-                                responder_name=responder_name,
-                                resource_name=responder_or_resource.__name__,
-                            ),
-                            UserWarning,
-                        )
-
-            return cast(_R, responder_or_resource)
+            return responder_or_resource
 
         else:
             responder = cast('Responder', responder_or_resource)

@@ -2,6 +2,8 @@ import pathlib
 
 import falcon
 import falcon.asgi
+from falcon.asgi.request import Request
+from falcon.asgi.response import Response
 
 from .chat import Chat
 from .hub import Events
@@ -12,7 +14,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 STATIC = HERE.parent / 'static'
 
 
-def create_app() -> falcon.asgi.App:
+def create_app() -> falcon.asgi.App[Request, Response]:
     app = falcon.asgi.App()
 
     # NOTE(vytas): E2E tests run Uvicorn, and the latest versions support ASGI

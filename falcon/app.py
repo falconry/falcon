@@ -69,6 +69,13 @@ from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
 
+__all__ = (
+    'Request',
+    'Response',
+    '_ReqT',
+    '_RespT',
+)
+
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
 # reference via module global is faster than going via self
 _BODILESS_STATUS_CODES = frozenset(
@@ -1340,7 +1347,7 @@ class App(Generic[_ReqT, _RespT]):
 
 # TODO(myusko): This class is a compatibility alias, and should be removed
 # in Falcon 5.0.
-class API(App):
+class API(App[_ReqT, _RespT]):
     """Compatibility alias of :class:`falcon.App`.
 
     ``API`` was renamed to :class:`App <falcon.App>` in Falcon 3.0 in order to

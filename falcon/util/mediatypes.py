@@ -98,7 +98,7 @@ def parse_header(line: str) -> tuple[str, dict[str, str]]:
     return _parse_header_old_stdlib(line)
 
 
-def _parse_media_type_header(media_type: str) -> tuple[str, str, dict]:
+def _parse_media_type_header(media_type: str) -> tuple[str, str, dict[str, str]]:
     full_type, params = parse_header(media_type)
 
     # TODO(vytas): Workaround from python-mimeparse by J. Gregorio et al.
@@ -124,7 +124,7 @@ def _parse_media_type_header(media_type: str) -> tuple[str, str, dict]:
 class _MediaType:
     main_type: str
     subtype: str
-    params: dict
+    params: dict[str, str]
 
     # NOTE(vytas): Using __slots__ with dataclasses is tricky, but it seems to
     #   work here since we are not using any default values in the definition.
@@ -140,7 +140,7 @@ class _MediaRange:
     main_type: str
     subtype: str
     quality: float
-    params: dict
+    params: dict[str, str]
 
     __slots__ = ('main_type', 'subtype', 'quality', 'params')
 

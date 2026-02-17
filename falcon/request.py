@@ -54,6 +54,8 @@ from falcon.util import structures
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 
+__all__ = ('Forwarded',)
+
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
@@ -644,7 +646,8 @@ class Request:
         # empty string, uwsgi, gunicorn, waitress, and wsgiref all
         # include it even in that case.
         try:
-            return self.env['SCRIPT_NAME']
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            return self.env['SCRIPT_NAME']  # type: ignore[no-any-return]
         except KeyError:
             return ''
 
@@ -669,7 +672,8 @@ class Request:
             :attr:`forwarded_scheme` can be used, instead,
             to handle such cases.
         """
-        return self.env['wsgi.url_scheme']
+        # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+        return self.env['wsgi.url_scheme']  # type: ignore[no-any-return]
 
     @property
     def forwarded_scheme(self) -> str:
@@ -1262,7 +1266,8 @@ class Request:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self.env['HTTP_' + wsgi_name]
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            return self.env['HTTP_' + wsgi_name]  # type: ignore[no-any-return]
 
         except KeyError:
             # NOTE(kgriffs): There are a couple headers that do not
@@ -1271,7 +1276,9 @@ class Request:
             # to access these instead of .get_header.
             if wsgi_name in WSGI_CONTENT_HEADERS:
                 try:
-                    return self.env[wsgi_name]
+                    # TODO(0xMattB): Implement advanced typing to type
+                    # as 'str' (see PR #2599)
+                    return self.env[wsgi_name]  # type: ignore[no-any-return]
                 except KeyError:
                     pass
 
