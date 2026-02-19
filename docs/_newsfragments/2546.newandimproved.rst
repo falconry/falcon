@@ -1,0 +1,6 @@
+Added a new :meth:`~falcon.Request.get_query_string_as_media` method to
+:class:`~falcon.Request` and :class:`~falcon.asgi.Request` that deserializes
+the entire query string as media content. This is useful for implementing
+OpenAPI 3.2 ``Parameter Object`` with content, where the whole query string
+is treated as serialized data (e.g., JSON). The method URL-decodes the query
+string and deserializes it using the configured media handlers.

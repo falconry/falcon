@@ -1164,6 +1164,86 @@ class Request:
     this property.
     """
 
+    def get_query_string_as_media(
+        self, media_type: str | None = None, default_when_empty: UnsetOr[Any] = _UNSET
+    ) -> Any:
+        """Deserialize the query string as a media object.
+
+        This method URL-decodes the query string and then deserializes it
+        as a media object using the specified media type handler. This is
+        useful for implementing OpenAPI 3.2 `Parameter Object with content`_
+        where the entire query string is treated as serialized content.
+
+        For example, if the query string is
+        ``%7B%22numbers%22%3A%5B1%2C2%5D%2C%22flag%22%3Anull%7D``, this
+        method will URL-decode it to ``{"numbers":[1,2],"flag":null}`` and
+        then deserialize it as JSON (assuming ``media_type`` is set to
+        ``'application/json'``)::
+
+            # Query string: ?%7B%22numbers%22%3A%5B1%2C2%5D%7D
+            data = req.get_query_string_as_media('application/json')
+            # data == {'numbers': [1, 2]}
+
+        See also :ref:`media` for more information regarding media handling.
+
+        Note:
+            When called on a request with an empty query string, Falcon will
+            let the media handler try to deserialize the empty string and will
+            return the value returned by the handler or propagate the exception
+            raised by it. To instead return a different value in case of an
+            exception by the handler, specify the argument ``default_when_empty``.
+
+        Args:
+            media_type: Media type to use for deserialization
+                (e.g., ``'application/json'``). If not specified, the
+                ``default_media_type`` from :class:`falcon.RequestOptions`
+                will be used (default ``'application/json'``).
+
+        Keyword Args:
+            default_when_empty: Fallback value to return when there is no
+                query string and the media handler raises an error. By default,
+                Falcon uses the value returned by the media handler or
+                propagates the raised exception, if any.
+
+        Returns:
+            object: The deserialized media representation of the query string.
+
+        Raises:
+            ValueError: No media handler is configured for the specified
+                media type.
+
+        .. _Parameter Object with content:
+            https://spec.openapis.org/oas/latest.html#parameter-object-examples
+
+        """
+        if media_type is None:
+            media_type = self.options.default_media_type
+
+        handler, _, _ = self.options.media_handlers._resolve(
+            media_type, self.options.default_media_type, raise_not_found=False
+        )
+        if handler is None:
+            raise ValueError(
+                f'No media handler is configured for {media_type!r}. '
+                'Please ensure the media type is registered in '
+                'RequestOptions.media_handlers.'
+            )
+
+        # URL-decode the query string
+        decoded_query_string = util.uri.decode(self.query_string, unquote_plus=False)
+
+        # Encode once and reuse bytes for BytesIO and length to avoid
+        # double-encoding the string.
+        query_bytes = decoded_query_string.encode('utf-8')
+        query_stream = BytesIO(query_bytes)
+
+        try:
+            return handler.deserialize(query_stream, media_type, len(query_bytes))
+        except errors.MediaNotFoundError:
+            if default_when_empty is not _UNSET:
+                return default_when_empty
+            raise
+
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
