@@ -1,0 +1,3 @@
+The :func:`~falcon.testing.simulate_request` now suports ``msgpack``
+and returns Content-Type as ``MEDIA_MSGPACK`` in a similar way that
+was made to JSON parameters.

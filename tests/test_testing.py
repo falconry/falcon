@@ -8,6 +8,13 @@ from falcon import status_codes
 from falcon import testing
 from falcon.util.sync import async_to_sync
 
+try:
+    import msgpack
+except ImportError:
+    msgpack = None
+
+SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
+
 
 class CustomCookies:
     def items(self):
@@ -104,6 +111,88 @@ def test_simulate_request_content_type():
         app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML
     )
     assert result.text == falcon.MEDIA_JSON
+
+
+@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
+@pytest.mark.parametrize(
+    'json,msgpack,response',
+    [
+        ({}, None, falcon.MEDIA_JSON),
+        (None, {}, falcon.MEDIA_MSGPACK),
+        ({}, {}, falcon.MEDIA_MSGPACK),
+    ],
+)
+def test_simulate_request_msgpack_content_type(json, msgpack, response):
+    class Foo:
+        def on_post(self, req, resp):
+            resp.text = req.content_type
+
+    app = App()
+    app.add_route('/', Foo())
+
+    headers = {'Content-Type': falcon.MEDIA_TEXT}
+
+    result = testing.simulate_post(app, '/', json=json, msgpack=msgpack)
+    assert result.text == response
+
+    result = testing.simulate_post(
+        app, '/', json=json, msgpack=msgpack, content_type=falcon.MEDIA_HTML
+    )
+    assert result.text == response
+
+    result = testing.simulate_post(
+        app, '/', json=json, msgpack=msgpack, headers=headers
+    )
+    assert result.text == response
+
+    result = testing.simulate_post(
+        app,
+        '/',
+        json=json,
+        msgpack=msgpack,
+        headers=headers,
+        content_type=falcon.MEDIA_HTML,
+    )
+    assert result.text == response
+
+
+@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
+@pytest.mark.parametrize(
+    'value',
+    (
+        'd\xff\xff\x00',
+        'quick fox jumps over the lazy dog',
+        '{"hello": "WORLD!"}',
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+        '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+        '\xe9\xe8',
+    ),
+)
+def test_simulate_request_msgpack_different_bodies(value):
+    value = bytes(value, 'UTF-8')
+
+    resource = testing.SimpleTestResource(body=value)
+
+    app = App()
+    app.add_route('/', resource)
+
+    result = testing.simulate_post(app, '/', msgpack={})
+    captured_resp = resource.captured_resp
+    content = captured_resp.text
+
+    if len(value) > 40:
+        content = value[:20] + b'...' + value[-20:]
+    else:
+        content = value
+
+    args = [
+        captured_resp.status,
+        captured_resp.headers['content-type'],
+        str(content),
+    ]
+
+    expected_content = 'Result<{}>'.format(' '.join(filter(None, args)))
+    assert str(result) == expected_content
 
 
 @pytest.mark.parametrize('mode', ['wsgi', 'asgi', 'asgi-stream'])
