@@ -20,8 +20,10 @@ if TYPE_CHECKING:
     from falcon import Response
 
 
-def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result]:
-    """Open a file for a static file request and read file stat.
+def _open_and_stat_file(
+    file_path: str | Path, only_stat: bool = False
+) -> tuple[io.BufferedReader, os.stat_result]:
+    """Open(optionally) a file for a static file request and read file stat.
 
     Args:
         file_path (Union[str, Path]): Path to the file to open.
@@ -29,13 +31,17 @@ def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result
         tuple: Tuple of (BufferedReader, stat_result).
     """
     fh: io.BufferedReader | None = None
-    try:
-        fh = io.open(file_path, 'rb')  # noqa: UP020
-        st = os.fstat(fh.fileno())
-    except OSError:
-        if fh is not None:
-            fh.close()
-        raise falcon.HTTPNotFound()
+
+    if only_stat:
+        st, fh = os.stat(file_path), io.BufferedReader(io.BytesIO())
+    else:
+        try:
+            fh = io.open(file_path, 'rb')  # noqa: UP020
+            st = os.fstat(fh.fileno())
+        except OSError:
+            if fh is not None:
+                fh.close()
+            raise falcon.HTTPNotFound()
     return fh, st
 
 
@@ -232,6 +238,9 @@ class StaticRoute:
             resp.set_header('Content-Length', '0')
             return
 
+        if req.method not in ('GET', 'HEAD'):
+            raise falcon.HTTPMethodNotAllowed(('GET', 'HEAD'))
+
         without_prefix = req.path[len(self._prefix) :]
 
         # NOTE(kgriffs): Check surrounding whitespace and strip trailing
@@ -260,13 +269,15 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
+        only_stat = req.method == 'HEAD'
+
         if self._fallback_filename is None:
-            fh, st = _open_file(file_path)
+            fh, st = _open_and_stat_file(file_path, only_stat)
         else:
             try:
-                fh, st = _open_file(file_path)
+                fh, st = _open_and_stat_file(file_path, only_stat)
             except falcon.HTTPNotFound:
-                fh, st = _open_file(self._fallback_filename)
+                fh, st = _open_and_stat_file(self._fallback_filename, only_stat)
                 file_path = self._fallback_filename
 
         etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
