@@ -850,7 +850,7 @@ How can I handle forward slashes within a route template field?
 
 Falcon 4.0 shipped initial support for
 :ref:`field converters <routing_field_converters>` that can match multiple
-segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
+segments. The ``path`` :class:`field converter <falcon.routing.PathConverter>`
 is capable of consuming multiple path segments when placed at the end of the
 URL template.
 
