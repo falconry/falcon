@@ -209,21 +209,48 @@ platform <https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-n
 
 Then, create an NGINX conf file that looks something like this:
 
-.. code-block:: ini
+.. code-block:: nginx
   :caption: /etc/nginx/sites-available/myproject.conf
 
+  # Redirect HTTP to HTTPS
   server {
     listen 80;
     server_name myproject.com;
+    return 301 https://$host$request_uri;
+  }
+
+  server {
+    listen 443 ssl;
+    server_name myproject.com;
+
+    ssl_certificate     /etc/letsencrypt/live/myproject.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/myproject.com/privkey.pem;
+
+    # Mozilla Intermediate configuration
+    # https://ssl-config.mozilla.org/#server=nginx
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
 
     access_log /var/log/nginx/myproject-access.log;
     error_log  /var/log/nginx/myproject-error.log  warn;
 
     location / {
-      uwsgi_pass 127.0.0.1:8080
+      uwsgi_pass 127.0.0.1:8080;
       include uwsgi_params;
     }
   }
+
+.. note::
+
+  The above configuration includes HTTPS with a redirect from HTTP, using
+  certificate paths typical of `Let's Encrypt`_. For a plain HTTP-only
+  configuration (e.g., during development), you can simplify to a single
+  ``server`` block listening on port 80 without the ``ssl_*`` directives.
+
+  For production deployments, use the `Mozilla SSL Configuration Generator`_
+  to generate a configuration tuned to your requirements.
+
+.. _`Mozilla SSL Configuration Generator`: https://ssl-config.mozilla.org/#server=nginx
 
 Finally, start (or restart) NGINX:
 
@@ -238,10 +265,9 @@ errors if the application does not start.
 Further Considerations
 ''''''''''''''''''''''
 
-We did not explain how to configure TLS (HTTPS) for NGINX, leaving that as an
-exercise for the reader. However, we do recommend using Let's Encrypt, which offers free,
-short-term certificates with auto-renewal. Visit the `Let’s Encrypt site`_ to learn
-how to integrate their service directly with NGINX.
+The NGINX configuration above includes TLS (HTTPS) using `Let's Encrypt`_, which
+offers free, short-term certificates with auto-renewal. Visit the `Let's Encrypt site`_
+to learn how to set up certificates for your domain.
 
 In addition to setting up NGINX and uWSGI to run your application, you will of
 course need to deploy a database server or any other services required by your
@@ -251,4 +277,4 @@ the Falcon community is always happy to help with deployment questions, so
 `please don't hesitate to ask <https://falcon.readthedocs.io/en/stable/community/help.html#chat>`_.
 
 
-.. _`Let’s Encrypt site`: https://certbot.eff.org/
+.. _`Let's Encrypt site`: https://certbot.eff.org/
