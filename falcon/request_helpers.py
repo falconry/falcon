@@ -35,7 +35,7 @@ _COOKIE_NAME_RESERVED_CHARS = re.compile(
 )
 
 # NOTE(kgriffs): strictly speaking, the weakness indicator is
-#   case-sensitive, but this wasn't explicit until RFC 7232
+#   case-sensitive, but this wasn't explicit until RFC 7232 (now RFC 9110)
 #   so we allow for both. We also require quotes because that's
 #   been standardized since 1999, and it makes the regex simpler
 #   and more performant.
@@ -135,7 +135,7 @@ def _parse_etags(etag_str: str) -> list[ETag | Literal['*']] | None:
     ETags. The string may also contain a '*' character, in order to indicate
     that any ETag should match the precondition.
 
-    (See also: RFC 7232, Section 3)
+    (See also: RFC 9110, Section 13.1)
 
     Args:
         etag_str (str): An ASCII header value to parse ETags from. ETag values

@@ -550,7 +550,7 @@ def simulate_request(
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -813,7 +813,7 @@ async def _simulate_request_asgi(
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -1355,7 +1355,7 @@ def simulate_get(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -1458,7 +1458,7 @@ def simulate_head(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -1556,7 +1556,7 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -1667,7 +1667,7 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -1773,7 +1773,7 @@ def simulate_options(app: Callable[..., Any], path: str, **kwargs: Any) -> Resul
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -1867,7 +1867,7 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:
@@ -1973,7 +1973,7 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also RFC 9110 and RFC 9112). Header names are not
             case-sensitive.
 
             Note:

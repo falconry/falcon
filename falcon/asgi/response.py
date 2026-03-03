@@ -356,7 +356,7 @@ class Response(response.Response):
 
         try:
             # NOTE(vytas): Supporting ISO-8859-1 for historical reasons as per
-            #   RFC 7230, Section 3.2.4; and to strive for maximum
+            #   RFC 9110, Section 5.3 (see also RFC 9112, Section 2.1); and to strive for maximum
             #   compatibility with WSGI.
 
             # PERF(vytas): On CPython, _encode_items_to_latin1 is implemented
