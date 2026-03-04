@@ -604,7 +604,7 @@ class TestRequestAttributes:
         expected_desc = (
             'The value provided for the "Range" header is '
             'invalid. It must be a range formatted '
-            'according to RFC 7233.'
+            'according to RFC 9110.'
         )
         self._test_error_details(
             headers,
@@ -723,7 +723,7 @@ class TestRequestAttributes:
         expected_desc = (
             'The value provided for the "{}" '
             'header is invalid. It must be formatted '
-            'according to RFC 7231, Section 7.1.1.1'
+            'according to RFC 9110, Section 5.6.7'
         )
 
         self._test_error_details(
