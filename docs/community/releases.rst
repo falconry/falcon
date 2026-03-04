@@ -1,7 +1,7 @@
 Releases and Versioning
 =======================
 
-Falcon is developed in the open (yes, You can :doc:`contribute <contributing>`
+Falcon is developed in the open (yes, you can :doc:`contribute <contributing>`
 too!) primarily using the
 `falconry/falcon <https://github.com/falconry/falcon>`__ GitHub repository.
 Newer releases are available from our GitHub
@@ -52,10 +52,8 @@ guarantees.
 .. rubric:: Security Maintenance
 
 We also provide limited security maintenance for the latest release of the old
-stable SemVer major series until *(1)* it falls back two major releases
-behind, or *(2)* 730 days (two years bar the possibility of a leap year) pass
-from the first release of the current stable series
-(whichever comes first).
+stable SemVer major series until it falls two major releases behind or 730 days
+pass from the first release of the current stable series (whichever comes first).
 
 "Security maintenance" of an old stable release here means providing new patch
 versions in response to security vulnerabilities. Other bugs (regardless of
@@ -93,11 +91,11 @@ Pre-releases and Development Versions
 
 The upcoming Falcon version release normally lives in our main development
 branch (``master``). If you absolutely need a new unreleased feature or fix,
-You can :ref:`install <install>` it directly from GitHub, however, we strongly
-recommend to deploy only stable Falcon releases to production.
+you can :ref:`install <install>` it directly from GitHub, however, we strongly
+recommend deploying only stable Falcon releases to production.
 That being said, we do try to keep the main development branch in good shape at
 all times; our Continuous Integration gates ensure that both ``master``
-commits, and pull requests being merged, pass all tests on the supported
+commits and pull requests being merged pass all tests on the supported
 platforms.
 
 Prior to a new stable release, we normally cut several alphas, betas, and
