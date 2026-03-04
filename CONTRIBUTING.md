@@ -277,7 +277,6 @@ The footer should contain any information about **Breaking Changes** and is also
 [goog-style]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
 [rtd]: https://falcon.readthedocs.io
 [coc]: https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md
-[freenode]: https://www.freenode.net/
 [gitter]: https://gitter.im/falconry/dev
 [ml-join]: mailto:users-join@mail.falconframework.org?subject=join
 [ml-archive]: https://mail.falconframework.org/archives/list/users@mail.falconframework.org/
