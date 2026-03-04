@@ -277,4 +277,5 @@ the Falcon community is always happy to help with deployment questions, so
 `please don't hesitate to ask <https://falcon.readthedocs.io/en/stable/community/help.html#chat>`_.
 
 
+.. _`Let's Encrypt`: https://letsencrypt.org/
 .. _`Let's Encrypt site`: https://certbot.eff.org/
