@@ -387,7 +387,7 @@ class HTTPForbidden(HTTPError):
     forbidden target resource MAY instead respond with a status code of
     404 Not Found.
 
-    (See also: RFC 9110, Section 15.5.5)
+    (See also: RFC 9110, Section 15.5.4)
 
     All the arguments are defined as keyword-only.
 
@@ -453,7 +453,7 @@ class HTTPNotFound(HTTPError):
     A 404 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls.
 
-    (See also: RFC 9110, Section 15.5.4)
+    (See also: RFC 9110, Section 15.5.5)
 
     All the arguments are defined as keyword-only.
 
@@ -851,7 +851,7 @@ class HTTPLengthRequired(HTTPError):
     header field containing the length of the message body in the
     request message.
 
-    (See also: RFC 9110, Section 15.5.10)
+    (See also: RFC 9110, Section 15.5.12)
 
     All the arguments are defined as keyword-only.
 
@@ -913,7 +913,7 @@ class HTTPPreconditionFailed(HTTPError):
     and, thus, prevent the request method from being applied if the
     target resource is in an unexpected state.
 
-    (See also: RFC 9110, Section 13.1.1)
+    (See also: RFC 9110, Section 15.5.13)
 
     All the arguments are defined as keyword-only.
 
@@ -977,7 +977,7 @@ class HTTPContentTooLarge(HTTPError):
     After header field to indicate that it is temporary and after what
     time the client MAY try again.
 
-    (See also: RFC 9110, Section 15.5.11)
+    (See also: RFC 9110, Section 15.5.14)
 
     All the arguments are defined as keyword-only.
 
@@ -1066,7 +1066,7 @@ class HTTPUriTooLong(HTTPError):
     A 414 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls.
 
-    (See also: RFC 9110, Section 15.5.12)
+    (See also: RFC 9110, Section 15.5.15)
 
     All the arguments are defined as keyword-only.
 
@@ -1128,7 +1128,7 @@ class HTTPUnsupportedMediaType(HTTPError):
     Type or Content-Encoding, or as a result of inspecting the data
     directly.
 
-    (See also: RFC 9110, Section 15.5.13)
+    (See also: RFC 9110, Section 15.5.16)
 
     All the arguments are defined as keyword-only.
 
@@ -2036,7 +2036,7 @@ class HTTPVersionNotSupported(HTTPError):
     server does not support, or refuses to support, the major version of
     HTTP that was used in the request message.  The server is indicating
     that it is unable or unwilling to complete the request using the same
-    major version as the client (as described in RFC 9112, Section 2.5),
+    major version as the client (as described in RFC 9110, Section 2.5),
     other than with this error message.  The server SHOULD
     generate a representation for the 505 response that describes why
     that version is not supported and what other protocols are supported

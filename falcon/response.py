@@ -1290,7 +1290,7 @@ class Response:
         value consists of either a single asterisk ("*") or a list of
         header field names (case-insensitive).
 
-        (See also: RFC 9110, Section 10.2.1)
+        (See also: RFC 9110, Section 12.5.5)
         """,
         _format_header_value_list,
     )
@@ -1307,7 +1307,7 @@ class Response:
     value consists of either a single asterisk ("*") or a list of
     header field names (case-insensitive).
 
-    (See also: RFC 9110, Section 10.2.1)
+    (See also: RFC 9110, Section 12.5.5)
     """
 
     accept_ranges: str | None = _header_property(
