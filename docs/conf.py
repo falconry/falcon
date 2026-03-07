@@ -145,6 +145,7 @@ html_js_files = ['custom-icons.js']
 html_favicon = '_static/img/favicon.ico'
 html_logo = '_static/img/logo.svg'
 html_static_path = ['_static']
+html_extra_path = ['llms.txt']
 html_theme = 'pydata_sphinx_theme'
 html_show_sourcelink = False
 
