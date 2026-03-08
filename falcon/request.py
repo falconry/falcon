@@ -2395,6 +2395,90 @@ class Request:
 
         return val
 
+    def get_param_as_dict(
+        self,
+        name: str,
+        required: bool = False,
+        deep_object: bool = False,
+        store: StoreArg = None,
+        default: Any | None = None,
+    ) -> Any:
+        """Retrieve a query parameter as a dictionary.
+
+        Supports OpenAPI's deep object style (`param[key]=value`)
+        and list-based key/value pairs (e.g., `param=k1,v1,k2,v2`).
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g, 'sort')
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not found
+                (default ``False``).
+            deep_object (bool): Set to True to use the deepObject (as in OAS)
+                format.
+            store: A ``dict``-like object in which to place the value
+                of the param, but only if the param is found (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
+
+        Returns:
+            dict: The value of the param if it is found. Otherwise, returns
+            ``None`` unless required is ``True``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed from the parameter.
+
+        .. versionadded:: 4.1.0
+        """
+
+        output: dict[str, Any] | None = None
+
+        if deep_object:
+            oc: dict[str, Any] = {}
+            for key, value in self._params.items():
+                if not key.startswith(f'{name}[') and key.endswith(']'):
+                    continue
+                inner = key[len(name) + 1 : -1]
+
+                if isinstance(value, (list, tuple)):
+                    oc[inner] = value[0] if value else None
+                else:
+                    oc[inner] = value
+
+            if not oc:
+                if required:
+                    msg = 'Missing deep object parameter'
+                    raise errors.HTTPMissingParam(msg)
+                output = default
+            else:
+                output = oc
+
+        else:
+            try:
+                values_list = self.get_param_as_list(name)
+            except errors.HTTPBadRequest:
+                msg = 'It could not parse the query parameter'
+                raise errors.HTTPInvalidParam(msg, name) from None
+
+            if values_list is None:
+                if required:
+                    msg = 'Missing query parameter'
+                    raise errors.HTTPMissingParam(msg)
+                output = default
+
+            else:
+                if len(values_list) % 2 != 0:
+                    msg = 'Invalid parameter format, list elements must be even'
+                    raise errors.HTTPInvalidParam(msg, name)
+                output = dict(zip(values_list[::2], values_list[1::2]))
+
+        if store is not None and isinstance(output, dict):
+            store.update(output)
+
+        return output
+
     def has_param(self, name: str) -> bool:
         """Determine whether or not the query string parameter already exists.
 
