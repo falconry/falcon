@@ -2369,25 +2369,76 @@ class Request:
                 the value could not be parsed as JSON.
         """
 
+        # Delegate to the more general get_param_as_media implementation
+        return self.get_param_as_media(
+            name=name,
+            media_type=MEDIA_JSON,
+            required=required,
+            store=store,
+            default=default,
+        )
+
+    def get_param_as_media(
+        self,
+        name: str,
+        media_type: str | None = None,
+        required: bool = False,
+        store: StoreArg = None,
+        default: Any | None = None,
+    ) -> Any:
+        """Return a query string parameter's value deserialized by a media handler.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'payload').
+
+        Keyword Args:
+            media_type (str|None): Media type to use for deserialization. If
+                ``None``, falls back to the app's ``default_media_type``.
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not
+                found (default ``False``).
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
+
+        Returns:
+            The deserialized value for the parameter, or ``default`` if the
+            parameter is missing and ``required`` is ``False``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed by the selected media handler.
+        """
+
         param_value = self.get_param(name, required=required)
 
         if param_value is None:
             return default
 
+        # Resolve media handler
+        if media_type is None:
+            media_type = self.options.default_media_type
+
         handler, _, _ = self.options.media_handlers._resolve(
-            MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+            media_type, self.options.default_media_type, raise_not_found=False
         )
         if handler is None:
-            handler = _DEFAULT_JSON_HANDLER
+            # Fall back to JSON handler when requested media is JSON
+            if media_type and MEDIA_JSON in media_type:
+                handler = _DEFAULT_JSON_HANDLER
+            else:
+                msg = f'No media handler for "{media_type}"'
+                raise errors.HTTPInvalidParam(msg, name)
 
         try:
-            # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
-            # interface is refactored. Possibly using the WS interface?
+            # Handlers accept a stream; reuse pattern from get_param_as_json
             val = handler.deserialize(
-                BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
+                BytesIO(param_value.encode()), media_type, len(param_value)
             )
         except errors.HTTPBadRequest:
-            msg = 'It could not be parsed as JSON.'
+            msg = 'It could not be parsed as the requested media type.'
             raise errors.HTTPInvalidParam(msg, name)
 
         if store is not None:
