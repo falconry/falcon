@@ -440,9 +440,9 @@ class Response:
                 mitigate some forms of cross-site scripting. (default: ``True``)
 
                 Note:
-                    HttpOnly cookies are not visible to javascript scripts
+                    HttpOnly cookies are not visible to JavaScript scripts
                     in the browser. They are automatically sent to the server
-                    on javascript ``XMLHttpRequest`` or ``Fetch`` requests.
+                    on JavaScript ``XMLHttpRequest`` or ``Fetch`` requests.
 
                 (See also: RFC 6265, Section 4.1.2.6)
 
@@ -485,9 +485,9 @@ class Response:
         """
 
         if not _is_ascii_encodable(name):
-            raise KeyError('name is not ascii encodable')
+            raise KeyError('name is not ASCII encodable')
         if not _is_ascii_encodable(value):
-            raise ValueError('value is not ascii encodable')
+            raise ValueError('value is not ASCII encodable')
 
         value = str(value)
 
@@ -570,7 +570,7 @@ class Response:
         agent to immediately expire its own copy of the cookie.
 
         Note:
-            Modern browsers place restriction on cookies without the
+            Modern browsers place restrictions on cookies without the
             "same-site" cookie attribute set. To that end this attribute
             is set to ``'Lax'`` by this method.
 
@@ -924,11 +924,11 @@ class Response:
                 A list of tags may be given in order to indicate to the
                 client that the target resource is available in multiple
                 languages.
-            type_hint(str): Provides a hint as to the media type of the
+            type_hint (str): Provides a hint as to the media type of the
                 result of dereferencing the link (default ``None``). As noted
                 in RFC 5988, this is only a hint and does not override the
                 Content-Type header returned when the link is followed.
-            crossorigin(str):  Determines how cross origin requests are handled.
+            crossorigin (str):  Determines how cross origin requests are handled.
                 Can take values 'anonymous' or 'use-credentials' or None.
                 (See:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)

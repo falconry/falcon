@@ -38,7 +38,9 @@ from falcon._typing import _UNSET
 from falcon._typing import StoreArg
 from falcon._typing import UnsetOr
 from falcon.constants import DEFAULT_MEDIA_TYPE
+from falcon.constants import FALSE_STRINGS
 from falcon.constants import MEDIA_JSON
+from falcon.constants import TRUE_STRINGS
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded
 from falcon.media import Handlers
@@ -54,8 +56,6 @@ from falcon.util.uri import parse_query_string
 
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
-TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
-FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 
 _PARAM_VALUE_DELIMITERS = {
@@ -345,18 +345,18 @@ class Request:
     # Properties
     # ------------------------------------------------------------------------
 
-    user_agent: str | None = helpers._header_property('HTTP_USER_AGENT')
-    """Value of the User-Agent header, or ``None`` if the header is missing."""
     auth: str | None = helpers._header_property('HTTP_AUTHORIZATION')
     """Value of the Authorization header, or ``None`` if the header is missing."""
     expect: str | None = helpers._header_property('HTTP_EXPECT')
     """Value of the Expect header, or ``None`` if the header is missing."""
     if_range: str | None = helpers._header_property('HTTP_IF_RANGE')
     """Value of the If-Range header, or ``None`` if the header is missing."""
-    referer: str | None = helpers._header_property('HTTP_REFERER')
-    """Value of the Referer header, or ``None`` if the header is missing."""
     last_event_id: str | None = helpers._header_property('HTTP_LAST_EVENT_ID')
     """Value of the Last-Event-ID header, or ``None`` if the header is missing."""
+    referer: str | None = helpers._header_property('HTTP_REFERER')
+    """Value of the Referer header, or ``None`` if the header is missing."""
+    user_agent: str | None = helpers._header_property('HTTP_USER_AGENT')
+    """Value of the User-Agent header, or ``None`` if the header is missing."""
 
     @property
     def forwarded(self) -> list[Forwarded] | None:
@@ -635,7 +635,7 @@ class Request:
         of the server.
 
         (In WSGI it corresponds to the "SCRIPT_NAME" environ variable defined
-        by PEP-3333; in ASGI it Corresponds to the "root_path"ASGI HTTP
+        by PEP-3333; in ASGI it Corresponds to the "root_path" ASGI HTTP
         scope field.)
         """  # noqa: D205
         # PERF(kgriffs): try..except is faster than get() assuming that
@@ -810,7 +810,7 @@ class Request:
         by the first proxy in front of the application server.
 
         The following request headers are checked, in order of
-        preference, to determine the forwarded scheme:
+        preference, to determine the forwarded host:
 
             - ``Forwarded``
             - ``X-Forwarded-Host``
@@ -1671,8 +1671,7 @@ class Request:
         Keyword Args:
             required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found or is not an float (default
-                ``False``).
+                parameter is not found or is not a float (default ``False``).
             min_value (float): Set to the minimum value allowed for this
                 param. If the param is found and it is less than min_value, an
                 ``HTTPError`` is raised.
