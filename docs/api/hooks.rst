@@ -164,3 +164,8 @@ After Hooks
 -----------
 
 .. autofunction:: falcon.after
+
+Configuration of Hooks
+----------------------
+
+.. autodata:: falcon.hooks.decorate_on_request

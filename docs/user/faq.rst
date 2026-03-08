@@ -63,7 +63,7 @@ spec support out of the box. However, there are several community projects
 available in this vein. Our
 `Add on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_ lists
 a couple of these projects, but you may also wish to search
-`PyPI <https://pypi.python.org/pypi>`_ for additional packages.
+`PyPI <https://pypi.org/>`_ for additional packages.
 
 If you are interested in the design-first approach mentioned above, you may
 also want to check out API design and gateway services such as Tyk, Apiary,
@@ -175,7 +175,7 @@ Further CORS customization is possible via :class:`~falcon.CORSMiddleware`
 For even more sophisticated use cases, have a look at Falcon add-ons from the
 community, such as `falcon-cors <https://github.com/lwcolton/falcon-cors>`_, or
 try one of the generic
-`WSGI CORS libraries available on PyPI <https://pypi.python.org/pypi?%3Aaction=search&term=cors&submit=search>`_.
+`WSGI CORS libraries available on PyPI <https://pypi.org/search/?q=cors>`_.
 If you use an API gateway, you might also look into what CORS functionality
 it provides at that level.
 
@@ -269,7 +269,7 @@ implement a simple WSGI wrapper that does the same thing:
 
         if host.startswith('api.'):
             return falcon_app(environ, start_response)
-        elif:
+        else:
             return webapp2_app(environ, start_response)
 
 See also `PEP 3333 <https://www.python.org/dev/peps/pep-3333/#environ-variables>`_
@@ -612,8 +612,8 @@ Why are '+' characters in my params being converted to spaces?
 --------------------------------------------------------------
 The ``+`` character is often used instead of ``%20`` to represent spaces in
 query string params, due to the historical conflation of form parameter encoding
-(``application/x-www-form-urlencoded``) and URI percent-encoding.  Therefore,
-Falcon, converts ``+`` to a space when decoding strings.
+(``application/x-www-form-urlencoded``) and URI percent-encoding. Therefore,
+Falcon converts ``+`` to a space when decoding strings.
 
 To work around this, RFC 3986 specifies ``+`` as a reserved character,
 and recommends percent-encoding any such characters when their literal value is
@@ -849,9 +849,10 @@ How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
 
 Falcon 4.0 shipped initial support for
-`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_
-that can match multiple segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
-is capable of consuming multiple path segments when placed at the end of the URL template.
+:ref:`field converters <routing_field_converters>` that can match multiple
+segments. The ``path`` :class:`field converter <falcon.routing.PathConverter>`
+is capable of consuming multiple path segments when placed at the end of the
+URL template.
 
 In previous versions, you can work around the issue by implementing a Falcon
 middleware component to rewrite the path before it is routed. If you control
@@ -1051,7 +1052,7 @@ By default, Falcon enables the `secure` cookie attribute. Therefore, if you are
 testing your app over HTTP (instead of HTTPS), the client will not send the
 cookie in subsequent requests.
 
-(See also the :ref:`cookie documentation <cookie-secure-attribute>`.)
+(See also the :ref:`Secure cookie attribute <cookie-secure-attribute>`.)
 
 .. _serve-downloadable-as:
 
@@ -1414,7 +1415,7 @@ is non-zero, we can overwrite that value in the header.
 Why do I see no error tracebacks in my ASGI application?
 --------------------------------------------------------
 
-When using Falcon with an ASGI server like Uvicorn,
+When using Falcon with an ASGI server,
 you might notice that server errors do not include any traceback by default.
 This behavior differs from WSGI, where the PEP-3333 specification defines the
 `wsgi.errors <https://peps.python.org/pep-3333/#environ-variables>`__ stream
@@ -1424,8 +1425,17 @@ This behavior differs from WSGI, where the PEP-3333 specification defines the
 Since there is no standardized way to log errors back to the ASGI server,
 the framework simply opts to log them using the ``falcon``
 :class:`logger <logging.Logger>`.
+As a well-behaved library, Falcon does not preconfigure any loggers since that
+might interfere with the user's logging setup.
 
-The easiest way to get started is configuring the root logger via
+Starting with Falcon :doc:`4.3 </changes/4.3.0>`, however, the framework no
+longer adds an instance of :class:`logging.NullHandler` to the ``falcon``
+logger, so error tracebacks may still reach ``sys.stderr`` via the
+:any:`logging.lastResort` handler (but it depends on the existing logging
+configuration of the ASGI server in question).
+
+If you are seeing an HTTP 500 error response without any corresponding
+traceback, the easiest way to get started is configuring the root logger via
 :func:`logging.basicConfig`:
 
 .. code:: python
@@ -1451,4 +1461,4 @@ By adding the above logging configuration, you should now see tracebacks logged
 to :any:`stderr <sys.stderr>` when accessing ``/things``.
 
 For additional details on this topic,
-please refer to :ref:`debugging_asgi_applications`.
+please refer to the ASGI tutorial: :ref:`debugging_asgi_applications`.

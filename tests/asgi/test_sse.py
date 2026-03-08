@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 
 import pytest
 
@@ -66,6 +67,12 @@ def test_single_event():
     assert result.text == ': ping\n\n'
 
 
+# TODO(vytas): Remove later during the CPython 3.15 dev cycle.
+#   See also: https://github.com/python/cpython/issues/143939.
+@pytest.mark.skipif(
+    sys.version_info[:4] == (3, 15, 0, 'alpha'),
+    reason='Raises "cannot reuse already awaited coroutine", CPython bug gh-143939',
+)
 def test_multiple_events():
     expected_result_text = (
         'data: ketchup\n'
@@ -151,6 +158,12 @@ def test_multiple_events():
     falcon.async_to_sync(_test)
 
 
+# TODO(vytas): Remove later during the CPython 3.15 dev cycle.
+#   See also: https://github.com/python/cpython/issues/143939.
+@pytest.mark.skipif(
+    sys.version_info[:4] == (3, 15, 0, 'alpha'),
+    reason='Raises "cannot reuse already awaited coroutine", CPython bug gh-143939',
+)
 def test_multiple_events_early_disconnect():
     class SomeResource:
         async def on_get(self, req, resp):

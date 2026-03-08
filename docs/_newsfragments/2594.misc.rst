@@ -1,0 +1,4 @@
+Falcon no longer adds an instance of :class:`logging.NullHandler` to the
+``falcon`` logger, so ASGI application tracebacks may still reach
+``sys.stderr`` via the :any:`logging.lastResort` handler in the absence of
+configuration (see also: :ref:`debugging_asgi_applications`).

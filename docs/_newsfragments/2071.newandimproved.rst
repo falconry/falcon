@@ -1,0 +1,9 @@
+A new router option, :attr:`~.CompiledRouterOptions.default_to_on_request`, was
+added for providing a default responder by implementing ``on_request()`` on
+resources (the new option is disabled by default). When enabled,
+``on_request()`` is used as the default responder for every unimplemented HTTP
+verb except ``on_options()`` (and the special ``on_websocket`` handler).
+
+When the option is disabled, or the ``on_request()`` method is not implemented,
+the default responder for
+:class:`"405 Method Not Allowed" <falcon.HTTPMethodNotAllowed>` is used.
