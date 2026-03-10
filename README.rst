@@ -1004,7 +1004,7 @@ limitations under the License.
 .. |Backer:TestMuAI| image:: https://falconframework.org/assets/testmu-ai-black.png
     :alt: TestMu AI
     :height: 60px
-    :target: https://www.testmu.ai/?utm_source=falcon&utm_medium=sponsor
+    :target: https://www.testmuai.com/?utm_medium=sponsor&utm_source=falcon
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px
