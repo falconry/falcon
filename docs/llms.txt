@@ -1,0 +1,64 @@
+# Falcon
+
+> Falcon is a minimalist ASGI/WSGI framework for building mission-critical REST APIs and microservices, with a focus on reliability, correctness, and performance at scale. Falcon encourages the REST architectural style, and tries to do as little as possible while remaining highly effective.
+
+Falcon supports CPython 3.9+ and PyPy 3.9+. It has native `asyncio` support via ASGI, as well as traditional WSGI support, and WebSocket support.
+
+## Docs
+
+- [Installation](https://falcon.readthedocs.io/en/stable/user/install.html): How to install Falcon
+- [Quickstart](https://falcon.readthedocs.io/en/stable/user/quickstart.html): Getting started with Falcon
+- [WSGI Tutorial](https://falcon.readthedocs.io/en/stable/user/tutorial.html): Step-by-step tutorial for building a WSGI app
+- [ASGI Tutorial](https://falcon.readthedocs.io/en/stable/user/tutorial-asgi.html): Step-by-step tutorial for building an ASGI app
+- [WebSocket Tutorial](https://falcon.readthedocs.io/en/stable/user/tutorial-websockets.html): Tutorial for WebSocket support
+- [FAQ](https://falcon.readthedocs.io/en/stable/user/faq.html): Frequently asked questions
+
+## API Reference
+
+- [Application](https://falcon.readthedocs.io/en/stable/api/app.html): The App class (ASGI and WSGI)
+- [Routing](https://falcon.readthedocs.io/en/stable/api/routing.html): URI routing, CompiledRouter, converters
+- [Request and Response](https://falcon.readthedocs.io/en/stable/api/request_and_response.html): Request, Response, and media handling
+- [Request and Response (WSGI)](https://falcon.readthedocs.io/en/stable/api/request_and_response_wsgi.html): WSGI-specific request/response classes
+- [Request and Response (ASGI)](https://falcon.readthedocs.io/en/stable/api/request_and_response_asgi.html): ASGI-specific request/response classes
+- [WebSocket](https://falcon.readthedocs.io/en/stable/api/websocket.html): WebSocket support
+- [Hooks](https://falcon.readthedocs.io/en/stable/api/hooks.html): Before and after hooks
+- [Middleware](https://falcon.readthedocs.io/en/stable/api/middleware.html): Middleware components
+- [Errors](https://falcon.readthedocs.io/en/stable/api/errors.html): Error handling and HTTP error classes
+- [Status Codes](https://falcon.readthedocs.io/en/stable/api/status.html): HTTP status code constants and utilities
+- [Media Handlers](https://falcon.readthedocs.io/en/stable/api/media.html): JSON, MessagePack, and custom media handlers
+- [Multipart](https://falcon.readthedocs.io/en/stable/api/multipart.html): Multipart form handling
+- [Cookies](https://falcon.readthedocs.io/en/stable/api/cookies.html): Cookie handling
+- [CORS](https://falcon.readthedocs.io/en/stable/api/cors.html): Cross-Origin Resource Sharing
+- [Redirects](https://falcon.readthedocs.io/en/stable/api/redirects.html): HTTP redirects
+- [Testing](https://falcon.readthedocs.io/en/stable/api/testing.html): Testing utilities and helpers
+- [Typing](https://falcon.readthedocs.io/en/stable/api/typing.html): Type annotations
+- [Utilities](https://falcon.readthedocs.io/en/stable/api/util.html): Utility functions
+- [Inspect](https://falcon.readthedocs.io/en/stable/api/inspect.html): Application inspection utilities
+
+## Recipes
+
+- [Pretty JSON](https://falcon.readthedocs.io/en/stable/user/recipes/pretty-json.html): Rendering pretty-printed JSON responses
+- [Request ID](https://falcon.readthedocs.io/en/stable/user/recipes/request-id.html): Generating unique request IDs
+- [Plain Text Handler](https://falcon.readthedocs.io/en/stable/user/recipes/plain-text-handler.html): Handling plain text request bodies
+- [Raw URL Path](https://falcon.readthedocs.io/en/stable/user/recipes/raw-url-path.html): Accessing the raw URL path
+- [Header Name Case](https://falcon.readthedocs.io/en/stable/user/recipes/header-name-case.html): Controlling header name casing
+- [Output CSV](https://falcon.readthedocs.io/en/stable/user/recipes/output-csv.html): Streaming CSV responses
+- [Multipart Mixed](https://falcon.readthedocs.io/en/stable/user/recipes/multipart-mixed.html): Handling multipart/mixed requests
+- [msgspec Integration](https://falcon.readthedocs.io/en/stable/user/recipes/msgspec-integration.html): Using msgspec for validation and serialization
+
+## Deployment
+
+- [Deployment Introduction](https://falcon.readthedocs.io/en/stable/deploy/intro.html): Overview of deploying Falcon apps
+- [Nginx + uWSGI](https://falcon.readthedocs.io/en/stable/deploy/nginx-uwsgi.html): Deploying with Nginx and uWSGI
+
+## Community
+
+- [Getting Help](https://falcon.readthedocs.io/en/stable/community/help.html): Where to get help
+- [Contributing](https://falcon.readthedocs.io/en/stable/community/contributing.html): How to contribute to Falcon
+- [Code of Conduct](https://falcon.readthedocs.io/en/stable/community/coc.html): Community code of conduct
+
+## Optional
+
+- [Changelog](https://falcon.readthedocs.io/en/stable/changes/index.html): Version history and release notes
+- [PyPI](https://pypi.org/project/falcon/): Falcon on the Python Package Index
+- [GitHub](https://github.com/falconry/falcon): Source code repository
