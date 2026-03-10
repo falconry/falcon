@@ -43,7 +43,7 @@ from typing import (
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
 # then we will need write tests and remove the "no cover" pragma.
-class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
+class CaseInsensitiveDict(MutableMapping[str, tuple[str, Any]]):  # pragma: no cover
     """A case-insensitive ``dict``-like object.
 
     Implements all methods and operations of
@@ -228,7 +228,7 @@ class Context:
     def update(self, items: dict[str, Any]) -> None:
         self.__dict__.update(items)
 
-    def values(self) -> ValuesView:
+    def values(self) -> ValuesView[Any]:
         return self.__dict__.values()
 
 
