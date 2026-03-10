@@ -36,7 +36,7 @@ def _header_property(header_name: str) -> Any:
     def fget(self: Request) -> str | None:
         try:
             # NOTE(vytas): Supporting ISO-8859-1 for historical reasons as per
-            #   RFC 7230, Section 3.2.4; and to strive for maximum
+            #   RFC 9110, Section 5.5; and to strive for maximum
             #   compatibility with WSGI.
             return self._asgi_headers[header_bytes].decode('latin1') or None
         except KeyError:
