@@ -592,12 +592,9 @@ class App(Generic[_ReqT, _RespT]):
 
             if (
                 self._cors_enable
-                and len(
-                    [
-                        mc
-                        for mc in self._unprepared_middleware + middleware
-                        if isinstance(mc, CORSMiddleware)
-                    ]
+                and sum(
+                    isinstance(mc, CORSMiddleware)
+                    for mc in self._unprepared_middleware + middleware
                 )
                 > 1
             ):
