@@ -926,7 +926,7 @@ def create_scope(
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). When the
+            format (see also :rfc:`9112` and :rfc:`9110`). When the
             request will include a body, the Content-Length header should be
             included in this list. Header names are not case-sensitive.
 
@@ -1069,7 +1069,7 @@ def create_scope_ws(
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). When the
+            format (see also :rfc:`9112` and :rfc:`9110`). When the
             request will include a body, the Content-Length header should be
             included in this list. Header names are not case-sensitive.
 
@@ -1166,7 +1166,7 @@ def create_environ(
             for an HTTP header. If desired, multiple header values may be
             combined into a single (*name*, *value*) pair by joining the values
             with a comma when the header in question supports the list
-            format (see also RFC 7230 and RFC 7231). Header names are not
+            format (see also :rfc:`9112` and :rfc:`9110`). Header names are not
             case-sensitive.
 
             Note:

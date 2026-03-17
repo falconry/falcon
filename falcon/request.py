@@ -493,7 +493,7 @@ class Request:
         header, both strong and weak, in the same order as listed in
         the header.
 
-        (See also: RFC 7232, Section 3.1)
+        (See also: :rfc:`9110`, Section 8.8.4)
         """  # noqa: D205
         # TODO(kgriffs): It may make sense at some point to create a
         #   header property generator that DRY's up the memoization
@@ -517,7 +517,7 @@ class Request:
         header, both strong and weak, in the same order as listed in
         the header.
 
-        (See also: RFC 7232, Section 3.2)
+        (See also: :rfc:`9110`, Section 8.8.5)
         """  # noqa: D205
         if self._cached_if_none_match is _UNSET:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
@@ -604,9 +604,9 @@ class Request:
             return first_num, last_num
 
         except ValueError:
-            href = 'https://tools.ietf.org/html/rfc7233'
+            href = 'https://tools.ietf.org/html/rfc9110'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = 'It must be a range formatted according to RFC 7233.'
+            msg = 'It must be a range formatted according to RFC 9110.'
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
 
     @property
@@ -1339,7 +1339,7 @@ class Request:
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
             obs_date (bool): Support obs-date formats according to
-                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
+                RFC 9110, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
                 (default ``False``).
 
         Returns:
@@ -1363,7 +1363,7 @@ class Request:
             else:
                 return None
         except ValueError:
-            msg = 'It must be formatted according to RFC 7231, Section 7.1.1.1'
+            msg = 'It must be formatted according to RFC 9110, Section 5.6.7'
             raise errors.HTTPInvalidHeader(msg, header)
 
     def get_cookie_values(self, name: str) -> list[str] | None:

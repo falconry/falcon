@@ -237,7 +237,7 @@ class ETag(str):
 
     This class is simply a subclass of ``str`` with a few helper methods and
     an extra attribute to indicate whether the entity-tag is weak or strong. The
-    value of the string is equivalent to what RFC 7232 calls an "opaque-tag",
+    value of the string is equivalent to what RFC 9110 calls an "opaque-tag",
     i.e. an entity-tag sans quotes and the weakness indicator.
 
     Note:
@@ -261,7 +261,7 @@ class ETag(str):
             resp.etag = content_etag
             resp.status = falcon.HTTP_200
 
-    (See also: RFC 7232)
+    (See also: :rfc:`9110`)
     """
 
     is_weak: bool = False
@@ -273,7 +273,7 @@ class ETag(str):
         Two entity-tags are equivalent if both are not weak and their
         opaque-tags match character-by-character.
 
-        (See also: RFC 7232, Section 2.3.2)
+        (See also: :rfc:`9110`, Section 8.8.3.2)
 
         Arguments:
             other (ETag): The other :class:`~.ETag` to which you are comparing
@@ -289,7 +289,7 @@ class ETag(str):
     def dumps(self) -> str:
         """Serialize the ETag to a string suitable for use in a precondition header.
 
-        (See also: RFC 7232, Section 2.3)
+        (See also: :rfc:`9110`, Section 8.8.3)
 
         Returns:
             str: An opaque quoted string, possibly prefixed by a weakness
@@ -313,11 +313,11 @@ class ETag(str):
             entity-tag. It can not be used to parse a comma-separated list of
             values.
 
-        (See also: RFC 7232, Section 2.3)
+        (See also: :rfc:`9110`, Section 8.8.3)
 
         Arguments:
             etag_str (str): An ASCII string representing a single entity-tag,
-                as defined by RFC 7232.
+                as defined by RFC 9110.
 
         Returns:
             ETag: An instance of `~.ETag` representing the parsed entity-tag.

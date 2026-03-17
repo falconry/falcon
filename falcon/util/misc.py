@@ -166,7 +166,7 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
     Keyword Arguments:
         obs_date (bool): Support obs-date formats according to
-            RFC 7231, e.g.:
+            RFC 9110, e.g.:
             "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
 
     Returns:

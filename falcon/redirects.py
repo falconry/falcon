@@ -36,7 +36,7 @@ class HTTPMovedPermanently(HTTPStatus):
         behavior is undesired, the 308 (Permanent Redirect) status code
         can be used instead.
 
-    (See also: RFC 7231, Section 6.4.2)
+    (See also: :rfc:`9110`, Section 6.4.2)
 
     Args:
         location (str): URI to provide as the Location header in the
@@ -65,7 +65,7 @@ class HTTPFound(HTTPStatus):
         behavior is undesired, the 307 (Temporary Redirect) status code
         can be used instead.
 
-    (See also: RFC 7231, Section 6.4.3)
+    (See also: :rfc:`9110`, Section 6.4.3)
 
     Args:
         location (str): URI to provide as the Location header in the
@@ -99,7 +99,7 @@ class HTTPSeeOther(HTTPStatus):
         The new URI in the Location header field is not considered
         equivalent to the effective request URI.
 
-    (See also: RFC 7231, Section 6.4.4)
+    (See also: :rfc:`9110`, Section 6.4.4)
 
     Args:
         location (str): URI to provide as the Location header in the
