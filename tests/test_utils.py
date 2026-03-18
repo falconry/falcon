@@ -673,6 +673,23 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('Document.pdf', -11)
 
+    @pytest.mark.parametrize(
+        'filename,max_length,expected',
+        [
+            ('con', None, '_con'),
+            ('nul.txt', None, '_nul.txt'),
+            ('CoM1.log', None, '_CoM1.log'),
+            ('lpt9', None, '_lpt9'),
+            ('con.txt', 7, '_co.txt'),
+            ('conduit.txt', None, 'conduit.txt'),
+        ],
+    )
+    def test_secure_filename_windows_reserved_names(
+        self, monkeypatch, filename, max_length, expected
+    ):
+        monkeypatch.setattr(misc.os, 'name', 'nt')
+        assert misc.secure_filename(filename, max_length) == expected
+
     def test_misc_isascii(self):
         with pytest.warns(deprecation.DeprecatedWarning):
             assert misc.isascii('foobar')
