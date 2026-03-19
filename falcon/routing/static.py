@@ -223,12 +223,19 @@ class StaticRoute:
             return path.startswith(self._prefix)
         return path.startswith(self._prefix) or path == self._prefix[:-1]
 
+    _ALLOWED_METHODS: ClassVar[frozenset[str]] = frozenset(
+        {'GET', 'HEAD', 'OPTIONS'}
+    )
+
     def __call__(self, req: Request, resp: Response, **kw: Any) -> None:
         """Resource responder for this route."""
         assert not kw
+
+        if req.method not in self._ALLOWED_METHODS:
+            raise falcon.HTTPMethodNotAllowed(sorted(self._ALLOWED_METHODS))
+
         if req.method == 'OPTIONS':
-            # it's likely a CORS request. Set the allow header to the appropriate value.
-            resp.set_header('Allow', 'GET')
+            resp.set_header('Allow', ', '.join(sorted(self._ALLOWED_METHODS)))
             resp.set_header('Content-Length', '0')
             return
 
@@ -279,9 +286,25 @@ class StaticRoute:
         last_modified = last_modified.replace(microsecond=0)
         resp.last_modified = last_modified
 
+        suffix = os.path.splitext(file_path)[1]
+        resp.content_type = resp.options.static_media_types.get(
+            suffix, 'application/octet-stream'
+        )
+        resp.accept_ranges = 'bytes'
+
+        if self._downloadable:
+            resp.downloadable_as = os.path.basename(file_path)
+
         if _is_not_modified(req, etag, last_modified):
             fh.close()
             resp.status = falcon.HTTP_304
+            return
+
+        if req.method == 'HEAD':
+            # NOTE(alexchenai): For HEAD requests, we set headers but do not
+            #   open a file stream, as the response must not include a body.
+            resp.content_length = st.st_size
+            fh.close()
             return
 
         req_range = req.range if req.range_unit == 'bytes' else None
@@ -292,14 +315,7 @@ class StaticRoute:
             raise falcon.HTTPNotFound()
 
         resp.set_stream(stream, length)
-        suffix = os.path.splitext(file_path)[1]
-        resp.content_type = resp.options.static_media_types.get(
-            suffix, 'application/octet-stream'
-        )
-        resp.accept_ranges = 'bytes'
 
-        if self._downloadable:
-            resp.downloadable_as = os.path.basename(file_path)
         if content_range:
             resp.status = falcon.HTTP_206
             resp.content_range = content_range

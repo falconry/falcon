@@ -757,3 +757,68 @@ def test_if_none_match_precedence(client, patch_open):
     )
     assert resp2.status == falcon.HTTP_304
     assert resp2.text == ''
+
+
+def test_head_request(client, patch_open):
+    content = b'Hello, World!'
+    patch_open(content=content)
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_head(path='/static/foo/bar.txt')
+    assert resp.status == falcon.HTTP_200
+    assert resp.headers.get('Content-Type') is not None
+    assert int(resp.headers['Content-Length']) == len(content)
+    assert resp.headers.get('ETag') is not None
+    assert resp.headers.get('Accept-Ranges') == 'bytes'
+    # HEAD response must not include a body
+    assert resp.content == b''
+
+
+def test_head_request_not_modified(client, patch_open):
+    mtime = (1736617934, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    # First, get the ETag
+    resp1 = client.simulate_request(path='/assets/css/main.css')
+    etag = resp1.headers['ETag']
+
+    # HEAD with matching ETag should return 304
+    resp2 = client.simulate_head(
+        path='/assets/css/main.css',
+        headers={'If-None-Match': etag},
+    )
+    assert resp2.status == falcon.HTTP_304
+    assert resp2.content == b''
+
+
+@pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+def test_method_not_allowed(client, patch_open, method):
+    patch_open()
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_request(
+        method=method,
+        path='/static/foo/bar.txt',
+    )
+    assert resp.status == falcon.HTTP_405
+    allow = resp.headers.get('Allow')
+    assert allow is not None
+    allowed_methods = {m.strip() for m in allow.split(',')}
+    assert allowed_methods == {'GET', 'HEAD', 'OPTIONS'}
+
+
+def test_options_returns_all_allowed_methods(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_options(path='/static/foo/bar.txt')
+    assert resp.status_code == 200
+    allow = resp.headers.get('Allow')
+    assert allow is not None
+    allowed_methods = {m.strip() for m in allow.split(',')}
+    assert allowed_methods == {'GET', 'HEAD', 'OPTIONS'}

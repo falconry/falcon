@@ -1,0 +1,9 @@
+Static routes now support ``HEAD`` requests properly. A ``HEAD`` request
+returns all the same headers as a ``GET`` request (``Content-Type``,
+``Content-Length``, ``ETag``, etc.) but does not open or stream file
+contents.
+
+Additionally, static routes now block unsupported HTTP methods (such as
+``POST``, ``PUT``, ``PATCH``, and ``DELETE``) with ``405 Method Not
+Allowed``, and the ``Allow`` header in ``OPTIONS`` responses now correctly
+lists all supported methods (``GET``, ``HEAD``, ``OPTIONS``).
