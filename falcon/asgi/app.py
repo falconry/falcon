@@ -1256,7 +1256,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                     # NOTE(vytas): We could add the ws=None parameter to the
                     #   default responders, but let's keep it simple for now,
                     #   and skip the warning part.
-                    if on_websocket not in (
+                    if on_websocket not in (  # type: ignore[comparison-overlap]
                         cls._default_responder_bad_request,
                         cls._default_responder_path_not_found,
                     ):
