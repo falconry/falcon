@@ -2392,7 +2392,7 @@ class Request:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
 
         Keyword Args:
-            media_type (str|None): Media type to use for deserialization. If
+            media_type (str | None): Media type to use for deserialization. If
                 ``None``, falls back to the app's ``default_media_type``.
             required (bool): Set to ``True`` to raise ``HTTPBadRequest``
                 instead of returning ``None`` when the parameter is not
@@ -2419,13 +2419,16 @@ class Request:
 
         # Resolve media handler
         if media_type is None:
+            # Fall back to JSON handler when requested media is JSON/
             media_type = self.options.default_media_type
 
         handler, _, _ = self.options.media_handlers._resolve(
             media_type, self.options.default_media_type, raise_not_found=False
         )
         if handler is None:
-            # Fall back to JSON handler when requested media is JSON
+            # NOTE(mannxo): Substring match is intentional; covers variants
+            # like 'application/json; charset=utf-8' and is good enough in
+            # practice until a stricter check is warranted.
             if media_type and MEDIA_JSON in media_type:
                 handler = _DEFAULT_JSON_HANDLER
             else:
@@ -2433,7 +2436,8 @@ class Request:
                 raise errors.HTTPInvalidParam(msg, name)
 
         try:
-            # Handlers accept a stream; reuse pattern from get_param_as_json
+            # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
+            # interface is refactored. Possibly using the WS interface?
             val = handler.deserialize(
                 BytesIO(param_value.encode()), media_type, len(param_value)
             )
