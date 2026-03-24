@@ -31,7 +31,7 @@ from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
 
-class TestCase(unittest.TestCase, TestClient):
+class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
