@@ -15,7 +15,7 @@ class Emitter:
 
     def __init__(self) -> None:
         self._done: bool = False
-        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue()
+        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue(maxsize=100)
 
     async def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
         try:
@@ -36,7 +36,10 @@ class Emitter:
 
     async def enqueue(self, message: str) -> None:
         event = SSEvent(text=message, event_id=str(uuid.uuid4()))
-        await self._queue.put(event)
+        try:
+            self._queue.put_nowait(event)
+        except asyncio.QueueFull:
+            pass
 
     @property
     def done(self) -> bool:
