@@ -63,6 +63,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
             See also:
             https://wicg.github.io/private-network-access/#private-network-request-heading
     """
+    allow_origins: str | frozenset[str]
 
     def __init__(
         self,
@@ -72,7 +73,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
         allow_private_network: bool = False,
     ):
         if allow_origins == '*':
-            self.allow_origins: str | frozenset[str] = allow_origins
+            self.allow_origins = allow_origins
         else:
             if isinstance(allow_origins, str):
                 allow_origins = [allow_origins]
