@@ -64,6 +64,8 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
             https://wicg.github.io/private-network-access/#private-network-request-heading
     """
 
+    allow_origins: str | frozenset[str]
+
     def __init__(
         self,
         allow_origins: str | Iterable[str] = '*',
