@@ -1,5 +1,5 @@
 # Server Specific Configurations
-server = {'port': '8080', 'host': '0.0.0.0'}
+server = {'port': '8080', 'host': '127.0.0.1'}
 
 # Pecan Application Configurations
 app = {
