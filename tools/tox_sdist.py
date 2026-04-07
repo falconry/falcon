@@ -28,6 +28,11 @@ def build_sdist():
 
 def extract_sdist(archive, target):
     with tarfile.open(archive) as targz:
+        resolved_target = target.resolve()
+        for member in targz.getmembers():
+            member_path = (resolved_target / member.name).resolve()
+            if not member_path.is_relative_to(resolved_target):
+                raise RuntimeError(f'Path traversal detected in tar: {member.name}')
         targz.extractall(target)
 
     content = target / archive.with_suffix('').stem
