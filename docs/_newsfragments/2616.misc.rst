@@ -1,0 +1,2 @@
+Address typing failures in :class:`~falcon.middleware.CORSMiddleware` and
+:class:`~falcon.Response` introduced by the Mypy 1.20 upgrade.

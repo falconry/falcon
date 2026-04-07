@@ -72,7 +72,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse):
         allow_private_network: bool = False,
     ):
         if allow_origins == '*':
-            self.allow_origins = allow_origins
+            self.allow_origins: str | frozenset[str] = allow_origins
         else:
             if isinstance(allow_origins, str):
                 allow_origins = [allow_origins]
