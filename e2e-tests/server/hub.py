@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import typing
 import uuid
 
@@ -9,13 +10,19 @@ from falcon.asgi import Response
 from falcon.asgi import SSEvent
 from falcon.asgi import WebSocket
 
+logger = logging.getLogger(__name__)
+
 
 class Emitter:
     POLL_TIMEOUT = 3.0
 
     def __init__(self) -> None:
         self._done: bool = False
-        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue(maxsize=100)
+        # NOTE: Bounded queue prevents unbounded memory growth when SSE
+        # consumers stop reading but remain connected. In production systems,
+        # this protects against memory leaks; here it serves as a safeguard
+        # for the test harness and demonstrates safe concurrency patterns.
+        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue(maxsize=256)
 
     async def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
         try:
@@ -39,7 +46,14 @@ class Emitter:
         try:
             self._queue.put_nowait(event)
         except asyncio.QueueFull:
-            pass
+            # NOTE(vytas): Drop message and log the incident.
+            # In production, consider implementing backpressure or
+            # terminating the stalled connection.
+            logger.warning(
+                "SSE emitter queue full (maxsize=%d), dropping message. "
+                "This indicates a slow or stalled consumer.",
+                self._queue.maxsize,
+            )
 
     @property
     def done(self) -> bool:
