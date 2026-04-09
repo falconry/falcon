@@ -18,10 +18,10 @@ class Emitter:
 
     def __init__(self) -> None:
         self._done: bool = False
-        # NOTE: Bounded queue prevents unbounded memory growth when SSE
-        # consumers stop reading but remain connected. In production systems,
-        # this protects against memory leaks; here it serves as a safeguard
-        # for the test harness and demonstrates safe concurrency patterns.
+        # NOTE(tang-vu): Bounded queue prevents unbounded memory growth when
+        # SSE consumers stop reading but remain connected. While unlikely in
+        # a test harness, this guards against memory leaks in long-running
+        # scenarios and demonstrates safe concurrency patterns.
         self._queue: asyncio.Queue[SSEvent] = asyncio.Queue(maxsize=256)
 
     async def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
@@ -46,9 +46,7 @@ class Emitter:
         try:
             self._queue.put_nowait(event)
         except asyncio.QueueFull:
-            # NOTE(vytas): Drop message and log the incident.
-            # In production, consider implementing backpressure or
-            # terminating the stalled connection.
+            # NOTE(tang-vu): Log the incident for diagnostics.
             logger.warning(
                 "SSE emitter queue full (maxsize=%d), dropping message. "
                 "This indicates a slow or stalled consumer.",
