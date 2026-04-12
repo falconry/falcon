@@ -4,23 +4,42 @@
 html[data-theme=light] {
   --pst-color-borders: rgb(206, 212, 218);
   --pst-color-primary: var(--pst-color-text-base);
-  /* Darken Falconry orange to meet WCAG 2.1 AA contrast */
+
+  /* Darkened Falcon orange for accessibility */
   --pst-color-secondary: rgb(169, 103, 9);
+
+  /* Ensure links follow theme color */
   --pst-color-link: var(--pst-color-secondary);
+
   --pst-color-success: rgb(165, 205, 57);
   --pst-color-admonition-tip: var(--pst-color-success);
   --pst-color-inline-code: var(--pst-color-text-base);
   --pst-color-inline-code-links: var(--pst-color-secondary);
+
   --pst-color-surface: rgb(255, 250, 234);
 }
 
 html[data-theme=dark] {
   --pst-color-primary: var(--pst-color-text-base);
+
+  /* Slightly brighter orange for dark mode */
   --pst-color-secondary: rgb(240, 173, 78);
+
+  /* Ensure links follow theme color */
   --pst-color-link: var(--pst-color-secondary);
+
   --pst-color-inline-code: var(--pst-color-text-base);
   --pst-color-inline-code-links: var(--pst-color-secondary);
+
   --pst-color-background: rgb(8, 6, 2);
   --pst-color-on-background: rgb(39, 37, 35);
   --pst-color-surface: rgb(31, 31, 31);
+}
+
+/* --- Fix after PyData Sphinx theme upgrade --- */
+
+/* Fix anchor highlight issue when navigating via links */
+:target {
+  scroll-margin-top: 80px;
+  background-color: transparent;
 }
