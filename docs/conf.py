@@ -1,4 +1,4 @@
-# Copyright 2014-2026 by Falcon Contributors.
+html_js_files = ['custom-icons.js']# Copyright 2014-2026 by Falcon Contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -141,7 +141,6 @@ autodoc_type_aliases = {
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_css_files = ['custom.css']
-html_js_files = ['custom-icons.js']
 html_favicon = '_static/img/favicon.ico'
 html_logo = '_static/img/logo.svg'
 html_static_path = ['_static']
