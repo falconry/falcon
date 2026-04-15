@@ -1,0 +1,3 @@
+On Windows, :func:`falcon.secure_filename` now escapes reserved device names
+(``CON``, ``NUL``, ``COM1``, etc.) by prefixing the sanitized value with an
+underscore.
