@@ -342,7 +342,9 @@ class ResourceAwareGameHook:
     VALUES = ('rock', 'scissors', 'paper')
 
     @classmethod
-    def __call__(cls, req: wsgi.Request, resp: wsgi.Response, resource: Resource):
+    def __call__(
+        cls, req: wsgi.Request, resp: wsgi.Response, resource: Resource
+    ) -> None:
         assert resource
         resource = typing.cast(HandGame, resource)
         assert resource.seed in cls.VALUES
