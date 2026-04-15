@@ -2369,9 +2369,9 @@ class Request:
                 the value could not be parsed as JSON.
         """
 
-        # Delegate to the more general get_param_as_media implementation
+        # NOTE(mannxo): Delegate to the more general get_param_as_media implementation.
         return self.get_param_as_media(
-            name=name,
+            name,
             media_type=MEDIA_JSON,
             required=required,
             store=store,
@@ -2419,7 +2419,7 @@ class Request:
 
         # Resolve media handler
         if media_type is None:
-            # Fall back to JSON handler when requested media is JSON/
+            # Fall back to the app's default media type.
             media_type = self.options.default_media_type
 
         handler, _, _ = self.options.media_handlers._resolve(
@@ -2427,23 +2427,25 @@ class Request:
         )
         if handler is None:
             # NOTE(mannxo): Substring match is intentional; covers variants
-            # like 'application/json; charset=utf-8' and is good enough in
-            # practice until a stricter check is warranted.
+            #   like 'application/json; charset=utf-8' and is good enough in
+            #   practice until a stricter check is warranted.
             if media_type and MEDIA_JSON in media_type:
                 handler = _DEFAULT_JSON_HANDLER
             else:
-                msg = f'No media handler for "{media_type}"'
-                raise errors.HTTPInvalidParam(msg, name)
+                raise errors.HTTPInternalServerError(
+                    title=f'No media handler exists for "{media_type}"'
+                )
 
         try:
             # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
-            # interface is refactored. Possibly using the WS interface?
+            #   interface is refactored. Possibly using the WS interface?
             val = handler.deserialize(
                 BytesIO(param_value.encode()), media_type, len(param_value)
             )
         except errors.HTTPBadRequest:
-            msg = 'It could not be parsed as the requested media type.'
-            raise errors.HTTPInvalidParam(msg, name)
+            raise errors.HTTPInvalidParam(
+                f'It could not be deserialized as "{media_type}".', name
+            )
 
         if store is not None:
             store[name] = val

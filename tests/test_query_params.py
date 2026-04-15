@@ -7,7 +7,9 @@ from uuid import UUID
 import pytest
 
 import falcon
+from falcon.errors import HTTPInternalServerError
 from falcon.errors import HTTPInvalidParam
+from falcon.errors import MediaMalformedError
 import falcon.testing as testing
 from falcon.util import deprecation
 
@@ -39,6 +41,11 @@ class Resource(testing.SimpleTestResource):
         pass
 
 
+@pytest.fixture(scope='session')
+def yaml():
+    return pytest.importorskip('yaml')
+
+
 @pytest.fixture
 def resource():
     return Resource()
@@ -52,6 +59,18 @@ def client(asgi, util):
             app.req_options.auto_parse_form_urlencoded = True
 
     return testing.TestClient(app)
+
+
+@pytest.fixture
+def yaml_handler(yaml):
+    class YAMLHandler:
+        def deserialize(self, stream, content_type, content_length):
+            try:
+                return yaml.safe_load(stream)
+            except ValueError as ex:
+                raise MediaMalformedError('YAML') from ex
+
+    return YAMLHandler()
 
 
 def simulate_request_get_query_params(client, path, query_string, **kwargs):
@@ -990,9 +1009,7 @@ class TestQueryParams:
 
     def test_get_param_as_media_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        payload_dict = 'foobar'
-        query_string = f'payload={payload_dict}'
-        simulate_request(client=client, path='/', query_string=query_string)
+        simulate_request(client=client, path='/', query_string='payload=foobar')
         req = resource.captured_req
         with pytest.raises(HTTPInvalidParam):
             req.get_param_as_media('payload', media_type=falcon.MEDIA_JSON)
@@ -1030,8 +1047,42 @@ class TestQueryParams:
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         # Use a media type that won't have a handler and doesn't contain 'json'
-        with pytest.raises(HTTPInvalidParam):
+        with pytest.raises(HTTPInternalServerError):
             req.get_param_as_media('payload', media_type='application/xml')
+
+    def test_get_param_as_media_yaml(
+        self, simulate_request, client, resource, yaml_handler
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.media_handlers[falcon.MEDIA_YAML] = yaml_handler
+        simulate_request(client=client, path='/', query_string='data={k1:+1,k2:+true}')
+        req = resource.captured_req
+
+        result = req.get_param_as_media('data', media_type=falcon.MEDIA_YAML)
+        assert result == {'k1': 1, 'k2': True}
+
+    def test_get_param_as_media_default_yaml(
+        self, simulate_request, client, resource, yaml_handler
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.default_media_type = falcon.MEDIA_YAML
+        client.app.req_options.media_handlers[falcon.MEDIA_YAML] = yaml_handler
+        simulate_request(client=client, path='/', query_string='data={k1:+1,k2:+true}')
+        req = resource.captured_req
+
+        result = req.get_param_as_media('data')
+        assert result == {'k1': 1, 'k2': True}
+
+    def test_get_param_as_media_no_default_handler(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.default_media_type = falcon.MEDIA_YAML
+        simulate_request(client=client, path='/', query_string='data={k1:+1,k2:+true}')
+        req = resource.captured_req
+
+        with pytest.raises(HTTPInternalServerError):
+            req.get_param_as_media('data')
 
     def test_has_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
