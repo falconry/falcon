@@ -4,4 +4,3 @@ deserializes a single query-string parameter using the configured media
 handlers. The helper accepts an optional ``media_type`` (which falls back
 to the app's ``default_media_type``), can store the parsed value into a
 provided mapping, and raises ``HTTPInvalidParam`` on parse errors.
-
