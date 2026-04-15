@@ -155,15 +155,13 @@ class ASGIRequestEventEmitter:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        body = memoryview(body)
-
         if disconnect_at is None:
             disconnect_at = time.time() + 30
 
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body: memoryview | None = body
+        self._body: memoryview | None = memoryview(body)
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
@@ -1372,7 +1370,7 @@ def redirected(
     """Redirect stdout or stderr temporarily.
 
     For instance, this helper can be used to capture output from Falcon
-    reources under tests::
+    resources under tests::
 
         import io
 

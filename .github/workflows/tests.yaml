@@ -62,7 +62,7 @@ jobs:
           - env: py314_cython
             python-version: "3.14"
           - env: py315
-            python-version: "3.15.0-alpha.1 - 3.15.0"
+            python-version: "3.15.0-alpha.3 - 3.15.0"
           - env: py312_nocover
             os: macos-latest
             platform-label: ' (macos)'
@@ -119,7 +119,7 @@ jobs:
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         if: ${{ matrix.tox.coverage }}
         with:
           env_vars: PYTHON

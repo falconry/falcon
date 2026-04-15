@@ -84,7 +84,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-|Backer:LambdaTest| |Backer:GovCert| |Backer:Sentry|
+|Backer:TestMuAI| |Backer:GovCert| |Backer:Sentry|
 
 Has Falcon helped you make an awesome app? Show your support today with a
 one-time donation or by becoming a patron.
@@ -975,7 +975,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2025 by Individual and corporate contributors as
+Copyright 2013-2026 by Individual and corporate contributors as
 noted in the individual source files.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -1001,10 +1001,10 @@ limitations under the License.
     :target: https://pypi.org/project/falcon/
 .. |Python versions| image:: https://img.shields.io/pypi/pyversions/falcon.svg
     :target: https://pypi.org/project/falcon/
-.. |Backer:LambdaTest| image:: https://falconframework.org/assets/lambdatest.png
-    :alt: LambdaTest
-    :height: 64px
-    :target: https://www.lambdatest.com/?utm_source=falcon&utm_medium=sponsor
+.. |Backer:TestMuAI| image:: https://falconframework.org/assets/testmu-ai-black.png
+    :alt: TestMu AI
+    :height: 60px
+    :target: https://www.testmuai.com/?utm_medium=sponsor&utm_source=falcon
 .. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
     :alt: CERT Gouvernemental Luxembourg
     :height: 60px

@@ -86,7 +86,15 @@ exclude = [
     "falcon/bench",
     "falcon/cmd",
 ]
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
 disallow_untyped_defs = true
+extra_checks = true
+strict_bytes = true
+strict_equality = true
+warn_unused_configs = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
@@ -115,37 +123,37 @@ module = [
 ignore_missing_imports = true
 
 [tool.towncrier]
-    package = "falcon"
-    package_dir = ""
-    filename = "docs/changes/4.3.0.rst"
-    directory = "docs/_newsfragments"
-    issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
+package = "falcon"
+package_dir = ""
+filename = "docs/changes/4.3.0.rst"
+directory = "docs/_newsfragments"
+issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
-    # TODO(vytas): title_format = false seems to have no effect in towncrier==21.3.0.
-    #   For now, we just have to remember to check the rendered changelog, and,
-    #   if needed, remove the unwanted auto-generated title.
-    #   See also: https://github.com/twisted/towncrier/issues/345.
-    title_format = false
+# TODO(vytas): title_format = false seems to have no effect in towncrier==21.3.0.
+#   For now, we just have to remember to check the rendered changelog, and,
+#   if needed, remove the unwanted auto-generated title.
+#   See also: https://github.com/twisted/towncrier/issues/345.
+title_format = false
 
-    [[tool.towncrier.type]]
-        directory = "breakingchange"
-        name = "Breaking Changes"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "breakingchange"
+name = "Breaking Changes"
+showcontent = true
 
-    [[tool.towncrier.type]]
-        directory = "newandimproved"
-        name = "New & Improved"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "newandimproved"
+name = "New & Improved"
+showcontent = true
 
-    [[tool.towncrier.type]]
-        directory = "bugfix"
-        name = "Fixed"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Fixed"
+showcontent = true
 
-    [[tool.towncrier.type]]
-        directory = "misc"
-        name = "Misc"
-        showcontent = true
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Misc"
+showcontent = true
 
 [tool.black]
 # this is kept to avoid reformatting all the code if one were to

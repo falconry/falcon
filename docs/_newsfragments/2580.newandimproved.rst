@@ -1,0 +1,4 @@
+A new request property, :attr:`req.last_event_id <falcon.Request.last_event_id>`,
+was added to provide convenient access to the ``Last-Event-ID`` header.
+This header is commonly sent by clients when reconnecting to a
+:attr:`Server-Sent Events <falcon.asgi.Response.sse>` stream.

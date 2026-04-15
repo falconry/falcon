@@ -1,4 +1,3 @@
-import sys
 import types
 import unittest.mock
 
@@ -213,9 +212,6 @@ class TestRequestIDContext:
         assert response.headers['X-Request-ID'] == response.json['request_id']
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason='this recipe requires Python 3.9+'
-)
 class TestMsgspec:
     @pytest.fixture(scope='class', autouse=True)
     def msgspec(self):

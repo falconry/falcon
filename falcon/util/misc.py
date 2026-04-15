@@ -30,6 +30,7 @@ import datetime
 import functools
 import http
 import inspect
+import os
 import os.path
 import re
 from typing import Any, Callable
@@ -65,6 +66,18 @@ __all__ = (
 _DEFAULT_HTTP_REASON = 'Unknown'
 
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
+_WINDOWS_RESERVED_FILENAMES = frozenset(
+    {
+        'CON',
+        'PRN',
+        'AUX',
+        'NUL',
+        'CONIN$',
+        'CONOUT$',
+        *(f'COM{i}' for i in range(1, 10)),
+        *(f'LPT{i}' for i in range(1, 10)),
+    }
+)
 
 _UTC_TIMEZONE = datetime.timezone.utc
 
@@ -372,6 +385,10 @@ def secure_filename(filename: str, max_length: int | None = None) -> str:
         >>> secure_filename('Ångström unit physics.pdf', max_length=19)
         'A_ngstro_m_unit.pdf'
 
+    .. versionchanged:: 4.3
+        Reserved Windows device filenames are escaped with a leading
+        underscore (``_``) when running on Windows.
+
     Args:
         filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
@@ -396,6 +413,13 @@ def secure_filename(filename: str, max_length: int | None = None) -> str:
         filename = filename.replace('.', '_', 1)
 
     filename = _UNSAFE_CHARS.sub('_', filename)
+
+    if (
+        os.name == 'nt'
+        and filename.partition('.')[0].rstrip(' ').upper()
+        in _WINDOWS_RESERVED_FILENAMES
+    ):
+        filename = '_' + filename
 
     if max_length and len(filename) > max_length:
         root, ext = os.path.splitext(filename)
