@@ -1,7 +1,7 @@
 doc2dash
 falconry-pygments-theme >= 0.2.0
 myst-parser
-pydata-sphinx-theme
+pydata-sphinx-theme < 0.17.0
 PyYAML
 Sphinx
 sphinx-copybutton
