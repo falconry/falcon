@@ -1,1 +1,5 @@
-New method :func:`falcon.Request.get_param_as_dict` has been added
+A new :meth:`~falcon.Request.get_param_as_dict` method was added to
+:class:`~falcon.Request` and :class:`~falcon.asgi.Request` that retrieves a
+query parameter as a ``dict``. Two input formats are supported: an alternating
+key/value list (e.g. ``param=k1,v1,k2,v2``) and, when ``deep_object`` is set,
+the OpenAPI v3 ``deepObject`` style (e.g. ``param[k1]=v1&param[k2]=v2``).

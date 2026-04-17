@@ -9,6 +9,7 @@ import pytest
 import falcon
 from falcon.errors import HTTPInternalServerError
 from falcon.errors import HTTPInvalidParam
+from falcon.errors import HTTPMissingParam
 from falcon.errors import MediaMalformedError
 import falcon.testing as testing
 from falcon.util import deprecation
@@ -1083,6 +1084,152 @@ class TestQueryParams:
 
         with pytest.raises(HTTPInternalServerError):
             req.get_param_as_media('data')
+
+    def test_get_param_as_dict_deep_object(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'user[name]=Ash&user[age]=36'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+
+        assert req.get_param_as_dict('user', deep_object=True) == {
+            'name': 'Ash',
+            'age': '36',
+        }
+
+    def test_get_param_as_dict_deep_object_multiple_objects(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        query_string = 'user[name]=Ash&user[age]=36&other[name]=Misty&other[age]=10'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+
+        assert req.get_param_as_dict('user', deep_object=True) == {
+            'name': 'Ash',
+            'age': '36',
+        }
+        assert req.get_param_as_dict('other', deep_object=True) == {
+            'name': 'Misty',
+            'age': '10',
+        }
+
+    def test_get_param_as_dict_deep_object_empty_value(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        simulate_request(client=client, path='/', query_string='user[empty]=')
+        req = resource.captured_req
+
+        assert req.get_param_as_dict('user', deep_object=True) == {'empty': ''}
+
+    def test_get_param_as_dict_deep_object_repeated_key(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        # NOTE: A repeated deep-object key yields a list internally; only
+        #   the first value is kept.
+        query_string = 'user[name]=Bond&user[name]=Blofeld&user[id]=007'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+
+        assert req.get_param_as_dict('user', deep_object=True) == {
+            'name': 'Bond',
+            'id': '007',
+        }
+
+    def test_get_param_as_dict_deep_object_skips_non_matching(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        query_string = 'user[name]=Ash&weird%5D=looking&user_agent=test'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+
+        assert req.get_param_as_dict('user', deep_object=True) == {'name': 'Ash'}
+
+    def test_get_param_as_dict_deep_object_missing_required(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        simulate_request(client=client, path='/', query_string='')
+        req = resource.captured_req
+
+        with pytest.raises(HTTPMissingParam):
+            req.get_param_as_dict('user', deep_object=True, required=True)
+
+    def test_get_param_as_dict_deep_object_default(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        simulate_request(client=client, path='/', query_string='')
+        req = resource.captured_req
+
+        default = {'fallback': '1'}
+        assert (
+            req.get_param_as_dict('user', deep_object=True, default=default) is default
+        )
+
+    def test_get_param_as_dict_deep_object_store(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        simulate_request(
+            client=client, path='/', query_string='user[name]=Ash&user[age]=36'
+        )
+        req = resource.captured_req
+
+        store: dict = {}
+        result = req.get_param_as_dict('user', deep_object=True, store=store)
+        assert result == {'name': 'Ash', 'age': '36'}
+        assert store == {'user': {'name': 'Ash', 'age': '36'}}
+
+    def test_get_param_as_dict_pairs(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'pair=a&pair=1&pair=b&pair=2'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+
+        assert req.get_param_as_dict('pair') == {'a': '1', 'b': '2'}
+
+    def test_get_param_as_dict_pairs_odd_length(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        query_string = 'pair=a&pair=b&pair=c'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+
+        with pytest.raises(HTTPInvalidParam):
+            req.get_param_as_dict('pair')
+
+    def test_get_param_as_dict_pairs_missing_required(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        simulate_request(client=client, path='/', query_string='')
+        req = resource.captured_req
+
+        with pytest.raises(HTTPMissingParam):
+            req.get_param_as_dict('pair', required=True)
+
+    def test_get_param_as_dict_pairs_default(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        simulate_request(client=client, path='/', query_string='')
+        req = resource.captured_req
+
+        default = {'x': 'y'}
+        assert req.get_param_as_dict('pair', default=default) is default
+
+    def test_get_param_as_dict_pairs_store(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'pair=a&pair=1&pair=b&pair=2'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+
+        store: dict = {}
+        result = req.get_param_as_dict('pair', store=store)
+        assert result == {'a': '1', 'b': '2'}
+        assert store == {'pair': {'a': '1', 'b': '2'}}
 
     def test_has_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
