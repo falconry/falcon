@@ -2532,6 +2532,114 @@ class Request:
 
         return val
 
+    def get_param_as_dict(
+        self,
+        name: str,
+        required: bool = False,
+        deep_object: bool = False,
+        delimiter: str | None = None,
+        store: StoreArg = None,
+        default: dict[str, str] | None = None,
+    ) -> dict[str, str] | None:
+        """Return the value of a query string parameter as a dictionary.
+
+        Two input formats are supported:
+
+        * An alternating key/value list, e.g., ``param=k1,v1,k2,v2``, e.g.:
+
+          >>> req
+          <Request: GET 'https://example.com/?color=R%7C100%7CG%7C200%7CB%7C150'>
+          >>> req.get_param_as_dict('color', delimiter='pipeDelimited')
+          {'R': '100', 'G': '200', 'B': '150'}
+
+          (The list can be split on the provided `delimiter`, otherwise
+          :attr:`~falcon.RequestOptions.auto_parse_qs_csv` must be enabled, or
+          the parameter must be repeated as in
+          ``param=k1&param=v1&param=k2&param=v2``, for the list form to be
+          picked up.)
+
+        * The OpenAPI v3 ``deepObject`` style, e.g.,
+          ``param[k1]=v1&param[k2]=v2`` (when `deep_object` is ``True``):
+
+          >>> req
+          <Request: GET 'https://example.com/?color%5BR%5D=100&color%5BG%5D=200'>
+          >>> req.get_param_as_dict('color', deep_object=True)
+          {'R': '100', 'G': '200'}
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not found
+                (default ``False``).
+            deep_object (bool): Set to ``True`` to interpret the parameter
+                using the OpenAPI v3 ``deepObject`` style (default ``False``).
+            delimiter (str): An optional character for splitting a parameter
+                value into the alternating list of keys and values; see
+                :meth:`~.get_param_as_list` for the list of supported
+                delimiters. Has no effect when `deep_object` is ``True``.
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
+            default (any): If the param is not found, returns the
+                given value instead of ``None``.
+
+        Returns:
+            dict: The value of the param if it is found. Otherwise, returns
+            ``None`` unless `required` is ``True``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed from the parameter.
+
+        .. versionadded:: 4.3
+        """
+
+        output: dict[str, str] | None
+
+        if deep_object:
+            oc: dict[str, str] = {}
+            prefix = f'{name}['
+            prefix_len = len(prefix)
+            for key, value in self._params.items():
+                if not (key.startswith(prefix) and key.endswith(']')):
+                    continue
+                inner = key[prefix_len:-1]
+
+                if isinstance(value, list):
+                    # NOTE(StepanUFL): An empty list is not expected to occur
+                    #   in practice here, but keep the check defensively so
+                    #   the return type is consistently str.
+                    oc[inner] = value[0] if value else ''
+                else:
+                    oc[inner] = value
+
+            if not oc:
+                if required:
+                    raise errors.HTTPMissingParam(name)
+                output = default
+            else:
+                output = oc
+
+        else:
+            values_list = self.get_param_as_list(
+                name, required=required, delimiter=delimiter
+            )
+
+            if values_list is None:
+                output = default
+            elif len(values_list) % 2 != 0:
+                msg = 'The number of list elements must be even.'
+                raise errors.HTTPInvalidParam(msg, name)
+            else:
+                output = dict(zip(values_list[::2], values_list[1::2]))
+
+        if output is not None and store is not None:
+            store[name] = output
+
+        return output
+
     def has_param(self, name: str) -> bool:
         """Determine whether or not the query string parameter already exists.
 
