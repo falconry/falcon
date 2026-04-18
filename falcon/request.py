@@ -2457,6 +2457,7 @@ class Request:
         name: str,
         required: bool = False,
         deep_object: bool = False,
+        delimiter: str | None = None,
         store: StoreArg = None,
         default: dict[str, str] | None = None,
     ) -> dict[str, str] | None:
@@ -2481,6 +2482,10 @@ class Request:
                 (default ``False``).
             deep_object (bool): Set to ``True`` to interpret the parameter
                 using the OpenAPI v3 ``deepObject`` style (default ``False``).
+            delimiter (str): An optional character for splitting a parameter
+                value into the alternating list of keys and values; see
+                :meth:`~.get_param_as_list` for the list of supported
+                delimiters. Has no effect when `deep_object` is ``True``.
             store (dict): A ``dict``-like object in which to place the
                 value of the param, but only if the param is found
                 (default ``None``).
@@ -2494,20 +2499,20 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed from the parameter.
-        """
 
-        # TODO(vytas): Also support the `delimiter` keyword argument, as in
-        #   get_param_as_list (introduced in #2538).
+        .. versionadded:: 4.3
+        """
 
         output: dict[str, str] | None
 
         if deep_object:
             oc: dict[str, str] = {}
             prefix = f'{name}['
+            prefix_len = len(prefix)
             for key, value in self._params.items():
                 if not (key.startswith(prefix) and key.endswith(']')):
                     continue
-                inner = key[len(prefix) : -1]
+                inner = key[prefix_len:-1]
 
                 if isinstance(value, list):
                     # NOTE(vytas): An empty list is not expected to occur
@@ -2525,7 +2530,7 @@ class Request:
                 output = oc
 
         else:
-            values_list = self.get_param_as_list(name)
+            values_list = self.get_param_as_list(name, delimiter=delimiter)
 
             if values_list is None:
                 if required:
