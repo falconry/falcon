@@ -45,7 +45,6 @@ class Emitter:
         event = SSEvent(text=message, event_id=str(uuid.uuid4()))
         try:
             self._queue.put_nowait(event)
-            self._queue.put_nowait(event)
         except asyncio.QueueFull:
             logger.warning(
                 'SSE emitter queue full (maxsize=%d), dropping message. '
