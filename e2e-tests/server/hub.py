@@ -19,10 +19,10 @@ class Emitter:
     def __init__(self) -> None:
         self._done: bool = False
         # NOTE(tang-vu): Bounded queue prevents unbounded memory growth when
-        # SSE consumers stop reading but remain connected. While unlikely in
-        # a test harness, this guards against memory leaks in long-running
-        # scenarios and demonstrates safe concurrency patterns.
-        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue(maxsize=256)
+        #   SSE consumers stop reading but remain connected. While unlikely in
+        #   this short-lived E2E test, this guards against memory leaks in
+        #   long-running scenarios, and demonstrates safe concurrency patterns.
+        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue(maxsize=32)
 
     async def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
         try:
@@ -45,11 +45,11 @@ class Emitter:
         event = SSEvent(text=message, event_id=str(uuid.uuid4()))
         try:
             self._queue.put_nowait(event)
+            self._queue.put_nowait(event)
         except asyncio.QueueFull:
-            # NOTE(tang-vu): Log the incident for diagnostics.
             logger.warning(
-                "SSE emitter queue full (maxsize=%d), dropping message. "
-                "This indicates a slow or stalled consumer.",
+                'SSE emitter queue full (maxsize=%d), dropping message. '
+                'This indicates a slow or stalled consumer.',
                 self._queue.maxsize,
             )
 
