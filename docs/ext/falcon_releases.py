@@ -23,8 +23,10 @@ import collections
 import datetime
 import enum
 import itertools
+import os
 import pathlib
 import re
+import time
 
 import sphinx.util.docutils
 
@@ -136,6 +138,17 @@ class FalconReleasesDirective(sphinx.util.docutils.SphinxDirective):
     required_arguments = 1
     has_content = True
 
+    @staticmethod
+    def get_build_date():
+        # NOTE(vytas,bmwiedemann): Afford overriding the current date with
+        #   SOURCE_DATE_EPOCH for reproducible documentation builds.
+        #   (See also: https://reproducible-builds.org/docs/source-date-epoch/)
+        build_date = datetime.datetime.fromtimestamp(
+            int(os.environ.get('SOURCE_DATE_EPOCH', time.time())),
+            tz=datetime.timezone.utc,
+        )
+        return build_date.date()
+
     def run(self):
         changelog_path = pathlib.Path(self.arguments[0])
         if not changelog_path.is_absolute():
@@ -184,7 +197,7 @@ class FalconReleasesDirective(sphinx.util.docutils.SphinxDirective):
                 eol_date = (
                     current_series[0].first.date + self._OLDSTABLE_MAINTENANCE_PERIOD
                 )
-                if datetime.date.today() < eol_date:
+                if self.get_build_date() < eol_date:
                     status = _ReleaseStatus.security
                     # NOTE(vytas): Move to a new line because otherwise table
                     #   layout gets messed up in an unpleasant way.

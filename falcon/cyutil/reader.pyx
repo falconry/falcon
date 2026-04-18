@@ -1,4 +1,4 @@
-# Copyright 2019-2025 by Vytautas Liuolia.
+# Copyright 2019-2026 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# cython: freethreading_compatible = True
 
 """Buffered stream reader (cythonized variant)."""
 

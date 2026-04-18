@@ -58,3 +58,23 @@ def test_things_advanced(asgi, util, httpx, requests):
     assert resp2.status_code == 200
     assert len(resp2.json) == 1
     assert resp2.json[0]['color'] == 'green'
+
+    resp3 = testing.simulate_post(
+        advanced.app,
+        '/1337/things',
+        headers={'Authorization': 'custom-token', 'Content-Type': 'application/json'},
+        body='{"key": "value"}',
+    )
+    assert resp3.status_code == 201
+
+    resp4 = testing.simulate_post(
+        advanced.app,
+        '/1337/things',
+        headers={
+            'Authorization': 'custom-token',
+            'Content-Type': 'application/json',
+            'Content-Length': '1',
+        },
+        body='',
+    )
+    assert resp4.status_code == 400

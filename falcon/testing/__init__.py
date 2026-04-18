@@ -18,7 +18,13 @@ Falcon's testing module contains various test classes and utility
 functions to support functional testing for both Falcon-based apps and
 the Falcon framework itself.
 
-The testing framework supports both unittest and pytest::
+The testing framework supports both :mod:`unittest` and
+`pytest <https://docs.pytest.org/>`__.
+
+Tests are normally carried out by simulating HTTP requests by calling the
+corresponding :class:`TestClient` methods, e.g.,
+:meth:`~falcon.testing.TestClient.simulate_get`,
+:meth:`~falcon.testing.TestClient.simulate_post`, etc::
 
     # -----------------------------------------------------------------
     # unittest
@@ -72,6 +78,26 @@ The testing framework supports both unittest and pytest::
 
         result = client.simulate_get('/messages/42')
         assert result.json == doc
+
+As shown above, the responses rendered by the application are encapsulated by
+the test :class:`Result`.
+
+Tip:
+    :class:`Result` objects implement a ``__rich__`` method for facilitating a
+    rich-text representation when used together with the popular
+    `rich <https://rich.readthedocs.io/>`__ library.
+
+    For instance, provided you have installed both Falcon and ``rich`` into
+    your environment, you should be able to see a prettier rendition of the
+    below 404-result:
+
+    >>> import falcon
+    >>> import falcon.testing
+    >>> import rich.pretty
+    >>> rich.pretty.install()
+    >>> client = falcon.testing.TestClient(falcon.App())
+    >>> client.get('/endpoint')
+    Result<404 Not Found application/json b'{"title": "404 Not Found"}'>
 """
 
 # Hoist classes and functions into the falcon.testing namespace

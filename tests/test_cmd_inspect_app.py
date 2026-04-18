@@ -1,4 +1,5 @@
 from argparse import Namespace
+import contextlib
 import io
 import sys
 
@@ -8,7 +9,6 @@ from falcon import App
 from falcon import inspect
 import falcon.asgi
 from falcon.cmd import inspect_app
-from falcon.testing import redirected
 
 _WIN32 = sys.platform.startswith('win')
 
@@ -168,7 +168,7 @@ class TestMain:
             args.append('-i')
         monkeypatch.setattr('sys.argv', args)
         output = io.StringIO()
-        with redirected(stdout=output):
+        with contextlib.redirect_stdout(output):
             inspect_app.main()
         routes = inspect.inspect_routes(_APP)
         sv = inspect.StringVisitor(verbose, internal)
@@ -183,7 +183,7 @@ class TestMain:
             args.append('-i')
         monkeypatch.setattr('sys.argv', args)
         output = io.StringIO()
-        with redirected(stdout=output):
+        with contextlib.redirect_stdout(output):
             inspect_app.main()
         ins = inspect.inspect_app(_APP)
         self.check(output.getvalue().strip(), ins.to_string(verbose, internal))
@@ -198,7 +198,7 @@ def test_route_main(monkeypatch):
 
     monkeypatch.setattr(inspect_app, 'main', mock)
     output = io.StringIO()
-    with redirected(stderr=output):
+    with contextlib.redirect_stderr(output):
         with pytest.raises(SystemExit):
             inspect_app.route_main()
 

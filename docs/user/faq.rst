@@ -63,7 +63,7 @@ spec support out of the box. However, there are several community projects
 available in this vein. Our
 `Add on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_ lists
 a couple of these projects, but you may also wish to search
-`PyPI <https://pypi.python.org/pypi>`_ for additional packages.
+`PyPI <https://pypi.org/>`_ for additional packages.
 
 If you are interested in the design-first approach mentioned above, you may
 also want to check out API design and gateway services such as Tyk, Apiary,
@@ -101,24 +101,24 @@ app are also thread-safe, your WSGI app as a whole will be thread-safe.
 Can I run Falcon on free-threaded CPython?
 ------------------------------------------
 
-At the time of this writing, Falcon has not been extensively evaluated without
-the GIL yet.
+Starting with Falcon :doc:`4.2 </changes/4.2.0>`, we began to ship binary
+wheels for the free-threaded CPython 3.14 build (in the first iteration, only
+on selected Linux x86 and ARM platforms).
 
-We load-tested the WSGI flavor of the framework via
-:class:`~wsgiref.simple_server.WSGIServer` +
-:class:`~socketserver.ThreadingMixIn` on
-`free-threaded CPython 3.13.0
-<https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython>`__
-(under ``PYTHON_GIL=0``), and observed no issues that would point toward
-Falcon's reliance on the GIL. Thus, we would like to think that Falcon is still
-:ref:`thread-safe <faq_thread_safety>` even in free-threaded execution,
-but it is too early to provide a definite answer.
+We load-tested the WSGI flavor of the framework using Gunicorn 23.0.0 on
+`free-threaded <https://docs.python.org/3/howto/free-threading-python.html>`__
+CPython 3.14.0, and observed no issues that would point toward
+Falcon's reliance on the GIL. Moreover, the throughput scaled almost linearly
+with the number of threads (up to the number of available cores on the system).
 
-If you experimented with free-threading of Falcon or other Python web services,
-please :ref:`share your experience <chat>`!
+Thus, we would like to think that Falcon is still :ref:`thread-safe
+<faq_thread_safety>` even in free-threaded execution, but we are awaiting more
+community feedback. If you experimented with free-threading of Falcon
+applications, or even deployed it in production, please
+:ref:`share your experience <chat>`!
 
 Does Falcon support asyncio?
-------------------------------
+----------------------------
 
 Starting with version 3.0, the `ASGI <https://asgi.readthedocs.io/en/latest/>`_
 flavor of Falcon now proudly supports :any:`asyncio`!
@@ -175,7 +175,7 @@ Further CORS customization is possible via :class:`~falcon.CORSMiddleware`
 For even more sophisticated use cases, have a look at Falcon add-ons from the
 community, such as `falcon-cors <https://github.com/lwcolton/falcon-cors>`_, or
 try one of the generic
-`WSGI CORS libraries available on PyPI <https://pypi.python.org/pypi?%3Aaction=search&term=cors&submit=search>`_.
+`WSGI CORS libraries available on PyPI <https://pypi.org/search/?q=cors>`_.
 If you use an API gateway, you might also look into what CORS functionality
 it provides at that level.
 
@@ -269,7 +269,7 @@ implement a simple WSGI wrapper that does the same thing:
 
         if host.startswith('api.'):
             return falcon_app(environ, start_response)
-        elif:
+        else:
             return webapp2_app(environ, start_response)
 
 See also `PEP 3333 <https://www.python.org/dev/peps/pep-3333/#environ-variables>`_
@@ -612,8 +612,8 @@ Why are '+' characters in my params being converted to spaces?
 --------------------------------------------------------------
 The ``+`` character is often used instead of ``%20`` to represent spaces in
 query string params, due to the historical conflation of form parameter encoding
-(``application/x-www-form-urlencoded``) and URI percent-encoding.  Therefore,
-Falcon, converts ``+`` to a space when decoding strings.
+(``application/x-www-form-urlencoded``) and URI percent-encoding. Therefore,
+Falcon converts ``+`` to a space when decoding strings.
 
 To work around this, RFC 3986 specifies ``+`` as a reserved character,
 and recommends percent-encoding any such characters when their literal value is
@@ -849,9 +849,10 @@ How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
 
 Falcon 4.0 shipped initial support for
-`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_
-that can match multiple segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
-is capable of consuming multiple path segments when placed at the end of the URL template.
+:ref:`field converters <routing_field_converters>` that can match multiple
+segments. The ``path`` :class:`field converter <falcon.routing.PathConverter>`
+is capable of consuming multiple path segments when placed at the end of the
+URL template.
 
 In previous versions, you can work around the issue by implementing a Falcon
 middleware component to rewrite the path before it is routed. If you control
@@ -1051,7 +1052,7 @@ By default, Falcon enables the `secure` cookie attribute. Therefore, if you are
 testing your app over HTTP (instead of HTTPS), the client will not send the
 cookie in subsequent requests.
 
-(See also the :ref:`cookie documentation <cookie-secure-attribute>`.)
+(See also the :ref:`Secure cookie attribute <cookie-secure-attribute>`.)
 
 .. _serve-downloadable-as:
 
@@ -1372,10 +1373,49 @@ To include multiple values, simply use ``"; "`` to separate each name-value
 pair. For example, if you were to pass ``{'Cookie': 'xxx=yyy; hello=world'}``,
 you would get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
 
+How can I set header fields when simulating requests?
+-----------------------------------------------------
+
+Default header fields can be overwritten to simulate unexpected
+behavior. For instance, to test the condition where a ``POST``
+request has an empty body but the value of ``Content-Length``
+is non-zero, we can overwrite that value in the header.
+
+.. code:: python
+
+    import falcon
+    import falcon.testing
+    import pytest
+
+    class PostTest:
+
+        def on_post(self, req, resp):
+            if req.content_length in (None, 0):
+                resp.status = falcon.HTTP_200
+            else:
+                if req.stream.read(req.content_length or 0):
+                    resp.status = falcon.HTTP_201
+                else:
+                    resp.status = falcon.HTTP_400
+
+    @pytest.fixture
+    def client():
+        app = falcon.App()
+        app.add_route('/resource', PostTest())
+
+        return falcon.testing.TestClient(app)
+
+
+    def test_post_empty_body_with_length(client):
+        headers = [('Content-Length', '1'),]
+        body = ''
+        result = client.simulate_post(path='/resource', body=body, headers=headers)
+        assert(result.status == falcon.HTTP_400)
+
 Why do I see no error tracebacks in my ASGI application?
 --------------------------------------------------------
 
-When using Falcon with an ASGI server like Uvicorn,
+When using Falcon with an ASGI server,
 you might notice that server errors do not include any traceback by default.
 This behavior differs from WSGI, where the PEP-3333 specification defines the
 `wsgi.errors <https://peps.python.org/pep-3333/#environ-variables>`__ stream
@@ -1385,8 +1425,17 @@ This behavior differs from WSGI, where the PEP-3333 specification defines the
 Since there is no standardized way to log errors back to the ASGI server,
 the framework simply opts to log them using the ``falcon``
 :class:`logger <logging.Logger>`.
+As a well-behaved library, Falcon does not preconfigure any loggers since that
+might interfere with the user's logging setup.
 
-The easiest way to get started is configuring the root logger via
+Starting with Falcon :doc:`4.3 </changes/4.3.0>`, however, the framework no
+longer adds an instance of :class:`logging.NullHandler` to the ``falcon``
+logger, so error tracebacks may still reach ``sys.stderr`` via the
+:any:`logging.lastResort` handler (but it depends on the existing logging
+configuration of the ASGI server in question).
+
+If you are seeing an HTTP 500 error response without any corresponding
+traceback, the easiest way to get started is configuring the root logger via
 :func:`logging.basicConfig`:
 
 .. code:: python
@@ -1412,4 +1461,4 @@ By adding the above logging configuration, you should now see tracebacks logged
 to :any:`stderr <sys.stderr>` when accessing ``/things``.
 
 For additional details on this topic,
-please refer to :ref:`debugging_asgi_applications`.
+please refer to the ASGI tutorial: :ref:`debugging_asgi_applications`.

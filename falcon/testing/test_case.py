@@ -26,12 +26,12 @@ except ImportError:  # pragma: nocover
 import falcon
 import falcon.request
 
-# TODO hoist for backwards compat. Remove in falcon 4.
+# TODO: Hoist for backwards compat. Remove in Falcon 5.0.
 from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
 
-class TestCase(unittest.TestCase, TestClient):
+class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:

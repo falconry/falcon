@@ -155,15 +155,13 @@ class ASGIRequestEventEmitter:
         elif not isinstance(body, bytes):
             body = body.encode()
 
-        body = memoryview(body)
-
         if disconnect_at is None:
             disconnect_at = time.time() + 30
 
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body: memoryview | None = body
+        self._body: memoryview | None = memoryview(body)
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
@@ -1359,16 +1357,48 @@ def create_asgi_req(
     return req_type(scope, req_event_emitter, options=options)
 
 
+# NOTE(TudorGR): Deprecated in Falcon 4.3.
+# TODO(TudorGR): Remove in Falcon 5.0.
+@falcon.util.deprecated(
+    'This context manager is deprecated and will be removed in Falcon 5.0. '
+    'Please use contextlib.redirect_stdout and contextlib.redirect_stderr instead.'
+)
 @contextlib.contextmanager
 def redirected(
     stdout: TextIO = sys.stdout, stderr: TextIO = sys.stderr
 ) -> Iterator[None]:
     """Redirect stdout or stderr temporarily.
 
-    e.g.:
+    For instance, this helper can be used to capture output from Falcon
+    resources under tests::
 
-    with redirected(stderr=os.devnull):
-        ...
+        import io
+
+        import falcon
+        import falcon.testing
+
+
+        class MediaPrinter:
+            def on_post(self, req, resp):
+                print(req.get_media())
+
+
+        client = falcon.testing.TestClient(falcon.App())
+        client.app.add_route('/print', MediaPrinter())
+
+        output = io.StringIO()
+        with falcon.testing.redirected(stdout=output):
+            client.simulate_post('/print', json={'message': 'Hello'})
+
+        assert output.getvalue() == "{'message': 'Hello'}\\n"
+
+    Tip:
+        The popular `pytest <https://docs.pytest.org/>`__ also captures
+        and suppresses output from successful tests by default.
+
+    .. deprecated:: 4.3
+        Use the stlib's :func:`contextlib.redirect_stdout` and
+        :func:`contextlib.redirect_stderr` instead.
     """
 
     old_stdout, old_stderr = sys.stdout, sys.stderr
