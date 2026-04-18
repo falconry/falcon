@@ -2369,31 +2369,196 @@ class Request:
                 the value could not be parsed as JSON.
         """
 
+        # NOTE(mannxo): Delegate to the more general get_param_as_media implementation.
+        return self.get_param_as_media(
+            name,
+            media_type=MEDIA_JSON,
+            required=required,
+            store=store,
+            default=default,
+        )
+
+    def get_param_as_media(
+        self,
+        name: str,
+        media_type: str | None = None,
+        required: bool = False,
+        store: StoreArg = None,
+        default: Any | None = None,
+    ) -> Any:
+        """Return a query string parameter's value deserialized by a media handler.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'payload').
+
+        Keyword Args:
+            media_type (str | None): Media type to use for deserialization. If
+                ``None``, falls back to the app's ``default_media_type``.
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not
+                found (default ``False``).
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
+
+        Returns:
+            The deserialized value for the parameter, or ``default`` if the
+            parameter is missing and ``required`` is ``False``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed by the selected media handler.
+        """
+
         param_value = self.get_param(name, required=required)
 
         if param_value is None:
             return default
 
+        # Resolve media handler
+        if media_type is None:
+            # Fall back to the app's default media type.
+            media_type = self.options.default_media_type
+
         handler, _, _ = self.options.media_handlers._resolve(
-            MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+            media_type, self.options.default_media_type, raise_not_found=False
         )
         if handler is None:
-            handler = _DEFAULT_JSON_HANDLER
+            # NOTE(mannxo): Substring match is intentional; covers variants
+            #   like 'application/json; charset=utf-8' and is good enough in
+            #   practice until a stricter check is warranted.
+            if media_type and MEDIA_JSON in media_type:
+                handler = _DEFAULT_JSON_HANDLER
+            else:
+                raise errors.HTTPInternalServerError(
+                    title=f'No media handler exists for "{media_type}"'
+                )
 
         try:
             # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
-            # interface is refactored. Possibly using the WS interface?
+            #   interface is refactored. Possibly using the WS interface?
             val = handler.deserialize(
-                BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
+                BytesIO(param_value.encode()), media_type, len(param_value)
             )
         except errors.HTTPBadRequest:
-            msg = 'It could not be parsed as JSON.'
-            raise errors.HTTPInvalidParam(msg, name)
+            raise errors.HTTPInvalidParam(
+                f'It could not be deserialized as "{media_type}".', name
+            )
 
         if store is not None:
             store[name] = val
 
         return val
+
+    def get_param_as_dict(
+        self,
+        name: str,
+        required: bool = False,
+        deep_object: bool = False,
+        delimiter: str | None = None,
+        store: StoreArg = None,
+        default: dict[str, str] | None = None,
+    ) -> dict[str, str] | None:
+        """Return the value of a query string parameter as a dictionary.
+
+        Two input formats are supported:
+
+        * An alternating key/value list, e.g., ``param=k1,v1,k2,v2``, e.g.:
+
+          >>> req
+          <Request: GET 'https://example.com/?color=R%7C100%7CG%7C200%7CB%7C150'>
+          >>> req.get_param_as_dict('color', delimiter='pipeDelimited')
+          {'R': '100', 'G': '200', 'B': '150'}
+
+          (The list can be split on the provided `delimiter`, otherwise
+          :attr:`~falcon.RequestOptions.auto_parse_qs_csv` must be enabled, or
+          the parameter must be repeated as in
+          ``param=k1&param=v1&param=k2&param=v2``, for the list form to be
+          picked up.)
+
+        * The OpenAPI v3 ``deepObject`` style, e.g.,
+          ``param[k1]=v1&param[k2]=v2`` (when `deep_object` is ``True``):
+
+          >>> req
+          <Request: GET 'https://example.com/?color%5BR%5D=100&color%5BG%5D=200'>
+          >>> req.get_param_as_dict('color', deep_object=True)
+          {'R': '100', 'G': '200'}
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not found
+                (default ``False``).
+            deep_object (bool): Set to ``True`` to interpret the parameter
+                using the OpenAPI v3 ``deepObject`` style (default ``False``).
+            delimiter (str): An optional character for splitting a parameter
+                value into the alternating list of keys and values; see
+                :meth:`~.get_param_as_list` for the list of supported
+                delimiters. Has no effect when `deep_object` is ``True``.
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
+            default (any): If the param is not found, returns the
+                given value instead of ``None``.
+
+        Returns:
+            dict: The value of the param if it is found. Otherwise, returns
+            ``None`` unless `required` is ``True``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed from the parameter.
+
+        .. versionadded:: 4.3
+        """
+
+        output: dict[str, str] | None
+
+        if deep_object:
+            oc: dict[str, str] = {}
+            prefix = f'{name}['
+            prefix_len = len(prefix)
+            for key, value in self._params.items():
+                if not (key.startswith(prefix) and key.endswith(']')):
+                    continue
+                inner = key[prefix_len:-1]
+
+                if isinstance(value, list):
+                    # NOTE(StepanUFL): An empty list is not expected to occur
+                    #   in practice here, but keep the check defensively so
+                    #   the return type is consistently str.
+                    oc[inner] = value[0] if value else ''
+                else:
+                    oc[inner] = value
+
+            if not oc:
+                if required:
+                    raise errors.HTTPMissingParam(name)
+                output = default
+            else:
+                output = oc
+
+        else:
+            values_list = self.get_param_as_list(
+                name, required=required, delimiter=delimiter
+            )
+
+            if values_list is None:
+                output = default
+            elif len(values_list) % 2 != 0:
+                msg = 'The number of list elements must be even.'
+                raise errors.HTTPInvalidParam(msg, name)
+            else:
+                output = dict(zip(values_list[::2], values_list[1::2]))
+
+        if output is not None and store is not None:
+            store[name] = output
+
+        return output
 
     def has_param(self, name: str) -> bool:
         """Determine whether or not the query string parameter already exists.
