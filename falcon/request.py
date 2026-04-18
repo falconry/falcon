@@ -2530,13 +2530,12 @@ class Request:
                 output = oc
 
         else:
-            values_list = self.get_param_as_list(name, delimiter=delimiter)
+            values_list = self.get_param_as_list(
+                name, required=required, delimiter=delimiter
+            )
 
             if values_list is None:
-                if required:
-                    raise errors.HTTPMissingParam(name)
                 output = default
-
             elif len(values_list) % 2 != 0:
                 msg = 'the number of list elements must be even'
                 raise errors.HTTPInvalidParam(msg, name)
