@@ -2465,13 +2465,26 @@ class Request:
 
         Two input formats are supported:
 
-        * An alternating key/value list, e.g., ``param=k1,v1,k2,v2``.
-          (Note that :attr:`~falcon.RequestOptions.auto_parse_qs_csv` must be
-          enabled, or the parameter must be repeated as in
+        * An alternating key/value list, e.g., ``param=k1,v1,k2,v2``, e.g.:
+
+          >>> req
+          <Request: GET 'https://example.com/?color=R%7C100%7CG%7C200%7CB%7C150'>
+          >>> req.get_param_as_dict('color', delimiter='pipeDelimited')
+          {'R': '100', 'G': '200', 'B': '150'}
+
+          (The list can be split on the provided `delimiter`, otherwise
+          :attr:`~falcon.RequestOptions.auto_parse_qs_csv` must be enabled, or
+          the parameter must be repeated as in
           ``param=k1&param=v1&param=k2&param=v2``, for the list form to be
           picked up.)
+
         * The OpenAPI v3 ``deepObject`` style, e.g.,
-          ``param[k1]=v1&param[k2]=v2`` (when `deep_object` is ``True``).
+          ``param[k1]=v1&param[k2]=v2`` (when `deep_object` is ``True``):
+
+          >>> req
+          <Request: GET 'https://example.com/?color%5BR%5D=100&color%5BG%5D=200'>
+          >>> req.get_param_as_dict('color', deep_object=True)
+          {'R': '100', 'G': '200'}
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
@@ -2515,7 +2528,7 @@ class Request:
                 inner = key[prefix_len:-1]
 
                 if isinstance(value, list):
-                    # NOTE(vytas): An empty list is not expected to occur
+                    # NOTE(StepanUFL): An empty list is not expected to occur
                     #   in practice here, but keep the check defensively so
                     #   the return type is consistently str.
                     oc[inner] = value[0] if value else ''
@@ -2537,7 +2550,7 @@ class Request:
             if values_list is None:
                 output = default
             elif len(values_list) % 2 != 0:
-                msg = 'the number of list elements must be even'
+                msg = 'The number of list elements must be even.'
                 raise errors.HTTPInvalidParam(msg, name)
             else:
                 output = dict(zip(values_list[::2], values_list[1::2]))
