@@ -26,8 +26,8 @@ from typing import (
 )
 
 from falcon import app_helpers
-from falcon.app import _ReqT
-from falcon.app import _RespT
+from falcon._typing import _ReqT
+from falcon._typing import _RespT
 from falcon.app import App
 from falcon.routing import CompiledRouter
 from falcon.routing.compiled import CompiledRouterNode

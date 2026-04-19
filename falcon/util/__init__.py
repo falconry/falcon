@@ -20,7 +20,7 @@ Conversely, the `uri` module must be imported explicitly::
 """
 
 from http import cookies as http_cookies
-import sys
+import sys as sys  # re-export for ``from falcon.util import sys`` consumers
 
 # Hoist misc. utils
 from falcon.constants import PYTHON_VERSION
@@ -76,7 +76,6 @@ __all__ = (
     'runs_sync',
     'secure_filename',
     'sync_to_async',
-    'sys',
     'TimezoneGMT',
     'to_query_str',
     'wrap_sync_to_async',

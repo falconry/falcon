@@ -70,10 +70,9 @@ from falcon.util import misc
 from falcon.util.misc import code_to_http_status
 
 __all__ = (
+    'App',
     'Request',
     'Response',
-    '_ReqT',
-    '_RespT',
 )
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),

@@ -608,7 +608,7 @@ class ASGIWebSocketSimulator:
                 'Expected TEXT payload but got BINARY instead'
             )
 
-        return '{}'.format(text)
+        return text  # type: ignore[no-any-return]
 
     async def receive_data(self) -> bytes:
         """Receive a message from the app with a binary data payload.
@@ -632,7 +632,7 @@ class ASGIWebSocketSimulator:
                 'Expected BINARY payload but got TEXT instead'
             )
 
-        return bytes(data)
+        return data  # type: ignore[no-any-return]
 
     async def receive_json(self) -> Any:
         """Receive a message from the app with a JSON-encoded TEXT payload.
