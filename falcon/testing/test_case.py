@@ -18,6 +18,8 @@ This package includes a unittest-style base class and requests-like
 utilities for simulating and validating HTTP requests.
 """
 
+from typing import Any
+
 try:
     import testtools as unittest
 except ImportError:  # pragma: nocover
@@ -50,7 +52,11 @@ class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
-    app: falcon.App
+    # NOTE(vytas): Parametrize with [Any, Any] because the app under test may
+    # use custom Request/Response subclasses. A future change could make
+    # TestCase generic over the app's request/response types (leveraging
+    # TypeVar defaults on Python 3.13+).
+    app: falcon.App[Any, Any]
     """A WSGI or ASGI application to target when simulating
     requests (defaults to ``falcon.App()``). When testing your
     application, you will need to set this to your own instance

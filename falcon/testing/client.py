@@ -1083,8 +1083,12 @@ class ASGIConductor:
     """
 
     # NOTE(caseit): while any asgi app is accept, type this as a falcon
-    # asgi app for user convenience
-    app: asgi.App
+    # asgi app for user convenience.
+    # NOTE(vytas): Parametrize with [Any, Any] because the client accepts any
+    # ASGI app, including Falcon apps with custom Request/Response subclasses.
+    # A future change could make ASGIConductor generic over the app's
+    # request/response types (leveraging TypeVar defaults on Python 3.13+).
+    app: asgi.App[Any, Any]
     """The app that this client instance was configured to use."""
 
     def __init__(
@@ -2085,8 +2089,12 @@ class TestClient:
     __test__ = False
 
     # NOTE(caseit): while any asgi/wsgi app is accept, type this as a falcon
-    # app for user convenience
-    app: falcon.App
+    # app for user convenience.
+    # NOTE(vytas): Parametrize with [Any, Any] because the client accepts any
+    # ASGI/WSGI app, including Falcon apps with custom Request/Response
+    # subclasses. A future change could make TestClient generic over the app's
+    # request/response types (leveraging TypeVar defaults on Python 3.13+).
+    app: falcon.App[Any, Any]
     """The app that this client instance was configured to use."""
 
     def __init__(
