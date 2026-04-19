@@ -851,7 +851,7 @@ class Response:
         # normalize the header names.
         _headers = self._headers
 
-        for name, value in headers:  # type: ignore[misc]
+        for name, value in headers:  # type: ignore[str-unpack]
             # NOTE(kgriffs): uwsgi fails with a TypeError if any header
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode
