@@ -7,6 +7,7 @@ html[data-theme=light] {
   /* Darken Falconry orange to meet WCAG 2.1 AA contrast */
   --pst-color-secondary: rgb(169, 103, 9);
   --pst-color-link: var(--pst-color-secondary);
+  --pst-color-link-higher-contrast: var(--pst-color-secondary);
   --pst-color-success: rgb(165, 205, 57);
   --pst-color-admonition-tip: var(--pst-color-success);
   --pst-color-inline-code: var(--pst-color-text-base);
@@ -18,6 +19,7 @@ html[data-theme=dark] {
   --pst-color-primary: var(--pst-color-text-base);
   --pst-color-secondary: rgb(240, 173, 78);
   --pst-color-link: var(--pst-color-secondary);
+  --pst-color-link-higher-contrast: var(--pst-color-secondary);
   --pst-color-inline-code: var(--pst-color-text-base);
   --pst-color-inline-code-links: var(--pst-color-secondary);
   --pst-color-background: rgb(8, 6, 2);
