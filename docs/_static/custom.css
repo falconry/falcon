@@ -1,6 +1,18 @@
-/* Customize the PyData theme's font colors. */
+/* Customize the PyData theme's fonts and colors. */
 
 /* Some ideas partially inspired by Bokeh docs. */
+
+/* NOTE(vytas): Revert to older PyData Sphinx Theme fonts from 0.16.x. */
+/*   Despite being not as "modern", they fluctuate less across the browsers. */
+html {
+  --pst-font-family-base-system:
+    -apple-system, "BlinkMacSystemFont", "Segoe UI", "Helvetica Neue", "Arial",
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --pst-font-family-monospace-system:
+    "SFMono-Regular", "Menlo", "Consolas", "Monaco", "Liberation Mono",
+    "Lucida Console", monospace;
+}
+
 html[data-theme=light] {
   --pst-color-borders: rgb(206, 212, 218);
   --pst-color-primary: var(--pst-color-text-base);
