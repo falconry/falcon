@@ -636,8 +636,6 @@ from falcon.util import structures
 from falcon.util import sync
 from falcon.util import sync_to_async
 
-# TODO(vytas): Remove this re-export of sys in Falcon 5.0.
-from falcon.util import sys  # NOQA: F401
 from falcon.util import time
 from falcon.util import TimezoneGMT
 from falcon.util import to_query_str
@@ -660,3 +658,24 @@ _logger = _logging.getLogger('falcon')
 #   However, this has mostly resulted in confusion for people trying the ASGI
 #   flavor of the framework as HTTP 500 tracebacks may disappear completely,
 #   so the revised choice is NOT to prevent last resort logging to sys.stderr.
+
+
+# NOTE(SAY-5): The stdlib `sys` module was historically re-exported as
+# `falcon.sys`. It was never a documented part of Falcon's public API and
+# is scheduled for removal in Falcon 5.0 (see #2630). Until then, accessing
+# `falcon.sys` returns the stdlib module but emits a `DeprecatedWarning`.
+def __getattr__(name: str) -> object:
+    if name == 'sys':
+        import sys as _sys
+        import warnings as _warnings
+
+        from falcon.util.deprecation import DeprecatedWarning
+
+        _warnings.warn(
+            'falcon.sys is deprecated; import the stdlib sys module directly. '
+            'It will be removed in Falcon 5.0. See falconry/falcon#2630.',
+            DeprecatedWarning,
+            stacklevel=2,
+        )
+        return _sys
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

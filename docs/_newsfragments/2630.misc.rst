@@ -1,0 +1,6 @@
+The stdlib :mod:`sys` module is no longer re-exported as ``falcon.sys``.
+This re-export was never a documented part of Falcon's public API, and
+appears to have been added by oversight. Accessing ``falcon.sys`` now
+emits a :class:`~falcon.util.deprecation.DeprecatedWarning`; the alias
+will be removed entirely in Falcon 5.0. Import the stdlib :mod:`sys`
+module directly instead.

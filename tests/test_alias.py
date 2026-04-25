@@ -45,3 +45,23 @@ def test_alias_equals_to_app(alias_client):
     with pytest.warns(DeprecatedWarning, match='API class will be removed'):
         api = falcon.API()
     assert isinstance(api, falcon.API)
+
+
+# Tests for the falcon.sys re-export deprecation (#2630). The alias is
+# scheduled for removal in Falcon 5.0; until then it must keep working
+# but warn on access.
+
+def test_falcon_sys_emits_deprecation_warning():
+    import sys as stdlib_sys
+
+    with pytest.warns(DeprecatedWarning, match='falcon.sys is deprecated'):
+        accessed = falcon.sys
+    assert accessed is stdlib_sys
+
+
+def test_falcon_unknown_attribute_still_raises_attribute_error():
+    # The new module __getattr__ must not swallow lookups for other
+    # missing attributes — those still need to raise AttributeError so
+    # `hasattr(falcon, 'something_that_does_not_exist')` returns False.
+    with pytest.raises(AttributeError, match='no attribute'):
+        falcon.this_attribute_does_not_exist  # noqa: B018
