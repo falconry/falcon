@@ -1,4 +1,3 @@
-The codebase's internal type annotations were improved to pass
-``mypy --strict falcon/``. To that end, we added a handful of
-``# type: ignore``\s for known limitations, but we are working on reducing the
-number of these too.
+Internal type annotations were improved, allowing the project to pass
+`mypy --strict falcon/`. We have added a few `# type: ignore` comments for
+known limitations, and are actively working to reduce their necessity.
