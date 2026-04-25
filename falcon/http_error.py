@@ -161,7 +161,7 @@ class HTTPError(Exception):
         """HTTP status code normalized from the ``status`` argument passed
         to the initializer.
         """  # noqa: D205
-        # TODO(0xMattB): Modify decorator to return proper type (see PR #2599)
+        # TODO(0xMattB): Modify decorator to return proper type (see gh #2629).
         return misc.http_status_to_code(self.status)  # type: ignore[no-any-return]
 
     def to_dict(

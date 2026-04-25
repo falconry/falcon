@@ -345,7 +345,7 @@ class Request(request.Request):
         #   empty string, at least uvicorn still includes it explicitly in
         #   that case.
         try:
-            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
             return self.scope['root_path']  # type: ignore[no-any-return]
         except KeyError:
             pass
@@ -380,7 +380,7 @@ class Request(request.Request):
         # PERF(kgriffs): Use try...except because we normally expect the
         #   key to be present.
         try:
-            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
             return self.scope['scheme']  # type: ignore[no-any-return]
         except KeyError:
             pass

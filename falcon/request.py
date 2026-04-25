@@ -1356,8 +1356,8 @@ class Request:
             # to access these instead of .get_header.
             if wsgi_name in WSGI_CONTENT_HEADERS:
                 try:
-                    # TODO(0xMattB): Implement advanced typing to type
-                    # as 'str' (see PR #2599)
+                    # TODO(0xMattB): Implement advanced typing to type as 'str'
+                    #   (see PR #2599).
                     return self.env[wsgi_name]  # type: ignore[no-any-return]
                 except KeyError:
                     pass

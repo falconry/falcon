@@ -20,7 +20,7 @@ Conversely, the `uri` module must be imported explicitly::
 """
 
 from http import cookies as http_cookies
-import sys as sys  # re-export for ``from falcon.util import sys`` consumers
+import sys as sys  # For falcon.sys, see #2630.
 
 # Hoist misc. utils
 from falcon.constants import PYTHON_VERSION

@@ -635,6 +635,8 @@ from falcon.util import secure_filename
 from falcon.util import structures
 from falcon.util import sync
 from falcon.util import sync_to_async
+
+# TODO(vytas): Remove this re-export of sys in Falcon 5.0.
 from falcon.util import sys  # NOQA: F401
 from falcon.util import time
 from falcon.util import TimezoneGMT
