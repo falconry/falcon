@@ -1,0 +1,3 @@
+Internal type annotations were improved, allowing the project to pass
+`mypy --strict falcon/`. We have added a few `# type: ignore` comments for
+known limitations, and are actively working to reduce their necessity.

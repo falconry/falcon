@@ -918,7 +918,7 @@ class TestFalconTestingUtils:
         app = util.create_app(asgi)
         app.add_route('/hello', resource)
 
-        result: falcon.testing.Result = simulate(app, '/hello')
+        result: falcon.testing.Result = simulate(app, '/hello')  # type: ignore[annotation-unchecked]
         captured_resp = resource.captured_resp
         content = captured_resp.text
 
@@ -933,7 +933,7 @@ class TestFalconTestingUtils:
             str(content),
         ]
 
-        status_color: str
+        status_color: str  # type: ignore[annotation-unchecked]
 
         for prefix, color in (
             ('1', 'blue'),

@@ -272,7 +272,7 @@ class TestMsgspec:
         mw_recipe = util.load_module('examples/recipes/msgspec_media_validation.py')
 
         class Metadata(msgspec.Struct):
-            name: str
+            name: str  # type: ignore[annotation-unchecked]
 
         class Resource:
             POST_SCHEMA = Metadata

@@ -44,6 +44,8 @@ if TYPE_CHECKING:
     from falcon.media import Handlers
     from falcon.util.reader import BufferedReader as PyBufferedReader
 
+__all__ = ('MultipartParseError',)
+
 # TODO(vytas):
 #   * Better support for form-wide charset setting
 #   * Clean up, simplify, and optimize BufferedReader

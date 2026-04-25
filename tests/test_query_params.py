@@ -1158,7 +1158,7 @@ class TestGetParamAsDict:
 
     def test_deep_object_store(self, asgi, util):
         req = util.create_req(asgi, query_string='user[name]=Ash&user[age]=36')
-        store: dict = {}
+        store = {}
         result = req.get_param_as_dict('user', deep_object=True, store=store)
         assert result == {'name': 'Ash', 'age': '36'}
         assert store == {'user': {'name': 'Ash', 'age': '36'}}
@@ -1191,7 +1191,7 @@ class TestGetParamAsDict:
 
     def test_pairs_store(self, asgi, util):
         req = util.create_req(asgi, query_string='pair=a&pair=1&pair=b&pair=2')
-        store: dict = {}
+        store = {}
         result = req.get_param_as_dict('pair', store=store)
         assert result == {'a': '1', 'b': '2'}
         assert store == {'pair': {'a': '1', 'b': '2'}}
