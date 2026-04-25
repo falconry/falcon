@@ -53,9 +53,9 @@ class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     __test__ = True
 
     # NOTE(vytas): Parametrize with [Any, Any] because the app under test may
-    # use custom Request/Response subclasses. A future change could make
-    # TestCase generic over the app's request/response types (leveraging
-    # TypeVar defaults on Python 3.13+).
+    #   use custom Request/Response subclasses.
+    # TODO(vytas): A future change could make TestCase generic over the app's
+    #   request/response types (leveraging TypeVar defaults on Python 3.13+).
     app: falcon.App[Any, Any]
     """A WSGI or ASGI application to target when simulating
     requests (defaults to ``falcon.App()``). When testing your

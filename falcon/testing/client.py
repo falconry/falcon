@@ -1082,12 +1082,13 @@ class ASGIConductor:
             for the same headers to one of the ``simulate_*()`` methods.
     """
 
-    # NOTE(caseit): while any asgi app is accept, type this as a falcon
-    # asgi app for user convenience.
+    # NOTE(caselit): While any ASGI app is accepted, type this as a
+    #   Falcon ASGI app for user convenience.
     # NOTE(vytas): Parametrize with [Any, Any] because the client accepts any
-    # ASGI app, including Falcon apps with custom Request/Response subclasses.
-    # A future change could make ASGIConductor generic over the app's
-    # request/response types (leveraging TypeVar defaults on Python 3.13+).
+    #   ASGI app, including Falcon apps with custom Request/Response
+    #   subclasses.
+    # TODO(vytas): A future change could make ASGIConductor generic over the
+    #   app's request/response types (leveraging TypeVar defaults on Python 3.13+).
     app: asgi.App[Any, Any]
     """The app that this client instance was configured to use."""
 
@@ -2088,12 +2089,13 @@ class TestClient:
     # NOTE(aryaniyaps): Prevent pytest from collecting tests on the class.
     __test__ = False
 
-    # NOTE(caseit): while any asgi/wsgi app is accept, type this as a falcon
-    # app for user convenience.
+    # NOTE(caselit): While any [other framework] ASGI app is accepted, type
+    #   this as a Falcon ASGI app for user convenience.
     # NOTE(vytas): Parametrize with [Any, Any] because the client accepts any
-    # ASGI/WSGI app, including Falcon apps with custom Request/Response
-    # subclasses. A future change could make TestClient generic over the app's
-    # request/response types (leveraging TypeVar defaults on Python 3.13+).
+    #   ASGI app, including Falcon apps with custom Request/Response
+    #   subclasses.
+    # TODO(vytas): A future change could make TestClient generic over the app's
+    #   request/response types (leveraging TypeVar defaults on Python 3.13+).
     app: falcon.App[Any, Any]
     """The app that this client instance was configured to use."""
 

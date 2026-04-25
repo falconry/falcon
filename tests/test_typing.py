@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, reveal_type
 from uuid import UUID
 
 import falcon
@@ -139,6 +139,8 @@ async def sink_fancy_async_both(
 #   type checking, Mypy complains that "Untyped decorator makes function untyped".
 def test_app_fancy_req() -> None:
     app = falcon.App(request_type=FancyRequest)
+    reveal_type(app)
+
     app.add_middleware(AuthMiddlewareFancyRequest())
     app.add_sink(sink_fancy_req)
     app.set_error_serializer(fancy_error_serializer)
@@ -148,6 +150,8 @@ def test_app_fancy_req() -> None:
 
 def test_app_fancy_both() -> None:
     app = falcon.App(request_type=FancyRequest, response_type=FancyResponse)
+    reveal_type(app)
+
     app.add_middleware(AuthMiddlewareFancyBoth())
     app.add_sink(sink_fancy_both)
     app.set_error_serializer(fancy_error_serializer)
@@ -157,6 +161,8 @@ def test_app_fancy_both() -> None:
 
 def test_app_fancy_async_req() -> None:
     app = falcon.asgi.App(request_type=FancyAsyncRequest)
+    reveal_type(app)
+
     app.add_middleware(AuthMiddlewareFancyRequest())
     app.add_sink(sink_fancy_async_req)
     app.set_error_serializer(fancy_asgi_error_serializer)
@@ -168,6 +174,8 @@ def test_app_fancy_async_both() -> None:
     app = falcon.asgi.App(
         request_type=FancyAsyncRequest, response_type=FancyAsyncResponse
     )
+    reveal_type(app)
+
     app.add_middleware(AuthMiddlewareFancyBoth())
     app.add_sink(sink_fancy_async_both)
     app.set_error_serializer(fancy_asgi_error_serializer)

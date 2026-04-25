@@ -5,10 +5,11 @@ import typing
 import pytest
 
 import falcon
-from falcon import app as wsgi
 from falcon import testing
 from falcon._typing import Resource
 import falcon.hooks
+from falcon.request import Request
+from falcon.response import Response
 
 # --------------------------------------------------------------------
 # Fixtures
@@ -342,9 +343,7 @@ class ResourceAwareGameHook:
     VALUES = ('rock', 'scissors', 'paper')
 
     @classmethod
-    def __call__(
-        cls, req: wsgi.Request, resp: wsgi.Response, resource: Resource
-    ) -> None:
+    def __call__(cls, req: Request, resp: Response, resource: Resource) -> None:
         assert resource
         resource = typing.cast(HandGame, resource)
         assert resource.seed in cls.VALUES

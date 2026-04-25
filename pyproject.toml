@@ -86,6 +86,7 @@ exclude = [
     "falcon/bench",
     "falcon/cmd",
 ]
+# NOTE(vytas): The below flags are equivalent to --strict as of Mypy 1.20.
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true
