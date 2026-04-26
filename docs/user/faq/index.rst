@@ -1462,3 +1462,8 @@ to :any:`stderr <sys.stderr>` when accessing ``/things``.
 
 For additional details on this topic,
 please refer to the ASGI tutorial: :ref:`debugging_asgi_applications`.
+
+.. toctree::
+   :hidden:
+
+   asgi_send_json

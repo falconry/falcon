@@ -11,4 +11,4 @@ User Guide
    tutorial-asgi
    tutorial-websockets
    recipes/index
-   faq
+   faq/index
