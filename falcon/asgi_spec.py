@@ -15,9 +15,10 @@
 """Constants, etc. defined by the ASGI specification."""
 
 from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any
+
+from typing import TypedDict, Literal,  Any, Required
+
 
 
 class EventType:
@@ -42,6 +43,45 @@ class EventType:
     WS_DISCONNECT = 'websocket.disconnect'
     WS_CLOSE = 'websocket.close'
 
+class HTTPRequestEvent(TypedDict, total=False):
+    type: Literal["http.request"]
+    body: bytes
+    more_body: bool
+
+class HTTPDisconnectEvent(TypedDict):
+    type: Literal["http.disconnect"]
+
+class HTTPResponseStartEvent(TypedDict):
+    type: Literal["http.response.start"]
+    status: int
+    headers: list[tuple[bytes, bytes]]
+
+
+class HTTPResponseBodyEvent(TypedDict, total=False):
+    type: Literal["http.response.body"]
+    body: bytes
+    more_body: bool
+
+class HTTPScope(TypedDict, total=False):
+    type: Required[Literal["http"]]
+    http_version: str
+    method: str
+    path: str
+    headers: list[tuple[bytes, bytes]]
+    asgi: dict[str, Any]
+
+class WebSocketScope(TypedDict, total=False):
+    type: Required[Literal["websocket"]]
+    path: str
+    headers: list[tuple[bytes, bytes]]
+    http_version: str
+    asgi: dict[str, Any]
+
+class LifespanScope(TypedDict, total=False):
+    type: Required[Literal["lifespan"]]
+    asgi: dict[str, Any]
+    http_version: str
+    
 
 class ScopeType:
     """Standard ASGI event type strings."""
@@ -64,7 +104,6 @@ class WSCloseCode:
     HANDLER_NOT_FOUND = 3405
 
 
-# TODO: use a typed dict for event dicts
 AsgiEvent = Mapping[str, Any]
-# TODO: use a typed dict for send msg dicts
 AsgiSendMsg = dict[str, Any]
+ASGIScope = HTTPScope | WebSocketScope | LifespanScope

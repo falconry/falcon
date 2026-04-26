@@ -28,6 +28,7 @@ from typing import (
     ClassVar,
     overload,
     TYPE_CHECKING,
+    cast
 )
 import warnings
 
@@ -55,6 +56,7 @@ from falcon.app_helpers import prepare_middleware_ws
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
+from falcon.asgi_spec import ASGIScope
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
@@ -68,7 +70,6 @@ from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 from falcon.util.sync import wrap_sync_to_async
-
 from ._asgi_helpers import _validate_asgi_scope
 from ._asgi_helpers import _wrap_asgi_coroutine_func
 from .multipart import MultipartForm
@@ -456,7 +457,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
     @_wrap_asgi_coroutine_func
     async def __call__(  # type: ignore[override] # noqa: C901
         self,
-        scope: dict[str, Any],
+        scope: ASGIScope | dict[str, Any],
         receive: AsgiReceive,
         send: AsgiSend,
     ) -> None:
@@ -488,12 +489,12 @@ class App(falcon.app.App[_ReqT, _RespT]):
             # PERF(vytas): Evaluate the potentially recurring WebSocket path
             #   first (in contrast to one-shot lifespan events).
             if scope_type == 'websocket':
-                await self._handle_websocket(spec_version, scope, receive, send)
+                await self._handle_websocket(spec_version, cast(dict[str, Any], scope), receive, send)
                 return
 
             # NOTE(vytas): Else 'lifespan' -- other scope_type values have been
             #   eliminated by _validate_asgi_scope at this point.
-            await self._call_lifespan_handlers(spec_version, scope, receive, send)
+            await self._call_lifespan_handlers(spec_version, cast(dict[str, Any], scope), receive, send)
             return
 
         # NOTE(kgriffs): Per the ASGI spec, we should not proceed with request
@@ -514,7 +515,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         assert first_event_type == 'http.request'
 
         req = self._request_type(
-            scope, receive, first_event=first_event, options=self.req_options
+            cast(dict[str, Any], scope), receive, first_event=first_event, options=self.req_options
         )
         resp = self._response_type(options=self.resp_options)
 
