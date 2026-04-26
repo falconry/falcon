@@ -69,6 +69,35 @@ let's not forget to mark ``asgilook`` as a Python package:
 
     $ touch asgilook/__init__.py
 
+Suggested App Layout
+--------------------
+
+For a typical Falcon project, we recommend the following structure::
+
+    myproject/
+    |-- app.py              # Application entry point (create_app())
+    |-- config.py           # Configuration settings
+    |-- resources/          # Resource modules (routes/handlers)
+    |   |-- __init__.py
+    |   |-- users.py        # e.g., UserResource
+    |   |-- items.py        # e.g., ItemResource
+    |-- middleware/         # Custom middleware
+    |   |-- __init__.py
+    |   |-- auth.py
+    |-- tests/              # Test suite
+    |   |-- __init__.py
+    |   |-- test_users.py
+    |   |-- conftest.py     # Shared fixtures
+    |-- requirements.txt
+    |-- README.md
+
+**Key conventions:**
+
+- Keep resources in separate modules under ``resources/``
+- Centralize app creation in ``app.py`` for easy testing
+- Use ``conftest.py`` for shared test fixtures
+- Add middleware in a dedicated ``middleware/`` package
+
 Hosting Our App
 ---------------
 
