@@ -233,7 +233,7 @@ class HTTPBadRequest(HTTPError):
     syntax, invalid request message framing, or deceptive request
     routing).
 
-    (See also: RFC 7231, Section 6.5.1)
+    (See also: RFC 9110, Section 15.5.1)
 
     All the arguments are defined as keyword-only.
 
@@ -303,7 +303,7 @@ class HTTPUnauthorized(HTTPError):
     SHOULD present the enclosed representation to the user, since it
     usually contains relevant diagnostic information.
 
-    (See also: RFC 7235, Section 3.1)
+    (See also: RFC 9110, Section 11.6.1)
 
     All the arguments are defined as keyword-only.
 
@@ -335,7 +335,7 @@ class HTTPUnauthorized(HTTPError):
                 The existing value of the WWW-Authenticate in headers will be
                 overridden by this value
 
-            (See also: RFC 7235, Section 2.1)
+            (See also: RFC 9110, Section 11.6.2)
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -388,7 +388,7 @@ class HTTPForbidden(HTTPError):
     forbidden target resource MAY instead respond with a status code of
     404 Not Found.
 
-    (See also: RFC 7231, Section 6.5.4)
+    (See also: RFC 9110, Section 15.5.4)
 
     All the arguments are defined as keyword-only.
 
@@ -454,7 +454,7 @@ class HTTPNotFound(HTTPError):
     A 404 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls.
 
-    (See also: RFC 7231, Section 6.5.3)
+    (See also: RFC 9110, Section 15.5.3)
 
     All the arguments are defined as keyword-only.
 
@@ -565,7 +565,7 @@ class HTTPMethodNotAllowed(HTTPError):
     A 405 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls.
 
-    (See also: RFC 7231, Section 6.5.5)
+    (See also: RFC 9110, Section 15.5.5)
 
     `allowed_methods` is the only positional argument allowed,
     the other arguments are defined as keyword-only.
@@ -644,9 +644,9 @@ class HTTPNotAcceptable(HTTPError):
     most appropriate. A user agent MAY automatically select the most
     appropriate choice from that list. However, this specification does
     not define any standard for such automatic selection, as described
-    in RFC 7231, Section 6.4.1
+    in RFC 9110, Section 15.4.1
 
-    (See also: RFC 7231, Section 6.5.6)
+    (See also: RFC 9110, Section 15.5.6)
 
     All the arguments are defined as keyword-only.
 
@@ -715,7 +715,7 @@ class HTTPConflict(HTTPError):
     case, the response representation would likely contain information
     useful for merging the differences based on the revision history.
 
-    (See also: RFC 7231, Section 6.5.8)
+    (See also: RFC 9110, Section 15.5.8)
 
     All the arguments are defined as keyword-only.
 
@@ -789,7 +789,7 @@ class HTTPGone(HTTPError):
     A 410 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls.
 
-    (See also: RFC 7231, Section 6.5.9)
+    (See also: RFC 9110, Section 15.5.9)
 
     All the arguments are defined as keyword-only.
 
@@ -852,7 +852,7 @@ class HTTPLengthRequired(HTTPError):
     header field containing the length of the message body in the
     request message.
 
-    (See also: RFC 7231, Section 6.5.10)
+    (See also: RFC 9110, Section 15.5.10)
 
     All the arguments are defined as keyword-only.
 
@@ -914,7 +914,7 @@ class HTTPPreconditionFailed(HTTPError):
     and, thus, prevent the request method from being applied if the
     target resource is in an unexpected state.
 
-    (See also: RFC 7232, Section 4.2)
+    (See also: RFC 9110, Section 13.1.2)
 
     All the arguments are defined as keyword-only.
 
@@ -978,7 +978,7 @@ class HTTPContentTooLarge(HTTPError):
     After header field to indicate that it is temporary and after what
     time the client MAY try again.
 
-    (See also: RFC 7231, Section 6.5.11)
+    (See also: RFC 9110, Section 15.5.11)
 
     All the arguments are defined as keyword-only.
 
@@ -1067,7 +1067,7 @@ class HTTPUriTooLong(HTTPError):
     A 414 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls.
 
-    (See also: RFC 7231, Section 6.5.12)
+    (See also: RFC 9110, Section 15.5.12)
 
     All the arguments are defined as keyword-only.
 
@@ -1129,7 +1129,7 @@ class HTTPUnsupportedMediaType(HTTPError):
     Type or Content-Encoding, or as a result of inspecting the data
     directly.
 
-    (See also: RFC 7231, Section 6.5.13)
+    (See also: RFC 9110, Section 15.5.13)
 
     All the arguments are defined as keyword-only.
 
@@ -1195,7 +1195,7 @@ class HTTPRangeNotSatisfiable(HTTPError):
     sender SHOULD generate a Content-Range header field specifying the
     current length of the selected representation.
 
-    (See also: RFC 7233, Section 4.4)
+    (See also: RFC 9110, Section 14.1.4)
 
     `resource_length` is the only positional argument allowed,
     the other arguments are defined as keyword-only.
@@ -1721,7 +1721,7 @@ class HTTPInternalServerError(HTTPError):
     The server encountered an unexpected condition that prevented it
     from fulfilling the request.
 
-    (See also: RFC 7231, Section 6.6.1)
+    (See also: RFC 9110, Section 15.6.1)
 
     All the arguments are defined as keyword-only.
 
@@ -1783,9 +1783,9 @@ class HTTPNotImplemented(HTTPError):
 
     A 501 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls
-    as described in RFC 7234, Section 4.2.2.
+    as described in RFC 9111, Section 4.2.2.
 
-    (See also: RFC 7231, Section 6.6.2)
+    (See also: RFC 9110, Section 15.6.2)
 
     All the arguments are defined as keyword-only.
 
@@ -1845,7 +1845,7 @@ class HTTPBadGateway(HTTPError):
     response from an inbound server it accessed while attempting to
     fulfill the request.
 
-    (See also: RFC 7231, Section 6.6.3)
+    (See also: RFC 9110, Section 15.6.3)
 
     All the arguments are defined as keyword-only.
 
@@ -1911,7 +1911,7 @@ class HTTPServiceUnavailable(HTTPError):
     server has to use it when becoming overloaded. Some servers might
     simply refuse the connection.
 
-    (See also: RFC 7231, Section 6.6.4)
+    (See also: RFC 9110, Section 15.6.4)
 
     All the arguments are defined as keyword-only.
 
@@ -1979,7 +1979,7 @@ class HTTPGatewayTimeout(HTTPError):
     from an upstream server it needed to access in order to complete the
     request.
 
-    (See also: RFC 7231, Section 6.6.5)
+    (See also: RFC 9110, Section 15.6.5)
 
     All the arguments are defined as keyword-only.
 
@@ -2037,13 +2037,13 @@ class HTTPVersionNotSupported(HTTPError):
     server does not support, or refuses to support, the major version of
     HTTP that was used in the request message.  The server is indicating
     that it is unable or unwilling to complete the request using the same
-    major version as the client (as described in RFC 7230, Section 2.6),
+    major version as the client (as described in RFC 9112, Section 2.5),
     other than with this error message.  The server SHOULD
     generate a representation for the 505 response that describes why
     that version is not supported and what other protocols are supported
     by that server.
 
-    (See also: RFC 7231, Section 6.6.6)
+    (See also: RFC 9110, Section 15.6.6)
 
     All the arguments are defined as keyword-only.
 
