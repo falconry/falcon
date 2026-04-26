@@ -1,0 +1,1 @@
+Updated obsolete RFC 7230/7231/7232/7233/7235 references to RFC 9110/9112 in ``falcon/errors.py``.
