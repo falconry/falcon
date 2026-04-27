@@ -3,7 +3,7 @@
 # Let's get this party started!
 from wsgiref.simple_server import make_server
 
-import falcon 
+import falcon
 from falcon import Request, Response
 
 
