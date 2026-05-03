@@ -963,6 +963,12 @@ async def _simulate_request_asgi(
 
         req_event_emitter.disconnect()
         await task_req
+
+        if resp_event_collector.status is None:
+            # NOTE(kgriffs): An immediate disconnect was simulated, and so
+            #   the app could not return a status.
+            raise ConnectionError('An immediate disconnect was simulated.')
+
         return Result(
             resp_event_collector.body_chunks,
             code_to_http_status(resp_event_collector.status),

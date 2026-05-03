@@ -33,7 +33,7 @@ import inspect
 import os
 import os.path
 import re
-from typing import Any, Callable
+from typing import Any, Callable, cast, TYPE_CHECKING, TypeVar
 import unicodedata
 
 from falcon import status_codes
@@ -87,6 +87,25 @@ _utcnow: Callable[[], datetime.datetime] = functools.partial(
     datetime.datetime.now, datetime.timezone.utc
 )
 
+_T = TypeVar('_T')
+_T_co = TypeVar('_T_co', covariant=True)
+
+if TYPE_CHECKING:
+    from typing import ParamSpec, Protocol
+
+    _P = ParamSpec('_P')
+
+    class _CachedCallable(Protocol[_P, _T_co]):
+        cache_clear: Callable[[], None]
+
+        def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _T_co: ...
+
+    class _LruCacheDecorator(Protocol):
+        def __call__(
+            self, maxsize: int
+        ) -> Callable[[Callable[_P, _T]], _CachedCallable[_P, _T]]: ...
+
+
 # The above aliases were not underscored prior to Falcon 3.1.2.
 strptime: Callable[[str, str], datetime.datetime] = deprecated(
     'This was a private alias local to this module; '
@@ -103,23 +122,25 @@ utcnow: Callable[[], datetime.datetime] = deprecated(
 #   the nocover pragma here.
 def _lru_cache_nop(
     maxsize: int,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:  # pragma: nocover
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+) -> Callable[[Callable[_P, _T]], _CachedCallable[_P, _T]]:  # pragma: nocover
+    def decorator(func: Callable[_P, _T]) -> _CachedCallable[_P, _T]:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
-        func.cache_clear = lambda: None  # type: ignore
+        cached_func = cast('_CachedCallable[_P, _T]', func)
+        cached_func.cache_clear = lambda: None
 
-        return func
+        return cached_func
 
     return decorator
 
 
 # PERF(kgriffs): Using lru_cache is slower on PyPy when the wrapped
 #   function is just doing a few non-IO operations.
+_lru_cache_for_simple_logic: '_LruCacheDecorator'
 if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = functools.lru_cache
+    _lru_cache_for_simple_logic = cast('_LruCacheDecorator', functools.lru_cache)
 
 
 def is_python_func(func: Callable[..., Any] | Any) -> bool:
