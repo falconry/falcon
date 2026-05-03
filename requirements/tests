@@ -10,7 +10,8 @@ uvicorn >= 0.17.0
 websockets >= 13.1
 
 # Handler Specific
-cbor2
+# TODO(vytas): Unpin cbor2 once we clean up exception handling, or the upstream revises 6.x behaviour.
+cbor2 < 6.0
 msgpack
 mujson
 ujson
@@ -23,5 +24,5 @@ python-rapidjson; platform_python_implementation != 'PyPy' and platform_machine 
 # (not available for CPython 3.15 either yet)
 orjson; python_version < '3.15' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
 
-# NOTE(vytas): msgspec is not fully compatible with 3.14 at the time of writing yet.
+# NOTE(vytas): msgspec is not fully compatible with 3.15 at the time of writing yet.
 msgspec; python_version < '3.15' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
