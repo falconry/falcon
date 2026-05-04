@@ -37,6 +37,7 @@ from falcon import util
 from falcon._typing import _UNSET
 from falcon._typing import StoreArg
 from falcon._typing import UnsetOr
+from falcon._typing import WSGIEnvironment
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import FALSE_STRINGS
 from falcon.constants import MEDIA_JSON
@@ -140,7 +141,7 @@ class Request:
     """
 
     # Attribute declaration
-    env: dict[str, Any]
+    env: WSGIEnvironment
     """Reference to the WSGI environ ``dict`` passed in from the
     server. (See also PEP-3333.)
     """
@@ -243,7 +244,7 @@ class Request:
     """Always ``False`` in a sync ``Request``."""
 
     def __init__(
-        self, env: dict[str, Any], options: RequestOptions | None = None
+        self, env: WSGIEnvironment, options: RequestOptions | None = None
     ) -> None:
         self.is_websocket: bool = False
 
@@ -260,7 +261,6 @@ class Request:
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
         path: str = env['PATH_INFO'] or '/'
-
         # PEP 3333 specifies that the PATH_INFO variable is always
         # "bytes tunneled as latin-1" and must be encoded back.
         #
@@ -503,7 +503,7 @@ class Request:
         if self._cached_if_match is _UNSET:
             header_value = self.env.get('HTTP_IF_MATCH')
             if header_value:
-                self._cached_if_match = helpers._parse_etags(header_value)
+                self._cached_if_match = helpers._parse_etags(str(header_value))
             else:
                 self._cached_if_match = None
 
@@ -524,7 +524,7 @@ class Request:
         if self._cached_if_none_match is _UNSET:
             header_value = self.env.get('HTTP_IF_NONE_MATCH')
             if header_value:
-                self._cached_if_none_match = helpers._parse_etags(header_value)
+                self._cached_if_none_match = helpers._parse_etags(str(header_value))
             else:
                 self._cached_if_none_match = None
 
@@ -647,7 +647,7 @@ class Request:
         # include it even in that case.
         try:
             # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
-            return self.env['SCRIPT_NAME']  # type: ignore[no-any-return]
+            return self.env['SCRIPT_NAME']
         except KeyError:
             return ''
 
@@ -673,7 +673,7 @@ class Request:
             to handle such cases.
         """
         # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
-        return self.env['wsgi.url_scheme']  # type: ignore[no-any-return]
+        return self.env['wsgi.url_scheme']
 
     @property
     def forwarded_scheme(self) -> str:
@@ -897,10 +897,10 @@ class Request:
                     # NOTE(kgriffs): Don't take the time to fix the case
                     # since headers are supposed to be case-insensitive
                     # anyway.
-                    headers[name[5:].replace('_', '-')] = value
+                    headers[name[5:].replace('_', '-')] = str(value)
 
                 elif name in WSGI_CONTENT_HEADERS:
-                    headers[name.replace('_', '-')] = value
+                    headers[name.replace('_', '-')] = str(value)
 
         return self._cached_headers
 
@@ -1347,7 +1347,7 @@ class Request:
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
             # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
-            return self.env['HTTP_' + wsgi_name]  # type: ignore[no-any-return]
+            return str(self.env['HTTP_' + wsgi_name])  # type: ignore[literal-required]
 
         except KeyError:
             # NOTE(kgriffs): There are a couple headers that do not
@@ -1358,7 +1358,7 @@ class Request:
                 try:
                     # TODO(0xMattB): Implement advanced typing to type as 'str'
                     #   (see PR #2599).
-                    return self.env[wsgi_name]  # type: ignore[no-any-return]
+                    return str(self.env[wsgi_name])  # type: ignore[literal-required]
                 except KeyError:
                     pass
 

@@ -31,8 +31,10 @@ from falcon import request
 from falcon import request_helpers as helpers
 from falcon._typing import _UNSET
 from falcon._typing import AsgiReceive
+from falcon._typing import HTTPScope
 from falcon._typing import StoreArg
 from falcon._typing import UnsetOr
+from falcon._typing import WebSocketScope
 from falcon.asgi_spec import AsgiEvent
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import Forwarded
@@ -99,7 +101,7 @@ class Request(request.Request):
     _media_error: Exception | None = None
     _stream: BoundedStream | None = None
 
-    scope: dict[str, Any]
+    scope: HTTPScope | WebSocketScope
     """Reference to the ASGI HTTP connection scope passed in
     from the server (see also: `Connection Scope`_).
 
@@ -111,7 +113,7 @@ class Request(request.Request):
 
     def __init__(
         self,
-        scope: dict[str, Any],
+        scope: HTTPScope | WebSocketScope,
         receive: AsgiReceive,
         first_event: AsgiEvent | None = None,
         options: request.RequestOptions | None = None,
@@ -160,7 +162,7 @@ class Request(request.Request):
 
         self.options = options if options is not None else request.RequestOptions()
 
-        self.method = 'GET' if self.is_websocket else scope['method']
+        self.method = 'GET' if self.is_websocket else scope['method']  # type: ignore[typeddict-item]
 
         self.uri_template = None
         # PERF(vytas): Fall back to class variable(s) when unset.
@@ -346,7 +348,7 @@ class Request(request.Request):
         #   that case.
         try:
             # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
-            return self.scope['root_path']  # type: ignore[no-any-return]
+            return self.scope['root_path']
         except KeyError:
             pass
 
@@ -381,7 +383,7 @@ class Request(request.Request):
         #   key to be present.
         try:
             # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
-            return self.scope['scheme']  # type: ignore[no-any-return]
+            return self.scope['scheme']
         except KeyError:
             pass
 
@@ -493,24 +495,12 @@ class Request(request.Request):
         if self._cached_access_route is None:
             # PERF(kgriffs): 'client' is optional according to the ASGI spec
             #   but it will probably be present, hence the try...except.
-            try:
-                # NOTE(kgriffs): The ASGI spec states that this can be
-                #   any iterable. So we need to read and cache it in
-                #   case the iterable is forward-only. But that is
-                #   effectively what we are doing since we only ever
-                #   access this field when setting self._cached_access_route
-                client, __ = self.scope['client']
-            # NOTE(vytas): Uvicorn may explicitly set scope['client'] to None.
-            #   According to the spec, it does default to None when missing,
-            #   but it is unclear whether it can be explicitly set to None, or
-            #   it must be a valid iterable when present. In any case, we
-            #   simply catch TypeError here too to account for this scenario.
-            except (KeyError, TypeError):
-                # NOTE(kgriffs): Default to localhost so that app logic does
-                #   note have to special-case the handling of a missing
-                #   client field in the connection scope. This should be
-                #   a reasonable default, but we can change it later if
-                #   that turns out not to be the case.
+
+            client_info = self.scope.get('client')
+
+            if client_info is not None:
+                client, __ = client_info
+            else:
                 client = '127.0.0.1'
 
             headers = self._asgi_headers
@@ -519,7 +509,7 @@ class Request(request.Request):
                 self._cached_access_route = []
                 for hop in self.forwarded or ():
                     if hop.src is not None:
-                        host, __ = parse_host(hop.src)
+                        host = parse_host(hop.src)[0]
                         self._cached_access_route.append(host)
             elif b'x-forwarded-for' in headers:
                 addresses = headers[b'x-forwarded-for'].decode('latin1').split(',')
@@ -920,7 +910,16 @@ class Request(request.Request):
                 #   read it once and cache the result in case the
                 #   iterator is forward-only (not likely, but better
                 #   safe than sorry).
-                self._asgi_server_cached = tuple(self.scope['server'])
+                server = self.scope['server']
+                if server is None:
+                    raise TypeError  # pragma: no cover
+                host, port = server
+                self._asgi_server_cached = (
+                    str(host),
+                    int(port)
+                    if port is not None
+                    else (443 if self._secure_scheme else 80),
+                )
             except (KeyError, TypeError):
                 # NOTE(kgriffs): Not found, or was None
                 default_port = 443 if self._secure_scheme else 80
