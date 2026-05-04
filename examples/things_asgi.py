@@ -2,13 +2,14 @@
 
 import falcon
 import falcon.asgi
+from falcon.asgi import Request, Response
 
 
 # Falcon follows the REST architectural style, meaning (among
 # other things) that you think in terms of resources and state
 # transitions, which map to HTTP verbs.
 class ThingsResource:
-    async def on_get(self, req, resp):
+    async def on_get(self, req: Request, resp: Response) -> None:
         """Handles GET requests"""
         resp.status = falcon.HTTP_200  # This is the default status
         resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
