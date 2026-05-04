@@ -20,6 +20,7 @@ from http import cookies as http_cookies
 import re
 from typing import Any, Literal, TYPE_CHECKING
 
+from falcon._typing import WSGIEnvironment
 from falcon.util import ETag
 
 if TYPE_CHECKING:
@@ -116,10 +117,9 @@ def _header_property(wsgi_name: str) -> Any:
     """
 
     def fget(self: Request) -> str | None:
-        try:
-            return self.env[wsgi_name] or None
-        except KeyError:
-            return None
+
+        env: WSGIEnvironment = self.env
+        return env.get(wsgi_name) or None  # type: ignore[return-value]
 
     return property(fget)
 

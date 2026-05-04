@@ -1315,7 +1315,7 @@ def create_req(
     """
 
     env = create_environ(**kwargs)
-    return falcon.request.Request(env, options=options)
+    return falcon.request.Request(env, options=options)  # type: ignore[arg-type]
 
 
 def create_asgi_req(
@@ -1354,7 +1354,7 @@ def create_asgi_req(
     req_event_emitter = ASGIRequestEventEmitter(body, disconnect_at=disconnect_at)
 
     req_type = req_type or falcon.asgi.Request
-    return req_type(scope, req_event_emitter, options=options)
+    return req_type(scope, req_event_emitter, options=options)  # type: ignore[arg-type]
 
 
 # NOTE(TudorGR): Deprecated in Falcon 4.3.

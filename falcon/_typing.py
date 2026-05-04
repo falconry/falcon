@@ -28,20 +28,21 @@ from typing import (
     Any,
     Callable,
     Literal,
-    Optional,
     Protocol,
     TYPE_CHECKING,
+    TypeAlias,
+    TypedDict,
     TypeVar,
-    Union,
 )
 
 # NOTE(vytas): Mypy still struggles to handle a conditional import in the EAFP
 #   fashion, so we branch on Py version instead (which it does understand).
 if sys.version_info >= (3, 11):
+    from typing import NotRequired
     from wsgiref.types import StartResponse as StartResponse
-    from wsgiref.types import WSGIEnvironment as WSGIEnvironment
 else:
-    WSGIEnvironment = dict[str, Any]
+    from typing_extensions import NotRequired
+
     StartResponse = Callable[[str, list[tuple[str, str]]], Callable[[bytes], None]]
 
 if TYPE_CHECKING:
@@ -61,7 +62,96 @@ class _Unset(Enum):
 
 _T = TypeVar('_T')
 _UNSET = _Unset.UNSET
-UnsetOr = Union[Literal[_Unset.UNSET], _T]
+UnsetOr: TypeAlias = _T | Literal[_Unset.UNSET]
+
+
+# ASGI scope TypedDicts
+class _ASGIVersions(TypedDict):
+    spec_version: str
+    version: Literal['2.0'] | Literal['3.0']
+
+
+class HTTPScope(TypedDict):
+    type: Literal['http']
+    asgi: _ASGIVersions
+    http_version: str
+    method: str
+    scheme: str
+    path: str
+    raw_path: bytes
+    query_string: bytes
+    root_path: str
+    headers: Iterable[tuple[bytes, bytes]]
+    client: tuple[str, int] | None
+    server: tuple[str, int | None] | None
+    state: NotRequired[dict[str, Any]]
+    extensions: dict[str, dict[object, object]] | None
+
+
+class WebSocketScope(TypedDict):
+    type: Literal['websocket']
+    asgi: _ASGIVersions
+    http_version: str
+    scheme: str
+    path: str
+    raw_path: bytes
+    query_string: bytes
+    root_path: str
+    headers: Iterable[tuple[bytes, bytes]]
+    client: tuple[str, int] | None
+    server: tuple[str, int | None] | None
+    subprotocols: Iterable[str]
+    state: NotRequired[dict[str, Any]]
+    extensions: dict[str, dict[object, object]] | None
+
+
+class LifespanScope(TypedDict):
+    type: Literal['lifespan']
+    asgi: _ASGIVersions
+    state: NotRequired[dict[str, Any]]
+
+
+# WSGI environ TypedDict
+# NOTE: Keys containing dots (e.g. 'wsgi.input') cannot be expressed in the
+# class-based TypedDict syntax; the functional form is used instead so that
+# all PEP 3333 keys can be represented in a single type.
+_WSGIEnvironmentRequired = TypedDict(
+    '_WSGIEnvironmentRequired',
+    {
+        'REQUEST_METHOD': str,
+        'SCRIPT_NAME': str,
+        'PATH_INFO': str,
+        'SERVER_NAME': str,
+        'SERVER_PORT': str,
+        'SERVER_PROTOCOL': str,
+        'wsgi.version': tuple[int, int],
+        'wsgi.url_scheme': str,
+        'wsgi.input': Any,
+        'wsgi.errors': Any,
+        'wsgi.multithread': bool,
+        'wsgi.multiprocess': bool,
+        'wsgi.run_once': bool,
+    },
+)
+
+
+class _WSGIEnvironmentOptional(TypedDict, total=False):
+    QUERY_STRING: str
+    CONTENT_TYPE: str
+    CONTENT_LENGTH: str
+    REMOTE_ADDR: str
+    HTTP_HOST: str
+    HTTP_ACCEPT: str
+    HTTP_FORWARDED: str
+    HTTP_X_FORWARDED_FOR: str
+    HTTP_X_FORWARDED_HOST: str
+    HTTP_X_FORWARDED_PROTO: str
+    HTTP_X_REAL_IP: str
+
+
+class WSGIEnvironment(_WSGIEnvironmentRequired, _WSGIEnvironmentOptional):
+    pass
+
 
 # NOTE(vytas,jap): TypeVar's "default" argument is only available on 3.13+.
 if sys.version_info >= (3, 13):
@@ -82,7 +172,7 @@ else:
     _ARespT = TypeVar('_ARespT', bound='AsgiResponse', contravariant=True)
 
 Link = dict[str, str]
-CookieArg = Mapping[str, Union[str, Cookie]]
+CookieArg = Mapping[str, str | Cookie]
 
 
 # Error handlers
@@ -112,7 +202,7 @@ class AsgiErrorHandler(Protocol[_AReqT, _ARespT]):
 ErrorSerializer = Callable[[_ReqT, _RespT, 'HTTPError'], None]
 
 # Sinks
-SinkPrefix = Union[str, Pattern[str]]
+SinkPrefix = str | Pattern[str]
 
 
 class SinkCallable(Protocol[_ReqT, _RespT]):
@@ -127,11 +217,11 @@ class AsgiSinkCallable(Protocol[_AReqT, _ARespT]):
 
 HeaderMapping = Mapping[str, str]
 HeaderIter = Iterable[tuple[str, str]]
-HeaderArg = Union[HeaderMapping, HeaderIter]
-ResponseStatus = Union[http.HTTPStatus, str, int]
-StoreArg = Optional[dict[str, Any]]
+HeaderArg = HeaderMapping | HeaderIter
+ResponseStatus = http.HTTPStatus | str | int
+StoreArg = dict[str, Any] | None
 Resource = object
-RangeSetHeader = Union[tuple[int, int, int], tuple[int, int, int, str]]
+RangeSetHeader = tuple[int, int, int] | tuple[int, int, int, str]
 
 
 # WSGI
@@ -151,11 +241,9 @@ class ResponderCallable(Protocol):
 
 ProcessRequestMethod = Callable[['Request', 'Response'], None]
 ProcessResourceMethod = Callable[
-    ['Request', 'Response', Optional[Resource], dict[str, Any]], None
+    ['Request', 'Response', Resource | None, dict[str, Any]], None
 ]
-ProcessResponseMethod = Callable[
-    ['Request', 'Response', Optional[Resource], bool], None
-]
+ProcessResponseMethod = Callable[['Request', 'Response', Resource | None, bool], None]
 
 
 # ASGI
@@ -185,27 +273,27 @@ AsgiReceive = Callable[[], Awaitable['AsgiEvent']]
 AsgiSend = Callable[['AsgiSendMsg'], Awaitable[None]]
 AsgiProcessRequestMethod = Callable[['AsgiRequest', 'AsgiResponse'], Awaitable[None]]
 AsgiProcessResourceMethod = Callable[
-    ['AsgiRequest', 'AsgiResponse', Optional[Resource], dict[str, Any]], Awaitable[None]
+    ['AsgiRequest', 'AsgiResponse', Resource | None, dict[str, Any]], Awaitable[None]
 ]
 AsgiProcessResponseMethod = Callable[
-    ['AsgiRequest', 'AsgiResponse', Optional[Resource], bool], Awaitable[None]
+    ['AsgiRequest', 'AsgiResponse', Resource | None, bool], Awaitable[None]
 ]
 AsgiProcessRequestWsMethod = Callable[['AsgiRequest', 'WebSocket'], Awaitable[None]]
 AsgiProcessResourceWsMethod = Callable[
-    ['AsgiRequest', 'WebSocket', Optional[Resource], dict[str, Any]], Awaitable[None]
+    ['AsgiRequest', 'WebSocket', Resource | None, dict[str, Any]], Awaitable[None]
 ]
-ResponseCallbacks = Union[
-    tuple[Callable[[], None], Literal[False]],
-    tuple[Callable[[], Awaitable[None]], Literal[True]],
-]
+ResponseCallbacks: TypeAlias = (
+    tuple[Callable[[], None], Literal[False]]
+    | tuple[Callable[[], Awaitable[None]], Literal[True]]
+)
 
 
 # Routing
 
-MethodDict = Union[
-    dict[str, ResponderCallable],
-    dict[str, Union[AsgiResponderCallable, AsgiResponderWsCallable]],
-]
+MethodDict = (
+    dict[str, ResponderCallable]
+    | dict[str, AsgiResponderCallable | AsgiResponderWsCallable]
+)
 
 
 class FindMethod(Protocol):
@@ -221,7 +309,7 @@ class SerializeSync(Protocol):
 
 DeserializeSync = Callable[[bytes], Any]
 
-Responder = Union[ResponderMethod, AsgiResponderMethod]
+Responder = ResponderMethod | AsgiResponderMethod
 
 
 # WSGI middleware interface
@@ -356,32 +444,35 @@ class UniversalMiddlewareWithProcessResponse(Protocol[_AReqT, _ARespT]):
 # NOTE(jkmnt): This typing is far from perfect due to the Python typing limitations,
 # but better than nothing. Middleware conforming to any protocol of the union
 # will pass the type check. Other protocols violations are not checked.
-SyncMiddleware = Union[
-    WsgiMiddlewareWithProcessRequest[_ReqT, _RespT],
-    WsgiMiddlewareWithProcessResource[_ReqT, _RespT],
-    WsgiMiddlewareWithProcessResponse[_ReqT, _RespT],
-]
+SyncMiddleware = (
+    WsgiMiddlewareWithProcessRequest[_ReqT, _RespT]
+    | WsgiMiddlewareWithProcessResource[_ReqT, _RespT]
+    | WsgiMiddlewareWithProcessResponse[_ReqT, _RespT]
+)
 """Synchronous (WSGI) application middleware.
 
 This type alias reflects the middleware interface for
 components that can be used with a WSGI app.
 """
 
-AsyncMiddleware = Union[
-    AsgiMiddlewareWithProcessRequest[_AReqT, _ARespT],
-    AsgiMiddlewareWithProcessResource[_AReqT, _ARespT],
-    AsgiMiddlewareWithProcessResponse[_AReqT, _ARespT],
+AsyncMiddleware = (
+    AsgiMiddlewareWithProcessRequest[_AReqT, _ARespT]
+    | AsgiMiddlewareWithProcessResource[_AReqT, _ARespT]
+    | AsgiMiddlewareWithProcessResponse[_AReqT, _ARespT]
+    |
     # Lifespan middleware
-    AsgiMiddlewareWithProcessStartup,
-    AsgiMiddlewareWithProcessShutdown,
+    AsgiMiddlewareWithProcessStartup
+    | AsgiMiddlewareWithProcessShutdown
+    |
     # WebSocket middleware
-    AsgiMiddlewareWithProcessRequestWs[_AReqT],
-    AsgiMiddlewareWithProcessResourceWs[_AReqT],
+    AsgiMiddlewareWithProcessRequestWs[_AReqT]
+    | AsgiMiddlewareWithProcessResourceWs[_AReqT]
+    |
     # Universal middleware with process_*_async methods
-    UniversalMiddlewareWithProcessRequest[_AReqT, _ARespT],
-    UniversalMiddlewareWithProcessResource[_AReqT, _ARespT],
-    UniversalMiddlewareWithProcessResponse[_AReqT, _ARespT],
-]
+    UniversalMiddlewareWithProcessRequest[_AReqT, _ARespT]
+    | UniversalMiddlewareWithProcessResource[_AReqT, _ARespT]
+    | UniversalMiddlewareWithProcessResponse[_AReqT, _ARespT]
+)
 """Asynchronous (ASGI) application middleware.
 
 This type alias reflects the middleware interface for components that can be
