@@ -7,7 +7,6 @@ from uuid import UUID
 import pytest
 
 import falcon
-from falcon.errors import HTTPInternalServerError
 from falcon.errors import HTTPInvalidParam
 from falcon.errors import HTTPMissingParam
 from falcon.errors import MediaMalformedError
@@ -1027,28 +1026,11 @@ class TestQueryParams:
         # Call without media_type to trigger fallback to default_media_type
         assert req.get_param_as_media('payload') == payload_dict
 
-    def test_get_param_as_media_no_handler_json_fallback(
-        self, simulate_request, client, resource
-    ):
+    def test_get_param_as_media_no_handler(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        payload_dict = {'foo': 'bar'}
-        query_string = f'payload={json.dumps(payload_dict)}'
-        simulate_request(client=client, path='/', query_string=query_string)
+        simulate_request(client=client, path='/', query_string='payload=test')
         req = resource.captured_req
-        # Use a media type that contains 'application/json' substring
-        # but has no explicit handler
-        result = req.get_param_as_media('payload', media_type='custom/application/json')
-        assert result == payload_dict
-
-    def test_get_param_as_media_no_handler_no_json(
-        self, simulate_request, client, resource
-    ):
-        client.app.add_route('/', resource)
-        query_string = 'payload=test'
-        simulate_request(client=client, path='/', query_string=query_string)
-        req = resource.captured_req
-        # Use a media type that won't have a handler and doesn't contain 'json'
-        with pytest.raises(HTTPInternalServerError):
+        with pytest.raises(ValueError, match='No media handler is configured'):
             req.get_param_as_media('payload', media_type='application/xml')
 
     def test_get_param_as_media_yaml(
@@ -1082,7 +1064,7 @@ class TestQueryParams:
         simulate_request(client=client, path='/', query_string='data={k1:+1,k2:+true}')
         req = resource.captured_req
 
-        with pytest.raises(HTTPInternalServerError):
+        with pytest.raises(ValueError, match='No media handler is configured'):
             req.get_param_as_media('data')
 
     def test_has_param(self, simulate_request, client, resource):
