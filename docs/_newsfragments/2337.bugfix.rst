@@ -1,0 +1,1 @@
+Static routes now support ``HEAD`` without opening file streams, and reject unsupported methods with a proper ``405 Method Not Allowed`` response.
