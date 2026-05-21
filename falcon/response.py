@@ -372,8 +372,14 @@ class Response:
             listed below correspond to those defined in `RFC 6265`_.
 
         Args:
-            name (str): Cookie name
-            value (str): Cookie value
+            name (str): Cookie name. Per :rfc:`6265#section-4.1.1`, cookie
+                names are restricted to US-ASCII characters; non-ASCII
+                values (e.g. multi-byte UTF-8 strings) raise ``KeyError``.
+            value (str): Cookie value. As with ``name``, the value must be
+                US-ASCII encodable; non-ASCII values raise ``ValueError``.
+                Encode non-ASCII payloads (for example with
+                :func:`urllib.parse.quote` or :mod:`base64`) before
+                passing them to this method.
 
         Keyword Args:
             expires (datetime): Specifies when the cookie should expire.
@@ -471,8 +477,10 @@ class Response:
                 .. versionadded:: 4.0
 
         Raises:
-            KeyError: `name` is not a valid cookie name.
-            ValueError: `value` is not a valid cookie value.
+            KeyError: `name` is not a valid cookie name (for example,
+                it contains non-ASCII characters).
+            ValueError: `value` is not a valid cookie value (for example,
+                it contains non-ASCII characters).
 
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
