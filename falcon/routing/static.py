@@ -248,6 +248,32 @@ class StaticRoute:
             return path.startswith(self._prefix)
         return path.startswith(self._prefix) or path == self._prefix[:-1]
 
+    def _get_file(
+        self, file_path: str, open_file: bool
+    ) -> tuple[str, os.stat_result, io.BufferedReader | None]:
+        if open_file:
+            try:
+                fh, st = _open_file(file_path)
+            except falcon.HTTPNotFound:
+                if self._fallback_filename is None:
+                    raise
+
+                fh, st = _open_file(self._fallback_filename)
+                file_path = self._fallback_filename
+
+            return file_path, st, fh
+
+        try:
+            st = _stat_file(file_path)
+        except falcon.HTTPNotFound:
+            if self._fallback_filename is None:
+                raise
+
+            st = _stat_file(self._fallback_filename)
+            file_path = self._fallback_filename
+
+        return file_path, st, None
+
     def __call__(self, req: Request, resp: Response, **kw: Any) -> None:
         """Resource responder for this route."""
         assert not kw
@@ -288,24 +314,7 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        if req.method == 'HEAD':
-            if self._fallback_filename is None:
-                st = _stat_file(file_path)
-            else:
-                try:
-                    st = _stat_file(file_path)
-                except falcon.HTTPNotFound:
-                    st = _stat_file(self._fallback_filename)
-                    file_path = self._fallback_filename
-        else:
-            if self._fallback_filename is None:
-                fh, st = _open_file(file_path)
-            else:
-                try:
-                    fh, st = _open_file(file_path)
-                except falcon.HTTPNotFound:
-                    fh, st = _open_file(self._fallback_filename)
-                    file_path = self._fallback_filename
+        file_path, st, fh = self._get_file(file_path, req.method != 'HEAD')
 
         etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
         resp.etag = etag
@@ -318,13 +327,13 @@ class StaticRoute:
         resp.last_modified = last_modified
 
         if _is_not_modified(req, etag, last_modified):
-            if req.method != 'HEAD':
+            if fh is not None:
                 fh.close()
             resp.status = falcon.HTTP_304
             return
 
         req_range = req.range if req.range_unit == 'bytes' else None
-        if req.method == 'HEAD':
+        if fh is None:
             length, content_range = _get_range(st, req_range)
             resp.content_length = length
         else:

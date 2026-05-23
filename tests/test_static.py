@@ -665,7 +665,9 @@ def test_head_request_honors_range(client, monkeypatch, tmp_path):
 def test_static_route_method_not_allowed(client, monkeypatch, tmp_path):
     (tmp_path / 'main.css').write_bytes(b'body { color: black; }')
 
-    open_mock = mock.Mock(side_effect=AssertionError('unsupported methods must not open files'))
+    open_mock = mock.Mock(
+        side_effect=AssertionError('unsupported methods must not open files')
+    )
     monkeypatch.setattr(io, 'open', open_mock)
 
     client.app.add_static_route('/assets/', tmp_path)
