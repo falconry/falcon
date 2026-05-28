@@ -287,7 +287,7 @@ class AsgiMiddlewareWithProcessResource(Protocol[_AReqT, _ARespT]):
         req: _AReqT,
         resp: _ARespT,
         resource: object,
-        params: Mapping[str, Any],
+        params: dict[str, Any],
     ) -> None: ...
 
 
@@ -318,7 +318,7 @@ class AsgiMiddlewareWithProcessResourceWs(Protocol[_AReqT]):
         req: _AReqT,
         ws: WebSocket,
         resource: object,
-        params: Mapping[str, Any],
+        params: dict[str, Any],
     ) -> None: ...
 
 
@@ -337,7 +337,7 @@ class UniversalMiddlewareWithProcessResource(Protocol[_AReqT, _ARespT]):
         req: _AReqT,
         resp: _ARespT,
         resource: object,
-        params: Mapping[str, Any],
+        params: dict[str, Any],
     ) -> None: ...
 
 
