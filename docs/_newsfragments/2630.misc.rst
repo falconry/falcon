@@ -1,4 +1,4 @@
 ``falcon.sys`` (an internal re-export of the standard library's
-:mod:`sys` module that was added by oversight long ago) is
+:mod:`sys` module that was added inadvertently long ago) is
 scheduled for removal in Falcon 5.0. Import the standard library's
 :mod:`sys` module directly instead.

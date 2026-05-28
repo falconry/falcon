@@ -1,3 +1,5 @@
-The :func:`~falcon.testing.simulate_request` now suports ``msgpack``
-and returns Content-Type as ``MEDIA_MSGPACK`` in a similar way that
-was made to JSON parameters.
+The test client (:func:`~falcon.testing.simulate_request` and friends) now
+accepts a ``msgpack`` keyword argument, analogous to the existing ``json``
+one. When provided, the value is serialized as a MessagePack document and
+used as the request body, and the ``Content-Type`` header is set to
+:attr:`~falcon.MEDIA_MSGPACK`.
