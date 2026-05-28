@@ -31,6 +31,7 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `granuels <https://github.com/granuels>`__
 - `jap <https://github.com/jap>`__
 - `MannXo <https://github.com/MannXo>`__
+- `mvanhorn <https://github.com/mvanhorn>`__
 - `ReinerBRO <https://github.com/ReinerBRO>`__
 - `rushevich <https://github.com/rushevich>`__
 - `StepanUFL <https://github.com/StepanUFL>`__
