@@ -45,8 +45,10 @@ from falcon._typing import AsgiResponderWsCallable
 from falcon._typing import AsgiSend
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import AsyncMiddleware
+from falcon._typing import LifespanScope
 from falcon._typing import Resource
 from falcon._typing import SinkPrefix
+from falcon._typing import WebSocketScope
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
@@ -466,16 +468,19 @@ class App(falcon.app.App[_ReqT, _RespT]):
         # PERF(kgriffs): This should usually be present, so use a
         #   try..except
         try:
-            asgi_info: dict[str, str] = scope['asgi']
+            raw = scope['asgi']
         except KeyError:
-            # NOTE(kgriffs): According to the ASGI spec, "2.0" is
-            #   the default version.
-            asgi_info = scope['asgi'] = {'version': '2.0'}
+            # Default per ASGI spec
+            raw = {'version': '2.0'}
+            scope['asgi'] = raw
 
-        try:
-            spec_version: str | None = asgi_info['spec_version']
-        except KeyError:
-            spec_version = None
+        # Normalize into proper _ASGIVersions shape
+        asgi_info = {
+            'spec_version': str(raw.get('spec_version', '2.0')),
+            'version': str(raw.get('version', '2.0')),
+        }
+
+        spec_version: str | None = asgi_info['spec_version']
 
         try:
             http_version: str = scope['http_version']
@@ -488,12 +493,12 @@ class App(falcon.app.App[_ReqT, _RespT]):
             # PERF(vytas): Evaluate the potentially recurring WebSocket path
             #   first (in contrast to one-shot lifespan events).
             if scope_type == 'websocket':
-                await self._handle_websocket(spec_version, scope, receive, send)
+                await self._handle_websocket(spec_version, scope, receive, send)  # type: ignore[arg-type]
                 return
 
             # NOTE(vytas): Else 'lifespan' -- other scope_type values have been
             #   eliminated by _validate_asgi_scope at this point.
-            await self._call_lifespan_handlers(spec_version, scope, receive, send)
+            await self._call_lifespan_handlers(spec_version, scope, receive, send)  # type: ignore[arg-type]
             return
 
         # NOTE(kgriffs): Per the ASGI spec, we should not proceed with request
@@ -514,7 +519,10 @@ class App(falcon.app.App[_ReqT, _RespT]):
         assert first_event_type == 'http.request'
 
         req = self._request_type(
-            scope, receive, first_event=first_event, options=self.req_options
+            scope,  # type: ignore[arg-type]
+            receive,
+            first_event=first_event,
+            options=self.req_options,
         )
         resp = self._response_type(options=self.resp_options)
 
@@ -1118,7 +1126,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 loop.run_in_executor(None, cb)
 
     async def _call_lifespan_handlers(
-        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: LifespanScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         while True:
             event = await receive()
@@ -1127,7 +1135,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 #   startup, as opposed to repeating them every request.
 
                 # NOTE(vytas): If missing, 'asgi' is populated in __call__.
-                asgi_info: dict[str, str] = scope['asgi']
+                asgi_info: dict[str, str] = scope['asgi']  # type: ignore[assignment]
                 version = asgi_info.get('version', '2.0 (implicit)')
                 if not version.startswith('3.'):
                     await send(
@@ -1188,7 +1196,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 return
 
     async def _handle_websocket(
-        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: WebSocketScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         first_event = await receive()
         if first_event['type'] != EventType.WS_CONNECT:

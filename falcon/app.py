@@ -499,7 +499,7 @@ class App(Generic[_ReqT, _RespT]):
         length: int | None = 0
 
         try:
-            body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
+            body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))  # type: ignore[arg-type]
         except Exception as ex:
             if not self._handle_exception(req, resp, ex, params):
                 raise
