@@ -33,6 +33,7 @@ jobs:
           # Typing
           - env: mypy
           - env: mypy_tests
+          - env: pyright_tests
           # Python tests
           - env: mintest
             coverage: true
