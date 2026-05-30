@@ -621,6 +621,64 @@ def test_file_closed(client, patch_open):
     assert patch_open.current_file.closed
 
 
+def test_head_request_does_not_open_file(client, monkeypatch, tmp_path):
+    file_path = tmp_path / 'main.css'
+    file_content = b'body { color: black; }'
+    file_path.write_bytes(file_content)
+
+    open_mock = mock.Mock(side_effect=AssertionError('HEAD must not open file streams'))
+    monkeypatch.setattr(io, 'open', open_mock)
+
+    client.app.add_static_route('/assets/', tmp_path)
+
+    resp = client.simulate_head(path='/assets/main.css')
+
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert resp.headers['Content-Type'] == 'text/css'
+    assert int(resp.headers['Content-Length']) == len(file_content)
+    assert resp.headers['Accept-Ranges'] == 'bytes'
+    open_mock.assert_not_called()
+
+
+def test_head_request_honors_range(client, monkeypatch, tmp_path):
+    file_path = tmp_path / 'main.css'
+    file_path.write_bytes(b'0123456789')
+
+    open_mock = mock.Mock(side_effect=AssertionError('HEAD must not open file streams'))
+    monkeypatch.setattr(io, 'open', open_mock)
+
+    client.app.add_static_route('/assets/', tmp_path)
+
+    resp = client.simulate_head(
+        path='/assets/main.css',
+        headers={'Range': 'bytes=2-5'},
+    )
+
+    assert resp.status == falcon.HTTP_206
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == 4
+    assert resp.headers['Content-Range'] == 'bytes 2-5/10'
+    open_mock.assert_not_called()
+
+
+def test_static_route_method_not_allowed(client, monkeypatch, tmp_path):
+    (tmp_path / 'main.css').write_bytes(b'body { color: black; }')
+
+    open_mock = mock.Mock(
+        side_effect=AssertionError('unsupported methods must not open files')
+    )
+    monkeypatch.setattr(io, 'open', open_mock)
+
+    client.app.add_static_route('/assets/', tmp_path)
+
+    resp = client.simulate_post(path='/assets/main.css')
+
+    assert resp.status == falcon.HTTP_405
+    assert resp.headers['Allow'] == 'GET, HEAD'
+    open_mock.assert_not_called()
+
+
 def test_options_request(client, patch_open):
     patch_open()
 
@@ -634,7 +692,7 @@ def test_options_request(client, patch_open):
     assert resp.status_code == 200
     assert resp.text == ''
     assert int(resp.headers['Content-Length']) == 0
-    assert resp.headers['Access-Control-Allow-Methods'] == 'GET'
+    assert resp.headers['Access-Control-Allow-Methods'] == 'GET, HEAD'
 
 
 def test_last_modified(client, patch_open):

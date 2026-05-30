@@ -127,7 +127,7 @@ class TestCorsMiddleware:
             ),
         )
 
-        assert result.headers['Access-Control-Allow-Methods'] == 'GET'
+        assert result.headers['Access-Control-Allow-Methods'] == 'GET, HEAD'
         assert result.headers['Access-Control-Allow-Headers'] == '*'
         assert result.headers['Access-Control-Max-Age'] == '86400'
         assert result.headers['Access-Control-Allow-Origin'] == '*'
