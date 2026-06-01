@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 
 from ._typing import _AReqT
 from ._typing import _ARespT
@@ -66,7 +66,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse[_AReqT, _ARespT]):
             https://wicg.github.io/private-network-access/#private-network-request-heading
     """
 
-    allow_origins: str | frozenset[str]
+    allow_origins: Literal['*'] | frozenset[str]
 
     def __init__(
         self,
@@ -76,7 +76,7 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse[_AReqT, _ARespT]):
         allow_private_network: bool = False,
     ):
         if allow_origins == '*':
-            self.allow_origins = allow_origins
+            self.allow_origins = '*'
         else:
             if isinstance(allow_origins, str):
                 allow_origins = [allow_origins]

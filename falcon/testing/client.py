@@ -384,8 +384,7 @@ class Result(_ResultBase):
     def __rich__(self) -> str:
         status, content_type, content = self._prepare_repr_args()
 
-        status_color: str
-
+        status_color: str = 'cyan'
         for prefix, color in (
             ('1', 'blue'),
             ('2', 'green'),
