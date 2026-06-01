@@ -1,0 +1,5 @@
+Documented the US-ASCII restriction on the ``name`` and ``value`` arguments
+of :meth:`falcon.Response.set_cookie`. The implementation has always rejected
+non-ASCII inputs (raising ``KeyError`` for ``name`` and ``ValueError`` for
+``value``), but the parameter and ``Raises`` entries did not call this out;
+the docstring now matches the runtime behaviour.
