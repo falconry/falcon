@@ -953,9 +953,11 @@ async def _simulate_request_asgi(
             while not resp_event_collector.status:
                 await asyncio.sleep(0)
 
+            status = resp_event_collector.status
+            assert status is not None
             return StreamedResult(
                 resp_event_collector.body_chunks,
-                code_to_http_status(resp_event_collector.status),
+                code_to_http_status(status),
                 resp_event_collector.headers,
                 task_req,
                 req_event_emitter,
@@ -963,9 +965,11 @@ async def _simulate_request_asgi(
 
         req_event_emitter.disconnect()
         await task_req
+        final_status = resp_event_collector.status
+        assert final_status is not None
         return Result(
             resp_event_collector.body_chunks,
-            code_to_http_status(resp_event_collector.status),
+            code_to_http_status(final_status),
             resp_event_collector.headers,
         )
 
