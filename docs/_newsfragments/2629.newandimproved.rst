@@ -1,2 +1,0 @@
-Internal LRU cache decorators now preserve wrapped callable signatures for
-static type checking.
