@@ -131,4 +131,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           # APPSEC(vytas): This is not optimal, but verifying seems to cause
           #   intermittent bugs when pinning directly to a hash.
-          verify_signatures: false
+          skip_validation: true
