@@ -11,6 +11,8 @@ on:
 jobs:
   test-emulated:
     name: "cibuildwheel: ${{ matrix.platform.build }}"
+    permissions:
+      contents: read
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
@@ -32,18 +34,19 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@5566d5f9322a1df04fb97ee8b7db60ec956eabff # v4.1.0
         if: ${{ matrix.platform.emulation }}
         with:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.2.1
+        uses: pypa/cibuildwheel@02d94edfc5fdf48ac283246e87aff761af8b9fa7 # v3.4.1
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).

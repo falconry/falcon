@@ -15,7 +15,8 @@ jobs:
   run-tox:
     name: tox -e ${{ matrix.tox.env }}${{ matrix.tox.platform-label || '' }}
     # APPSEC(vytas): Establish global restrictive permissions baseline.
-    permissions: {}
+    permissions:
+      contents: read
     runs-on: ${{ matrix.tox.os || matrix.default-os }}
     strategy:
       fail-fast: false
