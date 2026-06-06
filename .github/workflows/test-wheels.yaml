@@ -40,13 +40,13 @@ jobs:
           persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@5566d5f9322a1df04fb97ee8b7db60ec956eabff # v4.1.0
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
         if: ${{ matrix.platform.emulation }}
         with:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@02d94edfc5fdf48ac283246e87aff761af8b9fa7 # v3.4.1
+        uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084 # v3.4.1
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).
