@@ -13,16 +13,19 @@ jobs:
   build-sdist:
     # NOTE(vytas): We actually build sdist and pure-Python wheel.
     name: sdist
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
@@ -47,7 +50,7 @@ jobs:
           tools/test_dist.py dist/*.whl
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cibw-sdist
           path: dist/falcon-*
@@ -65,17 +68,18 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: cibw-sdist
           path: dist
@@ -85,7 +89,7 @@ jobs:
           tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
 
       - name: Upload sdist to release
-        uses: AButler/upload-release-assets@v3.0
+        uses: AButler/upload-release-assets@3d6774fae0ed91407dc5ae29d576b166536d1777 # v3.0
         if: github.event_name == 'release'
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -106,7 +110,7 @@ jobs:
     #   unauthorized access to the GitHub-backed trusted identity.
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: cibw-sdist
           path: dist
@@ -115,18 +119,20 @@ jobs:
       #   same job is not considered supported, however, the two steps below
       #   are made mutually exclusive by the github.event_name condition.
       - name: Publish sdist and pure-Python wheel to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish sdist and pure-Python wheel to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         if: github.event_name == 'release'
 
   build-wheels:
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
     needs: build-sdist
+    permissions:
+      contents: read
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
@@ -177,18 +183,19 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
         if: ${{ matrix.platform.emulation }}
         with:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.2.1
+        uses: pypa/cibuildwheel@9c00cb4f6b517705a3794b22395aedc36257242c # v3.2.1
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).
@@ -198,7 +205,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/falcon-*.whl
@@ -207,21 +214,24 @@ jobs:
     name: check-wheels
     needs:
       - build-wheels
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: cibw-wheel-*
           path: dist
@@ -247,7 +257,7 @@ jobs:
     #   unauthorized access to the GitHub-backed trusted identity.
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: cibw-wheel-*
           path: dist
@@ -257,11 +267,11 @@ jobs:
       #   same job is not considered supported, however, the two steps below
       #   are made mutually exclusive by the github.event_name condition.
       - name: Publish binary wheels to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         if: github.event_name == 'workflow_dispatch'
         with:
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish binary wheels to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         if: github.event_name == 'release'
