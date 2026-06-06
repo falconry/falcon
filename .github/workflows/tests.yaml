@@ -14,6 +14,8 @@ on:
 jobs:
   run-tox:
     name: tox -e ${{ matrix.tox.env }}${{ matrix.tox.platform-label || '' }}
+    # APPSEC(vytas): Establish global restrictive permissions baseline.
+    permissions: {}
     runs-on: ${{ matrix.tox.os || matrix.default-os }}
     strategy:
       fail-fast: false
@@ -95,6 +97,7 @@ jobs:
         #   https://github.com/codecov/codecov-action/issues/190
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -126,3 +129,6 @@ jobs:
           env_vars: PYTHON
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
+          # APPSEC(vytas): This is not optimal, but verifying seems to cause
+          #   intermittent bugs when pinning directly to a hash.
+          verify_signatures: false
