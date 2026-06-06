@@ -1,0 +1,20 @@
+# Audit GitHub Actions
+name: zizmor
+
+on:
+  # NOTE(vytas): Trigger the tests workflow on push or pull request
+  #   (pull requests only for the master branch for now).
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run-zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Zizmor via Tox
+        run: pipx run tox -e zizmor
