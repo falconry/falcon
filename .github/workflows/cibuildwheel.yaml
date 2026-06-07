@@ -38,8 +38,11 @@ jobs:
           python -m build
 
       - name: Check built artifacts
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py -e $GITHUB_EVENT_NAME -r $GITHUB_REF
 
       - name: Test sdist
         run: |
@@ -85,8 +88,11 @@ jobs:
           path: dist
 
       - name: Check collected artifacts
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py -e $GITHUB_EVENT_NAME -r $GITHUB_REF
 
       - name: Upload sdist to release
         uses: AButler/upload-release-assets@34491005a5d7ec239a784e460807ce844fde7962 # v4.0.0
@@ -238,8 +244,11 @@ jobs:
           merge-multiple: true
 
       - name: Check collected artifacts
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py -e $GITHUB_EVENT_NAME -r $GITHUB_REF
 
   publish-wheels:
     name: publish-wheels
