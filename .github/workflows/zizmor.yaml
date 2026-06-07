@@ -2,12 +2,9 @@
 name: zizmor
 
 on:
-  # NOTE(vytas): Trigger the tests workflow on push or pull request
-  #   (pull requests only for the master branch for now).
+  # Trigger the workflow on master but also allow it to run manually.
+  workflow_dispatch:
   push:
-    branches:
-      - "*"
-  pull_request:
     branches:
       - master
 
