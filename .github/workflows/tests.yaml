@@ -79,6 +79,7 @@ jobs:
           - env: "ws_tutorial"
           # Tooling
           - env: "twine_check"
+          - env: "zizmor-github"
           # ASGI & WSGI servers
           - env: "daphne"
           - env: "hypercorn"
