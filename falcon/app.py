@@ -1147,6 +1147,13 @@ class App(Generic[_ReqT, _RespT]):
             # a route was found, for the sake of backwards-compat.
             resource = None
 
+            # NOTE(vytas): This nested fallback chain might make static code
+            #   checkers think that method_map/params may be possibly unbound.
+            #   Since this is merely a compatibility path for old routers, we
+            #   simply initialize these vars here for the sake of clarity.
+            method_map = {}
+            params = {}
+
         if resource is not None:
             try:
                 responder = method_map[method]

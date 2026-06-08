@@ -1,4 +1,5 @@
-A new router option, :attr:`~.CompiledRouterOptions.default_to_on_request`, was
+A new router option,
+:attr:`~falcon.routing.CompiledRouterOptions.default_to_on_request`, was
 added to allow resources to provide a default responder via ``on_request()``
 (disabled by default). When enabled,
 ``on_request()`` is used as the default responder for every unimplemented HTTP

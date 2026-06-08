@@ -13,16 +13,19 @@ jobs:
   build-sdist:
     # NOTE(vytas): We actually build sdist and pure-Python wheel.
     name: sdist
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
@@ -35,8 +38,11 @@ jobs:
           python -m build
 
       - name: Check built artifacts
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py -e $GITHUB_EVENT_NAME -r $GITHUB_REF
 
       - name: Test sdist
         run: |
@@ -47,7 +53,7 @@ jobs:
           tools/test_dist.py dist/*.whl
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cibw-sdist
           path: dist/falcon-*
@@ -65,27 +71,31 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cibw-sdist
           path: dist
 
       - name: Check collected artifacts
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py -e $GITHUB_EVENT_NAME -r $GITHUB_REF
 
       - name: Upload sdist to release
-        uses: AButler/upload-release-assets@v3.0
+        uses: AButler/upload-release-assets@34491005a5d7ec239a784e460807ce844fde7962 # v4.0.0
         if: github.event_name == 'release'
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -106,7 +116,7 @@ jobs:
     #   unauthorized access to the GitHub-backed trusted identity.
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cibw-sdist
           path: dist
@@ -115,18 +125,20 @@ jobs:
       #   same job is not considered supported, however, the two steps below
       #   are made mutually exclusive by the github.event_name condition.
       - name: Publish sdist and pure-Python wheel to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
         if: github.event_name == 'workflow_dispatch'
         with:
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish sdist and pure-Python wheel to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
         if: github.event_name == 'release'
 
   build-wheels:
     name: ${{ matrix.python }}-${{ matrix.platform.name }}
     needs: build-sdist
+    permissions:
+      contents: read
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
@@ -177,18 +189,19 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
         if: ${{ matrix.platform.emulation }}
         with:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.2.1
+        uses: pypa/cibuildwheel@9c00cb4f6b517705a3794b22395aedc36257242c # v3.2.1
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).
@@ -198,7 +211,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.name }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cibw-wheel-${{ matrix.python }}-${{ matrix.platform.name }}
           path: wheelhouse/falcon-*.whl
@@ -207,29 +220,35 @@ jobs:
     name: check-wheels
     needs:
       - build-wheels
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: cibw-wheel-*
           path: dist
           merge-multiple: true
 
       - name: Check collected artifacts
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          tools/check_dist.py ${{ github.event_name == 'release' && format('-r {0}', github.ref) || '' }}
+          tools/check_dist.py -e $GITHUB_EVENT_NAME -r $GITHUB_REF
 
   publish-wheels:
     name: publish-wheels
@@ -247,7 +266,7 @@ jobs:
     #   unauthorized access to the GitHub-backed trusted identity.
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: cibw-wheel-*
           path: dist
@@ -257,11 +276,11 @@ jobs:
       #   same job is not considered supported, however, the two steps below
       #   are made mutually exclusive by the github.event_name condition.
       - name: Publish binary wheels to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
         if: github.event_name == 'workflow_dispatch'
         with:
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish binary wheels to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
         if: github.event_name == 'release'
