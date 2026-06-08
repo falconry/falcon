@@ -539,3 +539,19 @@ You then can define request methods like any other HTTP method:
             # Handle the custom FOO method
             async def on_foo(self, req, resp):
                 pass
+
+If the HTTP method contains a hyphen or other non-alphanumeric character,
+the corresponding responder name will not be a valid Python identifier.
+For example, ``VERSION-CONTROL`` maps to ``on_version-control``. In this
+case, define the responder as a regular method and then assign the bound
+method to the expected responder name with :func:`setattr`::
+
+    class VersionControlResource:
+        def handle_version_control(self, req, resp):
+            pass
+
+
+    resource = VersionControlResource()
+    handler = resource.handle_version_control
+    setattr(resource, 'on_version-control', handler)
+    app.add_route('/repos', resource)

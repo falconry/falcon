@@ -1,0 +1,2 @@
+Documented how to define responders for custom HTTP methods whose names contain
+hyphens or other non-alphanumeric characters.
