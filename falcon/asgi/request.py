@@ -31,6 +31,7 @@ from falcon import request
 from falcon import request_helpers as helpers
 from falcon._typing import _UNSET
 from falcon._typing import AsgiReceive
+from falcon._typing import AsgiScope
 from falcon._typing import StoreArg
 from falcon._typing import UnsetOr
 from falcon.asgi_spec import AsgiEvent
@@ -99,7 +100,7 @@ class Request(request.Request):
     _media_error: Exception | None = None
     _stream: BoundedStream | None = None
 
-    scope: dict[str, Any]
+    scope: AsgiScope
     """Reference to the ASGI HTTP connection scope passed in
     from the server (see also: `Connection Scope`_).
 
@@ -111,7 +112,7 @@ class Request(request.Request):
 
     def __init__(
         self,
-        scope: dict[str, Any],
+        scope: AsgiScope,
         receive: AsgiReceive,
         first_event: AsgiEvent | None = None,
         options: request.RequestOptions | None = None,
@@ -345,8 +346,7 @@ class Request(request.Request):
         #   empty string, at least uvicorn still includes it explicitly in
         #   that case.
         try:
-            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
-            return self.scope['root_path']  # type: ignore[no-any-return]
+            return self.scope['root_path']
         except KeyError:
             pass
 
@@ -380,8 +380,7 @@ class Request(request.Request):
         # PERF(kgriffs): Use try...except because we normally expect the
         #   key to be present.
         try:
-            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
-            return self.scope['scheme']  # type: ignore[no-any-return]
+            return self.scope['scheme']
         except KeyError:
             pass
 

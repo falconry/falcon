@@ -43,10 +43,14 @@ from falcon._typing import AsgiReceive
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
 from falcon._typing import AsgiSend
+from falcon._typing import AsgiScope
 from falcon._typing import AsgiSinkCallable
 from falcon._typing import AsyncMiddleware
+from falcon._typing import HTTPScope
+from falcon._typing import LifespanScope
 from falcon._typing import Resource
 from falcon._typing import SinkPrefix
+from falcon._typing import WebSocketScope
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
@@ -456,7 +460,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
     @_wrap_asgi_coroutine_func
     async def __call__(  # type: ignore[override] # noqa: C901
         self,
-        scope: dict[str, Any],
+        scope: AsgiScope,
         receive: AsgiReceive,
         send: AsgiSend,
     ) -> None:
@@ -1118,7 +1122,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 loop.run_in_executor(None, cb)
 
     async def _call_lifespan_handlers(
-        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: LifespanScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         while True:
             event = await receive()
@@ -1188,7 +1192,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 return
 
     async def _handle_websocket(
-        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: WebSocketScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         first_event = await receive()
         if first_event['type'] != EventType.WS_CONNECT:

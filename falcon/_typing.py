@@ -31,6 +31,8 @@ from typing import (
     Optional,
     Protocol,
     TYPE_CHECKING,
+    Tuple,
+    TypedDict,
     TypeVar,
     Union,
 )
@@ -40,9 +42,75 @@ from typing import (
 if sys.version_info >= (3, 11):
     from wsgiref.types import StartResponse as StartResponse
     from wsgiref.types import WSGIEnvironment as WSGIEnvironment
+    from typing import NotRequired
 else:
     WSGIEnvironment = dict[str, Any]
     StartResponse = Callable[[str, list[tuple[str, str]]], Callable[[bytes], None]]
+    from typing_extensions import NotRequired
+
+
+# ---------------------------------------------------------------------------
+# ASGI scope TypedDicts
+# Modelled after the ASGI spec:
+#   https://asgi.readthedocs.io/en/latest/specs/www.html
+# ---------------------------------------------------------------------------
+
+
+class ASGIVersions(TypedDict):
+    """ASGI version info present in every scope dict."""
+
+    version: str
+    spec_version: NotRequired[str]
+
+
+class HTTPScope(TypedDict):
+    """ASGI connection scope for HTTP requests."""
+
+    type: Literal['http']
+    asgi: ASGIVersions
+    http_version: str
+    method: str
+    scheme: str
+    path: str
+    raw_path: bytes
+    query_string: bytes
+    root_path: str
+    headers: Iterable[Tuple[bytes, bytes]]
+    client: Optional[Tuple[str, int]]
+    server: Optional[Tuple[str, Optional[int]]]
+    state: NotRequired[dict[str, Any]]
+    extensions: NotRequired[Optional[dict[str, dict[object, object]]]]
+
+
+class WebSocketScope(TypedDict):
+    """ASGI connection scope for WebSocket connections."""
+
+    type: Literal['websocket']
+    asgi: ASGIVersions
+    http_version: str
+    scheme: str
+    path: str
+    raw_path: bytes
+    query_string: bytes
+    root_path: str
+    headers: Iterable[Tuple[bytes, bytes]]
+    client: Optional[Tuple[str, int]]
+    server: Optional[Tuple[str, Optional[int]]]
+    subprotocols: Iterable[str]
+    state: NotRequired[dict[str, Any]]
+    extensions: NotRequired[Optional[dict[str, dict[object, object]]]]
+
+
+class LifespanScope(TypedDict):
+    """ASGI connection scope for lifespan events."""
+
+    type: Literal['lifespan']
+    asgi: ASGIVersions
+    state: NotRequired[dict[str, Any]]
+
+
+# Union of all scope types- use when scope_type has not yet been narrowed
+AsgiScope = Union[HTTPScope, WebSocketScope, LifespanScope]
 
 if TYPE_CHECKING:
     from falcon.asgi import Request as AsgiRequest

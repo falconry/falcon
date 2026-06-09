@@ -15,6 +15,7 @@ from falcon import status_codes
 from falcon._typing import AsgiReceive
 from falcon._typing import AsgiSend
 from falcon._typing import HeaderArg
+from falcon._typing import WebSocketScope
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
@@ -65,7 +66,7 @@ class WebSocket:
     def __init__(
         self,
         ver: str,
-        scope: dict[str, Any],
+        scope: WebSocketScope,
         receive: AsgiReceive,
         send: AsgiSend,
         media_handlers: Mapping[

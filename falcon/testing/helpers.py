@@ -52,6 +52,7 @@ from falcon import errors as falcon_errors
 from falcon._typing import CookieArg
 from falcon._typing import HeaderArg
 from falcon._typing import ResponseStatus
+from falcon._typing import HTTPScope, WebSocketScope, AsgiScope
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import EventType
@@ -911,7 +912,7 @@ def create_scope(
     content_length: int | None = None,
     include_server: bool = True,
     cookies: CookieArg | None = None,
-) -> dict[str, Any]:
+) -> HTTPScope:
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -979,7 +980,7 @@ def create_scope(
     if query_string_bytes and query_string_bytes.startswith(b'?'):
         raise ValueError("query_string should not start with '?'")
 
-    scope: dict[str, Any] = {
+    scope: HTTPScope = {
         'type': ScopeType.HTTP,
         'asgi': {
             'version': '3.0',
@@ -1055,7 +1056,7 @@ def create_scope_ws(
     include_server: bool = True,
     subprotocols: str | None = None,
     spec_version: str = '2.1',
-) -> dict[str, Any]:
+) -> WebSocketScope:
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
