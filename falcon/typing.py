@@ -53,6 +53,7 @@ class AsyncReadableIO(Protocol):
     """
 
     async def read(self, n: int | None = ..., /) -> bytes: ...
+
     def __aiter__(self) -> AsyncIterator[bytes]: ...
 
 

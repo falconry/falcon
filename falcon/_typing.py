@@ -31,7 +31,6 @@ from typing import (
     Optional,
     Protocol,
     TYPE_CHECKING,
-    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -40,9 +39,9 @@ from typing import (
 # NOTE(vytas): Mypy still struggles to handle a conditional import in the EAFP
 #   fashion, so we branch on Py version instead (which it does understand).
 if sys.version_info >= (3, 11):
+    from typing import NotRequired
     from wsgiref.types import StartResponse as StartResponse
     from wsgiref.types import WSGIEnvironment as WSGIEnvironment
-    from typing import NotRequired
 else:
     WSGIEnvironment = dict[str, Any]
     StartResponse = Callable[[str, list[tuple[str, str]]], Callable[[bytes], None]]
@@ -75,11 +74,11 @@ class HTTPScope(TypedDict):
     raw_path: bytes
     query_string: bytes
     root_path: str
-    headers: Iterable[Tuple[bytes, bytes]]
-    client: Optional[Tuple[str, int]]
-    server: Optional[Tuple[str, Optional[int]]]
+    headers: Iterable[tuple[bytes, bytes]]
+    client: tuple[str, int] | None
+    server: tuple[str, int | None] | None
     state: NotRequired[dict[str, Any]]
-    extensions: NotRequired[Optional[dict[str, dict[object, object]]]]
+    extensions: NotRequired[dict[str, dict[object, object]] | None]
 
 
 class WebSocketScope(TypedDict):
@@ -93,12 +92,12 @@ class WebSocketScope(TypedDict):
     raw_path: bytes
     query_string: bytes
     root_path: str
-    headers: Iterable[Tuple[bytes, bytes]]
-    client: Optional[Tuple[str, int]]
-    server: Optional[Tuple[str, Optional[int]]]
+    headers: Iterable[tuple[bytes, bytes]]
+    client: tuple[str, int] | None
+    server: tuple[str, int | None] | None
     subprotocols: Iterable[str]
     state: NotRequired[dict[str, Any]]
-    extensions: NotRequired[Optional[dict[str, dict[object, object]]]]
+    extensions: NotRequired[dict[str, dict[object, object]] | None]
 
 
 class LifespanScope(TypedDict):
@@ -109,7 +108,7 @@ class LifespanScope(TypedDict):
     state: NotRequired[dict[str, Any]]
 
 
-# Union of all scope types- use when scope_type has not yet been narrowed
+# Union of all scope types — use when scope_type has not yet been narrowed
 AsgiScope = Union[HTTPScope, WebSocketScope, LifespanScope]
 
 if TYPE_CHECKING:
