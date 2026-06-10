@@ -31,8 +31,10 @@ from falcon import request
 from falcon import request_helpers as helpers
 from falcon._typing import _UNSET
 from falcon._typing import AsgiReceive
+from falcon._typing import HTTPScope
 from falcon._typing import StoreArg
 from falcon._typing import UnsetOr
+from falcon._typing import WebSocketScope
 from falcon.asgi_spec import AsgiEvent
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import Forwarded
@@ -99,19 +101,23 @@ class Request(request.Request):
     _media_error: Exception | None = None
     _stream: BoundedStream | None = None
 
-    scope: dict[str, Any]
+    scope: HTTPScope | WebSocketScope
     """Reference to the ASGI HTTP connection scope passed in
     from the server (see also: `Connection Scope`_).
 
     .. _Connection Scope:
         https://asgi.readthedocs.io/en/latest/specs/www.html#connection-scope
+
+    .. versionchanged:: 4.3
+        The type was narrowed from ``dict[str, Any]`` to
+        ``HTTPScope | WebSocketScope``.
     """
     is_websocket: bool
     """Set to ``True`` IFF this request was made as part of a WebSocket handshake."""
 
     def __init__(
         self,
-        scope: dict[str, Any],
+        scope: HTTPScope | WebSocketScope,
         receive: AsgiReceive,
         first_event: AsgiEvent | None = None,
         options: request.RequestOptions | None = None,
@@ -160,7 +166,7 @@ class Request(request.Request):
 
         self.options = options if options is not None else request.RequestOptions()
 
-        self.method = 'GET' if self.is_websocket else scope['method']
+        self.method = 'GET' if self.is_websocket else scope['method']  # type: ignore[typeddict-item]
 
         self.uri_template = None
         # PERF(vytas): Fall back to class variable(s) when unset.
@@ -345,12 +351,11 @@ class Request(request.Request):
         #   empty string, at least uvicorn still includes it explicitly in
         #   that case.
         try:
-            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
-            return self.scope['root_path']  # type: ignore[no-any-return]
-        except KeyError:
+            return self.scope['root_path']
+        except KeyError:  # pragma: nocover
             pass
 
-        return ''
+        return ''  # pragma: nocover
 
     @property
     # NOTE(caselit): Deprecated long ago. Warns since 4.0.
@@ -380,12 +385,11 @@ class Request(request.Request):
         # PERF(kgriffs): Use try...except because we normally expect the
         #   key to be present.
         try:
-            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
-            return self.scope['scheme']  # type: ignore[no-any-return]
-        except KeyError:
+            return self.scope['scheme']
+        except KeyError:  # pragma: nocover
             pass
 
-        return 'ws' if self.is_websocket else 'http'
+        return 'ws' if self.is_websocket else 'http'  # pragma: nocover
 
     @property
     def forwarded_scheme(self) -> str:
@@ -499,7 +503,7 @@ class Request(request.Request):
                 #   case the iterable is forward-only. But that is
                 #   effectively what we are doing since we only ever
                 #   access this field when setting self._cached_access_route
-                client, __ = self.scope['client']
+                client, __ = self.scope['client']  # type: ignore[misc]
             # NOTE(vytas): Uvicorn may explicitly set scope['client'] to None.
             #   According to the spec, it does default to None when missing,
             #   but it is unclear whether it can be explicitly set to None, or
@@ -920,13 +924,16 @@ class Request(request.Request):
                 #   read it once and cache the result in case the
                 #   iterator is forward-only (not likely, but better
                 #   safe than sorry).
-                self._asgi_server_cached = tuple(self.scope['server'])
+                server = self.scope['server']
+                if server is None:
+                    raise TypeError
+                self._asgi_server_cached = tuple(server)  # type: ignore[assignment]
             except (KeyError, TypeError):
                 # NOTE(kgriffs): Not found, or was None
                 default_port = 443 if self._secure_scheme else 80
                 self._asgi_server_cached = ('localhost', default_port)
 
-        return self._asgi_server_cached
+        return self._asgi_server_cached  # type: ignore[return-value]
 
     @property
     def _secure_scheme(self) -> bool:
