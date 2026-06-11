@@ -276,7 +276,7 @@ class StaticRoute:
                 file_path = self._fallback_filename
 
         if is_head:
-            # NOTE(kgriffs): Close the file handle immediately since the
+            # NOTE(sijie-Z): Close the file handle immediately since the
             #   response to a HEAD request must not include a body.
             fh.close()
 
