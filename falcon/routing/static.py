@@ -227,10 +227,14 @@ class StaticRoute:
         """Resource responder for this route."""
         assert not kw
         if req.method == 'OPTIONS':
-            # it's likely a CORS request. Set the allow header to the appropriate value.
-            resp.set_header('Allow', 'GET')
+            resp.set_header('Allow', 'GET, HEAD, OPTIONS')
             resp.set_header('Content-Length', '0')
             return
+
+        if req.method not in ('GET', 'HEAD'):
+            raise falcon.HTTPMethodNotAllowed(
+                allowed_methods=['GET', 'HEAD', 'OPTIONS']
+            )
 
         without_prefix = req.path[len(self._prefix) :]
 
@@ -260,6 +264,8 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
+        is_head = req.method == 'HEAD'
+
         if self._fallback_filename is None:
             fh, st = _open_file(file_path)
         else:
@@ -268,6 +274,11 @@ class StaticRoute:
             except falcon.HTTPNotFound:
                 fh, st = _open_file(self._fallback_filename)
                 file_path = self._fallback_filename
+
+        if is_head:
+            # NOTE(kgriffs): Close the file handle immediately since the
+            #   response to a HEAD request must not include a body.
+            fh.close()
 
         etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
         resp.etag = etag
@@ -284,25 +295,28 @@ class StaticRoute:
             resp.status = falcon.HTTP_304
             return
 
-        req_range = req.range if req.range_unit == 'bytes' else None
-        try:
-            stream, length, content_range = _set_range(fh, st, req_range)
-        except OSError:
-            fh.close()
-            raise falcon.HTTPNotFound()
-
-        resp.set_stream(stream, length)
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
             suffix, 'application/octet-stream'
         )
-        resp.accept_ranges = 'bytes'
 
+        if is_head:
+            resp.content_length = st.st_size
+        else:
+            req_range = req.range if req.range_unit == 'bytes' else None
+            try:
+                stream, length, content_range = _set_range(fh, st, req_range)
+            except OSError:
+                fh.close()
+                raise falcon.HTTPNotFound()
+            resp.set_stream(stream, length)
+            if content_range:
+                resp.status = falcon.HTTP_206
+                resp.content_range = content_range
+
+        resp.accept_ranges = 'bytes'
         if self._downloadable:
             resp.downloadable_as = os.path.basename(file_path)
-        if content_range:
-            resp.status = falcon.HTTP_206
-            resp.content_range = content_range
 
 
 class StaticRouteAsync(StaticRoute):

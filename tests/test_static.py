@@ -634,7 +634,7 @@ def test_options_request(client, patch_open):
     assert resp.status_code == 200
     assert resp.text == ''
     assert int(resp.headers['Content-Length']) == 0
-    assert resp.headers['Access-Control-Allow-Methods'] == 'GET'
+    assert resp.headers['Access-Control-Allow-Methods'] == 'GET, HEAD, OPTIONS'
 
 
 def test_last_modified(client, patch_open):
@@ -757,3 +757,121 @@ def test_if_none_match_precedence(client, patch_open):
     )
     assert resp2.status == falcon.HTTP_304
     assert resp2.text == ''
+
+
+def test_head_request(client, patch_open):
+    patch_open(b'test_data')
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    resp = client.simulate_head(path='/assets/css/main.css')
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == len(b'test_data')
+    assert resp.headers.get('Accept-Ranges') == 'bytes'
+    assert resp.headers.get('Content-Type') is not None
+
+
+def test_head_content_length_matches_file_size(client, patch_open):
+    patch_open(b'0123456789abcdef')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    resp = client.simulate_head(path='/downloads/thing.zip')
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == 16
+
+
+def test_head_not_modified(client, patch_open):
+    mtime = (1736617934.133701, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    resp = client.simulate_head(
+        path='/assets/css/main.css',
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:14 GMT'},
+    )
+    assert resp.status == falcon.HTTP_304
+    assert resp.text == ''
+
+    resp = client.simulate_head(
+        path='/assets/css/main.css',
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:13 GMT'},
+    )
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+
+
+def test_head_etag(client, patch_open):
+    mtime = 1736617934.133701
+    patch_open(mtime=mtime)
+    content = b'test_data'
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    head_resp = client.simulate_head(path='/assets/css/main.css')
+    get_resp = client.simulate_get(path='/assets/css/main.css')
+    assert head_resp.headers['ETag'] == get_resp.headers['ETag']
+
+
+def test_head_with_fallback(client, patch_open, monkeypatch):
+    def validate(path):
+        if 'index' not in path:
+            raise OSError()
+
+    patch_open(validate=validate)
+    monkeypatch.setattr('os.path.isfile', lambda file: 'index' in file)
+
+    client.app.add_static_route(
+        '/static', '/opt/somesite/static', fallback_filename='index.html'
+    )
+
+    resp = client.simulate_head(path='/static/nonexistent')
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert resp.headers.get('Content-Type') is not None
+
+
+def test_head_downloadable(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route(
+        '/downloads', '/opt/somesite/downloads', downloadable=True
+    )
+
+    resp = client.simulate_head(path='/downloads/thing.zip')
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert resp.headers['Content-Disposition'] == 'attachment; filename="thing.zip"'
+
+
+def test_head_not_found(client):
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    resp = client.simulate_head(path='/assets/nonexistent.css')
+    assert resp.status == falcon.HTTP_404
+
+
+def test_unsupported_methods(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    for method in ('POST', 'PUT', 'DELETE', 'PATCH'):
+        resp = client.simulate_request(
+            path='/assets/css/main.css', method=method
+        )
+        assert resp.status == falcon.HTTP_405
+        assert resp.headers.get('Allow') == 'GET, HEAD, OPTIONS'
+
+
+def test_options_allow_header(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    resp = client.simulate_options(path='/assets/css/main.css')
+    assert resp.status == falcon.HTTP_200
+    assert resp.headers.get('Allow') == 'GET, HEAD, OPTIONS'
