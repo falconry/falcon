@@ -28,7 +28,8 @@ names.
 
 Two features that we had hoped to land in 4.3 -- response teardown callbacks and
 a native OpenTelemetry integration -- did not make the cut in time. Both are now
-at the top of our priority list for Falcon 4.4.
+at the top of our priority list for Falcon
+`4.4 <https://github.com/falconry/falcon/milestone/46>`__.
 
 On the security front, our GitHub Actions workflows are now audited with
 `zizmor <https://zizmor.sh/>`__, and we have hardened the existing workflows to
@@ -36,12 +37,6 @@ address the issues it surfaced.
 
 This release also incorporates many pull requests submitted by our community.
 Sincere thanks to all 19 contributors who made this release possible!
-
-
-.. Changes to Supported Platforms
-.. ------------------------------
-
-.. NOTE(vytas): No changes to the supported platforms (yet).
 
 
 New & Improved
@@ -118,7 +113,7 @@ Misc
 
 - Documented the US-ASCII restriction on the ``name`` and ``value`` arguments
   of :meth:`falcon.Response.set_cookie`. The implementation has always rejected
-  non-ASCII inputs (raising ``KeyError`` for ``name`` and ``ValueError`` for
+  non-ASCII inputs (raising :class:`KeyError` for ``name`` and :class:`ValueError` for
   ``value``), but the parameter and ``Raises`` entries did not call this out;
   the docstring now matches the runtime behaviour. (`#1445 <https://github.com/falconry/falcon/issues/1445>`__)
 - The :func:`falcon.testing.redirected` context manager has been deprecated in
