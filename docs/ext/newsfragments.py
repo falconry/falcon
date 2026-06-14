@@ -48,7 +48,7 @@ class TowncrierDraftRenderer:
     def _render_draft(self):
         if not self._has_newsfragments():
             # NOTE(vytas): To ease the work for 3rd party packagers, we do not
-            #   require the towncrier binary unless we actually have any
+            #   require the towncrier executable unless we actually have any
             #   newsfragments, otherwise we just simulate its stub.
             return self._TOWNCRIER_DRAFT_STUB
 
