@@ -1,6 +1,0 @@
-A new :meth:`~falcon.Request.get_query_string_as_media` method was added to
-:class:`~falcon.Request`. The method URL-decodes the entire query string and
-deserializes it using the configured media handlers. This is useful for
-implementing the OpenAPI 3.2 `querystring parameter location
-<https://spec.openapis.org/oas/v3.2.0.html#parameter-locations>`__, where
-the entire query string is treated as a single serialized value.

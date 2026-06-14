@@ -998,6 +998,18 @@ class TestFalconTestingUtils:
 
         assert result.__rich__() == expected_result
 
+    def test_rich_repr_7xx(self):
+        # NOTE(vytas): Regression test for unbound status_color found by pyright.
+        result = falcon.testing.Result(
+            [b'Eight Megabytes and Constantly Swapping\n'],
+            falcon.HTTP_702,
+            [('content-type', 'gnu/emacs')],
+        )
+        rich_repr = result.__rich__()
+        assert '702' in rich_repr
+        assert 'Emacs' in rich_repr
+        assert 'cyan' in rich_repr
+
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
         assert not result.content

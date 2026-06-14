@@ -1,5 +1,0 @@
-A new :meth:`~falcon.Request.get_param_as_media` method was added to
-:class:`~falcon.Request`. It deserializes a single query-string parameter
-using the configured media handlers, and accepts an optional ``media_type``
-that falls back to the app's
-:attr:`~falcon.RequestOptions.default_media_type` when unspecified.
