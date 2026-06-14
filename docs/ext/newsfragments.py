@@ -27,6 +27,8 @@ NEWSFRAGMENTS_DIR = FALCON_ROOT / 'docs' / '_newsfragments'
 class TowncrierDraftRenderer:
     """Newsfragment draft renderer for the configured Towncrier file."""
 
+    _FALCON_RELEASE_MARKER = '\n.. falcon-release:'
+    _TOWNCRIER_DRAFT_STUB = '\nNo significant changes.\n'
     _TOWNCRIER_FILENAME_PATTERN = re.compile(r'filename = "docs/(.+)\.rst"\n')
     _TOWNCRIER_MARKER = '.. towncrier release notes start'
 
@@ -40,8 +42,16 @@ class TowncrierDraftRenderer:
         assert len(documents) == 1, 'Expected exactly one tool.towncrier.filename'
         return cls(documents[0])
 
+    def _has_newsfragments(self):
+        return any(NEWSFRAGMENTS_DIR.glob('*.rst'))
+
     def _render_draft(self):
-        subprocess.call(('which', 'towncrier'))
+        if not self._has_newsfragments():
+            # NOTE(vytas): To ease the work for 3rd party packagers, we do not
+            #   require the towncrier binary unless we actually have any
+            #   newsfragments, otherwise we just simulate its stub.
+            return self._TOWNCRIER_DRAFT_STUB
+
         try:
             draft = subprocess.check_output(('towncrier', '--draft'), cwd=FALCON_ROOT)
         except FileNotFoundError:
@@ -63,6 +73,9 @@ class TowncrierDraftRenderer:
 
         document = source[0]
         if self._TOWNCRIER_MARKER not in document:
+            return
+        if self._FALCON_RELEASE_MARKER in document:
+            # Don't mess with finalized releases.
             return
 
         draft = self._render_draft()

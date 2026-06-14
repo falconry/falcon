@@ -1,5 +1,6 @@
 coverage >= 4.1
-pytest >= 7.0
+# TODO(vytas): Remove the upper bound once we converge with master.
+pytest >= 7.0, < 9.1
 pyyaml
 requests
 
