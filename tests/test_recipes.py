@@ -214,7 +214,8 @@ class TestRequestIDContext:
 
 class TestMsgspec:
     @pytest.fixture(scope='class', autouse=True)
-    def msgspec(self):
+    @classmethod
+    def msgspec(cls):
         return pytest.importorskip(
             'msgspec', reason='this recipe requires msgspec [not found]'
         )
