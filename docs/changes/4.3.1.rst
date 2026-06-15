@@ -1,0 +1,13 @@
+Changelog for Falcon 4.3.1
+==========================
+
+.. falcon-release: 2026-06-16
+
+Summary
+-------
+
+This is a :ref:`SemVer <semver>` patch release that makes Falcon's own test
+suite compatible with the recently released ``cbor2`` 6.x series.
+
+Documentation and tests aside, this release is functionally identical to
+:doc:`Falcon 4.3.0 <4.3.0>`.
