@@ -1,27 +1,42 @@
 Changelog for Falcon 4.3.0
 ==========================
 
+.. falcon-release: 2026-06-15
+
 Summary
 -------
 
-This is the first beta release of Falcon 4.3.
+Falcon 4.3.0 centers on request parsing and typing. On the parsing side, this
+release introduces a family of new :class:`~falcon.Request` methods for
+extracting structured data from the query string --
+:meth:`~falcon.Request.get_param_as_dict`,
+:meth:`~falcon.Request.get_param_as_media`, and
+:meth:`~falcon.Request.get_query_string_as_media` -- together with a new
+``delimiter`` argument for :meth:`~falcon.Request.get_param_as_list`. Several of
+these align with OpenAPI v3 (and 3.2) parameter styles, making it easier to
+implement spec-compliant APIs on top of Falcon.
 
-As Falcon 4.3 is now feature-complete, we would really be thankful if you could
-take this beta release for a spin with your apps, and
-:ref:`let us know if you run into any issues <chat>`!
+On the typing side, our internal annotations are now strict enough for the
+project to pass ``mypy --strict falcon/``, and :ref:`generic App types
+<generic_app_types>` are now automatically parametrized by the default
+request/response types on CPython 3.13+.
 
-As always, you can grab this pre-release
-`from PyPI <https://pypi.org/project/falcon/4.3.0b1/>`__::
+This release also brings a number of smaller improvements, including MessagePack
+support in the test client, an opt-in ``on_request()`` default responder, and
+hardening of :func:`falcon.secure_filename` against Windows reserved device
+names.
 
-    pip install falcon==4.3.0b1
+Two features that we had hoped to land in 4.3 -- response teardown callbacks and
+a native OpenTelemetry integration -- did not make the cut in time. Both are now
+at the top of our priority list for Falcon
+`4.4 <https://github.com/falconry/falcon/milestone/46>`__.
 
-Thank You!
+On the security front, our GitHub Actions workflows are now audited with
+`zizmor <https://zizmor.sh/>`__, and we have hardened the existing workflows to
+address the issues it surfaced.
 
-
-.. Changes to Supported Platforms
-.. ------------------------------
-
-.. NOTE(vytas): No changes to the supported platforms (yet).
+This release also incorporates many pull requests submitted by our community.
+Sincere thanks to all 19 contributors who made this release possible!
 
 
 New & Improved
@@ -31,13 +46,14 @@ New & Improved
   accepts a ``msgpack`` keyword argument, analogous to the existing ``json``
   one. When provided, the value is serialized as a MessagePack document and
   used as the request body, and the ``Content-Type`` header is set to
-  :attr:`~falcon.MEDIA_MSGPACK`. (`#1026 <https://github.com/falconry/falcon/issues/1026>`__)
+  ``MEDIA_MSGPACK``. (`#1026 <https://github.com/falconry/falcon/issues/1026>`__)
 - A new router option,
   :attr:`~falcon.routing.CompiledRouterOptions.default_to_on_request`, was
   added to allow resources to provide a default responder via ``on_request()``
-  (disabled by default). When enabled,
-  ``on_request()`` is used as the default responder for every unimplemented HTTP
-  verb except ``on_options()`` (and the special ``on_websocket`` handler).
+  (disabled by default). When enabled, ``on_request()`` is used as the default
+  responder for every HTTP method that lacks an explicit responder, except
+  ``OPTIONS`` (served by ``on_options()``) and the special WebSocket handler
+  (``on_websocket()``).
 
   When the option is disabled, or the ``on_request()`` method is not implemented,
   the default responder for
@@ -46,10 +62,10 @@ New & Improved
   (``CON``, ``NUL``, ``COM1``, etc.) by prefixing the sanitized value with an
   underscore. (`#2422 <https://github.com/falconry/falcon/issues/2422>`__)
 - Internal type annotations were improved, allowing the project to pass
-  `mypy --strict falcon/`. We have added a few `# type: ignore` comments for
+  ``mypy --strict falcon/``. We have added a few ``# type: ignore`` comments for
   known limitations, and are actively working to reduce their necessity. (`#2504 <https://github.com/falconry/falcon/issues/2504>`__)
-- The :meth:`req.get_param_as_list <falcon.Request.get_param_as_list>` method now
-  supports a new argument, `delimiter`, for splitting values.
+- The :meth:`~falcon.Request.get_param_as_list` method now
+  supports a new argument, ``delimiter``, for splitting values.
   In line with the OpenAPI v3 parameter specification, the supported delimiters
   currently include the ``'pipeDelimited'`` and ``'spaceDelimited'`` symbolic
   constants, as well as the literal ``','``, ``'|'``, and ``' '`` characters. (`#2538 <https://github.com/falconry/falcon/issues/2538>`__)
@@ -97,7 +113,7 @@ Misc
 
 - Documented the US-ASCII restriction on the ``name`` and ``value`` arguments
   of :meth:`falcon.Response.set_cookie`. The implementation has always rejected
-  non-ASCII inputs (raising ``KeyError`` for ``name`` and ``ValueError`` for
+  non-ASCII inputs (raising :class:`KeyError` for ``name`` and :class:`ValueError` for
   ``value``), but the parameter and ``Raises`` entries did not call this out;
   the docstring now matches the runtime behaviour. (`#1445 <https://github.com/falconry/falcon/issues/1445>`__)
 - The :func:`falcon.testing.redirected` context manager has been deprecated in
