@@ -697,9 +697,11 @@ class TestFalconUtils:
 
 @pytest.mark.parametrize(
     'protocol,method',
-    zip(
-        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
-        falcon.HTTP_METHODS * 2,
+    tuple(
+        zip(
+            ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
+            falcon.HTTP_METHODS * 2,
+        )
     ),
 )
 def test_simulate_request_protocol(asgi, protocol, method, util):
