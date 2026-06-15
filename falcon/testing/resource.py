@@ -31,15 +31,15 @@ import typing
 import falcon
 
 if typing.TYPE_CHECKING:  # pragma: no cover
-    from falcon import app as wsgi
     from falcon._typing import HeaderArg
     from falcon._typing import Resource
-    from falcon.asgi import app as asgi
+    from falcon.asgi.request import Request as AsgiRequest
+    from falcon.asgi.response import Response as AsgiResponse
 
 
 def capture_responder_args(
-    req: wsgi.Request,
-    resp: wsgi.Response,
+    req: falcon.Request,
+    resp: falcon.Response,
     resource: object,
     params: typing.Mapping[str, str],
 ) -> None:
@@ -79,8 +79,8 @@ def capture_responder_args(
 
 
 async def capture_responder_args_async(
-    req: asgi.Request,
-    resp: asgi.Response,
+    req: AsgiRequest,
+    resp: AsgiResponse,
     resource: Resource,
     params: typing.Mapping[str, str],
 ) -> None:
@@ -105,8 +105,8 @@ async def capture_responder_args_async(
 
 
 def set_resp_defaults(
-    req: wsgi.Request,
-    resp: wsgi.Response,
+    req: falcon.Request,
+    resp: falcon.Response,
     resource: Resource,
     params: typing.Mapping[str, str],
 ) -> None:
@@ -130,8 +130,8 @@ def set_resp_defaults(
 
 
 async def set_resp_defaults_async(
-    req: asgi.Request,
-    resp: asgi.Response,
+    req: AsgiRequest,
+    resp: AsgiResponse,
     resource: Resource,
     params: typing.Mapping[str, str],
 ) -> None:
@@ -166,9 +166,9 @@ class SimpleTestResource:
             responses
     """
 
-    captured_req: wsgi.Request | asgi.Request | None
+    captured_req: falcon.Request | None
     """The last Request object passed into any one of the responder methods."""
-    captured_resp: wsgi.Response | asgi.Response | None
+    captured_resp: falcon.Response | None
     """The last Response object passed into any one of the responder methods."""
 
     captured_kwargs: typing.Any | None
@@ -222,14 +222,14 @@ class SimpleTestResource:
     @falcon.before(capture_responder_args)
     @falcon.before(set_resp_defaults)
     def on_get(
-        self, req: wsgi.Request, resp: wsgi.Response, **kwargs: typing.Any
+        self, req: falcon.Request, resp: falcon.Response, **kwargs: typing.Any
     ) -> None:
         pass
 
     @falcon.before(capture_responder_args)
     @falcon.before(set_resp_defaults)
     def on_post(
-        self, req: wsgi.Request, resp: wsgi.Response, **kwargs: typing.Any
+        self, req: falcon.Request, resp: falcon.Response, **kwargs: typing.Any
     ) -> None:
         pass
 
@@ -265,13 +265,13 @@ class SimpleTestResourceAsync(SimpleTestResource):
     @falcon.before(capture_responder_args_async)
     @falcon.before(set_resp_defaults_async)
     async def on_get(  # type: ignore[override]
-        self, req: asgi.Request, resp: asgi.Response, **kwargs: typing.Any
+        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: typing.Any
     ) -> None:
         pass
 
     @falcon.before(capture_responder_args_async)
     @falcon.before(set_resp_defaults_async)
     async def on_post(  # type: ignore[override]
-        self, req: asgi.Request, resp: asgi.Response, **kwargs: typing.Any
+        self, req: AsgiRequest, resp: AsgiResponse, **kwargs: typing.Any
     ) -> None:
         pass

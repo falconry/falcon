@@ -38,7 +38,9 @@ from falcon._typing import _UNSET
 from falcon._typing import StoreArg
 from falcon._typing import UnsetOr
 from falcon.constants import DEFAULT_MEDIA_TYPE
+from falcon.constants import FALSE_STRINGS
 from falcon.constants import MEDIA_JSON
+from falcon.constants import TRUE_STRINGS
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded
 from falcon.media import Handlers
@@ -52,11 +54,19 @@ from falcon.util import structures
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 
+__all__ = ('Forwarded',)
+
 DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
-TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
-FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
+
+_PARAM_VALUE_DELIMITERS = {
+    ',': ',',
+    '|': '|',
+    ' ': ' ',
+    'pipeDelimited': '|',
+    'spaceDelimited': ' ',
+}
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
 strptime = datetime.strptime
@@ -337,16 +347,18 @@ class Request:
     # Properties
     # ------------------------------------------------------------------------
 
-    user_agent: str | None = helpers._header_property('HTTP_USER_AGENT')
-    """Value of the User-Agent header, or ``None`` if the header is missing."""
     auth: str | None = helpers._header_property('HTTP_AUTHORIZATION')
     """Value of the Authorization header, or ``None`` if the header is missing."""
     expect: str | None = helpers._header_property('HTTP_EXPECT')
     """Value of the Expect header, or ``None`` if the header is missing."""
     if_range: str | None = helpers._header_property('HTTP_IF_RANGE')
     """Value of the If-Range header, or ``None`` if the header is missing."""
+    last_event_id: str | None = helpers._header_property('HTTP_LAST_EVENT_ID')
+    """Value of the Last-Event-ID header, or ``None`` if the header is missing."""
     referer: str | None = helpers._header_property('HTTP_REFERER')
     """Value of the Referer header, or ``None`` if the header is missing."""
+    user_agent: str | None = helpers._header_property('HTTP_USER_AGENT')
+    """Value of the User-Agent header, or ``None`` if the header is missing."""
 
     @property
     def forwarded(self) -> list[Forwarded] | None:
@@ -625,7 +637,7 @@ class Request:
         of the server.
 
         (In WSGI it corresponds to the "SCRIPT_NAME" environ variable defined
-        by PEP-3333; in ASGI it Corresponds to the "root_path"ASGI HTTP
+        by PEP-3333; in ASGI it Corresponds to the "root_path" ASGI HTTP
         scope field.)
         """  # noqa: D205
         # PERF(kgriffs): try..except is faster than get() assuming that
@@ -634,7 +646,8 @@ class Request:
         # empty string, uwsgi, gunicorn, waitress, and wsgiref all
         # include it even in that case.
         try:
-            return self.env['SCRIPT_NAME']
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            return self.env['SCRIPT_NAME']  # type: ignore[no-any-return]
         except KeyError:
             return ''
 
@@ -659,7 +672,8 @@ class Request:
             :attr:`forwarded_scheme` can be used, instead,
             to handle such cases.
         """
-        return self.env['wsgi.url_scheme']
+        # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+        return self.env['wsgi.url_scheme']  # type: ignore[no-any-return]
 
     @property
     def forwarded_scheme(self) -> str:
@@ -800,7 +814,7 @@ class Request:
         by the first proxy in front of the application server.
 
         The following request headers are checked, in order of
-        preference, to determine the forwarded scheme:
+        preference, to determine the forwarded host:
 
             - ``Forwarded``
             - ``X-Forwarded-Host``
@@ -1154,6 +1168,85 @@ class Request:
     this property.
     """
 
+    def get_query_string_as_media(
+        self, media_type: str | None = None, default_when_empty: UnsetOr[Any] = _UNSET
+    ) -> Any:
+        """Deserialize the query string as a media object.
+
+        This method URL-decodes the query string and then deserializes it
+        as a media object using the specified media type handler. This is
+        useful for implementing the OpenAPI 3.2 `querystring parameter
+        location`_, where the entire query string is treated as a single
+        serialized value (typically JSON or form-urlencoded).
+
+        For example, if the query string is
+        ``%7B%22numbers%22%3A%5B1%2C2%5D%2C%22flag%22%3Anull%7D``, this
+        method will URL-decode it to ``{"numbers":[1,2],"flag":null}`` and
+        then deserialize it as JSON (assuming `media_type` is set to
+        ``'application/json'``)::
+
+            # Query string: ?%7B%22numbers%22%3A%5B1%2C2%5D%7D
+            data = req.get_query_string_as_media('application/json')
+            # data == {'numbers': [1, 2]}
+
+        See also :ref:`media` for more information regarding media handling.
+
+        Note:
+            When called on a request with an empty query string, Falcon will
+            let the media handler try to deserialize the empty string and will
+            return the value returned by the handler or propagate the exception
+            raised by it. To instead return a different value in case of an
+            exception by the handler, specify the argument `default_when_empty`.
+
+        Args:
+            media_type: Media type to use for deserialization (e.g.,
+                ``'application/json'``). If ``None``, falls back to the
+                value of :attr:`~falcon.RequestOptions.default_media_type`
+                (default ``'application/json'``).
+
+        Keyword Args:
+            default_when_empty: Fallback value to return when there is no
+                query string and the media handler raises an error. By default,
+                Falcon uses the value returned by the media handler or
+                propagates the raised exception, if any.
+
+        Returns:
+            object: The deserialized media representation of the query string.
+
+        Raises:
+            ValueError: No media handler is configured for `media_type`.
+
+        .. _querystring parameter location:
+            https://spec.openapis.org/oas/v3.2.0.html#parameter-locations
+        """
+        if media_type is None:
+            media_type = self.options.default_media_type
+
+        handler, _, _ = self.options.media_handlers._resolve(
+            media_type, self.options.default_media_type, raise_not_found=False
+        )
+        if handler is None:
+            raise ValueError(
+                f'No media handler is configured for {media_type!r}. '
+                'Please ensure the media type is registered in '
+                'RequestOptions.media_handlers.'
+            )
+
+        # URL-decode the query string
+        decoded_query_string = util.uri.decode(self.query_string, unquote_plus=False)
+
+        # Encode once and reuse bytes for BytesIO and length to avoid
+        # double-encoding the string.
+        query_bytes = decoded_query_string.encode('utf-8')
+        query_stream = BytesIO(query_bytes)
+
+        try:
+            return handler.deserialize(query_stream, media_type, len(query_bytes))
+        except errors.MediaNotFoundError:
+            if default_when_empty is not _UNSET:
+                return default_when_empty
+            raise
+
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
@@ -1252,7 +1345,8 @@ class Request:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self.env['HTTP_' + wsgi_name]
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+            return self.env['HTTP_' + wsgi_name]  # type: ignore[no-any-return]
 
         except KeyError:
             # NOTE(kgriffs): There are a couple headers that do not
@@ -1261,7 +1355,9 @@ class Request:
             # to access these instead of .get_header.
             if wsgi_name in WSGI_CONTENT_HEADERS:
                 try:
-                    return self.env[wsgi_name]
+                    # TODO(0xMattB): Implement advanced typing to type as 'str'
+                    #   (see PR #2599).
+                    return self.env[wsgi_name]  # type: ignore[no-any-return]
                 except KeyError:
                     pass
 
@@ -1661,8 +1757,7 @@ class Request:
         Keyword Args:
             required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found or is not an float (default
-                ``False``).
+                parameter is not found or is not a float (default ``False``).
             min_value (float): Set to the minimum value allowed for this
                 param. If the param is found and it is less than min_value, an
                 ``HTTPError`` is raised.
@@ -1944,6 +2039,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: list[str] | None = ...,
+        delimiter: str | None = None,
     ) -> list[str]: ...
 
     @overload
@@ -1954,6 +2050,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: list[_T] | None = ...,
+        delimiter: str | None = None,
     ) -> list[_T]: ...
 
     @overload
@@ -1965,6 +2062,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: list[str],
+        delimiter: str | None = None,
     ) -> list[str]: ...
 
     @overload
@@ -1976,6 +2074,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: list[_T],
+        delimiter: str | None = None,
     ) -> list[_T]: ...
 
     @overload
@@ -1986,6 +2085,7 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         default: list[str] | None = ...,
+        delimiter: str | None = None,
     ) -> list[str] | None: ...
 
     @overload
@@ -1996,6 +2096,7 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         default: list[_T] | None = ...,
+        delimiter: str | None = None,
     ) -> list[_T] | None: ...
 
     def get_param_as_list(
@@ -2005,6 +2106,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: list[_T] | None = None,
+        delimiter: str | None = None,
     ) -> list[_T] | list[str] | None:
         """Return the value of a query string parameter as a list.
 
@@ -2033,7 +2135,33 @@ class Request:
                 the value of the param, but only if the param is found (default
                 ``None``).
             default (any): If the param is not found returns the
-                given value instead of ``None``
+                given value instead of ``None``.
+            delimiter(str): An optional character for splitting a parameter
+                value into a list. In addition to the ``','``, ``' '``, and
+                ``'|'`` characters, the ``'spaceDelimited'`` and
+                ``'pipeDelimited'`` symbolic constants from the
+                `OpenAPI v3 parameter specification
+                <https://spec.openapis.org/oas/v3.2.0.html#style-values>`__
+                are also supported.
+
+                Note:
+                    If the parameter was already passed as an array, e.g., as
+                    multiple instances (the OAS ``'explode'`` style), the
+                    `delimiter` argument has no effect.
+
+                Note:
+                    In contrast to the automatic splitting of comma-separated
+                    values via the
+                    :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option,
+                    values are split by `delimiter` **after** percent-decoding
+                    the query string.
+
+                    The :attr:`~falcon.RequestOptions.keep_blank_qs_values`
+                    option has no effect on the secondary splitting by
+                    `delimiter` either.
+
+                .. versionadded:: 4.3
+                    The `delimiter` keyword argument.
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
@@ -2053,6 +2181,15 @@ class Request:
             :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option must be
             set to ``True``.
 
+            Even if the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option
+            is set (by default) to ``False``, a value can also be split into
+            list elements by using an OpenAPI spec-compatible delimiter, e.g.:
+
+            >>> req
+            <Request: GET 'http://falconframework.org/?colors=blue%7Cblack%7Cbrown'>
+            >>> req.get_param_as_list('colors', delimiter='pipeDelimited')
+            ['blue', 'black', 'brown']
+
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 a transform function raised an instance of ``ValueError``.
@@ -2065,6 +2202,16 @@ class Request:
         #       know how likely params are to be specified by clients.
         if name in params:
             items = params[name]
+
+            # NOTE(bricklayer25): If a delimiter is specified AND the param is
+            #   a single string, split it.
+            if delimiter is not None and isinstance(items, str):
+                if delimiter not in _PARAM_VALUE_DELIMITERS:
+                    raise ValueError(
+                        f'Unsupported delimiter value: {delimiter!r};'
+                        f' supported: {tuple(_PARAM_VALUE_DELIMITERS)}'
+                    )
+                items = items.split(_PARAM_VALUE_DELIMITERS[delimiter])
 
             # NOTE(warsaw): When a key appears multiple times in the request
             # query, it will already be represented internally as a list.
@@ -2309,30 +2456,218 @@ class Request:
         """
 
         param_value = self.get_param(name, required=required)
-
         if param_value is None:
             return default
 
         handler, _, _ = self.options.media_handlers._resolve(
             MEDIA_JSON, MEDIA_JSON, raise_not_found=False
         )
+        # NOTE(vytas): Fall back to a default JSON handler so that this legacy
+        #   helper keeps working even when the user has unregistered the
+        #   built-in JSON handler.
         if handler is None:
             handler = _DEFAULT_JSON_HANDLER
 
+        return self._deserialize_param_value(
+            name, param_value, MEDIA_JSON, handler, store
+        )
+
+    def get_param_as_media(
+        self,
+        name: str,
+        media_type: str | None = None,
+        required: bool = False,
+        store: StoreArg = None,
+        default: Any | None = None,
+    ) -> Any:
+        """Return a query string parameter's value deserialized by a media handler.
+
+        This is useful for implementing the OpenAPI Parameter Object's
+        `content`_ field, where an individual query-string parameter is
+        itself a serialized media document such as JSON.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'payload').
+
+        Keyword Args:
+            media_type (str): Media type to use for deserialization (e.g.,
+                ``'application/json'``). If ``None``, falls back to the
+                value of :attr:`~falcon.RequestOptions.default_media_type`
+                (default ``'application/json'``).
+            required (bool): Set to ``True`` to raise
+                :class:`~falcon.HTTPBadRequest` instead of returning ``None``
+                when the parameter is not found (default ``False``).
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
+
+        Returns:
+            The deserialized value for the parameter, or ``default`` if the
+            parameter is missing and `required` is ``False``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed by the selected media handler.
+            ValueError: No media handler is configured for `media_type`.
+
+        .. _content:
+            https://spec.openapis.org/oas/latest.html#fixed-fields-for-use-with-content
+        """
+
+        param_value = self.get_param(name, required=required)
+        if param_value is None:
+            return default
+
+        if media_type is None:
+            media_type = self.options.default_media_type
+
+        handler, _, _ = self.options.media_handlers._resolve(
+            media_type, self.options.default_media_type, raise_not_found=False
+        )
+        if handler is None:
+            raise ValueError(
+                f'No media handler is configured for {media_type!r}. '
+                'Please ensure the media type is registered in '
+                'RequestOptions.media_handlers.'
+            )
+
+        return self._deserialize_param_value(
+            name, param_value, media_type, handler, store
+        )
+
+    def _deserialize_param_value(
+        self,
+        name: str,
+        param_value: str,
+        media_type: str,
+        handler: Any,
+        store: StoreArg,
+    ) -> Any:
         try:
             # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
-            # interface is refactored. Possibly using the WS interface?
+            #   interface is refactored. Possibly using the WS interface?
             val = handler.deserialize(
-                BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
+                BytesIO(param_value.encode()), media_type, len(param_value)
             )
         except errors.HTTPBadRequest:
-            msg = 'It could not be parsed as JSON.'
-            raise errors.HTTPInvalidParam(msg, name)
+            raise errors.HTTPInvalidParam(
+                f'It could not be deserialized as {media_type!r}.', name
+            )
 
         if store is not None:
             store[name] = val
 
         return val
+
+    def get_param_as_dict(
+        self,
+        name: str,
+        required: bool = False,
+        deep_object: bool = False,
+        delimiter: str | None = None,
+        store: StoreArg = None,
+        default: dict[str, str] | None = None,
+    ) -> dict[str, str] | None:
+        """Return the value of a query string parameter as a dictionary.
+
+        Two input formats are supported:
+
+        * An alternating key/value list, e.g., ``param=k1,v1,k2,v2``, e.g.:
+
+          >>> req
+          <Request: GET 'https://example.com/?color=R%7C100%7CG%7C200%7CB%7C150'>
+          >>> req.get_param_as_dict('color', delimiter='pipeDelimited')
+          {'R': '100', 'G': '200', 'B': '150'}
+
+          (The list can be split on the provided `delimiter`, otherwise
+          :attr:`~falcon.RequestOptions.auto_parse_qs_csv` must be enabled, or
+          the parameter must be repeated as in
+          ``param=k1&param=v1&param=k2&param=v2``, for the list form to be
+          picked up.)
+
+        * The OpenAPI v3 ``deepObject`` style, e.g.,
+          ``param[k1]=v1&param[k2]=v2`` (when `deep_object` is ``True``):
+
+          >>> req
+          <Request: GET 'https://example.com/?color%5BR%5D=100&color%5BG%5D=200'>
+          >>> req.get_param_as_dict('color', deep_object=True)
+          {'R': '100', 'G': '200'}
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not found
+                (default ``False``).
+            deep_object (bool): Set to ``True`` to interpret the parameter
+                using the OpenAPI v3 ``deepObject`` style (default ``False``).
+            delimiter (str): An optional character for splitting a parameter
+                value into the alternating list of keys and values; see
+                :meth:`~.get_param_as_list` for the list of supported
+                delimiters. Has no effect when `deep_object` is ``True``.
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
+            default (any): If the param is not found, returns the
+                given value instead of ``None``.
+
+        Returns:
+            dict: The value of the param if it is found. Otherwise, returns
+            ``None`` unless `required` is ``True``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed from the parameter.
+
+        .. versionadded:: 4.3
+        """
+
+        output: dict[str, str] | None
+
+        if deep_object:
+            oc: dict[str, str] = {}
+            prefix = f'{name}['
+            prefix_len = len(prefix)
+            for key, value in self._params.items():
+                if not (key.startswith(prefix) and key.endswith(']')):
+                    continue
+                inner = key[prefix_len:-1]
+
+                if isinstance(value, list):
+                    # NOTE(StepanUFL): An empty list is not expected to occur
+                    #   in practice here, but keep the check defensively so
+                    #   the return type is consistently str.
+                    oc[inner] = value[0] if value else ''
+                else:
+                    oc[inner] = value
+
+            if not oc:
+                if required:
+                    raise errors.HTTPMissingParam(name)
+                output = default
+            else:
+                output = oc
+
+        else:
+            values_list = self.get_param_as_list(
+                name, required=required, delimiter=delimiter
+            )
+
+            if values_list is None:
+                output = default
+            elif len(values_list) % 2 != 0:
+                msg = 'The number of list elements must be even.'
+                raise errors.HTTPInvalidParam(msg, name)
+            else:
+                output = dict(zip(values_list[::2], values_list[1::2]))
+
+        if output is not None and store is not None:
+            store[name] = output
+
+        return output
 
     def has_param(self, name: str) -> bool:
         """Determine whether or not the query string parameter already exists.

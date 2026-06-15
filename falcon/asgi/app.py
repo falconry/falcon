@@ -28,13 +28,15 @@ from typing import (
     ClassVar,
     overload,
     TYPE_CHECKING,
-    TypeVar,
 )
 import warnings
 
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import _AReqT as _ReqT
+from falcon._typing import _ARespT as _RespT
+from falcon._typing import _ExcT
 from falcon._typing import _UNSET
 from falcon._typing import AsgiErrorHandler
 from falcon._typing import AsgiReceive
@@ -80,8 +82,7 @@ from .ws import WebSocketOptions
 
 __all__ = ('App',)
 
-
-# TODO(vytas): Clean up these foul workarounds before the 4.0 release.
+# TODO(vytas): Clean up these foul workarounds before the 5.0 release.
 MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm
 
 _EVT_RESP_EOF: AsgiSendMsg = {'type': EventType.HTTP_RESPONSE_BODY}
@@ -91,10 +92,6 @@ _BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 _TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
-
-_ExcT = TypeVar('_ExcT', bound=Exception)
-_ReqT = TypeVar('_ReqT', bound=Request, contravariant=True)
-_RespT = TypeVar('_RespT', bound=Response, contravariant=True)
 
 
 class App(falcon.app.App[_ReqT, _RespT]):
@@ -524,7 +521,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         resource: Resource | None = None
         params: dict[str, Any] = {}
 
-        dependent_mw_resp_stack: list = []
+        dependent_mw_resp_stack: list[Any] = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -1258,7 +1255,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                     # NOTE(vytas): We could add the ws=None parameter to the
                     #   default responders, but let's keep it simple for now,
                     #   and skip the warning part.
-                    if on_websocket not in (
+                    if on_websocket not in (  # type: ignore[comparison-overlap]
                         cls._default_responder_bad_request,
                         cls._default_responder_path_not_found,
                     ):

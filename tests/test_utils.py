@@ -673,6 +673,23 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('Document.pdf', -11)
 
+    @pytest.mark.parametrize(
+        'filename,max_length,expected',
+        [
+            ('con', None, '_con'),
+            ('nul.txt', None, '_nul.txt'),
+            ('CoM1.log', None, '_CoM1.log'),
+            ('lpt9', None, '_lpt9'),
+            ('con.txt', 7, '_co.txt'),
+            ('conduit.txt', None, 'conduit.txt'),
+        ],
+    )
+    def test_secure_filename_windows_reserved_names(
+        self, monkeypatch, filename, max_length, expected
+    ):
+        monkeypatch.setattr(misc.os, 'name', 'nt')
+        assert misc.secure_filename(filename, max_length) == expected
+
     def test_misc_isascii(self):
         with pytest.warns(deprecation.DeprecatedWarning):
             assert misc.isascii('foobar')
@@ -680,9 +697,11 @@ class TestFalconUtils:
 
 @pytest.mark.parametrize(
     'protocol,method',
-    zip(
-        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
-        falcon.HTTP_METHODS * 2,
+    tuple(
+        zip(
+            ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
+            falcon.HTTP_METHODS * 2,
+        )
     ),
 )
 def test_simulate_request_protocol(asgi, protocol, method, util):
@@ -901,7 +920,7 @@ class TestFalconTestingUtils:
         app = util.create_app(asgi)
         app.add_route('/hello', resource)
 
-        result: falcon.testing.Result = simulate(app, '/hello')
+        result: falcon.testing.Result = simulate(app, '/hello')  # type: ignore[annotation-unchecked]
         captured_resp = resource.captured_resp
         content = captured_resp.text
 
@@ -916,7 +935,7 @@ class TestFalconTestingUtils:
             str(content),
         ]
 
-        status_color: str
+        status_color: str  # type: ignore[annotation-unchecked]
 
         for prefix, color in (
             ('1', 'blue'),
@@ -980,6 +999,18 @@ class TestFalconTestingUtils:
         )
 
         assert result.__rich__() == expected_result
+
+    def test_rich_repr_7xx(self):
+        # NOTE(vytas): Regression test for unbound status_color found by pyright.
+        result = falcon.testing.Result(
+            [b'Eight Megabytes and Constantly Swapping\n'],
+            falcon.HTTP_702,
+            [('content-type', 'gnu/emacs')],
+        )
+        rich_repr = result.__rich__()
+        assert '702' in rich_repr
+        assert 'Emacs' in rich_repr
+        assert 'cyan' in rich_repr
 
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])

@@ -20,7 +20,7 @@ Conversely, the `uri` module must be imported explicitly::
 """
 
 from http import cookies as http_cookies
-import sys
+import sys as sys  # For falcon.sys, see #2630.
 
 # Hoist misc. utils
 from falcon.constants import PYTHON_VERSION
@@ -66,6 +66,7 @@ __all__ = (
     'get_argnames',
     'get_bound_method',
     'get_running_loop',
+    'http_cookies',
     'http_date_to_dt',
     'http_now',
     'http_status_to_code',

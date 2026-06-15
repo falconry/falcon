@@ -31,7 +31,7 @@ def extract_sdist(archive, target):
         targz.extractall(target)
 
     content = target / archive.with_suffix('').stem
-    assert content.is_dir, 'no extracted directory found, something is wrong!'
+    assert content.is_dir(), 'no extracted directory found, something is wrong!'
     logging.info(f'Extracted {archive} to {content}.')
     return content
 

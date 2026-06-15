@@ -94,7 +94,7 @@ class Response(response.Response):
     def sse(self) -> SSEEmitter | None:
         """A Server-Sent Event (SSE) emitter, implemented as
         an async iterator or generator that yields a series of
-        of :class:`falcon.asgi.SSEvent` instances. Each event will be
+        :class:`falcon.asgi.SSEvent` instances. Each event will be
         serialized and sent to the client as HTML5 Server-Sent Events::
 
             async def emitter():

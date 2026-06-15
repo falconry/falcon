@@ -1,4 +1,4 @@
-# Copyright 2019-2025 by Vytautas Liuolia.
+# Copyright 2019-2026 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -333,7 +333,7 @@ class BufferedReader:
             self._buffer_pos = 0
             self._buffer = next_chunk
 
-    def pipe(self, destination: IO | None = None) -> None:
+    def pipe(self, destination: IO[bytes] | None = None) -> None:
         while True:
             chunk = self.read(self._chunk_size)
             if not chunk:
@@ -345,7 +345,7 @@ class BufferedReader:
     def pipe_until(
         self,
         delimiter: bytes,
-        destination: IO | None = None,
+        destination: IO[bytes] | None = None,
         consume_delimiter: bool = False,
         _size: int | None = None,
     ) -> None:

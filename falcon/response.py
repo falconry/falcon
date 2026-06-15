@@ -199,7 +199,8 @@ class Response:
             if resp.status_code >= 400:
                 log.warning(f'returning error response: {resp.status_code}')
         """
-        return http_status_to_code(self.status)
+        # TODO(0xMattB): Modify decorator to return proper type (see gh #2629).
+        return http_status_to_code(self.status)  # type: ignore[no-any-return]
 
     @status_code.setter
     def status_code(self, value: int) -> None:
@@ -371,8 +372,14 @@ class Response:
             listed below correspond to those defined in `RFC 6265`_.
 
         Args:
-            name (str): Cookie name
-            value (str): Cookie value
+            name (str): Cookie name. Per :rfc:`6265#section-4.1.1`, cookie
+                names are restricted to US-ASCII characters; non-ASCII
+                values (e.g. multi-byte UTF-8 strings) raise ``KeyError``.
+            value (str): Cookie value. As with ``name``, the value must be
+                US-ASCII encodable; non-ASCII values raise ``ValueError``.
+                Encode non-ASCII payloads (for example with
+                :func:`urllib.parse.quote` or :mod:`base64`) before
+                passing them to this method.
 
         Keyword Args:
             expires (datetime): Specifies when the cookie should expire.
@@ -440,9 +447,9 @@ class Response:
                 mitigate some forms of cross-site scripting. (default: ``True``)
 
                 Note:
-                    HttpOnly cookies are not visible to javascript scripts
+                    HttpOnly cookies are not visible to JavaScript scripts
                     in the browser. They are automatically sent to the server
-                    on javascript ``XMLHttpRequest`` or ``Fetch`` requests.
+                    on JavaScript ``XMLHttpRequest`` or ``Fetch`` requests.
 
                 (See also: RFC 6265, Section 4.1.2.6)
 
@@ -470,8 +477,10 @@ class Response:
                 .. versionadded:: 4.0
 
         Raises:
-            KeyError: `name` is not a valid cookie name.
-            ValueError: `value` is not a valid cookie value.
+            KeyError: `name` is not a valid cookie name (for example,
+                it contains non-ASCII characters).
+            ValueError: `value` is not a valid cookie value (for example,
+                it contains non-ASCII characters).
 
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
@@ -485,9 +494,9 @@ class Response:
         """
 
         if not _is_ascii_encodable(name):
-            raise KeyError('name is not ascii encodable')
+            raise KeyError('name is not ASCII encodable')
         if not _is_ascii_encodable(value):
-            raise ValueError('value is not ascii encodable')
+            raise ValueError('value is not ASCII encodable')
 
         value = str(value)
 
@@ -570,7 +579,7 @@ class Response:
         agent to immediately expire its own copy of the cookie.
 
         Note:
-            Modern browsers place restriction on cookies without the
+            Modern browsers place restrictions on cookies without the
             "same-site" cookie attribute set. To that end this attribute
             is set to ``'Lax'`` by this method.
 
@@ -850,7 +859,7 @@ class Response:
         # normalize the header names.
         _headers = self._headers
 
-        for name, value in headers:  # type: ignore[misc]
+        for name, value in headers:  # type: ignore[str-unpack]
             # NOTE(kgriffs): uwsgi fails with a TypeError if any header
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode
@@ -924,11 +933,11 @@ class Response:
                 A list of tags may be given in order to indicate to the
                 client that the target resource is available in multiple
                 languages.
-            type_hint(str): Provides a hint as to the media type of the
+            type_hint (str): Provides a hint as to the media type of the
                 result of dereferencing the link (default ``None``). As noted
                 in RFC 5988, this is only a hint and does not override the
                 Content-Type header returned when the link is followed.
-            crossorigin(str):  Determines how cross origin requests are handled.
+            crossorigin (str):  Determines how cross origin requests are handled.
                 Can take values 'anonymous' or 'use-credentials' or None.
                 (See:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)

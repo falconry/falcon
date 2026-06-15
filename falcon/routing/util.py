@@ -22,7 +22,9 @@ from falcon import constants
 from falcon import responders
 
 if TYPE_CHECKING:
+    from falcon._typing import AsgiResponderCallable
     from falcon._typing import MethodDict
+    from falcon._typing import ResponderCallable
 
 
 class SuffixedMethodNotFoundError(Exception):
@@ -31,7 +33,9 @@ class SuffixedMethodNotFoundError(Exception):
         self.message = message
 
 
-def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
+def map_http_methods(
+    resource: object, suffix: str | None = None, default_to_on_request: bool = False
+) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
@@ -46,6 +50,11 @@ def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
             a suffix is provided, Falcon will map GET requests to
             ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
             etc.
+        default_to_on_request (bool): If True, it prevents a
+            ``SuffixedMethodNotFoundError`` from being raised on resources
+            defining ``on_request_{suffix}()``.
+            (See also: :ref:`CompiledRouterOptions <compiled_router_options>`.)
+
 
     Returns:
         dict: A mapping of HTTP methods to explicitly defined resource responders.
@@ -69,8 +78,12 @@ def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
             if callable(responder):
                 method_map[method] = responder
 
+    has_default_responder = default_to_on_request and hasattr(
+        resource, f'on_request_{suffix}'
+    )
+
     # If suffix is specified and doesn't map to any methods, raise an error
-    if suffix and not method_map:
+    if suffix and not method_map and not has_default_responder:
         raise SuffixedMethodNotFoundError(
             'No responders found for the specified suffix'
         )
@@ -78,7 +91,11 @@ def map_http_methods(resource: object, suffix: str | None = None) -> MethodDict:
     return method_map
 
 
-def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
+def set_default_responders(
+    method_map: MethodDict,
+    asgi: bool = False,
+    default_responder: ResponderCallable | AsgiResponderCallable | None = None,
+) -> None:
     """Map HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
@@ -86,6 +103,11 @@ def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
             defined in a resource.
         asgi (bool): ``True`` if using an ASGI app, ``False`` otherwise
             (default ``False``).
+        default_responder: An optional default responder for unimplemented
+            resource methods (default: ``None``). If not provided, a new
+            responder for
+            :class:`"405 Method Not Allowed" <falcon.HTTPMethodNotAllowed>`
+            is constructed.
     """
 
     # Attach a resource for unsupported HTTP methods
@@ -99,8 +121,18 @@ def set_default_responders(method_map: MethodDict, asgi: bool = False) -> None:
         method_map['OPTIONS'] = opt_responder  # type: ignore[assignment]
         allowed_methods.append('OPTIONS')
 
-    na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
+    if 'WEBSOCKET' not in method_map:
+        # Explicitly assign 405 Method Not Allowed to avoid
+        # using the default responder for WEBSOCKET
+        method_map['WEBSOCKET'] = responders.create_method_not_allowed(
+            allowed_methods, asgi=asgi
+        )  # type: ignore[assignment]
+
+    if default_responder is None:
+        default_responder = responders.create_method_not_allowed(
+            allowed_methods, asgi=asgi
+        )
 
     for method in constants.COMBINED_METHODS:
         if method not in method_map:
-            method_map[method] = na_responder  # type: ignore[assignment]
+            method_map[method] = default_responder  # type: ignore[assignment]

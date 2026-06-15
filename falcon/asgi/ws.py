@@ -261,7 +261,7 @@ class WebSocket:
             code (int): The close code to use for the ``CloseEvent``
                 (default 1000). See also:
                 https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code.
-            reason(str): The string reason indicating why the server closed the
+            reason (str): The string reason indicating why the server closed the
                 connection. See also:
                 https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/reason.
 
@@ -378,7 +378,7 @@ class WebSocket:
         """Send a message to the client with a binary data payload.
 
         Arguments:
-            payload (Union[bytes, bytearray, memoryview]): The binary data to send.
+            payload (bytes | bytearray | memoryview): The binary data to send.
         """
 
         self._require_accepted()
@@ -417,7 +417,8 @@ class WebSocket:
         if text is None:
             raise errors.PayloadTypeError('Missing TEXT (0x01) payload')
 
-        return text
+        # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+        return text  # type: ignore[no-any-return]
 
     async def receive_data(self) -> bytes:
         """Receive a message from the client with a binary data payload.
@@ -441,7 +442,7 @@ class WebSocket:
         if data is None:
             raise errors.PayloadTypeError('Missing BINARY (0x02) payload')
 
-        return data
+        return data  # type: ignore[no-any-return]
 
     async def receive_media(self) -> object:
         """Receive a deserialized object from the client.
@@ -588,7 +589,7 @@ class WebSocketOptions:
     https://tools.ietf.org/html/rfc6455#section-7.4.
     """
     default_close_reasons: dict[int, str]
-    """A default mapping between the Websocket close code, and the reason why
+    """A default mapping between the WebSocket close code, and the reason why
     the connection is closed.
     Close codes corresponding to HTTP errors are also included in this mapping.
     """

@@ -125,7 +125,7 @@ class SSEvent:
         self.comment = comment
 
     def serialize(self, handler: BaseHandler | None = None) -> bytes:
-        """Serialize this event to string.
+        """Serialize this event to a byte string.
 
         Args:
             handler: Handler object that will be used to serialize the ``json``
@@ -133,7 +133,7 @@ class SSEvent:
                 the builtin JSON library will be used (default ``None``).
 
         Returns:
-            bytes: string representation of this event.
+            bytes: byte string representation of this event.
         """
         if self.comment is not None:
             block = f': {self.comment}\n'

@@ -146,16 +146,14 @@ class ASGIRequestEventEmitter:
 
     def __init__(
         self,
-        body: str | bytes | None = None,
+        body: str | bytes | memoryview | None = None,
         chunk_size: int | None = None,
         disconnect_at: int | float | None = None,
     ) -> None:
         if body is None:
             body = b''
         elif not isinstance(body, bytes):
-            body = body.encode()
-
-        body = memoryview(body)
+            body = body.encode()  # type: ignore[union-attr]
 
         if disconnect_at is None:
             disconnect_at = time.time() + 30
@@ -163,7 +161,7 @@ class ASGIRequestEventEmitter:
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body: memoryview | None = body
+        self._body: memoryview | None = memoryview(body)
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
@@ -610,7 +608,7 @@ class ASGIWebSocketSimulator:
                 'Expected TEXT payload but got BINARY instead'
             )
 
-        return text
+        return text  # type: ignore[no-any-return]
 
     async def receive_data(self) -> bytes:
         """Receive a message from the app with a binary data payload.
@@ -634,7 +632,7 @@ class ASGIWebSocketSimulator:
                 'Expected BINARY payload but got TEXT instead'
             )
 
-        return data
+        return data  # type: ignore[no-any-return]
 
     async def receive_json(self) -> Any:
         """Receive a message from the app with a JSON-encoded TEXT payload.
@@ -882,7 +880,7 @@ def get_unused_port() -> int:
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(('localhost', 0))
-        return s.getsockname()[1]
+        return int(s.getsockname()[1])
 
 
 def rand_string(min: int, max: int) -> str:
@@ -1359,6 +1357,12 @@ def create_asgi_req(
     return req_type(scope, req_event_emitter, options=options)
 
 
+# NOTE(TudorGR): Deprecated in Falcon 4.3.
+# TODO(TudorGR): Remove in Falcon 5.0.
+@falcon.util.deprecated(
+    'This context manager is deprecated and will be removed in Falcon 5.0. '
+    'Please use contextlib.redirect_stdout and contextlib.redirect_stderr instead.'
+)
 @contextlib.contextmanager
 def redirected(
     stdout: TextIO = sys.stdout, stderr: TextIO = sys.stderr
@@ -1366,7 +1370,7 @@ def redirected(
     """Redirect stdout or stderr temporarily.
 
     For instance, this helper can be used to capture output from Falcon
-    reources under tests::
+    resources under tests::
 
         import io
 
@@ -1391,6 +1395,10 @@ def redirected(
     Tip:
         The popular `pytest <https://docs.pytest.org/>`__ also captures
         and suppresses output from successful tests by default.
+
+    .. deprecated:: 4.3
+        Use the stlib's :func:`contextlib.redirect_stdout` and
+        :func:`contextlib.redirect_stderr` instead.
     """
 
     old_stdout, old_stderr = sys.stdout, sys.stderr

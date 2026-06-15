@@ -635,6 +635,8 @@ from falcon.util import secure_filename
 from falcon.util import structures
 from falcon.util import sync
 from falcon.util import sync_to_async
+
+# TODO(vytas): Remove this re-export of sys in Falcon 5.0.
 from falcon.util import sys  # NOQA: F401
 from falcon.util import time
 from falcon.util import TimezoneGMT
@@ -644,9 +646,17 @@ from falcon.util import wrap_sync_to_async
 from falcon.util import wrap_sync_to_async_unsafe
 
 # Package version
-from falcon.version import __version__  # NOQA: F401
+from falcon.version import __version__ as __version__  # NOQA: F401
 
 # NOTE(kgriffs): Only to be used internally on the rare occasion that we
 #   need to log something that we can't communicate any other way.
 _logger = _logging.getLogger('falcon')
-_logger.addHandler(_logging.NullHandler())
+
+# NOTE(vytas): We used to add a NullHandler() to the above _logger;
+#   which *could* be done according to the stdlib's docs,
+#   "*if* you want to prevent your library's logged events being output to
+#   sys.stderr in the absence of logging configuration".
+#
+#   However, this has mostly resulted in confusion for people trying the ASGI
+#   flavor of the framework as HTTP 500 tracebacks may disappear completely,
+#   so the revised choice is NOT to prevent last resort logging to sys.stderr.

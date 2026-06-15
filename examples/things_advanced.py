@@ -106,7 +106,7 @@ class JSONTranslator:
             # Nothing to do
             return
 
-        body = req.stream.read()
+        body = req.bounded_stream.read()
         if not body:
             raise falcon.HTTPBadRequest(
                 title='Empty request body',

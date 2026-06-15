@@ -18,6 +18,8 @@ This package includes a unittest-style base class and requests-like
 utilities for simulating and validating HTTP requests.
 """
 
+from typing import Any
+
 try:
     import testtools as unittest
 except ImportError:  # pragma: nocover
@@ -26,12 +28,12 @@ except ImportError:  # pragma: nocover
 import falcon
 import falcon.request
 
-# TODO hoist for backwards compat. Remove in falcon 4.
+# TODO: Hoist for backwards compat. Remove in Falcon 5.0.
 from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
 
-class TestCase(unittest.TestCase, TestClient):
+class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
@@ -50,7 +52,11 @@ class TestCase(unittest.TestCase, TestClient):
     # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
     __test__ = True
 
-    app: falcon.App
+    # NOTE(vytas): Parametrize with [Any, Any] because the app under test may
+    #   use custom Request/Response subclasses.
+    # TODO(vytas): A future change could make TestCase generic over the app's
+    #   request/response types (leveraging TypeVar defaults on Python 3.13+).
+    app: falcon.App[Any, Any]
     """A WSGI or ASGI application to target when simulating
     requests (defaults to ``falcon.App()``). When testing your
     application, you will need to set this to your own instance

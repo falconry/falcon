@@ -1,6 +1,6 @@
 recursive-include docs *.rst *.md *.html *.ico *.png *.py *.svg
 recursive-include e2e-tests *.py *.css *.html *.js
-recursive-include examples *.py
+recursive-include examples *.py *.yaml
 recursive-include falcon *.pyx
 recursive-include tests *.py *.pyx
 include .coveragerc
@@ -14,6 +14,8 @@ include docs/conf.py docs/Makefile
 include falcon/py.typed
 graft docs/_static
 graft docs/_templates
+graft examples/asgilook/requirements
+graft examples/look/requirements
 graft requirements
 graft tools
 prune docs/_build

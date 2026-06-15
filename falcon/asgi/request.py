@@ -255,11 +255,20 @@ class Request(request.Request):
     # trouble.
     # ------------------------------------------------------------------------
 
+    # NOTE(vytas): Duplicating docstrings from the WSGI flavor here, otherwise
+    #   Sphinx doesn't seem to pick them up.
     auth: str | None = asgi_helpers._header_property('Authorization')
+    """Value of the Authorization header, or ``None`` if the header is missing."""
     expect: str | None = asgi_helpers._header_property('Expect')
+    """Value of the Expect header, or ``None`` if the header is missing."""
     if_range: str | None = asgi_helpers._header_property('If-Range')
+    """Value of the If-Range header, or ``None`` if the header is missing."""
+    last_event_id: str | None = asgi_helpers._header_property('Last-Event-ID')
+    """Value of the Last-Event-ID header, or ``None`` if the header is missing."""
     referer: str | None = asgi_helpers._header_property('Referer')
+    """Value of the Referer header, or ``None`` if the header is missing."""
     user_agent: str | None = asgi_helpers._header_property('User-Agent')
+    """Value of the User-Agent header, or ``None`` if the header is missing."""
 
     @property
     def accept(self) -> str:
@@ -336,7 +345,8 @@ class Request(request.Request):
         #   empty string, at least uvicorn still includes it explicitly in
         #   that case.
         try:
-            return self.scope['root_path']
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
+            return self.scope['root_path']  # type: ignore[no-any-return]
         except KeyError:
             pass
 
@@ -370,7 +380,8 @@ class Request(request.Request):
         # PERF(kgriffs): Use try...except because we normally expect the
         #   key to be present.
         try:
-            return self.scope['scheme']
+            # TODO(0xMattB): Implement advanced typing to type as 'str' (see gh #2628).
+            return self.scope['scheme']  # type: ignore[no-any-return]
         except KeyError:
             pass
 
@@ -489,7 +500,12 @@ class Request(request.Request):
                 #   effectively what we are doing since we only ever
                 #   access this field when setting self._cached_access_route
                 client, __ = self.scope['client']
-            except KeyError:
+            # NOTE(vytas): Uvicorn may explicitly set scope['client'] to None.
+            #   According to the spec, it does default to None when missing,
+            #   but it is unclear whether it can be explicitly set to None, or
+            #   it must be a valid iterable when present. In any case, we
+            #   simply catch TypeError here too to account for this scenario.
+            except (KeyError, TypeError):
                 # NOTE(kgriffs): Default to localhost so that app logic does
                 #   note have to special-case the handling of a missing
                 #   client field in the connection scope. This should be
@@ -868,9 +884,9 @@ class Request(request.Request):
 
     @property
     def env(self) -> NoReturn:  # type:ignore[override]
-        """The env property is not available in ASGI. Use :attr:`~.store` instead."""
+        """The env property is not available in ASGI. Use :attr:`~.scope` instead."""
         raise AttributeError(
-            'The env property is not available in ASGI. Use :attr:`~.store` instead'
+            'The env property is not available in ASGI. Use req.scope instead.'
         )
 
     def log_error(self, message: str) -> NoReturn:

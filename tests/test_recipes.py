@@ -1,4 +1,3 @@
-import sys
 import types
 import unittest.mock
 
@@ -213,11 +212,9 @@ class TestRequestIDContext:
         assert response.headers['X-Request-ID'] == response.json['request_id']
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason='this recipe requires Python 3.9+'
-)
 class TestMsgspec:
-    @pytest.fixture(scope='class', autouse=True)
+    @pytest.fixture(autouse=True)
+    # TODO(vytas): Make this @classmethod when we drop CPython 3.9 support.
     def msgspec(self):
         return pytest.importorskip(
             'msgspec', reason='this recipe requires msgspec [not found]'
@@ -276,7 +273,7 @@ class TestMsgspec:
         mw_recipe = util.load_module('examples/recipes/msgspec_media_validation.py')
 
         class Metadata(msgspec.Struct):
-            name: str
+            name: str  # type: ignore[annotation-unchecked]
 
         class Resource:
             POST_SCHEMA = Metadata

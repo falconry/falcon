@@ -31,7 +31,6 @@ from typing import (
     Generic,
     Literal,
     overload,
-    TypeVar,
 )
 import warnings
 
@@ -39,9 +38,11 @@ from falcon import app_helpers as helpers
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import _ExcT
+from falcon._typing import _ReqT
+from falcon._typing import _RespT
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
-from falcon._typing import AsgiSinkCallable
 from falcon._typing import ErrorHandler
 from falcon._typing import ErrorSerializer
 from falcon._typing import FindMethod
@@ -68,6 +69,8 @@ from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
 
+__all__ = ('App',)
+
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
 # reference via module global is faster than going via self
 _BODILESS_STATUS_CODES = frozenset(
@@ -85,10 +88,6 @@ _TYPELESS_STATUS_CODES = frozenset(
         status.HTTP_304,
     ]
 )
-
-_ExcT = TypeVar('_ExcT', bound=Exception)
-_ReqT = TypeVar('_ReqT', bound=Request, contravariant=True)
-_RespT = TypeVar('_RespT', bound=Response, contravariant=True)
 
 
 class App(Generic[_ReqT, _RespT]):
@@ -268,17 +267,17 @@ class App(Generic[_ReqT, _RespT]):
     # NOTE(caselit): this should actually be a protocol of the methods required
     # by a router, hardcoded to CompiledRouter for convenience for now.
     _router: routing.CompiledRouter
-    _serialize_error: ErrorSerializer
+    _serialize_error: ErrorSerializer[_ReqT, _RespT]
     _sink_and_static_routes: tuple[
         tuple[
             Pattern[str] | routing.StaticRoute,
-            SinkCallable | AsgiSinkCallable | routing.StaticRoute,
+            SinkCallable[_ReqT, _RespT] | routing.StaticRoute,
             bool,
         ],
         ...,
     ]
     _sink_before_static_route: bool
-    _sinks: list[tuple[Pattern[str], SinkCallable | AsgiSinkCallable, Literal[True]]]
+    _sinks: list[tuple[Pattern[str], SinkCallable[_ReqT, _RespT], Literal[True]]]
     _static_routes: list[
         tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
     ]
@@ -1148,6 +1147,13 @@ class App(Generic[_ReqT, _RespT]):
             # a route was found, for the sake of backwards-compat.
             resource = None
 
+            # NOTE(vytas): This nested fallback chain might make static code
+            #   checkers think that method_map/params may be possibly unbound.
+            #   Since this is merely a compatibility path for old routers, we
+            #   simply initialize these vars here for the sake of clarity.
+            method_map = {}
+            params = {}
+
         if resource is not None:
             try:
                 responder = method_map[method]
@@ -1167,7 +1173,7 @@ class App(Generic[_ReqT, _RespT]):
                 if m:
                     if is_sink:
                         params = m.groupdict()  # type: ignore[union-attr]
-                    responder = obj
+                    responder = obj  # type: ignore[assignment,unused-ignore]
 
                     break
             else:
@@ -1220,7 +1226,7 @@ class App(Generic[_ReqT, _RespT]):
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
 
-    def _find_error_handler(self, ex: Exception) -> ErrorHandler | None:
+    def _find_error_handler(self, ex: Exception) -> ErrorHandler[_ReqT, _RespT] | None:
         # NOTE(csojinb): The `__mro__` class attribute returns the method
         # resolution order tuple, i.e. the complete linear inheritance chain
         # ``(type(ex), ..., object)``. For a valid exception class, the last
@@ -1343,7 +1349,7 @@ class App(Generic[_ReqT, _RespT]):
 
 # TODO(myusko): This class is a compatibility alias, and should be removed
 # in Falcon 5.0.
-class API(App):
+class API(App[_ReqT, _RespT]):
     """Compatibility alias of :class:`falcon.App`.
 
     ``API`` was renamed to :class:`App <falcon.App>` in Falcon 3.0 in order to

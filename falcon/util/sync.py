@@ -7,7 +7,7 @@ from functools import partial
 from functools import wraps
 import inspect
 import os
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, cast, TypeVar
 
 from falcon.util import deprecation
 
@@ -53,7 +53,7 @@ class _ActiveRunner:
         if self._runner.get_loop().is_closed():
             # NOTE(vytas): This condition is never hit on _DummyRunner.
             self._runner = self._runner_cls()  # pragma: nocover
-        return self._runner
+        return cast(_DummyRunner, self._runner)
 
 
 _active_runner = _ActiveRunner(getattr(asyncio, 'Runner', _DummyRunner))
@@ -94,7 +94,7 @@ def wrap_sync_to_async_unsafe(func: Callable[..., Any]) -> Callable[..., Any]:
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Callable[..., Any]:
-        return func(*args, **kwargs)
+        return cast(Callable[..., Any], func(*args, **kwargs))
 
     return wrapper
 

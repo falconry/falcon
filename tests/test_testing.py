@@ -1,3 +1,5 @@
+import io
+
 import pytest
 
 import falcon
@@ -5,6 +7,11 @@ from falcon import App
 from falcon import status_codes
 from falcon import testing
 from falcon.util.sync import async_to_sync
+
+try:
+    import msgpack
+except ImportError:
+    msgpack = None
 
 
 class CustomCookies:
@@ -102,6 +109,108 @@ def test_simulate_request_content_type():
         app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML
     )
     assert result.text == falcon.MEDIA_JSON
+
+
+@pytest.mark.skipif(msgpack is None, reason='msgpack is not installed')
+@pytest.mark.parametrize(
+    'json_doc, msgpack_doc, expected_content_type',
+    [
+        ({}, None, falcon.MEDIA_JSON),
+        (None, {}, falcon.MEDIA_MSGPACK),
+        ({}, {}, falcon.MEDIA_MSGPACK),
+    ],
+)
+@pytest.mark.parametrize(
+    'content_type, headers',
+    [
+        (None, None),
+        (falcon.MEDIA_HTML, None),
+        (None, {'Content-Type': falcon.MEDIA_TEXT}),
+        (falcon.MEDIA_HTML, {'Content-Type': falcon.MEDIA_TEXT}),
+    ],
+)
+def test_simulate_request_msgpack_content_type(
+    json_doc, msgpack_doc, expected_content_type, content_type, headers
+):
+    class Foo:
+        def on_post(self, req, resp):
+            resp.text = req.content_type
+
+    app = App()
+    app.add_route('/', Foo())
+
+    result = testing.simulate_post(
+        app,
+        '/',
+        json=json_doc,
+        msgpack=msgpack_doc,
+        content_type=content_type,
+        headers=headers,
+    )
+    assert result.text == expected_content_type
+
+
+@pytest.mark.skipif(msgpack is None, reason='msgpack is not installed')
+@pytest.mark.parametrize(
+    'media',
+    [
+        True,
+        42,
+        3.14,
+        'Hello, World!',
+        b'binary string',
+        [1, 2, 3, 'four'],
+        {'key': 'value'},
+        {'nested': {'list': [1, 2, 3], 'unicode': 'caf\xe9 \U0001f600'}},
+    ],
+)
+def test_simulate_request_msgpack_body(asgi, util, media):
+    captured = {}
+
+    if asgi:
+
+        class Resource:
+            async def on_post(self, req, resp):
+                captured['body'] = await req.stream.read()
+
+    else:
+
+        class Resource:
+            def on_post(self, req, resp):
+                captured['body'] = req.bounded_stream.read()
+
+    app = util.create_app(asgi)
+    app.add_route('/', Resource())
+
+    result = testing.simulate_post(app, '/', msgpack=media)
+
+    assert result.status_code == 200
+    assert captured['body'] == msgpack.packb(media, use_bin_type=True)
+    assert msgpack.unpackb(captured['body'], raw=False) == media
+
+
+@pytest.mark.skipif(msgpack is None, reason='msgpack is not installed')
+def test_simulate_request_msgpack_overrides_body(asgi, util):
+    captured = {}
+
+    if asgi:
+
+        class Resource:
+            async def on_post(self, req, resp):
+                captured['body'] = await req.stream.read()
+
+    else:
+
+        class Resource:
+            def on_post(self, req, resp):
+                captured['body'] = req.bounded_stream.read()
+
+    app = util.create_app(asgi)
+    app.add_route('/', Resource())
+
+    testing.simulate_post(app, '/', body='ignored', msgpack={'real': True})
+
+    assert captured['body'] == msgpack.packb({'real': True}, use_bin_type=True)
 
 
 @pytest.mark.parametrize('mode', ['wsgi', 'asgi', 'asgi-stream'])
@@ -232,3 +341,15 @@ def test_deprecated_httpnow():
     ):
         now = testing.httpnow()
     assert now
+
+
+def test_deprecated_redirected():
+    with pytest.warns(
+        falcon.util.DeprecatedWarning,
+        match='Please use contextlib.redirect_stdout and '
+        'contextlib.redirect_stderr instead.',
+    ):
+        output = io.StringIO()
+        with testing.redirected(stdout=output):
+            print('test output')
+    assert output.getvalue() == 'test output\n'

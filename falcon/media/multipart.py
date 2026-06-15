@@ -1,4 +1,4 @@
-# Copyright 2019-2025 by Vytautas Liuolia.
+# Copyright 2019-2026 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,6 +43,8 @@ if TYPE_CHECKING:
     from falcon.asgi.multipart import MultipartForm as AsgiMultipartForm
     from falcon.media import Handlers
     from falcon.util.reader import BufferedReader as PyBufferedReader
+
+__all__ = ('MultipartParseError',)
 
 # TODO(vytas):
 #   * Better support for form-wide charset setting

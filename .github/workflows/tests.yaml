@@ -14,6 +14,9 @@ on:
 jobs:
   run-tox:
     name: tox -e ${{ matrix.tox.env }}${{ matrix.tox.platform-label || '' }}
+    # APPSEC(vytas): Establish global restrictive permissions baseline.
+    permissions:
+      contents: read
     runs-on: ${{ matrix.tox.os || matrix.default-os }}
     strategy:
       fail-fast: false
@@ -33,6 +36,7 @@ jobs:
           # Typing
           - env: mypy
           - env: mypy_tests
+          - env: pyright_tests
           # Python tests
           - env: mintest
             coverage: true
@@ -61,6 +65,8 @@ jobs:
             python-version: "3.14"
           - env: py314_cython
             python-version: "3.14"
+          - env: py315
+            python-version: "3.15.0-alpha.3 - 3.15.0"
           - env: py312_nocover
             os: macos-latest
             platform-label: ' (macos)'
@@ -73,6 +79,7 @@ jobs:
           - env: "ws_tutorial"
           # Tooling
           - env: "twine_check"
+          - env: "zizmor_github"
           # ASGI & WSGI servers
           - env: "daphne"
           - env: "hypercorn"
@@ -87,14 +94,15 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         # NOTE(vytas): Work around
         #   https://github.com/codecov/codecov-action/issues/190
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.tox.python-version || matrix.python-version }}
 
@@ -117,9 +125,12 @@ jobs:
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         if: ${{ matrix.tox.coverage }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
+          # APPSEC(vytas): This is not optimal, but verifying seems to cause
+          #   intermittent bugs when pinning directly to a hash.
+          skip_validation: true

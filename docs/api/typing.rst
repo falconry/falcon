@@ -44,10 +44,11 @@ The use of generics should in most cases require no explicit effort on your
 side. However, if you annotate your variables or return types as
 ``falcon.App``, the type checker may require you to provide the explicit type
 parameters when running in the strict mode (Mypy calls the option
-``--disallow-any-generics``, also part of the ``--strict`` mode flag).
+``--disallow-any-generics``, also part of the ``--strict`` mode flag) on
+Python 3.12 or older.
 
 For instance, the following mini-application will not pass type checking with
-Mypy in the ``--strict`` mode:
+Mypy in the ``--strict`` mode on, e.g., CPython 3.12:
 
 .. code-block:: python
 
@@ -122,6 +123,11 @@ Both alternatives should now pass type checking in the ``--strict`` mode.
     :class:`falcon.App` and :class:`falcon.asgi.App` are now annotated as
     :class:`generic types <typing.Generic>` parametrized by the request and
     response classes.
+
+.. versionchanged:: 4.3
+    :class:`falcon.App` and :class:`falcon.asgi.App` are now automatically
+    parametrized by the default request/response types unless specified
+    otherwise. However, this only works on CPython 3.13+.
 
 
 Known Limitations

@@ -20,6 +20,8 @@ __all__ = (
     'MEDIA_PNG',
     'MEDIA_TEXT',
     'MEDIA_URLENCODED',
+    'TRUE_STRINGS',
+    'FALSE_STRINGS',
     'MEDIA_XML',
     'MEDIA_YAML',
     'SINGLETON_HEADERS',
@@ -47,6 +49,11 @@ ASGI_SUPPORTED = FALCON_SUPPORTED
 This constant is no longer referenced by the framework itself, and left for
 compatibility with Falcon 3.x.
 """
+
+TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
+"""String values that are interpreted as boolean ``True``."""
+FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
+"""Similar to :attr:`TRUE_STRINGS`, the values corresponding to boolean ``False``."""
 
 # RFC 7231, 5789 methods
 HTTP_METHODS = [

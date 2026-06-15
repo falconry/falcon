@@ -388,7 +388,7 @@ def parse_query_string(
 
     """
 
-    params: dict = {}
+    params: dict[str, str | list[str]] = {}
 
     is_encoded = '+' in query_string or '%' in query_string
 
