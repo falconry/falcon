@@ -1,3 +1,2 @@
 coverage>=4.1
-# TODO(vytas): Remove the upper bound once we converge with master.
-pytest<9.1
+pytest
