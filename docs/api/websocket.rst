@@ -246,7 +246,13 @@ one or both payload types, as in the following example.
 
         # The raw BINARY payload will be passed as a byte string
         def deserialize(self, payload: bytes) -> object:
-            return cbor2.loads(payload)
+            try:
+                return cbor2.loads(payload)
+            except cbor2.CBORDecodeError as ex:
+                # NOTE: cbor2's CBORDecodeError is not a subclass of
+                #   ValueError, so we reraise in order to signal an
+                #   invalid payload to Falcon.
+                raise ValueError('error decoding CBOR payload') from ex
 
     app = falcon.asgi.App()
 
