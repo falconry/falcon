@@ -1,0 +1,7 @@
+falcon
+uvicorn
+httpie
+aiofiles
+Pillow
+redis
+msgpack
