@@ -1,0 +1,8 @@
+When decoding with ``unquote_plus=False``, the Cython-accelerated
+:meth:`falcon.uri.decode` mistook a literal plus sign followed by two
+hexadecimal digits for a percent-encoded byte. For instance,
+``uri.decode('+00', unquote_plus=False)`` returned ``'\x00'`` instead of the
+expected ``'+00'``, which could inject a NUL byte into decoded values (an ISO
+8601 timestamp such as ``...964935+00:00`` being a common trigger). The
+accelerated implementation now preserves a literal plus in this case, matching
+the pure-Python variant.
