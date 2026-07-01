@@ -116,6 +116,16 @@ myst_enable_checkboxes = True
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
+# NOTE(vytas): Nitpicky mode is enabled to warn on broken references and
+#   missing links during the documentation build. Unresolved type aliases
+#   are suppressed via nitpick_ignore below.
+nitpicky = True
+nitpick_ignore = [
+    ('py:class', 'SyncMiddleware'),
+    ('py:class', 'AsyncMiddleware'),
+    ('py:class', 'PreparedMiddlewareResult'),
+]
+
 # NOTE(vytas): The autodoc_type_aliases mapping below doesn't really work as
 #   advertised...
 #   Sphinx is looking for the mapped types defined as classes, however, typing
@@ -130,8 +140,6 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 #
 #   See also https://github.com/sphinx-doc/sphinx/issues/10785 & related issues
 #   for discussion and potentially better workarounds.
-# TODO(vytas): If we enable the "nitpicky" mode, we will have to add exceptions
-#   for all unresolved aliases.
 autodoc_type_aliases = {
     'SyncMiddleware': 'SyncMiddleware',
     'AsyncMiddleware': 'AsyncMiddleware',
