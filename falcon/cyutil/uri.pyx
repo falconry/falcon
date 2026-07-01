@@ -89,10 +89,14 @@ cdef unicode _cy_decode(unsigned char* data, Py_ssize_t start, Py_ssize_t end,
             dst_start += pos - src_start
             src_start = pos
 
-            if data[pos] == b'+' and unquote_plus:
-                result[dst_start] = b' '
-                dst_start += 1
-                src_start += 1
+            if data[pos] == b'+':
+                # NOTE(apoorva-01): A literal plus is only rewritten to a space
+                #   when unquote_plus is enabled; otherwise it is preserved
+                #   as-is and must not be mistaken for a percent sequence.
+                if unquote_plus:
+                    result[dst_start] = b' '
+                    dst_start += 1
+                    src_start += 1
                 continue
 
             # NOTE(vytas): Else %

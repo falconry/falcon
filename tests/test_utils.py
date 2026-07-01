@@ -371,6 +371,15 @@ class TestFalconUtils:
             '/disk/lost+found/fd0'
         )
 
+        # NOTE(apoorva-01): A plus followed by two hex digits must not be
+        #   decoded as a percent sequence when unquote_plus is False (#2670).
+        assert uri.decode('+00', unquote_plus=False) == '+00'
+        assert uri.decode('+00', unquote_plus=True) == ' 00'
+        assert (
+            uri.decode('2026-06-29T23:11:38.964935+00:00.jpg', unquote_plus=False)
+            == '2026-06-29T23:11:38.964935+00:00.jpg'
+        )
+
         assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9') == (
             'http://example.com?x=ab+cd=42,9'
         )
@@ -697,9 +706,11 @@ class TestFalconUtils:
 
 @pytest.mark.parametrize(
     'protocol,method',
-    zip(
-        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
-        falcon.HTTP_METHODS * 2,
+    tuple(
+        zip(
+            ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
+            falcon.HTTP_METHODS * 2,
+        )
     ),
 )
 def test_simulate_request_protocol(asgi, protocol, method, util):

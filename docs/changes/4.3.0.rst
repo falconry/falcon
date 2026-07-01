@@ -1,21 +1,141 @@
 Changelog for Falcon 4.3.0
 ==========================
 
+.. falcon-release: 2026-06-15
+
 Summary
 -------
 
-Falcon 4.3 is in development. The progress is tracked via the
-`Version 4.3 milestone <https://github.com/falconry/falcon/milestone/45>`__
-on GitHub.
+Falcon 4.3.0 centers on request parsing and typing. On the parsing side, this
+release introduces a family of new :class:`~falcon.Request` methods for
+extracting structured data from the query string --
+:meth:`~falcon.Request.get_param_as_dict`,
+:meth:`~falcon.Request.get_param_as_media`, and
+:meth:`~falcon.Request.get_query_string_as_media` -- together with a new
+``delimiter`` argument for :meth:`~falcon.Request.get_param_as_list`. Several of
+these align with OpenAPI v3 (and 3.2) parameter styles, making it easier to
+implement spec-compliant APIs on top of Falcon.
+
+On the typing side, our internal annotations are now strict enough for the
+project to pass ``mypy --strict falcon/``, and :ref:`generic App types
+<generic_app_types>` are now automatically parametrized by the default
+request/response types on CPython 3.13+.
+
+This release also brings a number of smaller improvements, including MessagePack
+support in the test client, an opt-in ``on_request()`` default responder, and
+hardening of :func:`falcon.secure_filename` against Windows reserved device
+names.
+
+Two features that we had hoped to land in 4.3 -- response teardown callbacks and
+a native OpenTelemetry integration -- did not make the cut in time. Both are now
+at the top of our priority list for Falcon
+`4.4 <https://github.com/falconry/falcon/milestone/46>`__.
+
+On the security front, our GitHub Actions workflows are now audited with
+`zizmor <https://zizmor.sh/>`__, and we have hardened the existing workflows to
+address the issues it surfaced.
+
+This release also incorporates many pull requests submitted by our community.
+Sincere thanks to all 19 contributors who made this release possible!
 
 
-.. Changes to Supported Platforms
-.. ------------------------------
+New & Improved
+--------------
 
-.. NOTE(vytas): No changes to the supported platforms (yet).
+- The test client (:func:`~falcon.testing.simulate_request` and friends) now
+  accepts a ``msgpack`` keyword argument, analogous to the existing ``json``
+  one. When provided, the value is serialized as a MessagePack document and
+  used as the request body, and the ``Content-Type`` header is set to
+  ``MEDIA_MSGPACK``. (`#1026 <https://github.com/falconry/falcon/issues/1026>`__)
+- A new router option,
+  :attr:`~falcon.routing.CompiledRouterOptions.default_to_on_request`, was
+  added to allow resources to provide a default responder via ``on_request()``
+  (disabled by default). When enabled, ``on_request()`` is used as the default
+  responder for every HTTP method that lacks an explicit responder, except
+  ``OPTIONS`` (served by ``on_options()``) and the special WebSocket handler
+  (``on_websocket()``).
+
+  When the option is disabled, or the ``on_request()`` method is not implemented,
+  the default responder for
+  :class:`"405 Method Not Allowed" <falcon.HTTPMethodNotAllowed>` is used. (`#2071 <https://github.com/falconry/falcon/issues/2071>`__)
+- On Windows, :func:`falcon.secure_filename` now escapes reserved device names
+  (``CON``, ``NUL``, ``COM1``, etc.) by prefixing the sanitized value with an
+  underscore. (`#2422 <https://github.com/falconry/falcon/issues/2422>`__)
+- Internal type annotations were improved, allowing the project to pass
+  ``mypy --strict falcon/``. We have added a few ``# type: ignore`` comments for
+  known limitations, and are actively working to reduce their necessity. (`#2504 <https://github.com/falconry/falcon/issues/2504>`__)
+- The :meth:`~falcon.Request.get_param_as_list` method now
+  supports a new argument, ``delimiter``, for splitting values.
+  In line with the OpenAPI v3 parameter specification, the supported delimiters
+  currently include the ``'pipeDelimited'`` and ``'spaceDelimited'`` symbolic
+  constants, as well as the literal ``','``, ``'|'``, and ``' '`` characters. (`#2538 <https://github.com/falconry/falcon/issues/2538>`__)
+- A new :meth:`~falcon.Request.get_param_as_dict` method was added to
+  :class:`~falcon.Request` that retrieves a query parameter as a ``dict``.
+  Two input formats are supported: an alternating key/value list
+  (e.g. ``param=k1,v1,k2,v2``) and, when ``deep_object`` is set, the OpenAPI v3
+  ``deepObject`` style (e.g. ``param[k1]=v1&param[k2]=v2``). (`#2542 <https://github.com/falconry/falcon/issues/2542>`__)
+- A new :meth:`~falcon.Request.get_query_string_as_media` method was added to
+  :class:`~falcon.Request`. The method URL-decodes the entire query string and
+  deserializes it using the configured media handlers. This is useful for
+  implementing the OpenAPI 3.2 `querystring parameter location
+  <https://spec.openapis.org/oas/v3.2.0.html#parameter-locations>`__, where
+  the entire query string is treated as a single serialized value. (`#2546 <https://github.com/falconry/falcon/issues/2546>`__)
+- A new :meth:`~falcon.Request.get_param_as_media` method was added to
+  :class:`~falcon.Request`. It deserializes a single query-string parameter
+  using the configured media handlers, and accepts an optional ``media_type``
+  that falls back to the app's
+  :attr:`~falcon.RequestOptions.default_media_type` when unspecified. (`#2549 <https://github.com/falconry/falcon/issues/2549>`__)
+- A new request property, :attr:`req.last_event_id <falcon.Request.last_event_id>`,
+  was added to provide convenient access to the ``Last-Event-ID`` header.
+  This header is commonly sent by clients when reconnecting to a
+  :attr:`Server-Sent Events <falcon.asgi.Response.sse>` stream. (`#2580 <https://github.com/falconry/falcon/issues/2580>`__)
+- :ref:`Generic App types <generic_app_types>` are now automatically parametrized
+  by the default request/response types (unless specified otherwise), courtesy of
+  :class:`~typing.TypeVar`'s default value support on CPython 3.13+. (`#2586 <https://github.com/falconry/falcon/issues/2586>`__)
 
 
-.. towncrier release notes start
+Fixed
+-----
+
+- Due to differences in interpretation of the ASGI specification, Uvicorn
+  could set ``client`` in the HTTP connection scope in a way that broke
+  :attr:`req.access_route <falcon.asgi.Request.access_route>` and
+  :attr:`req.remote_addr <falcon.asgi.Request.remote_addr>` when the app server
+  was bound to a Unix domain socket.
+
+  This discrepancy was addressed, and Falcon should now fall back to the same
+  default value (``'127.0.0.1'``) in this case as if ``client`` was missing
+  altogether. (`#2583 <https://github.com/falconry/falcon/issues/2583>`__)
+
+
+Misc
+----
+
+- Documented the US-ASCII restriction on the ``name`` and ``value`` arguments
+  of :meth:`falcon.Response.set_cookie`. The implementation has always rejected
+  non-ASCII inputs (raising :class:`KeyError` for ``name`` and :class:`ValueError` for
+  ``value``), but the parameter and ``Raises`` entries did not call this out;
+  the docstring now matches the runtime behaviour. (`#1445 <https://github.com/falconry/falcon/issues/1445>`__)
+- The :func:`falcon.testing.redirected` context manager has been deprecated in
+  favor of the standard library's :func:`contextlib.redirect_stdout` and
+  :func:`contextlib.redirect_stderr`. It is scheduled for removal in Falcon 5.0. (`#2569 <https://github.com/falconry/falcon/issues/2569>`__)
+- Falcon no longer adds an instance of :class:`logging.NullHandler` to the
+  ``falcon`` logger, so ASGI application tracebacks may now reach
+  ``sys.stderr`` via the :any:`logging.lastResort` handler in the absence of
+  configuration (see also: :ref:`debugging_asgi_applications`). (`#2594 <https://github.com/falconry/falcon/issues/2594>`__)
+- ``falcon.sys`` (an internal re-export of the standard library's
+  :mod:`sys` module that was added inadvertently long ago) is
+  scheduled for removal in Falcon 5.0. Import the standard library's
+  :mod:`sys` module directly instead. (`#2630 <https://github.com/falconry/falcon/issues/2630>`__)
+- Our GitHub Actions workflows are now audited with
+  `zizmor <https://zizmor.sh/>`__, a static analysis tool that catches common
+  security pitfalls in CI/CD pipelines. The audit runs both as a dedicated
+  workflow and as part of our ``tox`` checks, and the existing workflows were
+  hardened to address the issues it surfaced. (`#2651 <https://github.com/falconry/falcon/issues/2651>`__)
+
+
+
+
 
 Contributors to this Release
 ----------------------------
