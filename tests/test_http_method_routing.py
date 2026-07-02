@@ -293,6 +293,22 @@ class TestHttpMethodRouting:
         headers = response.headers
         assert headers['allow'] == 'GET, HEAD, PUT, REPORT'
 
+    def test_default_on_options_with_on_request(self, asgi, util):
+        class CatchAllResource:
+            def on_request(self, req, resp):
+                pass
+
+        app = util.create_app(asgi)
+        app.router_options.default_to_on_request = True
+        app.add_route('/catch-all', CatchAllResource())
+
+        result = testing.simulate_get(app, '/catch-all')
+        assert result.status_code == 200
+
+        result = testing.simulate_options(app, '/catch-all')
+        assert result.status_code == 200
+        assert 'allow' not in result.headers
+
     def test_on_options(self, client):
         response = client.simulate_request(path='/misc', method='OPTIONS')
         assert response.status == falcon.HTTP_204
