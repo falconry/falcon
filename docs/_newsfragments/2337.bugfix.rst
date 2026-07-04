@@ -1,0 +1,15 @@
+Static routes (as configured via
+:meth:`~falcon.App.add_static_route`) did not implement proper ``HEAD``
+support: a ``HEAD`` request would needlessly open the underlying file (and
+never close it, since the body was later discarded), even though a ``HEAD``
+response never includes a body. ``HEAD`` requests to static routes are now
+served directly from the file's metadata (``stat``), without opening a file
+handle, while still returning the same headers (including ``Content-Length``,
+``ETag``, ``Last-Modified``, and ``Content-Range`` for ranged requests) that
+the equivalent ``GET`` request would have produced.
+
+In addition, static routes now reject methods other than ``GET``, ``HEAD``,
+and ``OPTIONS`` with a ``405 Method Not Allowed`` response (rather than
+serving the file's contents for any method), and the ``Allow``/
+``Access-Control-Allow-Methods`` header set for ``OPTIONS`` requests now
+correctly advertises ``GET, HEAD`` instead of just ``GET``.

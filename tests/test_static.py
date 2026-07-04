@@ -1,5 +1,6 @@
 import errno
 import io
+import mimetypes
 import os
 import pathlib
 import posixpath
@@ -53,29 +54,46 @@ def create_sr(asgi, prefix, directory, **kwargs):
 @pytest.fixture
 def patch_open(monkeypatch):
     def patch(content=None, validate=None, mtime=1736617934):
+        class FakeStat:
+            def __init__(self, size):
+                self.st_size = size
+                self.st_mtime = mtime
+
+        def compute_stat_and_data(path):
+            if validate:
+                validate(path)
+            data = path.encode() if content is None else content
+            return FakeStat(len(data)), data
+
         def open(path, mode):
             class FakeFD(int):
                 pass
 
-            class FakeStat:
-                def __init__(self, size):
-                    self.st_size = size
-                    self.st_mtime = mtime
-
-            if validate:
-                validate(path)
-
-            data = path.encode() if content is None else content
+            stat, data = compute_stat_and_data(path)
             fake_file = io.BytesIO(data)
             fd = FakeFD(1337)
-            fd._stat = FakeStat(len(data))
+            fd._stat = stat
             fake_file.fileno = lambda: fd
 
             patch.current_file = fake_file
             return fake_file
 
+        def stat(path):
+            # NOTE: Used by HEAD requests, which stat the file directly
+            # instead of going through io.open()/os.fstat().
+            stat_result, _data = compute_stat_and_data(path)
+            return stat_result
+
+        # NOTE: Response/ResponseOptions lazily call mimetypes.init(), which
+        # itself calls the real os.stat() on a handful of well-known system
+        # paths. Trigger that now so it doesn't run (against our fake
+        # os.stat below) the first time a Response is constructed inside a
+        # test.
+        mimetypes.init()
+
         monkeypatch.setattr(io, 'open', open)
         monkeypatch.setattr(os, 'fstat', lambda fileno: fileno._stat)
+        monkeypatch.setattr(os, 'stat', stat)
 
     patch.current_file = None
     return patch
@@ -634,7 +652,110 @@ def test_options_request(client, patch_open):
     assert resp.status_code == 200
     assert resp.text == ''
     assert int(resp.headers['Content-Length']) == 0
-    assert resp.headers['Access-Control-Allow-Methods'] == 'GET'
+    assert resp.headers['Access-Control-Allow-Methods'] == 'GET, HEAD'
+
+
+def test_head_request(client, patch_open):
+    patch_open(b'test_data')
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_request(method='HEAD', path='/static/foo/bar.txt')
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == len(b'test_data')
+    assert resp.headers.get('Accept-Ranges') == 'bytes'
+    assert 'ETag' in resp.headers
+    assert 'Last-Modified' in resp.headers
+
+    # NOTE: A HEAD request must not open (or otherwise leave dangling) a
+    #   file handle, since the response never includes a body.
+    assert patch_open.current_file is None
+
+
+def test_head_request_not_found(client, patch_open):
+    def validate(path):
+        raise OSError(errno.ENOENT, 'File not found')
+
+    patch_open(validate=validate)
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_request(method='HEAD', path='/static/missing.txt')
+    assert resp.status == falcon.HTTP_404
+    assert patch_open.current_file is None
+
+
+def test_head_request_not_modified(client, patch_open):
+    patch_open(b'test_data')
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    head_resp = client.simulate_request(method='HEAD', path='/static/foo/bar.txt')
+    etag = head_resp.headers['ETag']
+
+    resp = client.simulate_request(
+        method='HEAD',
+        path='/static/foo/bar.txt',
+        headers={'If-None-Match': etag},
+    )
+    assert resp.status == falcon.HTTP_304
+    assert resp.text == ''
+    assert patch_open.current_file is None
+
+
+@pytest.mark.parametrize(
+    'range_header, exp_status, exp_content_range, exp_length',
+    [
+        (None, falcon.HTTP_200, None, 16),
+        ('bytes=1-3', falcon.HTTP_206, 'bytes 1-3/16', 3),
+        ('bytes=-3', falcon.HTTP_206, 'bytes 13-15/16', 3),
+        ('bytes=8-', falcon.HTTP_206, 'bytes 8-15/16', 8),
+    ],
+)
+def test_head_request_range(
+    client, range_header, exp_status, exp_content_range, exp_length, patch_open
+):
+    patch_open(b'0123456789abcdef')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    headers = {'Range': range_header} if range_header else None
+    resp = client.simulate_request(
+        method='HEAD', path='/downloads/thing.zip', headers=headers
+    )
+    assert resp.status == exp_status
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == exp_length
+    assert resp.headers.get('Content-Range') == exp_content_range
+    assert patch_open.current_file is None
+
+
+def test_head_request_range_not_satisfiable(client, patch_open):
+    patch_open(b'0123456789abcdef')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    resp = client.simulate_request(
+        method='HEAD',
+        path='/downloads/thing.zip',
+        headers={'Range': 'bytes=100-200'},
+    )
+    assert resp.status == falcon.HTTP_416
+    assert resp.headers.get('Content-Range') == 'bytes */16'
+    assert patch_open.current_file is None
+
+
+@pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+def test_method_not_allowed(client, method, patch_open):
+    patch_open(b'test_data')
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_request(method=method, path='/static/foo/bar.txt')
+    assert resp.status == falcon.HTTP_405
+    assert resp.headers.get('Allow') == 'GET, HEAD'
+    assert patch_open.current_file is None
 
 
 def test_last_modified(client, patch_open):
