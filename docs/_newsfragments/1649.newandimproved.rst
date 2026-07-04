@@ -1,0 +1,9 @@
+:class:`~falcon.routing.StaticRoute` (and, correspondingly,
+:meth:`~falcon.App.add_static_route`) now accept a ``disallowed_chars``
+argument, letting an app override the default set of characters
+disallowed in requested filenames (previously hard-coded as
+``_DISALLOWED_CHARS_PATTERN``, now exposed as
+:attr:`~falcon.routing.StaticRoute.DEFAULT_DISALLOWED_CHARS`). This makes
+it possible, for instance, to serve files whose names legitimately
+contain a tilde (``~``). The NUL byte and the Unicode replacement
+character are always disallowed, regardless of this setting.

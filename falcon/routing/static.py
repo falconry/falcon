@@ -168,11 +168,38 @@ class StaticRoute:
                 Content-Disposition header (provided it was requested with the
                 `downloadable` parameter described above), are derived from the
                 fallback filename, as opposed to the requested filename.
+        disallowed_chars (str): A string overriding the set of additional
+            characters to disallow in the requested filename, in place of
+            :attr:`DEFAULT_DISALLOWED_CHARS`. The string is interpreted as
+            the body of a regex character class (i.e., it is inserted
+            verbatim between the square brackets when compiling the
+            pattern used to search the requested filename), so characters
+            that are special to regular expressions (such as ``]``,
+            ``\\`` or ``^``) must be escaped accordingly. Pass an empty
+            string to disable this check altogether.
+
+            Defaults to ``None``, in which case
+            :attr:`DEFAULT_DISALLOWED_CHARS` is used unmodified. Regardless
+            of this setting, the NUL byte (``'\\x00'``) and the Unicode
+            replacement character (``'\\ufffd'``) are always disallowed.
     """
+
+    #: A string of characters disallowed in requested filenames by default
+    #: (unless customized via the `disallowed_chars` constructor
+    #: parameter). The string is interpreted as the body of a regex
+    #: character class.
+    DEFAULT_DISALLOWED_CHARS: ClassVar[str] = '\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"'
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
     _DISALLOWED_CHARS_PATTERN: ClassVar[Pattern[str]] = re.compile(
-        '[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]'
+        '[' + DEFAULT_DISALLOWED_CHARS + ']'
+    )
+
+    # NOTE(vytas): Regardless of any disallowed_chars override, always
+    #   reject the NUL byte and the Unicode replacement character, since
+    #   allowing them could result in unexpected or surprising behavior.
+    _ALWAYS_DISALLOWED_CHARS_PATTERN: ClassVar[Pattern[str]] = re.compile(
+        '[\x00\ufffd]'
     )
 
     # NOTE(vytas): Match the behavior of the underlying os.path.normpath.
@@ -191,6 +218,7 @@ class StaticRoute:
         directory: str | Path,
         downloadable: bool = False,
         fallback_filename: str | None = None,
+        disallowed_chars: str | None = None,
     ) -> None:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
@@ -207,6 +235,18 @@ class StaticRoute:
             )
             if not os.path.isfile(self._fallback_filename):
                 raise ValueError('fallback_filename is not a file')
+
+        if disallowed_chars is None:
+            self._disallowed_chars_pattern = self._DISALLOWED_CHARS_PATTERN
+        elif disallowed_chars:
+            self._disallowed_chars_pattern = re.compile('[' + disallowed_chars + ']')
+        else:
+            # NOTE(vytas): An explicitly empty string means the caller does
+            #   not want any additional characters disallowed (beyond the
+            #   ones matched by _ALWAYS_DISALLOWED_CHARS_PATTERN below).
+            #   '[]' would be an invalid (unterminated) character set, so
+            #   use an equivalent pattern that never matches instead.
+            self._disallowed_chars_pattern = re.compile('(?!)')
 
         # NOTE(kgriffs): Ensure it ends with a path separator to ensure
         # we only match on the complete segment. Don't raise an error
@@ -240,7 +280,8 @@ class StaticRoute:
         if (
             not (without_prefix or self._fallback_filename is not None)
             or without_prefix.strip().rstrip('.') != without_prefix
-            or self._DISALLOWED_CHARS_PATTERN.search(without_prefix)
+            or self._disallowed_chars_pattern.search(without_prefix)
+            or self._ALWAYS_DISALLOWED_CHARS_PATTERN.search(without_prefix)
             or '\\' in without_prefix
             or '//' in without_prefix
             or len(without_prefix) > self._MAX_NON_PREFIXED_LEN
