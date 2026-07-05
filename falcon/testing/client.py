@@ -1219,12 +1219,24 @@ class ASGIConductor:
 
         This method returns an async context manager that can be used to obtain
         a managed :class:`falcon.testing.ASGIWebSocketSimulator` instance.
+
         Exiting the context will simulate a close on the WebSocket (if not
         already closed) and await the completion of the task that is
         running the simulated ASGI request.
-
+        
+        .. warning::
+            If your ``on_websocket`` responder does not return (for example,
+            it runs an infinite loop without ever breaking out on
+            disconnect), exiting this context manager will hang
+            indefinitely while awaiting that task, regardless of any
+            ``timeout`` passed to :meth:`~falcon.testing.ASGIWebSocketSimulator.wait_ready`.
+            Ensure your responder returns promptly after the client
+            disconnects, or explicitly break out of any long-running
+            loops when :attr:`~falcon.testing.ASGIWebSocketSimulator.closed`
+            becomes ``True``.
+            
         In the following example, a series of WebSocket TEXT events are
-        received from the ASGI app::
+        received from the ASGI app::  
 
             async with conductor.simulate_ws('/events') as ws:
                 while some_condition:
