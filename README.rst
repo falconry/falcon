@@ -439,8 +439,8 @@ Note that this example assumes that the
 
     # examples/things_advanced.py
 
-    import json
     import logging
+    import time
     import uuid
     from wsgiref import simple_server
 
@@ -531,44 +531,21 @@ Note that this example assumes that the
                     )
 
 
-    class JSONTranslator:
-        # NOTE: Normally you would simply use req.media and resp.media for
-        # this particular use case; this example serves only to illustrate
-        # what is possible.
+    class TimingMiddleware:
+        """Middleware that records request processing time.
+
+        Demonstrates using req.context and resp.context to pass
+        information between middleware components and resources.
+        """
 
         def process_request(self, req, resp):
-            # req.stream corresponds to the WSGI wsgi.input environ variable,
-            # and allows you to read bytes from the request body.
-            #
-            # See also: PEP 3333
-            if req.content_length in (None, 0):
-                # Nothing to do
-                return
-
-            body = req.bounded_stream.read()
-            if not body:
-                raise falcon.HTTPBadRequest(
-                    title='Empty request body',
-                    description='A valid JSON document is required.',
-                )
-
-            try:
-                req.context.doc = json.loads(body.decode('utf-8'))
-
-            except (ValueError, UnicodeDecodeError):
-                description = (
-                    'Could not decode the request body. The '
-                    'JSON was incorrect or not encoded as '
-                    'UTF-8.'
-                )
-
-                raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
+            req.context.request_start = time.perf_counter()
 
         def process_response(self, req, resp, resource, req_succeeded):
-            if not hasattr(resp.context, 'result'):
-                return
-
-            resp.text = json.dumps(resp.context.result)
+            start = getattr(req.context, 'request_start', None)
+            if start is not None:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                resp.set_header('Server-Timing', f'total;dur={elapsed_ms:.2f}')
 
 
     def max_body(limit):
@@ -611,11 +588,7 @@ Note that this example assumes that the
                     title='Service Outage', description=description, retry_after=30
                 )
 
-            # NOTE: Normally you would use resp.media for this sort of thing;
-            # this example serves only to demonstrate how the context can be
-            # used to pass arbitrary values between middleware components,
-            # hooks, and resources.
-            resp.context.result = result
+            resp.media = result
 
             resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
@@ -623,8 +596,8 @@ Note that this example assumes that the
         @falcon.before(max_body(64 * 1024))
         def on_post(self, req, resp, user_id):
             try:
-                doc = req.context.doc
-            except AttributeError:
+                doc = req.get_media()
+            except falcon.errors.HTTPBadRequest:
                 raise falcon.HTTPBadRequest(
                     title='Missing thing',
                     description='A thing must be submitted in the request body.',
@@ -641,7 +614,7 @@ Note that this example assumes that the
         middleware=[
             AuthMiddleware(),
             RequireJSON(),
-            JSONTranslator(),
+            TimingMiddleware(),
         ]
     )
 
@@ -659,7 +632,7 @@ Note that this example assumes that the
     sink = SinkAdapter()
     app.add_sink(sink, r'/search/(?P<engine>ddg|y)\Z')
 
-    # Useful for debugging problems in your API; works with pdb.set_trace(). You
+    # Useful for debugging problems in your App; works with pdb.set_trace(). You
     # can also use Gunicorn to host your app. Gunicorn can be configured to
     # auto-restart workers when it detects a code change, and it also works
     # with pdb.
@@ -706,8 +679,8 @@ Here's the ASGI version of the app from above. Note that it uses the
 
     # examples/things_advanced_asgi.py
 
-    import json
     import logging
+    import time
     import uuid
 
     import falcon
@@ -728,7 +701,7 @@ Here's the ASGI version of the app from above. Note that it uses the
     class StorageError(Exception):
 
         @staticmethod
-        async def handle(ex, req, resp, params):
+        async def handle(req, resp, ex, params):
             # TODO: Log the error, clean up, etc. before raising
             raise falcon.HTTPInternalServerError()
 
@@ -793,45 +766,25 @@ Here's the ASGI version of the app from above. Note that it uses the
             if req.method in ('POST', 'PUT'):
                 if 'application/json' not in req.content_type:
                     raise falcon.HTTPUnsupportedMediaType(
-                        description='This API only supports requests encoded as JSON.',
+                        title='This API only supports requests encoded as JSON.',
                         href='http://docs.examples.com/api/json')
 
 
-    class JSONTranslator:
-        # NOTE: Normally you would simply use req.get_media() and resp.media for
-        # this particular use case; this example serves only to illustrate
-        # what is possible.
+    class TimingMiddleware:
+        """Async middleware that records request processing time.
+
+        Demonstrates using req.context and resp.context to pass
+        information between middleware components and resources.
+        """
 
         async def process_request(self, req, resp):
-            # NOTE: Test explicitly for 0, since this property could be None in
-            # the case that the Content-Length header is missing (in which case we
-            # can't know if there is a body without actually attempting to read
-            # it from the request stream.)
-            if req.content_length == 0:
-                # Nothing to do
-                return
-
-            body = await req.stream.read()
-            if not body:
-                raise falcon.HTTPBadRequest(title='Empty request body',
-                                            description='A valid JSON document is required.')
-
-            try:
-                req.context.doc = json.loads(body.decode('utf-8'))
-
-            except (ValueError, UnicodeDecodeError):
-                description = ('Could not decode the request body. The '
-                               'JSON was incorrect or not encoded as '
-                               'UTF-8.')
-
-                raise falcon.HTTPBadRequest(title='Malformed JSON',
-                                            description=description)
+            req.context.request_start = time.perf_counter()
 
         async def process_response(self, req, resp, resource, req_succeeded):
-            if not hasattr(resp.context, 'result'):
-                return
-
-            resp.text = json.dumps(resp.context.result)
+            start = getattr(req.context, 'request_start', None)
+            if start is not None:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                resp.set_header('Server-Timing', f'total;dur={elapsed_ms:.2f}')
 
 
     def max_body(limit):
@@ -872,11 +825,7 @@ Here's the ASGI version of the app from above. Note that it uses the
                     description=description,
                     retry_after=30)
 
-            # NOTE: Normally you would use resp.media for this sort of thing;
-            # this example serves only to demonstrate how the context can be
-            # used to pass arbitrary values between middleware components,
-            # hooks, and resources.
-            resp.context.result = result
+            resp.media = result
 
             resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
@@ -884,8 +833,8 @@ Here's the ASGI version of the app from above. Note that it uses the
         @falcon.before(max_body(64 * 1024))
         async def on_post(self, req, resp, user_id):
             try:
-                doc = req.context.doc
-            except AttributeError:
+                doc = await req.get_media()
+            except falcon.errors.HTTPBadRequest:
                 raise falcon.HTTPBadRequest(
                     title='Missing thing',
                     description='A thing must be submitted in the request body.')
@@ -893,14 +842,14 @@ Here's the ASGI version of the app from above. Note that it uses the
             proper_thing = await self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
+            resp.location = '/{}/things/{}'.format(user_id, proper_thing['id'])
 
 
     # The app instance is an ASGI callable
     app = falcon.asgi.App(middleware=[
-        # AuthMiddleware(),
+        AuthMiddleware(),
         RequireJSON(),
-        JSONTranslator(),
+        TimingMiddleware(),
     ])
 
     db = StorageEngine()
