@@ -1,0 +1,7 @@
+Documented that exiting the context manager returned by
+:meth:`~falcon.testing.ASGIConductor.simulate_ws` awaits completion of the
+background task running the simulated ASGI request. If the
+``on_websocket`` responder never returns (for example, an infinite loop
+that does not break out when the connection is closed), this await will
+hang indefinitely, regardless of any ``timeout`` passed to
+:meth:`~falcon.testing.ASGIWebSocketSimulator.wait_ready`.
