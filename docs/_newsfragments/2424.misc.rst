@@ -1,0 +1,1 @@
+Added a ``SECURITY.md`` documenting how to report vulnerabilities.
