@@ -746,6 +746,63 @@ def test_head_request_range_not_satisfiable(client, patch_open):
     assert patch_open.current_file is None
 
 
+@pytest.mark.parametrize(
+    'range_header',
+    ['bytes=1-3', 'bytes=-3', 'bytes=8-', 'bytes=0-30'],
+)
+def test_head_request_range_zero_length(client, range_header, patch_open):
+    patch_open(b'')
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    resp = client.simulate_request(
+        method='HEAD',
+        path='/downloads/thing.zip',
+        headers={'Range': range_header},
+    )
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == 0
+    assert 'Content-Range' not in resp.headers
+    assert patch_open.current_file is None
+
+
+def test_head_request_fallback_filename(client, patch_open, monkeypatch):
+    def validate(path):
+        if 'index' not in path:
+            raise OSError(errno.ENOENT, 'File not found')
+
+    patch_open(validate=validate)
+    monkeypatch.setattr('os.path.isfile', lambda file: 'index' in file)
+
+    client.app.add_static_route(
+        '/static', '/opt/somesite/static', fallback_filename='index.html'
+    )
+
+    resp = client.simulate_request(method='HEAD', path='/static/missing.txt')
+    assert resp.status == falcon.HTTP_200
+    assert resp.text == ''
+    assert 'ETag' in resp.headers
+    assert patch_open.current_file is None
+
+
+def test_head_request_fallback_filename_not_found(client, patch_open, monkeypatch):
+    def validate(path):
+        # NOTE: Neither the requested file nor the fallback file exist.
+        raise OSError(errno.ENOENT, 'File not found')
+
+    patch_open(validate=validate)
+    monkeypatch.setattr('os.path.isfile', lambda file: 'index' in file)
+
+    client.app.add_static_route(
+        '/static', '/opt/somesite/static', fallback_filename='index.html'
+    )
+
+    resp = client.simulate_request(method='HEAD', path='/static/missing.txt')
+    assert resp.status == falcon.HTTP_404
+    assert patch_open.current_file is None
+
+
 @pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
 def test_method_not_allowed(client, method, patch_open):
     patch_open(b'test_data')
