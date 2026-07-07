@@ -261,7 +261,7 @@ def test_good_path(asgi, util, uri_prefix, uri_path, expected_path, mtype, patch
     'disallowed_chars',
     [
         None,
-        # NOTE(vytas): Equivalent to the default, just spelled out
+        # NOTE(zain-asif-dev): Equivalent to the default, just spelled out
         #   explicitly to make sure passing it verbatim still works.
         '\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"',
     ],
@@ -291,8 +291,8 @@ def test_disallowed_chars_default(asgi, util, disallowed_chars, patch_open):
 def test_disallowed_chars_override(asgi, util, patch_open):
     patch_open()
 
-    # NOTE(vytas): Override the default set of disallowed characters to
-    #   allow tildes in requested filenames (see also GH #1649), while
+    # NOTE(zain-asif-dev): Override the default set of disallowed characters
+    #   to allow tildes in requested filenames (see also GH #1649), while
     #   still disallowing control characters.
     sr = create_sr(
         asgi,
@@ -335,7 +335,7 @@ def test_disallowed_chars_override_still_blocks_nul_and_replacement_char(
 ):
     patch_open(b'')
 
-    # NOTE(vytas): Even when disallowed_chars is overridden with an
+    # NOTE(zain-asif-dev): Even when disallowed_chars is overridden with an
     #   "empty" pattern, the NUL byte and the Unicode replacement
     #   character must still be rejected.
     sr = create_sr(asgi, '/static', '/var/www/statics', disallowed_chars='')

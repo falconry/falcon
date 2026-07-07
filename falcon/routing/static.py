@@ -195,9 +195,10 @@ class StaticRoute:
         '[' + DEFAULT_DISALLOWED_CHARS + ']'
     )
 
-    # NOTE(vytas): Regardless of any disallowed_chars override, always
-    #   reject the NUL byte and the Unicode replacement character, since
-    #   allowing them could result in unexpected or surprising behavior.
+    # NOTE(zain-asif-dev): Regardless of any disallowed_chars override,
+    #   always reject the NUL byte and the Unicode replacement character,
+    #   since allowing them could result in unexpected or surprising
+    #   behavior.
     _ALWAYS_DISALLOWED_CHARS_PATTERN: ClassVar[Pattern[str]] = re.compile(
         '[\x00\ufffd]'
     )
@@ -241,11 +242,12 @@ class StaticRoute:
         elif disallowed_chars:
             self._disallowed_chars_pattern = re.compile('[' + disallowed_chars + ']')
         else:
-            # NOTE(vytas): An explicitly empty string means the caller does
-            #   not want any additional characters disallowed (beyond the
-            #   ones matched by _ALWAYS_DISALLOWED_CHARS_PATTERN below).
-            #   '[]' would be an invalid (unterminated) character set, so
-            #   use an equivalent pattern that never matches instead.
+            # NOTE(zain-asif-dev): An explicitly empty string means the
+            #   caller does not want any additional characters disallowed
+            #   (beyond the ones matched by
+            #   _ALWAYS_DISALLOWED_CHARS_PATTERN below). '[]' would be an
+            #   invalid (unterminated) character set, so use an equivalent
+            #   pattern that never matches instead.
             self._disallowed_chars_pattern = re.compile('(?!)')
 
         # NOTE(kgriffs): Ensure it ends with a path separator to ensure
