@@ -647,7 +647,10 @@ class Request:
         # include it even in that case.
         try:
             # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
-            return self.env['SCRIPT_NAME']  # type: ignore[no-any-return]
+            root_path = self.env['SCRIPT_NAME']
+            if not root_path.isascii():
+                root_path = root_path.encode('iso-8859-1').decode('utf-8', 'replace')
+            return root_path  # type: ignore[no-any-return]
         except KeyError:
             return ''
 
