@@ -61,12 +61,12 @@ def test_app_missing():
 def test_root_path_non_ascii_wsgi():
     env = testing.create_environ()
 
-    script_name = "/café".encode().decode("iso-8859-1")
-    env["SCRIPT_NAME"] = script_name
+    script_name = '/café'.encode().decode('iso-8859-1')
+    env['SCRIPT_NAME'] = script_name
 
     req = Request(env)
 
-    assert req.root_path == "/café"
+    assert req.root_path == '/café'
 
 
 class TestRequestAttributes:
