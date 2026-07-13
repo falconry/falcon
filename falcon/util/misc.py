@@ -33,7 +33,7 @@ import inspect
 import os
 import os.path
 import re
-from typing import Any, Callable
+from typing import Any, Callable, cast, TYPE_CHECKING
 import unicodedata
 
 from falcon import status_codes
@@ -43,6 +43,23 @@ from falcon.uri import encode_value
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
 # public Falcon interface.
 from .deprecation import deprecated
+
+if TYPE_CHECKING:
+    from typing import ParamSpec, Protocol, TypeVar
+
+    _P = ParamSpec('_P')
+    _R_co = TypeVar('_R_co', covariant=True)
+
+    class _CallableWithCacheClear(Protocol[_P, _R_co]):
+        cache_clear: Callable[[], None]
+
+        def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_co: ...
+
+    class _LruCacheFactory(Protocol):
+        def __call__(
+            self, maxsize: int
+        ) -> Callable[[Callable[_P, _R_co]], _CallableWithCacheClear[_P, _R_co]]: ...
+
 
 try:
     from falcon.cyutil.misc import encode_items_to_latin1 as _cy_encode_items_to_latin1
@@ -103,23 +120,27 @@ utcnow: Callable[[], datetime.datetime] = deprecated(
 #   the nocover pragma here.
 def _lru_cache_nop(
     maxsize: int,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:  # pragma: nocover
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+) -> Callable[
+    [Callable[_P, _R_co]], _CallableWithCacheClear[_P, _R_co]
+]:  # pragma: nocover
+    def decorator(func: Callable[_P, _R_co]) -> _CallableWithCacheClear[_P, _R_co]:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
-        func.cache_clear = lambda: None  # type: ignore
+        cached_func = cast('_CallableWithCacheClear[_P, _R_co]', func)
+        cached_func.cache_clear = lambda: None
 
-        return func
+        return cached_func
 
     return decorator
 
 
 # PERF(kgriffs): Using lru_cache is slower on PyPy when the wrapped
 #   function is just doing a few non-IO operations.
+_lru_cache_for_simple_logic: _LruCacheFactory
 if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = functools.lru_cache
+    _lru_cache_for_simple_logic = cast('_LruCacheFactory', functools.lru_cache)
 
 
 def is_python_func(func: Callable[..., Any] | Any) -> bool:
