@@ -198,10 +198,9 @@ class StaticRoute:
     # NOTE(zain-asif-dev): Regardless of any disallowed_chars override,
     #   always reject the NUL byte and the Unicode replacement character,
     #   since allowing them could result in unexpected or surprising
-    #   behavior.
-    _ALWAYS_DISALLOWED_CHARS_PATTERN: ClassVar[Pattern[str]] = re.compile(
-        '[\x00\ufffd]'
-    )
+    #   behavior. Folded into _disallowed_chars_pattern in __init__ below,
+    #   so that match() only ever needs to perform a single regex search.
+    _ALWAYS_DISALLOWED_CHARS: ClassVar[str] = '\x00\ufffd'
 
     # NOTE(vytas): Match the behavior of the underlying os.path.normpath.
     _DISALLOWED_NORMALIZED_PREFIXES: ClassVar[tuple[str, ...]] = (
@@ -240,15 +239,16 @@ class StaticRoute:
         if disallowed_chars is None:
             self._disallowed_chars_pattern = self._DISALLOWED_CHARS_PATTERN
         elif disallowed_chars:
-            self._disallowed_chars_pattern = re.compile('[' + disallowed_chars + ']')
+            self._disallowed_chars_pattern = re.compile(
+                '[' + disallowed_chars + self._ALWAYS_DISALLOWED_CHARS + ']'
+            )
         else:
             # NOTE(zain-asif-dev): An explicitly empty string means the
-            #   caller does not want any additional characters disallowed
-            #   (beyond the ones matched by
-            #   _ALWAYS_DISALLOWED_CHARS_PATTERN below). '[]' would be an
-            #   invalid (unterminated) character set, so use an equivalent
-            #   pattern that never matches instead.
-            self._disallowed_chars_pattern = re.compile('(?!)')
+            #   caller does not want any additional characters disallowed,
+            #   beyond the ones in _ALWAYS_DISALLOWED_CHARS above.
+            self._disallowed_chars_pattern = re.compile(
+                '[' + self._ALWAYS_DISALLOWED_CHARS + ']'
+            )
 
         # NOTE(kgriffs): Ensure it ends with a path separator to ensure
         # we only match on the complete segment. Don't raise an error
@@ -283,7 +283,6 @@ class StaticRoute:
             not (without_prefix or self._fallback_filename is not None)
             or without_prefix.strip().rstrip('.') != without_prefix
             or self._disallowed_chars_pattern.search(without_prefix)
-            or self._ALWAYS_DISALLOWED_CHARS_PATTERN.search(without_prefix)
             or '\\' in without_prefix
             or '//' in without_prefix
             or len(without_prefix) > self._MAX_NON_PREFIXED_LEN
