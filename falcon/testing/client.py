@@ -1217,7 +1217,7 @@ class ASGIConductor:
         All keyword arguments are passed through to
         :meth:`falcon.testing.create_scope_ws`.
 
-       This method returns an async context manager that can be used to obtain
+        This method returns an async context manager that can be used to obtain
         a managed :class:`falcon.testing.ASGIWebSocketSimulator` instance.
 
         Exiting the context will simulate a close on the WebSocket (if not
