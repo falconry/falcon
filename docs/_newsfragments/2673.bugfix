@@ -1,0 +1,1 @@
+The default OPTIONS responder no longer emits an Allow header when no HTTP methods are explicitly mapped to the endpoint via the @on_get, @on_post, etc. decorators. The header previously listed the empty set of allowed methods as an empty string, which violated RFC 7231.
