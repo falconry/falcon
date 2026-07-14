@@ -1,5 +1,6 @@
-# examples/things_asgi.py
+from __future__ import annotations
 
+# examples/things_asgi.py
 import falcon
 import falcon.asgi
 
@@ -8,7 +9,7 @@ import falcon.asgi
 # other things) that you think in terms of resources and state
 # transitions, which map to HTTP verbs.
 class ThingsResource:
-    async def on_get(self, req, resp):
+    async def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
         """Handles GET requests"""
         resp.status = falcon.HTTP_200  # This is the default status
         resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
@@ -22,7 +23,7 @@ class ThingsResource:
 
 # falcon.asgi.App instances are callable ASGI apps...
 # in larger applications the app is created in a separate file
-app = falcon.asgi.App()
+app: falcon.asgi.App = falcon.asgi.App()
 
 # Resources are represented by long-lived class instances
 things = ThingsResource()
