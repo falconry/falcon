@@ -29,11 +29,11 @@ import warnings
 
 import falcon
 import falcon.request
-from falcon.util.deprecation import DeprecatedWarning
 
 # TODO: Hoist for backwards compat. Remove in Falcon 5.0.
 from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
+from falcon.util.deprecation import DeprecatedWarning
 
 _TESTTOOLS_WARNING = (
     'falcon.testing.TestCase is rebased on testtools.TestCase. '
@@ -114,6 +114,13 @@ class TestCase(_UnittestBase, TestClient):  # type: ignore[misc]
         To keep a custom base class (including ``testtools``), set the
         environment variable ``FALCON_TESTING_TESTCASE_BASE`` to an import path
         such as ``testtools:TestCase`` or ``mypkg.tests:MyBase``.
+
+        .. versionchanged:: 4.4
+            Automatic rebase onto :class:`testtools.TestCase` is deprecated
+            and will be removed in Falcon 5.0. A
+            :class:`~falcon.util.deprecation.DeprecatedWarning` is emitted when
+            that path is used. Prefer :mod:`unittest` or :mod:`pytest`, or set
+            ``FALCON_TESTING_TESTCASE_BASE`` for a custom base until 5.0.
 
     This base class provides some extra plumbing for unittest-style
     test cases, to help simulate WSGI or ASGI requests without having

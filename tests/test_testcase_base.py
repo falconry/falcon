@@ -12,8 +12,10 @@ import pytest
 from falcon.util.deprecation import DeprecatedWarning
 
 
-def _fresh_test_case_module(monkeypatch, *, env: str | None = None, block_testtools: bool = False):
-    """Import a clean falcon.testing.test_case under controlled env/import conditions."""
+def _fresh_test_case_module(
+    monkeypatch, *, env: str | None = None, block_testtools: bool = False
+):
+    """Import falcon.testing.test_case under controlled env/import conditions."""
     if env is None:
         monkeypatch.delenv('FALCON_TESTING_TESTCASE_BASE', raising=False)
     else:
@@ -23,7 +25,9 @@ def _fresh_test_case_module(monkeypatch, *, env: str | None = None, block_testto
         real_import = __import__
 
         def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == 'testtools' or (isinstance(name, str) and name.startswith('testtools.')):
+            if name == 'testtools' or (
+                isinstance(name, str) and name.startswith('testtools.')
+            ):
                 raise ImportError('testtools blocked for unit test')
             return real_import(name, globals, locals, fromlist, level)
 
@@ -103,7 +107,9 @@ def test_custom_base_via_env_uses_unittest_without_deprecation(monkeypatch):
 
 
 def test_custom_base_dotted_form(monkeypatch):
-    tc = _fresh_test_case_module(monkeypatch, env='unittest.TestCase', block_testtools=True)
+    tc = _fresh_test_case_module(
+        monkeypatch, env='unittest.TestCase', block_testtools=True
+    )
     assert tc._UnittestBase is unittest.TestCase
     assert tc._USED_TESTTOOLS is False
 
