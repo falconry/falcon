@@ -68,3 +68,4 @@ dash
 #py Environment
 /venv
 /env
+.venv

@@ -33,7 +33,7 @@ Please also ensure that your coding style follows PEP 8 and the ``ruff`` formatt
 In order to reformat your code with ``ruff``, simply issue:
 
 ```bash
-$ pip install -U ruff
+$ pip install uv && uv tool install ruff
 $ ruff format
 ```
 
@@ -41,7 +41,7 @@ You can also reformat your code, and apply safe ``ruff`` fixes, via the
 ``reformat`` ``tox`` environment:
 
 ```bash
-$ pip install -U tox
+$ pip install uv && uv tool install tox
 $ tox -e reformat
 ```
 
@@ -49,7 +49,7 @@ You can check all this by running ``tox`` from within the Falcon project directo
 Your environment must be based on CPython 3.10, 3.11, 3.12, 3.13, or 3.14:
 
 ```bash
-$ pip install -U tox
+$ pip install uv && uv tool install tox
 $ tox --recreate
 ```
 
@@ -111,13 +111,14 @@ $ tox -e py310_bench -- -h
 $ tox -e py310_bench -- -b falcon -i 20000
 ```
 
-Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use pyenv with pyenv-virtualenv from within a falcon source directory:
+Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use uv and pyenv with pyenv-virtualenv from within a falcon source directory:
 
 ```bash
 $ pyenv virtualenv 3.10.6 falcon-sandbox-310
 $ pyenv shell falcon-sandbox-310
-$ pip install -r requirements/bench
-$ pip install -e .
+$ pip install uv
+$ uv pip install -r requirements/bench
+$ uv pip install -e .
 $ falcon-bench
 ```
 
