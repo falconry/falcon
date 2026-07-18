@@ -83,5 +83,13 @@ for broad or final validation.
   `docs/user/recipes/`, and add coverage in `tests/test_recipes.py` when
   practical.
 
+## Operator boundaries
+
+- Never create, submit, or open a GitHub pull request. Prepare the changes and
+  verification evidence, then ask the human operator to open the pull request.
+- Never tick, check, or otherwise complete a pull request checklist on the
+  operator's behalf. The human operator must review the changes and complete
+  every checklist item manually.
+
 See `CONTRIBUTING.md` for commit-message format, full docstring markup rules,
 review policy, and contributor conduct.
