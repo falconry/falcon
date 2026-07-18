@@ -49,7 +49,8 @@ all generated changes.
   and standard formulas.
 - Format necessary non-trivial tagged comments as
   `TODO|NOTE|PERF|APPSEC(<GitHub handle>):`. If the author's handle is
-  unavailable, do not invent one; avoid the tagged comment unless necessary.
+  unavailable, do not invent one and don't impersonate other users;
+  avoid the tagged comment unless necessary.
 
 ## Verification
 
