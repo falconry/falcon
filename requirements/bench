@@ -6,4 +6,4 @@ bottle
 pprofile
 # NOTE(vytas): vmprof supports only up to Python 3.11 at the time of writing.
 #   (https://github.com/vmprof/vmprof-python/issues/261)
-vmprof
+vmprof; python_version  < '3.11'
