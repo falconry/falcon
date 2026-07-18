@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 from re import Pattern
+import stat
 from typing import Any, ClassVar, IO, TYPE_CHECKING
 
 import falcon
@@ -39,6 +40,50 @@ def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result
     return fh, st
 
 
+def _stat_file(file_path: str | Path) -> os.stat_result:
+    """Read file stat for a static file request without opening it."""
+
+    try:
+        st = os.stat(file_path)
+        if not stat.S_ISREG(st.st_mode):
+            raise OSError
+    except OSError:
+        raise falcon.HTTPNotFound()
+
+    return st
+
+
+def _get_range(
+    st: os.stat_result, req_range: tuple[int, int] | None
+) -> tuple[int, tuple[int, int, int] | None]:
+    size = st.st_size
+    if req_range is None:
+        return size, None
+
+    start, end = req_range
+    if size == 0:
+        # NOTE(tipabu): Ignore Range headers for zero-byte files; just serve
+        #   the empty body since Content-Range can't be used to express a
+        #   zero-byte body.
+        return 0, None
+
+    if start < 0 and end == -1:
+        # NOTE(tipabu): Special case: only want the last N bytes.
+        start = max(start, -size)
+        return -start, (size + start, size - 1, size)
+
+    if start >= size:
+        raise falcon.HTTPRangeNotSatisfiable(size)
+
+    if end == -1:
+        length = size - start
+        return length, (start, size - 1, size)
+
+    end = min(end, size - 1)
+    length = end - start + 1
+    return length, (start, end, size)
+
+
 def _set_range(
     fh: io.BufferedReader, st: os.stat_result, req_range: tuple[int, int] | None
 ) -> tuple[ReadableIO, int, tuple[int, int, int] | None]:
@@ -55,41 +100,21 @@ def _set_range(
             possibly bounded, and the content-range will be a tuple of
             (start, end, size).
     """
-    size = st.st_size
-    if req_range is None:
-        return fh, size, None
-
-    start, end = req_range
-    if size == 0:
-        # NOTE(tipabu): Ignore Range headers for zero-byte files; just serve
-        #   the empty body since Content-Range can't be used to express a
-        #   zero-byte body.
-        return fh, 0, None
-
-    if start < 0 and end == -1:
-        # NOTE(tipabu): Special case: only want the last N bytes.
-        start = max(start, -size)
-        fh.seek(start, os.SEEK_END)
-        # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
-        #   its implementation was found to be buggy in many popular WSGI
-        #   servers for open files with a non-zero offset.
-        return _BoundedFile(fh, -start), -start, (size + start, size - 1, size)
-
-    if start >= size:
+    try:
+        length, content_range = _get_range(st, req_range)
+    except falcon.HTTPRangeNotSatisfiable:
         fh.close()
-        raise falcon.HTTPRangeNotSatisfiable(size)
+        raise
 
-    fh.seek(start)
-    if end == -1:
-        # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
-        #   its implementation was found to be buggy in many popular WSGI
-        #   servers for open files with a non-zero offset.
-        length = size - start
-        return _BoundedFile(fh, length), length, (start, size - 1, size)
+    if content_range is None:
+        return fh, length, None
 
-    end = min(end, size - 1)
-    length = end - start + 1
-    return _BoundedFile(fh, length), length, (start, end, size)
+    fh.seek(content_range[0])
+
+    # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
+    #   its implementation was found to be buggy in many popular WSGI
+    #   servers for open files with a non-zero offset.
+    return _BoundedFile(fh, length), length, content_range
 
 
 def _is_not_modified(
@@ -223,14 +248,43 @@ class StaticRoute:
             return path.startswith(self._prefix)
         return path.startswith(self._prefix) or path == self._prefix[:-1]
 
+    def _get_file(
+        self, file_path: str, open_file: bool
+    ) -> tuple[str, os.stat_result, io.BufferedReader | None]:
+        if open_file:
+            try:
+                fh, st = _open_file(file_path)
+            except falcon.HTTPNotFound:
+                if self._fallback_filename is None:
+                    raise
+
+                fh, st = _open_file(self._fallback_filename)
+                file_path = self._fallback_filename
+
+            return file_path, st, fh
+
+        try:
+            st = _stat_file(file_path)
+        except falcon.HTTPNotFound:
+            if self._fallback_filename is None:
+                raise
+
+            st = _stat_file(self._fallback_filename)
+            file_path = self._fallback_filename
+
+        return file_path, st, None
+
     def __call__(self, req: Request, resp: Response, **kw: Any) -> None:
         """Resource responder for this route."""
         assert not kw
         if req.method == 'OPTIONS':
             # it's likely a CORS request. Set the allow header to the appropriate value.
-            resp.set_header('Allow', 'GET')
+            resp.set_header('Allow', 'GET, HEAD')
             resp.set_header('Content-Length', '0')
             return
+
+        if req.method not in ('GET', 'HEAD'):
+            raise falcon.HTTPMethodNotAllowed(['GET', 'HEAD'])
 
         without_prefix = req.path[len(self._prefix) :]
 
@@ -260,14 +314,7 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        if self._fallback_filename is None:
-            fh, st = _open_file(file_path)
-        else:
-            try:
-                fh, st = _open_file(file_path)
-            except falcon.HTTPNotFound:
-                fh, st = _open_file(self._fallback_filename)
-                file_path = self._fallback_filename
+        file_path, st, fh = self._get_file(file_path, req.method != 'HEAD')
 
         etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
         resp.etag = etag
@@ -280,18 +327,24 @@ class StaticRoute:
         resp.last_modified = last_modified
 
         if _is_not_modified(req, etag, last_modified):
-            fh.close()
+            if fh is not None:
+                fh.close()
             resp.status = falcon.HTTP_304
             return
 
         req_range = req.range if req.range_unit == 'bytes' else None
-        try:
-            stream, length, content_range = _set_range(fh, st, req_range)
-        except OSError:
-            fh.close()
-            raise falcon.HTTPNotFound()
+        if fh is None:
+            length, content_range = _get_range(st, req_range)
+            resp.content_length = length
+        else:
+            try:
+                stream, length, content_range = _set_range(fh, st, req_range)
+            except OSError:
+                fh.close()
+                raise falcon.HTTPNotFound()
 
-        resp.set_stream(stream, length)
+            resp.set_stream(stream, length)
+
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
             suffix, 'application/octet-stream'
