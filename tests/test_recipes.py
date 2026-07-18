@@ -79,6 +79,56 @@ class TestOutputCSV:
         assert result.status_code == 200
         assert result.text.startswith(expected_head)
 
+class TestErrorHandling:
+    @pytest.mark.parametrize(
+        'accept,expected_content_type',
+        [
+            (falcon.MEDIA_TEXT, falcon.MEDIA_TEXT),
+            (falcon.MEDIA_JSON, falcon.MEDIA_JSON),
+        ],
+    )
+    def test_serializer(self, asgi, app_kind, util, accept, expected_content_type):
+        module = util.load_module(
+            'error_handling_serializer', parent_dir='examples/recipes', suffix=app_kind
+        )
+        app = util.create_app(asgi)
+        app.set_error_serializer(module.serialize_error)
+        app.add_route('/division/{dividend:int}/{divisor:int}', module.Division())
+
+        result = falcon.testing.simulate_get(
+            app, '/division/1/0', headers={'Accept': accept}
+        )
+        assert result.status_code == 500
+        assert result.headers['Content-Type'].startswith(expected_content_type)
+
+    def test_custom_handler_renders_response(self, asgi, app_kind, util):
+        module = util.load_module(
+            'error_handling_custom', parent_dir='examples/recipes', suffix=app_kind
+        )
+        app = util.create_app(asgi)
+        app.add_error_handler(OverflowError, module.handle_overflow)
+        app.add_route(
+            '/exponentiation/{base:float}/{power:float}', module.Exponentiation()
+        )
+
+        result = falcon.testing.simulate_get(app, '/exponentiation/20/900')
+        assert result.status_code == 422
+        assert result.text.startswith('That was too much to handle')
+
+    def test_custom_handler_reraises_httperror(self, asgi, app_kind, util):
+        module = util.load_module(
+            'error_handling_custom', parent_dir='examples/recipes', suffix=app_kind
+        )
+        app = util.create_app(asgi)
+        app.add_error_handler(OverflowError, module.handle_overflow)
+        app.add_route(
+            '/exponentiation/{base:float}/{power:float}', module.Exponentiation()
+        )
+
+        result = falcon.testing.simulate_get(app, '/exponentiation/20/1000')
+        assert result.status_code == 400
+        assert result.json == {'title': 'Too Damn High!'}
+
 
 class TestPrettyJSON:
     class QuoteResource:
