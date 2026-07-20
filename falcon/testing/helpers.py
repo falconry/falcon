@@ -51,11 +51,12 @@ import falcon
 from falcon import errors as falcon_errors
 from falcon._typing import CookieArg
 from falcon._typing import HeaderArg
+from falcon._typing import HTTPScope
 from falcon._typing import ResponseStatus
+from falcon._typing import WebSocketScope
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import EventType
-from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
@@ -911,7 +912,7 @@ def create_scope(
     content_length: int | None = None,
     include_server: bool = True,
     cookies: CookieArg | None = None,
-) -> dict[str, Any]:
+) -> HTTPScope:
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -979,8 +980,8 @@ def create_scope(
     if query_string_bytes and query_string_bytes.startswith(b'?'):
         raise ValueError("query_string should not start with '?'")
 
-    scope: dict[str, Any] = {
-        'type': ScopeType.HTTP,
+    scope: HTTPScope = {
+        'type': 'http',
         'asgi': {
             'version': '3.0',
             'spec_version': '2.1',
@@ -990,6 +991,11 @@ def create_scope(
         'path': path,
         'raw_path': raw_path.encode(),
         'query_string': query_string_bytes,
+        'root_path': '',
+        'scheme': 'http',
+        'headers': [],
+        'client': None,
+        'server': None,
     }
 
     # NOTE(kgriffs): Explicitly test against None so that the caller
@@ -1025,10 +1031,10 @@ def create_scope(
 
         # NOTE(kgriffs): Expose as an iterable to ensure the framework/app
         #   isn't hard-coded to only work with a list or tuple.
-        scope['client'] = iter([remote_addr, remote_port])
+        scope['client'] = iter([remote_addr, remote_port])  # type: ignore[typeddict-item]
 
     if include_server:
-        scope['server'] = iter([host, port])
+        scope['server'] = iter([host, port])  # type: ignore[typeddict-item]
 
     # NOTE(myusko): Clients discard Set-Cookie header
     #  in the response to the OPTIONS method.
@@ -1055,7 +1061,7 @@ def create_scope_ws(
     include_server: bool = True,
     subprotocols: str | None = None,
     spec_version: str = '2.1',
-) -> dict[str, Any]:
+) -> WebSocketScope:
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1100,7 +1106,11 @@ def create_scope_ws(
             advertise to the server (default ``[]``).
     """
 
-    scope = create_scope(
+    # NOTE(symtalha14): Build from the HTTP scope to reuse all its construction
+    #   logic, then copy shared fields into a proper WebSocketScope. We cannot
+    #   mutate the HTTPScope in-place because TypedDicts do not support deleting
+    #   required keys (e.g. 'method').
+    http_scope = create_scope(
         path=path,
         query_string=query_string,
         headers=headers,
@@ -1113,9 +1123,23 @@ def create_scope_ws(
         include_server=include_server,
     )
 
-    scope['type'] = ScopeType.WS
-    scope['asgi']['spec_version'] = spec_version
-    del scope['method']
+    scope: WebSocketScope = {
+        'type': 'websocket',
+        'asgi': {
+            'version': http_scope['asgi']['version'],
+            'spec_version': spec_version,
+        },
+        'http_version': http_scope['http_version'],
+        'scheme': http_scope.get('scheme', 'ws'),
+        'path': http_scope['path'],
+        'raw_path': http_scope['raw_path'],
+        'query_string': http_scope['query_string'],
+        'root_path': http_scope.get('root_path', ''),
+        'headers': http_scope.get('headers', []),
+        'client': http_scope.get('client'),
+        'server': http_scope.get('server'),
+        'subprotocols': [],
+    }
 
     # NOTE(kgriffiths): Explicit check against None affords simulating a request
     #   with a scope that does not contain the optional 'subprotocols' key.
@@ -1479,7 +1503,7 @@ def _add_headers_to_environ(env: dict[str, Any], headers: HeaderArg | None) -> N
 
 
 def _add_headers_to_scope(
-    scope: dict[str, Any],
+    scope: HTTPScope | WebSocketScope,
     headers: HeaderArg | None,
     content_length: int | None,
     host: str,
@@ -1533,7 +1557,7 @@ def _add_headers_to_scope(
 
     # NOTE(kgriffs): Make it an iterator to ensure the app is not expecting
     #   a specific type (ASGI only specified that it is an iterable).
-    scope['headers'] = iter(prepared_headers)
+    scope['headers'] = iter(prepared_headers)  # type: ignore[arg-type]
 
 
 def _fixup_http_version(http_version: str) -> str:

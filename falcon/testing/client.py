@@ -48,8 +48,8 @@ from falcon._typing import CookieArg
 from falcon._typing import HeaderArg
 from falcon._typing import HeaderIter
 from falcon._typing import HeaderMapping
+from falcon._typing import LifespanScope
 from falcon.asgi_spec import AsgiEvent
-from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MSGPACK
@@ -924,7 +924,7 @@ async def _simulate_request_asgi(
             'Please use the method parameter.'
         )
 
-    http_scope.update(extras)
+    http_scope.update(extras)  # type: ignore[typeddict-item]
     # ---------------------------------------------------------------------
 
     if asgi_disconnect_ttl == 0:  # Special case
@@ -971,8 +971,8 @@ async def _simulate_request_asgi(
     # ---------------------------------------------------------------------
     # NOTE(kgriffs): 'lifespan' scope
     # ---------------------------------------------------------------------
-    lifespan_scope = {
-        'type': ScopeType.LIFESPAN,
+    lifespan_scope: LifespanScope = {
+        'type': 'lifespan',
         'asgi': {
             'version': '3.0',
             'spec_version': '2.0',
@@ -1130,8 +1130,8 @@ class ASGIConductor:
         self._lifespan_task: asyncio.Task[Any] | None = None
 
     async def __aenter__(self) -> ASGIConductor:
-        lifespan_scope = {
-            'type': ScopeType.LIFESPAN,
+        lifespan_scope: LifespanScope = {
+            'type': 'lifespan',
             'asgi': {
                 'version': '3.0',
                 'spec_version': '2.0',
