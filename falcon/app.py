@@ -1147,6 +1147,13 @@ class App(Generic[_ReqT, _RespT]):
             # a route was found, for the sake of backwards-compat.
             resource = None
 
+            # NOTE(vytas): This nested fallback chain might make static code
+            #   checkers think that method_map/params may be possibly unbound.
+            #   Since this is merely a compatibility path for old routers, we
+            #   simply initialize these vars here for the sake of clarity.
+            method_map = {}
+            params = {}
+
         if resource is not None:
             try:
                 responder = method_map[method]
@@ -1155,7 +1162,7 @@ class App(Generic[_ReqT, _RespT]):
                 #   binding self to the default responder method. We could
                 #   decorate the function itself with @staticmethod, but it
                 #   would perhaps be less obvious to the reader why this is
-                #   needed when just looking at the code in the reponder
+                #   needed when just looking at the code in the responder
                 #   module, so we just grab it directly here.
                 responder = self.__class__._default_responder_bad_request
         else:

@@ -39,7 +39,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Free Threading",
-    "Programming Language :: Python :: Free Threading :: 2 - Beta",
+    "Programming Language :: Python :: Free Threading :: 3 - Stable",
     "Programming Language :: Cython",
     "Typing :: Typed",
 ]
@@ -131,7 +131,7 @@ ignore_missing_imports = true
 [tool.towncrier]
 package = "falcon"
 package_dir = ""
-filename = "docs/changes/4.3.0.rst"
+filename = "docs/changes/4.4.0.rst"
 directory = "docs/_newsfragments"
 issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 

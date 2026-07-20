@@ -1175,13 +1175,14 @@ class Request:
 
         This method URL-decodes the query string and then deserializes it
         as a media object using the specified media type handler. This is
-        useful for implementing OpenAPI 3.2 `Parameter Object with content`_
-        where the entire query string is treated as serialized content.
+        useful for implementing the OpenAPI 3.2 `querystring parameter
+        location`_, where the entire query string is treated as a single
+        serialized value (typically JSON or form-urlencoded).
 
         For example, if the query string is
         ``%7B%22numbers%22%3A%5B1%2C2%5D%2C%22flag%22%3Anull%7D``, this
         method will URL-decode it to ``{"numbers":[1,2],"flag":null}`` and
-        then deserialize it as JSON (assuming ``media_type`` is set to
+        then deserialize it as JSON (assuming `media_type` is set to
         ``'application/json'``)::
 
             # Query string: ?%7B%22numbers%22%3A%5B1%2C2%5D%7D
@@ -1195,13 +1196,13 @@ class Request:
             let the media handler try to deserialize the empty string and will
             return the value returned by the handler or propagate the exception
             raised by it. To instead return a different value in case of an
-            exception by the handler, specify the argument ``default_when_empty``.
+            exception by the handler, specify the argument `default_when_empty`.
 
         Args:
-            media_type: Media type to use for deserialization
-                (e.g., ``'application/json'``). If not specified, the
-                ``default_media_type`` from :class:`falcon.RequestOptions`
-                will be used (default ``'application/json'``).
+            media_type: Media type to use for deserialization (e.g.,
+                ``'application/json'``). If ``None``, falls back to the
+                value of :attr:`~falcon.RequestOptions.default_media_type`
+                (default ``'application/json'``).
 
         Keyword Args:
             default_when_empty: Fallback value to return when there is no
@@ -1213,12 +1214,10 @@ class Request:
             object: The deserialized media representation of the query string.
 
         Raises:
-            ValueError: No media handler is configured for the specified
-                media type.
+            ValueError: No media handler is configured for `media_type`.
 
-        .. _Parameter Object with content:
-            https://spec.openapis.org/oas/latest.html#parameter-object-examples
-
+        .. _querystring parameter location:
+            https://spec.openapis.org/oas/v3.2.0.html#parameter-locations
         """
         if media_type is None:
             media_type = self.options.default_media_type
@@ -2456,13 +2455,21 @@ class Request:
                 the value could not be parsed as JSON.
         """
 
-        # NOTE(mannxo): Delegate to the more general get_param_as_media implementation.
-        return self.get_param_as_media(
-            name,
-            media_type=MEDIA_JSON,
-            required=required,
-            store=store,
-            default=default,
+        param_value = self.get_param(name, required=required)
+        if param_value is None:
+            return default
+
+        handler, _, _ = self.options.media_handlers._resolve(
+            MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+        )
+        # NOTE(vytas): Fall back to a default JSON handler so that this legacy
+        #   helper keeps working even when the user has unregistered the
+        #   built-in JSON handler.
+        if handler is None:
+            handler = _DEFAULT_JSON_HANDLER
+
+        return self._deserialize_param_value(
+            name, param_value, MEDIA_JSON, handler, store
         )
 
     def get_param_as_media(
@@ -2475,15 +2482,21 @@ class Request:
     ) -> Any:
         """Return a query string parameter's value deserialized by a media handler.
 
+        This is useful for implementing the OpenAPI Parameter Object's
+        `content`_ field, where an individual query-string parameter is
+        itself a serialized media document such as JSON.
+
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
 
         Keyword Args:
-            media_type (str | None): Media type to use for deserialization. If
-                ``None``, falls back to the app's ``default_media_type``.
-            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
-                instead of returning ``None`` when the parameter is not
-                found (default ``False``).
+            media_type (str): Media type to use for deserialization (e.g.,
+                ``'application/json'``). If ``None``, falls back to the
+                value of :attr:`~falcon.RequestOptions.default_media_type`
+                (default ``'application/json'``).
+            required (bool): Set to ``True`` to raise
+                :class:`~falcon.HTTPBadRequest` instead of returning ``None``
+                when the parameter is not found (default ``False``).
             store (dict): A ``dict``-like object in which to place the
                 value of the param, but only if the param is found
                 (default ``None``).
@@ -2492,37 +2505,46 @@ class Request:
 
         Returns:
             The deserialized value for the parameter, or ``default`` if the
-            parameter is missing and ``required`` is ``False``.
+            parameter is missing and `required` is ``False``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed by the selected media handler.
+            ValueError: No media handler is configured for `media_type`.
+
+        .. _content:
+            https://spec.openapis.org/oas/latest.html#fixed-fields-for-use-with-content
         """
 
         param_value = self.get_param(name, required=required)
-
         if param_value is None:
             return default
 
-        # Resolve media handler
         if media_type is None:
-            # Fall back to the app's default media type.
             media_type = self.options.default_media_type
 
         handler, _, _ = self.options.media_handlers._resolve(
             media_type, self.options.default_media_type, raise_not_found=False
         )
         if handler is None:
-            # NOTE(mannxo): Substring match is intentional; covers variants
-            #   like 'application/json; charset=utf-8' and is good enough in
-            #   practice until a stricter check is warranted.
-            if media_type and MEDIA_JSON in media_type:
-                handler = _DEFAULT_JSON_HANDLER
-            else:
-                raise errors.HTTPInternalServerError(
-                    title=f'No media handler exists for "{media_type}"'
-                )
+            raise ValueError(
+                f'No media handler is configured for {media_type!r}. '
+                'Please ensure the media type is registered in '
+                'RequestOptions.media_handlers.'
+            )
 
+        return self._deserialize_param_value(
+            name, param_value, media_type, handler, store
+        )
+
+    def _deserialize_param_value(
+        self,
+        name: str,
+        param_value: str,
+        media_type: str,
+        handler: Any,
+        store: StoreArg,
+    ) -> Any:
         try:
             # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
             #   interface is refactored. Possibly using the WS interface?
@@ -2531,7 +2553,7 @@ class Request:
             )
         except errors.HTTPBadRequest:
             raise errors.HTTPInvalidParam(
-                f'It could not be deserialized as "{media_type}".', name
+                f'It could not be deserialized as {media_type!r}.', name
             )
 
         if store is not None:
