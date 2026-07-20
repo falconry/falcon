@@ -23,5 +23,8 @@ Contributors to this Release
 Many thanks to all of our talented and stylish contributors for this release!
 
 - `apoorva-01 <https://github.com/apoorva-01>`__
+- `chbndrhnns <https://github.com/chbndrhnns>`__
 - `maxtaran2010 <https://github.com/maxtaran2010>`__
+- `MeGaurav4 <https://github.com/MeGaurav4>`__
+- `mvanhorn <https://github.com/mvanhorn>`__
 - `vytas7 <https://github.com/vytas7>`__
