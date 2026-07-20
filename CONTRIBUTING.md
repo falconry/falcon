@@ -46,11 +46,18 @@ $ tox -e reformat
 ```
 
 You can check all this by running ``tox`` from within the Falcon project directory.
-Your environment must be based on CPython 3.10, 3.11, 3.12, 3.13, or 3.14:
+Your environment must be based on CPython 3.10, 3.11, 3.12, 3.13, 3.14, or 3.15:
 
 ```bash
 $ pip install -U tox
 $ tox --recreate
+```
+
+If you prefer, you can also use [`uvx`](https://docs.astral.sh/uv/) to run
+``ruff`` and ``tox`` directly:
+
+```bash
+$ uvx tox -e reformat  # also applies to other examples, e.g., uvx tox --recreate
 ```
 
 ### Reviews

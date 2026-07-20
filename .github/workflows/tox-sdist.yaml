@@ -6,6 +6,10 @@ on:
   push:
     branches:
       - master
+  # TODO(vytas): Remove once proven to pass on PR.
+  pull_request:
+    branches:
+      - master
 
 jobs:
   run_tox:
@@ -22,6 +26,7 @@ jobs:
           - "3.12"
           - "3.13"
           - "3.14"
+          - "3.15"
 
     steps:
       - name: Checkout repo
@@ -33,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version != '3.15' && matrix.python-version || '3.15.0-beta.3 - 3.15.0'}}
 
       - name: Install dependencies
         run: |
