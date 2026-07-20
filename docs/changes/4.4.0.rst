@@ -9,10 +9,11 @@ Falcon 4.4 is in development. The progress is tracked via the
 on GitHub.
 
 
-.. Changes to Supported Platforms
-.. ------------------------------
+Changes to Supported Platforms
+------------------------------
 
-.. NOTE(vytas): No changes to the supported platforms (yet).
+- CPython 3.15 is now fully supported.
+  (`#2593 <https://github.com/falconry/falcon/issues/2593>`__)
 
 
 .. towncrier release notes start
