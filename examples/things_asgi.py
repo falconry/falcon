@@ -1,5 +1,7 @@
 # examples/things_asgi.py
 
+from __future__ import annotations
+
 import falcon
 import falcon.asgi
 
@@ -8,7 +10,7 @@ import falcon.asgi
 # other things) that you think in terms of resources and state
 # transitions, which map to HTTP verbs.
 class ThingsResource:
-    async def on_get(self, req, resp):
+    async def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
         """Handles GET requests"""
         resp.status = falcon.HTTP_200  # This is the default status
         resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
