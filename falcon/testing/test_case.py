@@ -100,7 +100,7 @@ _UnittestBase, _USED_TESTTOOLS = _resolve_unittest_base()
 _testtools_deprecation_emitted = False
 
 
-class TestCase(_UnittestBase, TestClient):  # type: ignore[misc]
+class TestCase(_UnittestBase, TestClient):  # type: ignore[misc, valid-type]
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
