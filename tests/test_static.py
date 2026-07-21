@@ -258,6 +258,114 @@ def test_good_path(asgi, util, uri_prefix, uri_path, expected_path, mtype, patch
 
 
 @pytest.mark.parametrize(
+    'disallowed_chars',
+    [
+        None,
+        # NOTE(zain-asif-dev): Equivalent to the default, just spelled out
+        #   explicitly to make sure passing it verbatim still works.
+        '\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"',
+    ],
+)
+def test_disallowed_chars_default(asgi, util, disallowed_chars, patch_open):
+    patch_open(b'')
+
+    sr = create_sr(
+        asgi, '/static', '/var/www/statics', disallowed_chars=disallowed_chars
+    )
+
+    req = util.create_req(
+        asgi,
+        host='test.com',
+        path='/static/~/.ssh/authorized_keys',
+        root_path='statics',
+    )
+    resp = util.create_resp(asgi)
+
+    with pytest.raises(falcon.HTTPNotFound):
+        if asgi:
+            falcon.async_to_sync(sr, req, resp)
+        else:
+            sr(req, resp)
+
+
+def test_disallowed_chars_override(asgi, util, patch_open):
+    patch_open()
+
+    # NOTE(zain-asif-dev): Override the default set of disallowed characters
+    #   to allow tildes in requested filenames (see also GH #1649), while
+    #   still disallowing control characters.
+    sr = create_sr(
+        asgi,
+        '/static',
+        '/var/www/statics',
+        disallowed_chars='\x00-\x1f\x80-\x9f',
+    )
+
+    req = util.create_req(
+        asgi,
+        host='test.com',
+        path='/static/default~module.js',
+        root_path='statics',
+    )
+    resp = util.create_resp(asgi)
+
+    if asgi:
+
+        async def run():
+            await sr(req, resp)
+            return await resp.stream.read()
+
+        body = falcon.async_to_sync(run)
+    else:
+        sr(req, resp)
+        body = resp.stream.read()
+
+    assert body.decode() == normalize_path('/var/www/statics/default~module.js')
+
+
+@pytest.mark.parametrize(
+    'uri',
+    [
+        '/static/.\x00ssh/authorized_keys',
+        '/static/\ufffdsomething',
+    ],
+)
+def test_disallowed_chars_override_still_blocks_nul_and_replacement_char(
+    asgi, util, uri, patch_open
+):
+    patch_open(b'')
+
+    # NOTE(zain-asif-dev): Even when disallowed_chars is overridden with an
+    #   "empty" pattern, the NUL byte and the Unicode replacement
+    #   character must still be rejected.
+    sr = create_sr(asgi, '/static', '/var/www/statics', disallowed_chars='')
+
+    req = util.create_req(asgi, host='test.com', path=uri, root_path='statics')
+    resp = util.create_resp(asgi)
+
+    with pytest.raises(falcon.HTTPNotFound):
+        if asgi:
+            falcon.async_to_sync(sr, req, resp)
+        else:
+            sr(req, resp)
+
+
+def test_add_static_route_disallowed_chars(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route(
+        '/static',
+        normalize_path('/var/www/statics'),
+        disallowed_chars='\x00-\x1f\x80-\x9f',
+    )
+
+    result = client.simulate_get('/static/default~module.js')
+
+    assert result.status_code == 200
+    assert result.text == normalize_path('/var/www/statics/default~module.js')
+
+
+@pytest.mark.parametrize(
     'range_header, exp_content_range, exp_content',
     [
         ('bytes=1-3', 'bytes 1-3/16', '123'),

@@ -730,6 +730,7 @@ class App(Generic[_ReqT, _RespT]):
         directory: str | pathlib.Path,
         downloadable: bool = False,
         fallback_filename: str | None = None,
+        disallowed_chars: str | None = None,
     ) -> None:
         """Add a route to a directory of static files.
 
@@ -786,6 +787,11 @@ class App(Generic[_ReqT, _RespT]):
             fallback_filename (str): Fallback filename used when the requested file
                 is not found. Can be a relative path inside the prefix folder or
                 any valid absolute path.
+            disallowed_chars (str): A string overriding the set of
+                additional characters to disallow in the requested
+                filename, in place of
+                :attr:`~falcon.routing.StaticRoute.DEFAULT_DISALLOWED_CHARS`.
+                See :class:`~falcon.routing.StaticRoute` for more details.
 
         """
 
@@ -794,6 +800,7 @@ class App(Generic[_ReqT, _RespT]):
             directory,
             downloadable=downloadable,
             fallback_filename=fallback_filename,
+            disallowed_chars=disallowed_chars,
         )
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
