@@ -95,6 +95,7 @@ extensions = [
     'ext.cibuildwheel',
     'ext.doorway',
     'ext.falcon_releases',
+    'ext.newsfragments',
     'ext.private_args',
     'ext.rfc',
     'ext.workarounds',

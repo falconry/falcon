@@ -32,7 +32,6 @@ jobs:
           - env: ruff
           # Documentation
           - env: docs
-          - env: towncrier
           # Typing
           - env: mypy
           - env: mypy_tests
@@ -66,7 +65,9 @@ jobs:
           - env: py314_cython
             python-version: "3.14"
           - env: py315
-            python-version: "3.15.0-alpha.3 - 3.15.0"
+            python-version: "3.15.0-beta.3 - 3.15.0"
+          - env: py315_cython
+            python-version: "3.15.0-beta.3 - 3.15.0"
           - env: py312_nocover
             os: macos-latest
             platform-label: ' (macos)'
@@ -125,12 +126,9 @@ jobs:
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ matrix.tox.coverage }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
-          # APPSEC(vytas): This is not optimal, but verifying seems to cause
-          #   intermittent bugs when pinning directly to a hash.
-          skip_validation: true

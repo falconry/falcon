@@ -29,7 +29,7 @@ def test_custom_router_find_should_be_used(asgi, util):
 
     else:
 
-        def resource(req, resp, **kwargs):
+        def resource(req, resp, **kwargs):  # type: ignore[misc]
             resp.text = f'{{"uri_template": "{req.uri_template}"}}'
 
     class CustomRouter:
@@ -106,7 +106,7 @@ def test_custom_router_takes_req_positional_argument(asgi, util):
 
     else:
 
-        def responder(req, resp):
+        def responder(req, resp):  # type: ignore[misc]
             resp.text = 'OK'
 
     class CustomRouter:
@@ -129,7 +129,7 @@ def test_custom_router_takes_req_keyword_argument(asgi, util):
 
     else:
 
-        def responder(req, resp):
+        def responder(req, resp):  # type: ignore[misc]
             resp.text = 'OK'
 
     class CustomRouter:
