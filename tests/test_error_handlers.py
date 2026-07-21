@@ -326,7 +326,7 @@ class TestCustomError:
 
         else:
 
-            def handle_zero_division(req, resp, ex, params):
+            def handle_zero_division(req, resp, ex, params):  # type: ignore[misc]
                 assert resp.render_body() is None
                 resp.status = falcon.HTTP_719
 
