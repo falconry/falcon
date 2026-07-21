@@ -116,6 +116,7 @@ from falcon.testing.client import simulate_put
 from falcon.testing.client import simulate_request
 from falcon.testing.client import StreamedResult
 from falcon.testing.client import TestClient
+import falcon.testing.helpers as helpers  # public submodule for tests/docs
 from falcon.testing.helpers import ASGILifespanEventEmitter
 from falcon.testing.helpers import ASGIRequestEventEmitter
 from falcon.testing.helpers import ASGIResponseEventCollector
@@ -158,6 +159,7 @@ __all__ = (
     'StreamedResult',
     'TestClient',
     # helpers
+    'helpers',
     'ASGILifespanEventEmitter',
     'ASGIRequestEventEmitter',
     'ASGIResponseEventCollector',
