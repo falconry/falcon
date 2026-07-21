@@ -89,8 +89,9 @@ for broad or final validation.
   types are `breakingchange`, `newandimproved`, `bugfix`, and `misc`. Name the
   fragment after the issue the change closes; use the PR number itself only
   when no associated issue exists.
-  `tox -e docs` renders pending fragments into the changelog; preview the
-  result there.
+  `tox -e docs` renders pending fragments as a draft into the built
+  documentation without modifying the changelog file; preview the result
+  there.
 - Never invent an issue or PR number. If none is available, report that the
   fragment cannot be named instead of creating a placeholder.
 - For recipes, put executable code in `examples/recipes/`, include it from
