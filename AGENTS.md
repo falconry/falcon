@@ -2,22 +2,25 @@
 
 Read `CONTRIBUTING.md` first. Treat `pyproject.toml` and `tox.ini` as the
 executable source of truth when prose and configuration differ. In accordance
-with the “Use of LLMs” policy in `CONTRIBUTING.md`, carefully review and test
+with the "Use of LLMs" policy in `CONTRIBUTING.md`, carefully review and test
 all generated changes.
 
 ## Repository map
 
 - `falcon/app.py`, `falcon/request.py`, and `falcon/response.py` implement the
-  WSGI side. `falcon/asgi/` implements ASGI and WebSocket behavior. Shared
-  behavior lives in modules such as `falcon/app_helpers.py`, `falcon/routing/`,
-  `falcon/media/`, and `falcon/util/`.
+  WSGI flavor, as well as base behavior that `falcon/asgi/` subclasses for
+  ASGI and WebSocket support. More shared behavior lives in modules such as
+  `falcon/app_helpers.py`, `falcon/routing/`, `falcon/media/`, and
+  `falcon/util/`.
 - `falcon/testing/` contains public test helpers. Primary tests live in
   `tests/`, with ASGI-specific coverage in `tests/asgi/`. Tutorial and example
   suites have dedicated tox environments.
-- `falcon/cyutil/*.pyx` contains optional optimized implementations selected by
-  Python fallbacks such as `falcon/util/reader.py` and `falcon/util/uri.py`.
-  Preserve both modes when changing these paths, and use a Cython tox
-  environment.
+- `falcon/cyutil/*.pyx` contains optional Cython-optimized counterparts of
+  pure Python modules such as `falcon/util/reader.py` and `falcon/util/uri.py`.
+  When available, the optimized versions are selected at import time (in
+  `falcon/util/uri.py`, `falcon/util/misc.py`, and -- for the buffered
+  reader -- `falcon/util/__init__.py`). Preserve both modes when changing
+  these paths, and use a Cython tox environment.
 - Documentation is reStructuredText under `docs/`. Put runnable recipe snippets
   in `examples/recipes/`; documentation includes them with `literalinclude`.
 
@@ -47,7 +50,7 @@ all generated changes.
   with a roughly 70-character summary that ends in a period.
 - Name caught exceptions `ex`. Limit single-character names to trivial indices
   and standard formulas.
-- Format necessary non-trivial tagged comments as
+- Format non-trivial tagged comments as
   `TODO|NOTE|PERF|APPSEC(<GitHub handle>):`. If the author's handle is
   unavailable, do not invent one and don't impersonate other users;
   avoid the tagged comment unless necessary.
@@ -58,7 +61,10 @@ Run commands from the repository root. Start with the focused test, run only
 affected specialized environments next, and reserve the complete `tox` gate
 for broad or final validation.
 
-- In an already-prepared development environment, get focused feedback with
+- Prepare a development environment by installing the project in editable
+  mode together with the test dependencies:
+  `pip install -e . -r requirements/tests`.
+- In a prepared development environment, get focused feedback with
   `pytest tests/test_<area>.py -k '<case>'` or
   `pytest tests/asgi/test_<area>.py -k '<case>'`.
 - Run all Python tests and collect coverage data with `tox -e pytest`; check
@@ -68,7 +74,11 @@ for broad or final validation.
   formatting and safe fixes only with `tox -e reformat`.
 - For typing changes, run `tox -e mypy,mypy_tests`. For documentation or
   docstring changes, run `tox -e docs`.
-- Run `tox` for the complete local gate and 100% combined coverage report.
+- Always finish with a plain `tox` run without arguments (or `tox -r` to
+  recreate environments): the default env selection is the complete local
+  gate, and it must pass together with the 100% combined coverage check
+  before changes are handed over to the operator.
+  Documentation-only changes may instead finish with `tox -e docs`.
 
 ## Documentation and changelog
 
@@ -76,8 +86,12 @@ for broad or final validation.
   build it with `tox -e docs`.
 - Functionality changes require
   `docs/_newsfragments/{issue_number}.{fragment_type}.rst`. The exact fragment
-  types are `breakingchange`, `newandimproved`, `bugfix`, and `misc`. Preview
-  the result with `tox -e changelog_draft`.
+  types are `breakingchange`, `newandimproved`, `bugfix`, and `misc`. Name the
+  fragment after the issue the change closes; use the PR number itself only
+  when no associated issue exists.
+  `tox -e docs` renders pending fragments as a draft into the built
+  documentation without modifying the changelog file; preview the result
+  there.
 - Never invent an issue or PR number. If none is available, report that the
   fragment cannot be named instead of creating a placeholder.
 - For recipes, put executable code in `examples/recipes/`, include it from
@@ -86,11 +100,17 @@ for broad or final validation.
 
 ## Operator boundaries
 
-- Never create, submit, or open a GitHub pull request. Prepare the changes and
-  verification evidence, then ask the human operator to open the pull request.
+- Never create, submit, or open a GitHub pull request, regardless of the
+  mechanism: `gh`, direct API calls, web automation, and pushing a branch and
+  then accepting GitHub's suggestion all count, and draft pull requests are
+  still pull requests. Prepare the changes and verification evidence, then ask
+  the human operator to open the pull request.
 - Never tick, check, or otherwise complete a pull request checklist on the
   operator's behalf. The human operator must review the changes and complete
   every checklist item manually.
+- Do not take any other outward actions on Falcon's GitHub repositories
+  either: opening issues, posting comments or reviews, and editing pull
+  request metadata are all reserved for the human operator.
 
 See `CONTRIBUTING.md` for commit-message format, full docstring markup rules,
 review policy, and contributor conduct.
