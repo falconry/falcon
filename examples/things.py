@@ -1,7 +1,5 @@
 # examples/things.py
 
-from __future__ import annotations
-
 # Let's get this party started!
 from wsgiref.simple_server import make_server
 

@@ -1,7 +1,5 @@
 # examples/things_asgi.py
 
-from __future__ import annotations
-
 import falcon
 import falcon.asgi
 from falcon.asgi import Request
