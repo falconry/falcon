@@ -99,11 +99,17 @@ for broad or final validation.
 
 ## Operator boundaries
 
-- Never create, submit, or open a GitHub pull request. Prepare the changes and
-  verification evidence, then ask the human operator to open the pull request.
+- Never create, submit, or open a GitHub pull request, regardless of the
+  mechanism: `gh`, direct API calls, web automation, and pushing a branch and
+  then accepting GitHub's suggestion all count, and draft pull requests are
+  still pull requests. Prepare the changes and verification evidence, then ask
+  the human operator to open the pull request.
 - Never tick, check, or otherwise complete a pull request checklist on the
   operator's behalf. The human operator must review the changes and complete
   every checklist item manually.
+- Do not take any other outward actions on Falcon's GitHub repositories
+  either: opening issues, posting comments or reviews, and editing pull
+  request metadata are all reserved for the human operator.
 
 See `CONTRIBUTING.md` for commit-message format, full docstring markup rules,
 review policy, and contributor conduct.
