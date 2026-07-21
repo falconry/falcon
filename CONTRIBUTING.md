@@ -198,6 +198,13 @@ own; `AGENTS.md` spells out the boundaries that apply to agent-assisted
 contributions. A human contributor remains responsible for every submitted
 change.
 
+On a related note, please do not credit LLMs or coding agents as commit
+authors, including via `Co-authored-by` trailers (which some tools add by
+default; check your editor's settings). Only humans can hold copyright to
+contributed code, so machine-authorship credits merely muddy the provenance of
+your changes. Instead, disclose the use of LLMs in your PR's description or
+comments as explained above.
+
 If in doubt, it is often better to leave, e.g., documentation sections missing
 and ask for help instead of filling them with ostensibly legitimate LLM output.
 
