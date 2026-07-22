@@ -9,9 +9,8 @@ class AlreadyRunningError(Exception):
 
 async def handle_already_running(req, resp, exception, params):
     raise falcon.HTTPConflict(
-        title=f"Task {exception.taskid} already running!",
-        description=str(exception)
-        )
+        title=f'Task {exception.taskid} already running!', description=str(exception)
+    )
 
 
 def serialize_error(req, resp, exception):
@@ -23,7 +22,7 @@ def serialize_error(req, resp, exception):
             'http_status': exception.status,
             'title': data.get('title'),
             'message': 'Custom Error Serializer',
-        }
+        },
     }
 
     resp.content_type = falcon.MEDIA_JSON
