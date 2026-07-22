@@ -29,7 +29,9 @@ __all__ = (
 )
 
 Headers = dict[str, str]
-"""Headers dictionary returned by the framework.
+"""Mutable headers dictionary used by response objects.
+
+Request headers do not use this type alias since they are typed as read-only.
 
 .. versionadded:: 4.0
 """
