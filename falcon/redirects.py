@@ -41,6 +41,9 @@ class HTTPMovedPermanently(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These are
+            merged into the headers already set on the response; they
+            are not related to the headers of the incoming request.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -70,6 +73,9 @@ class HTTPFound(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These are
+            merged into the headers already set on the response; they
+            are not related to the headers of the incoming request.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -104,6 +110,9 @@ class HTTPSeeOther(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These are
+            merged into the headers already set on the response; they
+            are not related to the headers of the incoming request.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -133,6 +142,9 @@ class HTTPTemporaryRedirect(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These are
+            merged into the headers already set on the response; they
+            are not related to the headers of the incoming request.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -159,6 +171,9 @@ class HTTPPermanentRedirect(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These are
+            merged into the headers already set on the response; they
+            are not related to the headers of the incoming request.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:

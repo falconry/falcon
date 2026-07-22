@@ -1,0 +1,6 @@
+The ``headers`` argument of the redirect exceptions
+(:class:`~falcon.HTTPMovedPermanently`, :class:`~falcon.HTTPFound`,
+:class:`~falcon.HTTPSeeOther`, :class:`~falcon.HTTPTemporaryRedirect`, and
+:class:`~falcon.HTTPPermanentRedirect`) is now documented. The accompanying
+docstrings clarify that these headers are merged into the ones already set on
+the response, and are unrelated to the headers of the incoming request.
