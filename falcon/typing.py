@@ -31,7 +31,8 @@ __all__ = (
 Headers = dict[str, str]
 """Mutable headers dictionary used by :class:`~falcon.Response` objects.
 
-The :attr:`~falcon.Request.headers` property uses a read-only mapping instead of this type.
+The :attr:`~falcon.Request.headers` property uses a read-only mapping instead of
+this type.
 
 .. versionadded:: 4.0
 """
