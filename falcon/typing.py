@@ -29,9 +29,9 @@ __all__ = (
 )
 
 Headers = dict[str, str]
-"""Mutable headers dictionary used by response objects.
+"""Mutable headers dictionary used by :class:`~falcon.Response` objects.
 
-Request headers do not use this type alias since they are typed as read-only.
+The :attr:`~falcon.Request.headers` property uses a read-only mapping instead of this type.
 
 .. versionadded:: 4.0
 """
