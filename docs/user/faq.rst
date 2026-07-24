@@ -1273,9 +1273,17 @@ config object on demand.
 How do I test my Falcon app? Can I use pytest?
 ----------------------------------------------
 
-Falcon's testing framework supports both ``unittest`` and ``pytest``. In fact,
-the tutorial in the docs provides an excellent introduction to
+Falcon's testing framework supports both ``unittest`` and ``pytest``. Prefer
+those over third-party unittest runners: the tutorial provides an excellent
+introduction to
 `testing Falcon apps with pytest <http://falcon.readthedocs.io/en/stable/user/tutorial.html#testing-your-application>`_.
+
+If you use :class:`falcon.testing.TestCase` and ``testtools`` happens to be
+installed, Falcon may still rebase the helper on ``testtools.TestCase`` for
+backwards compatibility. That path is **deprecated** and will be removed in
+Falcon 5.0; a deprecation warning is emitted when it is used. To keep a custom
+base class until then, set ``FALCON_TESTING_TESTCASE_BASE`` (for example
+``testtools:TestCase``).
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
 

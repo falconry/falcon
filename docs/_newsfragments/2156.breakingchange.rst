@@ -1,0 +1,13 @@
+The ``testtools`` integration for :class:`falcon.testing.TestCase` is
+deprecated and will be removed in Falcon 5.0.
+
+If ``testtools`` is installed, :class:`~falcon.testing.TestCase` still
+rebases onto :class:`testtools.TestCase` for backwards compatibility, but
+doing so now emits a :class:`~falcon.util.deprecation.DeprecatedWarning`.
+Prefer the standard library :mod:`unittest` base (used when ``testtools`` is
+not installed) or :mod:`pytest` as shown in the testing tutorial.
+
+An escape hatch is available: set the environment variable
+``FALCON_TESTING_TESTCASE_BASE`` to an import path
+(``module:attribute`` or ``module.attribute``), for example
+``testtools:TestCase`` or a project-specific base class.
