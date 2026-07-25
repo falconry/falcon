@@ -484,7 +484,14 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
 
             # The raw BINARY payload will be passed as a byte string
             def deserialize(self, payload: bytes) -> object:
-                return cbor2.loads(payload)
+                try:
+                    return cbor2.loads(payload)
+                except cbor2.CBORDecodeError as ex:
+                    # NOTE(vytas): As of cbor2 6.0, CBORDecodeError is no
+                    #   longer a subclass of ValueError, so we reraise to
+                    #   signal an invalid payload (mirroring the pattern
+                    #   documented in our WebSocket guide).
+                    raise ValueError('error decoding CBOR payload') from ex
 
         app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = (
             CBORHandler()
