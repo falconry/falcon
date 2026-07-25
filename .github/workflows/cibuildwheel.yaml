@@ -165,6 +165,7 @@ jobs:
           - cp312
           - cp313
           - cp314
+          - cp315
         include:
           - platform:
               name: manylinux_x86_64
@@ -182,6 +183,22 @@ jobs:
               name: musllinux_aarch64
               os: ubuntu-24.04-arm
             python: cp314t
+          - platform:
+              name: manylinux_x86_64
+              os: ubuntu-latest
+            python: cp315t
+          - platform:
+              name: musllinux_x86_64
+              os: ubuntu-latest
+            python: cp315t
+          - platform:
+              name: manylinux_aarch64
+              os: ubuntu-24.04-arm
+            python: cp315t
+          - platform:
+              name: musllinux_aarch64
+              os: ubuntu-24.04-arm
+            python: cp315t
 
     defaults:
       run:
@@ -201,7 +218,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@f03ac7617d6cff873ccf24cc0d567ef5ba5a9e6d # v4.0.0
+        uses: pypa/cibuildwheel@294735312765b09d24a2fbec22660ce817587d55 # v4.1.0
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).
