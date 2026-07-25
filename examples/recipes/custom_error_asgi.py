@@ -14,18 +14,23 @@ async def handle_already_running(req, resp, exception, params):
 
 
 def serialize_error(req, resp, exception):
+    message = 'Custom Error Serializer'
     data = exception.to_dict()
-
-    resp.media = {
-        'success': False,
-        'error': {
-            'http_status': exception.status,
-            'title': data.get('title'),
-            'message': 'Custom Error Serializer',
-        },
-    }
-
-    resp.content_type = falcon.MEDIA_JSON
+    prefered_media = req.client_prefers((falcon.MEDIA_JSON,))
+    if prefered_media is not None:
+        resp.media = {
+            'success': False,
+            'error': {
+                'http_status': exception.status,
+                'title': data.get('title'),
+                'message': message,
+            },
+        }
+        resp.content_type = falcon.MEDIA_JSON
+    else:
+        resp.text = f'{message}\n{exception.status}\n{data.get("title")}\n'
+        resp.content_type = falcon.MEDIA_TEXT
+    resp.append_header('Vary', 'Accept')
 
 
 class Start:
