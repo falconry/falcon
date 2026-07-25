@@ -1,1 +1,8 @@
-The default OPTIONS responder no longer emits an Allow header when no HTTP methods are explicitly mapped to the endpoint via the @on_get, @on_post, etc. decorators. The header previously listed the empty set of allowed methods as an empty string, which violated RFC 7231.
+When no HTTP methods were explicitly mapped to a resource via ``on_get()``,
+``on_post()``, etc. responders (for instance, when the route was only served
+by a catch-all ``on_request()`` responder), the default OPTIONS responder
+rendered an empty Allow header. Although technically permitted by RFC 7231,
+an empty value indicates that the target resource allows no methods at all,
+which was misleading in this situation.
+The default OPTIONS responder now simply omits the Allow header when the
+list of allowed methods is empty.
