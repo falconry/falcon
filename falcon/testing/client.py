@@ -384,8 +384,7 @@ class Result(_ResultBase):
     def __rich__(self) -> str:
         status, content_type, content = self._prepare_repr_args()
 
-        status_color: str
-
+        status_color: str = 'cyan'
         for prefix, color in (
             ('1', 'blue'),
             ('2', 'green'),
@@ -600,13 +599,13 @@ def simulate_request(
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
+        msgpack (MessagePack serializable): A MessagePack document to
+            serialize as the body of the request (default: ``None``). If
+            specified, overrides `body` and sets the Content-Type header
+            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            specified by either the `content_type` or `headers`
+            arguments. If both `msgpack` and `json` are specified,
+            `msgpack` takes precedence.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -868,13 +867,13 @@ async def _simulate_request_asgi(
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as `
-            `'application/msgpack'``.
+        msgpack (MessagePack serializable): A MessagePack document to
+            serialize as the body of the request (default: ``None``). If
+            specified, overrides `body` and sets the Content-Type header
+            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            specified by either the `content_type` or `headers`
+            arguments. If both `msgpack` and `json` are specified,
+            `msgpack` takes precedence.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -1632,13 +1631,13 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
+        msgpack (MessagePack serializable): A MessagePack document to
+            serialize as the body of the request (default: ``None``). If
+            specified, overrides `body` and sets the Content-Type header
+            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            specified by either the `content_type` or `headers`
+            arguments. If both `msgpack` and `json` are specified,
+            `msgpack` takes precedence.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -1750,13 +1749,13 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
+        msgpack (MessagePack serializable): A MessagePack document to
+            serialize as the body of the request (default: ``None``). If
+            specified, overrides `body` and sets the Content-Type header
+            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            specified by either the `content_type` or `headers`
+            arguments. If both `msgpack` and `json` are specified,
+            `msgpack` takes precedence.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -1952,13 +1951,13 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
+        msgpack (MessagePack serializable): A MessagePack document to
+            serialize as the body of the request (default: ``None``). If
+            specified, overrides `body` and sets the Content-Type header
+            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            specified by either the `content_type` or `headers`
+            arguments. If both `msgpack` and `json` are specified,
+            `msgpack` takes precedence.
 
     Returns:
         :class:`~.Result`: The result of the request
@@ -2065,13 +2064,13 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
             for the 'Set-Cookie' header.
-        msgpack(Msgpack serializable): A Msgpack document to serialize as the
-            body of the request (default: ``None``). If specified,
-            overrides `body` and sets the Content-Type header to
-            ``'application/msgpack'``, overriding any value specified by
-            either the `content_type` or `headers` arguments. If msgpack and json
-            are both specified, the Content-Type header will be set as
-            ``'application/msgpack'``.
+        msgpack (MessagePack serializable): A MessagePack document to
+            serialize as the body of the request (default: ``None``). If
+            specified, overrides `body` and sets the Content-Type header
+            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            specified by either the `content_type` or `headers`
+            arguments. If both `msgpack` and `json` are specified,
+            `msgpack` takes precedence.
 
     Returns:
         :class:`~.Result`: The result of the request

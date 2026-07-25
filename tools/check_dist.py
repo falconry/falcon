@@ -13,6 +13,8 @@ CHANGELOGS = FALCON_ROOT / 'docs' / 'changes'
 RELEASE_STABLE_VERSION_PATTERN = re.compile(r'^(\d+)\.(\d+).(\d+)$')
 RELEASE_META_PATTERN = re.compile(r'\.\.\s+falcon-release\:\s+([\d-]+)')
 
+RELEASE_EVENT_NAME = 'release'
+
 
 def check_dist(dist, git_ref):
     sdist = None
@@ -88,6 +90,12 @@ def main():
         default=str(DIST),
         help='dist directory to check (default: %(default)s)',
     )
+    # NOTE(vytas): This is semantically awkward, but it eases CI plumbing a lot.
+    parser.add_argument(
+        '-e',
+        '--event-name',
+        help='event name (e.g. $GITHUB_EVENT_NAME) for interpreting --git-ref',
+    )
     parser.add_argument(
         '-r',
         '--git-ref',
@@ -95,7 +103,10 @@ def main():
     )
 
     args = parser.parse_args()
-    check_dist(pathlib.Path(args.dist_dir).resolve(), args.git_ref)
+
+    event_name = args.event_name or RELEASE_EVENT_NAME
+    git_ref = args.git_ref if event_name == RELEASE_EVENT_NAME else None
+    check_dist(pathlib.Path(args.dist_dir).resolve(), git_ref)
 
 
 if __name__ == '__main__':

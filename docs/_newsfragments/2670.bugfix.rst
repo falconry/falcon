@@ -1,0 +1,5 @@
+When decoding with ``unquote_plus=False``, the cythonized variant of
+:func:`falcon.uri.decode` mistook a literal plus sign followed by two
+hexadecimal digits for a percent-encoded byte.
+This has been fixed, and a literal plus is now preserved
+just like in the pure-Python case.

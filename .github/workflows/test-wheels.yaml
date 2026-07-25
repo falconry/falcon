@@ -11,12 +11,14 @@ on:
 jobs:
   test-emulated:
     name: "cibuildwheel: ${{ matrix.platform.build }}"
+    permissions:
+      contents: read
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
         platform:
-          - build: "cp314-manylinux_aarch64"
+          - build: "cp315-manylinux_aarch64"
             os: ubuntu-24.04-arm
           - build: "cp314-manylinux_s390x"
             os: ubuntu-latest
@@ -32,22 +34,23 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
         if: ${{ matrix.platform.emulation }}
         with:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.2.1
+        uses: pypa/cibuildwheel@294735312765b09d24a2fbec22660ce817587d55 # v4.1.0
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).
-          # CIBW_ENABLE: cpython-prerelease
+          CIBW_ENABLE: cpython-prerelease
 
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.platform.build }}

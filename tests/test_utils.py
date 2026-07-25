@@ -7,6 +7,7 @@ import inspect
 import itertools
 import json
 import random
+import sys
 from urllib.parse import quote
 from urllib.parse import unquote_plus
 
@@ -356,11 +357,19 @@ class TestFalconUtils:
             ('+%80', ' �'),
             ('+++%FF+++', '   �   '),  # impossible byte
             ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
-            ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
         ],
     )
     def test_uri_decode_bad_unicode(self, encoded, expected, decode_approach):
         assert uri.decode(encoded) == expected
+
+    def test_uri_decode_paired_utf16_surrogates(self, decode_approach):
+        # NOTE(vytas): On GraalPy, this yields only '��', however, we allow
+        #   both variants assuming GraalPy might eventually get fixed.
+        #   See also https://github.com/oracle/graalpython/issues/875.
+        expected = (
+            {'��', '������'} if sys.implementation.name == 'graalpy' else {'������'}
+        )
+        assert uri.decode('%ed%ae%80%ed%b0%80') in expected
 
     def test_uri_decode_unquote_plus(self, decode_approach):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
@@ -369,6 +378,15 @@ class TestFalconUtils:
         )
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=False) == (
             '/disk/lost+found/fd0'
+        )
+
+        # NOTE(apoorva-01): A plus followed by two hex digits must not be
+        #   decoded as a percent sequence when unquote_plus is False (#2670).
+        assert uri.decode('+00', unquote_plus=False) == '+00'
+        assert uri.decode('+00', unquote_plus=True) == ' 00'
+        assert (
+            uri.decode('2026-06-29T23:11:38.964935+00:00.jpg', unquote_plus=False)
+            == '2026-06-29T23:11:38.964935+00:00.jpg'
         )
 
         assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9') == (
@@ -697,9 +715,11 @@ class TestFalconUtils:
 
 @pytest.mark.parametrize(
     'protocol,method',
-    zip(
-        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
-        falcon.HTTP_METHODS * 2,
+    tuple(
+        zip(
+            ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
+            falcon.HTTP_METHODS * 2,
+        )
     ),
 )
 def test_simulate_request_protocol(asgi, protocol, method, util):
@@ -997,6 +1017,18 @@ class TestFalconTestingUtils:
         )
 
         assert result.__rich__() == expected_result
+
+    def test_rich_repr_7xx(self):
+        # NOTE(vytas): Regression test for unbound status_color found by pyright.
+        result = falcon.testing.Result(
+            [b'Eight Megabytes and Constantly Swapping\n'],
+            falcon.HTTP_702,
+            [('content-type', 'gnu/emacs')],
+        )
+        rich_repr = result.__rich__()
+        assert '702' in rich_repr
+        assert 'Emacs' in rich_repr
+        assert 'cyan' in rich_repr
 
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])

@@ -202,7 +202,7 @@ def test_single_path_segment(client):
 
 
 @pytest.mark.parametrize(
-    'uri_template,',
+    'uri_template',
     [
         '/{id:int}',
         '/{id:int(3)}',
@@ -224,7 +224,7 @@ def test_int_converter(client, uri_template):
 
 @pytest.mark.parametrize('id_value', [2, 2.1, 1.9])
 @pytest.mark.parametrize(
-    'uri_template,',
+    'uri_template',
     [
         '/{id:float}',
         '/{id:float(1)}',
@@ -266,7 +266,7 @@ def test_float_converter_non_finite_disallowed(client):
 
 
 @pytest.mark.parametrize(
-    'uri_template,',
+    'uri_template',
     [
         '/{id:int(2)}',
         '/{id:int(min=124)}',
