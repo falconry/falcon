@@ -1,3 +1,6 @@
-Decode non-ASCII WSGI ``SCRIPT_NAME`` values when populating
-:attr:`req.root_path <falcon.Request.root_path>`, matching the existing
-decoding behavior for ``PATH_INFO``.
+As prescribed by PEP 3333, WSGI servers tunnel non-ASCII characters in the
+request path via ISO-8859-1, and Falcon has long decoded ``PATH_INFO`` back
+to UTF-8. The ``SCRIPT_NAME`` variable was, however, used verbatim when
+populating :attr:`req.root_path <falcon.Request.root_path>`.
+The tunneled ``SCRIPT_NAME`` is now decoded in the same way as the
+request path.
