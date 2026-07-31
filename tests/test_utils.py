@@ -7,6 +7,7 @@ import inspect
 import itertools
 import json
 import random
+import sys
 from urllib.parse import quote
 from urllib.parse import unquote_plus
 
@@ -356,11 +357,19 @@ class TestFalconUtils:
             ('+%80', ' �'),
             ('+++%FF+++', '   �   '),  # impossible byte
             ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
-            ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
         ],
     )
     def test_uri_decode_bad_unicode(self, encoded, expected, decode_approach):
         assert uri.decode(encoded) == expected
+
+    def test_uri_decode_paired_utf16_surrogates(self, decode_approach):
+        # NOTE(vytas): On GraalPy, this yields only '��', however, we allow
+        #   both variants assuming GraalPy might eventually get fixed.
+        #   See also https://github.com/oracle/graalpython/issues/875.
+        expected = (
+            {'��', '������'} if sys.implementation.name == 'graalpy' else {'������'}
+        )
+        assert uri.decode('%ed%ae%80%ed%b0%80') in expected
 
     def test_uri_decode_unquote_plus(self, decode_approach):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
