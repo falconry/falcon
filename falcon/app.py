@@ -1162,7 +1162,7 @@ class App(Generic[_ReqT, _RespT]):
                 #   binding self to the default responder method. We could
                 #   decorate the function itself with @staticmethod, but it
                 #   would perhaps be less obvious to the reader why this is
-                #   needed when just looking at the code in the reponder
+                #   needed when just looking at the code in the responder
                 #   module, so we just grab it directly here.
                 responder = self.__class__._default_responder_bad_request
         else:

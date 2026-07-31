@@ -213,7 +213,8 @@ class TestRequestIDContext:
 
 
 class TestMsgspec:
-    @pytest.fixture(scope='class', autouse=True)
+    @pytest.fixture(autouse=True)
+    # TODO(vytas): Make this @classmethod when we drop CPython 3.9 support.
     def msgspec(self):
         return pytest.importorskip(
             'msgspec', reason='this recipe requires msgspec [not found]'

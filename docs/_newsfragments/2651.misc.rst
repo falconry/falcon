@@ -1,5 +1,0 @@
-Our GitHub Actions workflows are now audited with
-`zizmor <https://zizmor.sh/>`__, a static analysis tool that catches common
-security pitfalls in CI/CD pipelines. The audit runs both as a dedicated
-workflow and as part of our ``tox`` checks, and the existing workflows were
-hardened to address the issues it surfaced.

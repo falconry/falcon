@@ -85,7 +85,7 @@ Schema validation can fail, and the resulting exception would unexpectedly
 bubble up as a generic HTTP 500 error. We can do better!
 Skimming through ``msgspec``\'s docs, we find out that this
 case is represented by ``msgspec.ValidationError``. We could either create an
-:meth:`error hander <falcon.App.add_error_handler>` that reraises this
+:meth:`error handler <falcon.App.add_error_handler>` that reraises this
 exception as :class:`~falcon.MediaValidationError`, or just use a
 ``try.. except`` clause, and reraise directly inside middleware.
 

@@ -10,8 +10,7 @@ uvicorn >= 0.17.0
 websockets >= 13.1
 
 # Handler Specific
-# TODO(vytas): Unpin cbor2 once we clean up exception handling, or the upstream revises 6.x behaviour.
-cbor2 < 6.0
+cbor2
 msgpack
 mujson
 ujson

@@ -93,7 +93,7 @@ class TestDefaultRouting:
 
         else:
 
-            def sink_too(req, resp):
+            def sink_too(req, resp):  # type: ignore[misc]
                 resp.status = falcon.HTTP_781
 
         client.app.add_sink(sink, r'/foo')
