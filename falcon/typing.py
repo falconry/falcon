@@ -29,7 +29,10 @@ __all__ = (
 )
 
 Headers = dict[str, str]
-"""Headers dictionary returned by the framework.
+"""Mutable headers dictionary used by :class:`~falcon.Response` objects.
+
+(Note that the :attr:`req.headers <falcon.Request.headers>` property is
+annotated as a read-only mapping instead of this type.)
 
 .. versionadded:: 4.0
 """
