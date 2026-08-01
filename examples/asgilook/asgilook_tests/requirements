@@ -1,0 +1,7 @@
+fakeredis
+pytest
+Pillow
+falcon
+msgpack
+aiofiles
+pytest-cov

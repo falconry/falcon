@@ -56,11 +56,8 @@ Next, :ref:`install Falcon <install>` into your *virtualenv*::
 You can then create a basic :class:`Falcon ASGI application <falcon.asgi.App>`
 by adding an ``asgilook/app.py`` module with the following contents:
 
-.. code:: python
-
-   import falcon.asgi
-
-   app = falcon.asgi.App()
+.. literalinclude:: ../../examples/asgilook/basic_falcon.py
+    :language: python
 
 As in the :ref:`WSGI tutorial's introduction <tutorial-first-steps>`,
 let's not forget to mark ``asgilook`` as a Python package:
@@ -139,22 +136,8 @@ logger, so error tracebacks may still reach ``sys.stderr`` via the
 Here's how you can set up basic logging in your ASGI Falcon application via
 :func:`logging.basicConfig`:
 
-.. code:: python
-
-    import logging
-
-    import falcon
-
-    logging.basicConfig(level=logging.INFO)
-
-
-    class ErrorResource:
-        def on_get(self, req, resp):
-            raise Exception('Something went wrong!')
-
-
-    app = falcon.App()
-    app.add_route('/error', ErrorResource())
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/logging.py
+    :language: python
 
 When the above route is accessed, Falcon will catch the unhandled exception and
 automatically log an error message. Below is an example of what the log output
@@ -216,23 +199,8 @@ In this tutorial, we'll just pass around a ``Config`` instance to resource
 initializers for easier testing (coming later in this tutorial). Create a new
 module, ``config.py`` next to ``app.py``, and add the following code to it:
 
-.. code:: python
-
-    import os
-    import pathlib
-    import uuid
-
-
-    class Config:
-        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
-        DEFAULT_UUID_GENERATOR = uuid.uuid4
-
-        def __init__(self):
-            self.storage_path = pathlib.Path(
-                os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH))
-            self.storage_path.mkdir(parents=True, exist_ok=True)
-
-            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/config.py
+    :language: python
 
 Image Store
 -----------
@@ -251,76 +219,8 @@ all uploaded images to JPEG with the popular
 We can now implement a basic async image store. Save the following code as
 ``store.py`` next to ``app.py`` and ``config.py``:
 
-.. code:: python
-
-    import asyncio
-    import datetime
-    import io
-
-    import aiofiles
-    import PIL.Image
-
-    import falcon
-
-
-    class Image:
-        def __init__(self, config, image_id, size):
-            self._config = config
-
-            self.image_id = image_id
-            self.size = size
-            self.modified = datetime.datetime.now(datetime.timezone.utc)
-
-        @property
-        def path(self):
-            return self._config.storage_path / self.image_id
-
-        @property
-        def uri(self):
-            return f'/images/{self.image_id}.jpeg'
-
-        def serialize(self):
-            return {
-                'id': self.image_id,
-                'image': self.uri,
-                'modified': falcon.dt_to_http(self.modified),
-                'size': self.size,
-            }
-
-
-    class Store:
-        def __init__(self, config):
-            self._config = config
-            self._images = {}
-
-        def _load_from_bytes(self, data):
-            return PIL.Image.open(io.BytesIO(data))
-
-        def _convert(self, image):
-            rgb_image = image.convert('RGB')
-
-            converted = io.BytesIO()
-            rgb_image.save(converted, 'JPEG')
-            return converted.getvalue()
-
-        def get(self, image_id):
-            return self._images.get(image_id)
-
-        def list_images(self):
-            return sorted(self._images.values(), key=lambda item: item.modified)
-
-        async def save(self, image_id, data):
-            loop = asyncio.get_running_loop()
-            image = await loop.run_in_executor(None, self._load_from_bytes, data)
-            converted = await loop.run_in_executor(None, self._convert, image)
-
-            path = self._config.storage_path / image_id
-            async with aiofiles.open(path, 'wb') as output:
-                await output.write(converted)
-
-            stored = Image(self._config, image_id, image.size)
-            self._images[image_id] = stored
-            return stored
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/store.py
+    :language: python
 
 Here we store data using ``aiofiles``, and run ``Pillow`` image transformation
 functions in the default :class:`~concurrent.futures.ThreadPoolExecutor`,
@@ -347,35 +247,8 @@ methods must be awaitable coroutines. Let's see how this works by
 implementing a resource to represent both a single image and a collection
 of images. Place the code below in a file named ``images.py``:
 
-.. code:: python
-
-    import aiofiles
-
-    import falcon
-
-
-    class Images:
-        def __init__(self, config, store):
-            self._config = config
-            self._store = store
-
-        async def on_get(self, req, resp):
-            resp.media = [image.serialize() for image in self._store.list_images()]
-
-        async def on_get_image(self, req, resp, image_id):
-            # NOTE: image_id: UUID is converted back to a string identifier.
-            image = self._store.get(str(image_id))
-            resp.stream = await aiofiles.open(image.path, 'rb')
-            resp.content_type = falcon.MEDIA_JPEG
-
-        async def on_post(self, req, resp):
-            data = await req.stream.read()
-            image_id = str(self._config.uuid_generator())
-            image = await self._store.save(image_id, data)
-
-            resp.location = image.uri
-            resp.media = image.serialize()
-            resp.status = falcon.HTTP_201
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/images.py
+    :language: python
 
 This module is an example of a Falcon "resource" class, as described in
 :ref:`routing`. Falcon uses resource-based routing to encourage a RESTful
@@ -456,25 +329,8 @@ test cases.
 
 Modify ``app.py`` to read as follows:
 
-.. code:: python
-
-    import falcon.asgi
-
-    from .config import Config
-    from .images import Images
-    from .store import Store
-
-
-    def create_app(config=None):
-        config = config or Config()
-        store = Store(config)
-        images = Images(config, store)
-
-        app = falcon.asgi.App()
-        app.add_route('/images', images)
-        app.add_route('/images/{image_id:uuid}.jpeg', images, suffix='image')
-
-        return app
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/app.py
+   :language: python
 
 As mentioned earlier, we need to use a route suffix for the ``Images`` class to
 distinguish between a GET for a single image vs. the entire collection of
@@ -491,7 +347,7 @@ section.
 In order to bootstrap an ASGI app instance for ``uvicorn`` to reference, we'll
 create a simple ``asgi.py`` module with the following contents:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/asgi.py
+.. literalinclude:: ../../examples/asgilook/01_basic/asgilook/asgi.py
     :language: python
 
 Running the application is not too dissimilar from the previous command line::
@@ -582,45 +438,29 @@ purposes.
 Let's add a new method ``Store.make_thumbnail()`` to perform scaling on the
 fly:
 
-.. code:: python
-
-    async def make_thumbnail(self, image, size):
-        async with aiofiles.open(image.path, 'rb') as img_file:
-            data = await img_file.read()
-
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self._resize, data, size)
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
+    :start-at: async def make_thumbnail(self, image, size):
+    :end-at: return await loop.run_in_executor(None, self._resize, data, size)
+    :language: python
+    :dedent: 4
 
 We'll also add an internal helper to run the ``Pillow`` thumbnail operation that
 is offloaded to a threadpool executor, again, in hoping that Pillow can release
 the GIL for some operations:
 
-.. code:: python
-
-    def _resize(self, data, size):
-        image = PIL.Image.open(io.BytesIO(data))
-        image.thumbnail(size)
-
-        resized = io.BytesIO()
-        image.save(resized, 'JPEG')
-        return resized.getvalue()
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
+    :start-at: def _resize(self, data, size):
+    :end-at: return resized.getvalue()
+    :language: python
+    :dedent: 4
 
 The ``store.Image`` class can be extended to also return URIs to thumbnails:
 
-.. code:: python
-
-    def thumbnails(self):
-        def reductions(size, min_size):
-            width, height = size
-            factor = 2
-            while width // factor >= min_size and height // factor >= min_size:
-                yield (width // factor, height // factor)
-                factor *= 2
-
-        return [
-            f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
-            for width, height in reductions(
-                self.size, self._config.min_thumb_size)]
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
+    :start-at: def thumbnails(self):
+    :end-before: class Store:
+    :language: python
+    :dedent: 4
 
 Here, we only generate URIs for a series of downsized resolutions. The actual
 scaling will happen on the fly upon requesting these resources.
@@ -632,7 +472,7 @@ You may wish to experiment with this resolution distribution.
 
 After updating ``store.py``, the module should now look like this:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/store.py
     :language: python
 
 Furthermore, it is practical to impose a minimum resolution, as any potential
@@ -644,30 +484,13 @@ The :ref:`app configuration <asgi_tutorial_config>` will need to be updated
 to add the ``min_thumb_size`` option (by default initialized to 64 pixels)
 as follows:
 
-.. code:: python
-
-    import os
-    import pathlib
-    import uuid
-
-
-    class Config:
-        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
-        DEFAULT_MIN_THUMB_SIZE = 64
-        DEFAULT_UUID_GENERATOR = uuid.uuid4
-
-        def __init__(self):
-            self.storage_path = pathlib.Path(
-                os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH))
-            self.storage_path.mkdir(parents=True, exist_ok=True)
-
-            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
-            self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/config.py
+   :language: python
 
 Let's also add a ``Thumbnails`` resource to expose the new
 functionality. The final version of ``images.py`` reads:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/images.py
+.. literalinclude:: ../../examples/asgilook/02_dynamic_thumbnails/asgilook/images.py
     :language: python
 
 .. note::
@@ -802,13 +625,11 @@ Let's implement the ``process_startup()`` and ``process_shutdown()`` handlers
 in our middleware to execute code upon our application's startup and shutdown,
 respectively:
 
-.. code:: python
-
-    async def process_startup(self, scope, event):
-        await self._redis.ping()
-
-    async def process_shutdown(self, scope, event):
-        await self._redis.close()
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/cache.py
+    :start-at:     async def process_startup(self, scope, event):
+    :end-at:         await self._redis.close()
+    :language: python
+    :dedent: 4
 
 .. warning::
     The Lifespan Protocol is an optional extension; please check if your ASGI
@@ -830,7 +651,7 @@ implementations for production and testing.
 Assuming we call our new :ref:`configuration <asgi_tutorial_config>` item
 ``redis_host`` the final version of ``config.py`` now reads:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/config.py
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/config.py
     :language: python
 
 Let's complete the Redis cache component by implementing
@@ -838,14 +659,14 @@ two more middleware methods, in addition to ``process_startup()`` and
 ``process_shutdown()``. Create a ``cache.py`` module containing the following
 code:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/cache.py
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/cache.py
     :language: python
 
 For caching to take effect, we also need to modify ``app.py`` to add
 the ``RedisCache`` component to our application's middleware list.
 The final version of ``app.py`` should look something like this:
 
-.. literalinclude:: ../../examples/asgilook/asgilook/app.py
+.. literalinclude:: ../../examples/asgilook/03_caching/asgilook/app.py
     :language: python
 
 Now, subsequent access to ``/thumbnails`` should be cached, as indicated by the
@@ -943,7 +764,7 @@ Next, let's implement fixtures to replace ``uuid`` and ``redis``, and inject the
 into our tests via ``conftest.py`` (place your code in the newly created ``tests``
 directory):
 
-.. literalinclude:: ../../examples/asgilook/tests/conftest.py
+.. literalinclude:: ../../examples/asgilook/asgilook_tests/tests/conftest.py
     :language: python
 
 .. note::
@@ -970,13 +791,8 @@ With the groundwork in place, we can start with a simple test that will attempt
 to GET the ``/images`` resource. Place the following code in a new
 ``tests/test_images.py`` module:
 
-.. code:: python
-
-    def test_list_images(client):
-        resp = client.simulate_get('/images')
-
-        assert resp.status_code == 200
-        assert resp.json == []
+.. literalinclude:: ../../examples/asgilook/asgilook_tests/tests/test_images.py
+    :language: python
 
 Let's give it a try::
 
