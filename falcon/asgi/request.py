@@ -122,17 +122,12 @@ class Request(request.Request):
 
         req_headers: dict[bytes, bytes] = {}
         for header_name, header_value in scope['headers']:
-            # NOTE(kgriffs): According to ASGI 3.0, header names are always
-            #   lowercased, and both name and value are byte strings. Although
-            #   technically header names and values are restricted to US-ASCII
-            #   we decode later (just-in-time) using the default 'utf-8' because
-            #   it is a little faster than passing an encoding option (except
-            #   under Cython).
-            #
-            #   The reason we wait to decode is that the typical app will not
-            #   need to decode all request headers, and we usually can just
-            #   leave the header name as a byte string and look it up that way.
-            #
+            # NOTE(kgriffs): ASGI 3.0 originally mandated lowercase header
+            #   names, but the spec was relaxed to 'SHOULD' instead of 'MUST'.
+            #   Some non-compliant ASGI servers may send mixed-case header
+            #   names, so we normalize to lowercase to ensure consistent
+            #   lookups throughout the request object.
+            header_name = header_name.lower()
 
             # NOTE(kgriffs): There are no standard request headers that
             #   allow multiple instances to appear in the request while also
