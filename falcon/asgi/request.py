@@ -55,6 +55,11 @@ class Request(request.Request):
     Note:
         `Request` is not meant to be instantiated directly by responders.
 
+        Falcon expects ASGI servers to supply lowercase request header names,
+        as recommended by the `ASGI HTTP Connection Scope
+        <https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope>`__.
+        Header names that are not lowercase are not normalized by Falcon.
+
     Args:
         scope (dict): ASGI HTTP connection scope passed in from the server (see
             also: `Connection Scope`_).
@@ -69,7 +74,6 @@ class Request(request.Request):
 
     .. _Connection Scope:
         https://asgi.readthedocs.io/en/latest/specs/www.html#connection-scope
-
     """
 
     __slots__ = [
@@ -692,10 +696,14 @@ class Request(request.Request):
 
     @property
     def headers(self) -> Mapping[str, str]:
-        """Raw HTTP headers from the request with dash-separated
-        names normalized to lowercase.
+        """HTTP headers from the request with dash-separated lowercase names.
 
         Note:
+            Falcon expects the ASGI server to supply lowercase header names,
+            as recommended by the `ASGI HTTP Connection Scope
+            <https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope>`__.
+            Header names that are not lowercase are not normalized by Falcon.
+
             This property differs from the WSGI version of ``Request.headers``
             in that the latter returns *uppercase* names for historical
             reasons. Middleware, such as tracing and logging components, that

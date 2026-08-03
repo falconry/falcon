@@ -1086,10 +1086,16 @@ expecting a specific header name capitalization, see this recipe how to
 override header names using generic WSGI middleware:
 :ref:`capitalizing_response_headers`.
 
-Note that this question only applies to the WSGI flavor of Falcon. The
-`ASGI HTTP scope specification
+The preceding workaround only applies to the WSGI flavor of Falcon. For ASGI
+responses, the `Response Start event
 <https://asgi.readthedocs.io/en/latest/specs/www.html#response-start-send-event>`_
-requires HTTP header names to be lowercased.
+requires applications to supply lowercase header names.
+
+Incoming ASGI request headers are different. The `HTTP Connection Scope
+<https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope>`_
+recommends, but does not require, that servers supply lowercase header names.
+Falcon expects servers to follow this recommendation and does not normalize
+non-lowercase request header names.
 
 Furthermore, the HTTP2 standard also mandates that header field names MUST be
 converted to lowercase (see `RFC 7540, Section 8.1.2
