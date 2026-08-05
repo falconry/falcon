@@ -57,7 +57,7 @@ as expected.
     app = falcon.asgi.App()
 
     class HelloWorldResource:
-        async def on_get(self, req, resp):
+        async def on_get(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
             resp.media = {'hello': 'world'}
 
     app.add_route('/hello', HelloWorldResource())
@@ -105,7 +105,7 @@ let's keep it simple.
 
 
     class EchoWebSocketResource:
-        async def on_websocket(self, req: Request, ws: WebSocket):
+        async def on_websocket(self, req: Request, ws: WebSocket) -> None:
             try:
                 await ws.accept()
             except WebSocketDisconnected:

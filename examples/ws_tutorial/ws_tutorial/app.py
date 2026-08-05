@@ -6,9 +6,8 @@ import uvicorn
 
 from falcon import WebSocketDisconnected
 import falcon.asgi
-from falcon.asgi import Request
-from falcon.asgi import WebSocket
-
+from falcon.asgi import Request, Response, WebSocket
+from typing import Any
 logger = logging.getLogger('ws-logger')
 logger.setLevel('INFO')
 logger.addHandler(logging.StreamHandler())
@@ -37,12 +36,12 @@ app = falcon.asgi.App()
 
 
 class LoggerMiddleware:
-    async def process_request_ws(self, req: Request, ws: WebSocket):
+    async def process_request_ws(self, req: Request, ws: WebSocket) -> None:
         # This will be called for the HTTP request that initiates the
         #   WebSocket handshake before routing.
         pass
 
-    async def process_resource_ws(self, req: Request, ws: WebSocket, resource, params):
+    async def process_resource_ws(self, req: Request, ws: WebSocket, resource: object, params: dict[str, Any]) -> None:
         # This will be called for the HTTP request that initiates the
         #   WebSocket handshake after routing (if a route matches the
         #   request).
@@ -56,7 +55,7 @@ class AuthMiddleware:
 
         self.protected_routes = protected_routes
 
-    async def process_request_ws(self, req: Request, ws: WebSocket):
+    async def process_request_ws(self, req: Request, ws: WebSocket) -> None:
         # Opening a connection so we can receive the token
         await ws.accept()
 
@@ -75,12 +74,12 @@ class AuthMiddleware:
 
 
 class HelloWorldResource:
-    async def on_get(self, req, resp):
+    async def on_get(self, req: Request, resp: Response) -> None:
         resp.media = {'hello': 'world'}
 
 
 class EchoWebSocketResource:
-    async def on_websocket(self, req: Request, ws: WebSocket):
+    async def on_websocket(self, req: Request, ws: WebSocket) -> None:
         while True:
             try:
                 message = await ws.receive_text()
@@ -92,7 +91,7 @@ class EchoWebSocketResource:
 
 
 class ReportsResource:
-    async def on_websocket(self, req: Request, ws: WebSocket):
+    async def on_websocket(self, req: Request, ws: WebSocket) -> None:
         while True:
             try:
                 query = await ws.receive_text()

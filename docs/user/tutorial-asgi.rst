@@ -149,7 +149,7 @@ Here's how you can set up basic logging in your ASGI Falcon application via
 
 
     class ErrorResource:
-        def on_get(self, req, resp):
+        async def on_get(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
             raise Exception('Something went wrong!')
 
 
@@ -227,7 +227,7 @@ module, ``config.py`` next to ``app.py``, and add the following code to it:
         DEFAULT_CONFIG_PATH = '/tmp/asgilook'
         DEFAULT_UUID_GENERATOR = uuid.uuid4
 
-        def __init__(self):
+        def __init__(self) -> None:
             self.storage_path = pathlib.Path(
                 os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH))
             self.storage_path.mkdir(parents=True, exist_ok=True)
@@ -355,20 +355,20 @@ of images. Place the code below in a file named ``images.py``:
 
 
     class Images:
-        def __init__(self, config, store):
+        def __init__(self, config: Config, store: Store) -> None:
             self._config = config
             self._store = store
 
-        async def on_get(self, req, resp):
+        async def on_get(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
             resp.media = [image.serialize() for image in self._store.list_images()]
 
-        async def on_get_image(self, req, resp, image_id):
+        async def on_get_image(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, image_id: str) -> None:
             # NOTE: image_id: UUID is converted back to a string identifier.
             image = self._store.get(str(image_id))
             resp.stream = await aiofiles.open(image.path, 'rb')
             resp.content_type = falcon.MEDIA_JPEG
 
-        async def on_post(self, req, resp):
+        async def on_post(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
             data = await req.stream.read()
             image_id = str(self._config.uuid_generator())
             image = await self._store.save(image_id, data)
@@ -465,7 +465,7 @@ Modify ``app.py`` to read as follows:
     from .store import Store
 
 
-    def create_app(config=None):
+    def create_app(config: Config | None = None) -> falcon.asgi.App:
         config = config or Config()
         store = Store(config)
         images = Images(config, store)

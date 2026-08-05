@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import falcon.asgi
 
 from .cache import RedisCache
@@ -7,7 +9,7 @@ from .images import Thumbnails
 from .store import Store
 
 
-def create_app(config=None):
+def create_app(config: Config | None = None) -> falcon.asgi.App:
     config = config or Config()
     cache = RedisCache(config)
     store = Store(config)

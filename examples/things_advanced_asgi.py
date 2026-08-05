@@ -1,7 +1,8 @@
-# examples/things_advanced_asgi.py
+from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 import uuid
 
 import httpx
@@ -11,17 +12,17 @@ import falcon.asgi
 
 
 class StorageEngine:
-    async def get_things(self, marker, limit):
+    async def get_things(self, marker: str, limit: int) -> list[dict[str, Any]]:
         return [{'id': str(uuid.uuid4()), 'color': 'green'}]
 
-    async def add_thing(self, thing):
+    async def add_thing(self, thing: dict[str, Any]) -> dict[str, Any]:
         thing['id'] = str(uuid.uuid4())
         return thing
 
 
 class StorageError(Exception):
     @staticmethod
-    async def handle(req, resp, ex, params):
+    async def handle(req: falcon.asgi.Request, resp: falcon.asgi.Response, ex: Exception, params: dict[str, Any]) -> None:
         # TODO: Log the error, clean up, etc. before raising
         raise falcon.HTTPInternalServerError()
 
@@ -32,20 +33,20 @@ class SinkAdapter:
         'y': 'https://search.yahoo.com/search',
     }
 
-    async def __call__(self, req, resp, engine):
+    async def __call__(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, engine: str) -> None:
         url = self.engines[engine]
         params = {'q': req.get_param('q', True)}
 
         async with httpx.AsyncClient() as client:
             result = await client.get(url, params=params)
 
-        resp.status = result.status_code
+        resp.status = falcon.code_to_http_status(result.status_code)
         resp.content_type = result.headers['content-type']
         resp.text = result.text
 
 
 class AuthMiddleware:
-    async def process_request(self, req, resp):
+    async def process_request(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
         token = req.get_header('Authorization')
         account_id = req.get_header('Account-ID')
 
@@ -74,12 +75,12 @@ class AuthMiddleware:
                 href='http://docs.example.com/auth',
             )
 
-    def _token_is_valid(self, token, account_id):
+    def _token_is_valid(self, token: str, account_id: str | None) -> bool:
         return True  # Suuuuuure it's valid...
 
 
 class RequireJSON:
-    async def process_request(self, req, resp):
+    async def process_request(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
         if not req.client_accepts_json:
             raise falcon.HTTPNotAcceptable(
                 description='This API only supports responses encoded as JSON.',
@@ -95,20 +96,20 @@ class RequireJSON:
 
 
 class JSONTranslator:
-    # NOTE: Normally you would simply use req.get_media() and resp.media for
+    # NOTE: Normally you would simply use req.media and resp.media for
     # this particular use case; this example serves only to illustrate
     # what is possible.
 
-    async def process_request(self, req, resp):
-        # NOTE: Test explicitly for 0, since this property could be None in
-        # the case that the Content-Length header is missing (in which case we
-        # can't know if there is a body without actually attempting to read
-        # it from the request stream.)
-        if req.content_length == 0:
+    async def process_request(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
+        # req.stream corresponds to the WSGI wsgi.input environ variable,
+        # and allows you to read bytes from the request body.
+        #
+        # See also: PEP 3333
+        if req.content_length in (None, 0):
             # Nothing to do
             return
 
-        body = await req.stream.read()
+        body = await req.bounded_stream.read()
         if not body:
             raise falcon.HTTPBadRequest(
                 title='Empty request body',
@@ -127,15 +128,15 @@ class JSONTranslator:
 
             raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
 
-    async def process_response(self, req, resp, resource, req_succeeded):
+    async def process_response(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, resource: object, req_succeeded: bool) -> None:
         if not hasattr(resp.context, 'result'):
             return
 
         resp.text = json.dumps(resp.context.result)
 
 
-def max_body(limit):
-    async def hook(req, resp, resource, params):
+def max_body(limit: int):
+    async def hook(req: falcon.asgi.Request, resp: falcon.asgi.Response, resource: object, params: dict[str, Any]) -> None:
         length = req.content_length
         if length is not None and length > limit:
             msg = (
@@ -151,11 +152,11 @@ def max_body(limit):
 
 
 class ThingsResource:
-    def __init__(self, db):
+    def __init__(self, db: StorageEngine) -> None:
         self.db = db
         self.logger = logging.getLogger('thingsapp.' + __name__)
 
-    async def on_get(self, req, resp, user_id):
+    async def on_get(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, user_id: str) -> None:
         marker = req.get_param('marker') or ''
         limit = req.get_param_as_int('limit') or 50
 
@@ -184,7 +185,7 @@ class ThingsResource:
         resp.status = falcon.HTTP_200
 
     @falcon.before(max_body(64 * 1024))
-    async def on_post(self, req, resp, user_id):
+    async def on_post(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, user_id: str) -> None:
         try:
             doc = req.context.doc
         except AttributeError:
