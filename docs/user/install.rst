@@ -178,6 +178,8 @@ Conversely, in order to run an ``async``
 Uvicorn is a popular choice, owing to its fast and stable
 implementation. What is more, Uvicorn is supported on Windows, and on PyPy
 (however, both at a performance loss compared to CPython on Unix-like systems).
+For a production-oriented walkthrough with NGINX, see
+:ref:`deploy-uvicorn-nginx`.
 
 Falcon is also regularly tested against Daphne, the current ASGI reference
 server.
