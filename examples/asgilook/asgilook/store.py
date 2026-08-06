@@ -1,15 +1,21 @@
+from __future__ import annotations
+
 import asyncio
 import datetime
 import io
+from pathlib import Path
+from typing import Any
 
 import aiofiles
 import PIL.Image
 
 import falcon
 
+from .config import Config
+
 
 class Image:
-    def __init__(self, config, image_id, size):
+    def __init__(self, config: Config, image_id: str, size: tuple[int, int]) -> None:
         self._config = config
 
         self.image_id = image_id
@@ -17,14 +23,14 @@ class Image:
         self.modified = datetime.datetime.now(datetime.timezone.utc)
 
     @property
-    def path(self):
-        return self._config.storage_path / self.image_id
+    def path(self) -> Path:
+        return Path(self._config.storage_path) / self.image_id
 
     @property
-    def uri(self):
+    def uri(self) -> str:
         return f'/images/{self.image_id}.jpeg'
 
-    def serialize(self):
+    def serialize(self) -> dict[str, Any]:
         return {
             'id': self.image_id,
             'image': self.uri,
@@ -33,7 +39,7 @@ class Image:
             'thumbnails': self.thumbnails(),
         }
 
-    def thumbnails(self):
+    def thumbnails(self) -> list[str]:
         def reductions(size, min_size):
             width, height = size
             factor = 2
@@ -48,21 +54,21 @@ class Image:
 
 
 class Store:
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         self._config = config
-        self._images = {}
+        self._images: dict[str, Image] = {}
 
-    def _load_from_bytes(self, data):
+    def _load_from_bytes(self, data: bytes) -> PIL.Image.Image:
         return PIL.Image.open(io.BytesIO(data))
 
-    def _convert(self, image):
+    def _convert(self, image: PIL.Image.Image) -> bytes:
         rgb_image = image.convert('RGB')
 
         converted = io.BytesIO()
         rgb_image.save(converted, 'JPEG')
         return converted.getvalue()
 
-    def _resize(self, data, size):
+    def _resize(self, data: bytes, size: tuple[int, int]) -> bytes:
         image = PIL.Image.open(io.BytesIO(data))
         image.thumbnail(size)
 
@@ -70,20 +76,20 @@ class Store:
         image.save(resized, 'JPEG')
         return resized.getvalue()
 
-    def get(self, image_id):
+    def get(self, image_id: str) -> Image | None:
         return self._images.get(image_id)
 
-    def list_images(self):
+    def list_images(self) -> list[Image]:
         return sorted(self._images.values(), key=lambda item: item.modified)
 
-    async def make_thumbnail(self, image, size):
+    async def make_thumbnail(self, image: Image, size: tuple[int, int]) -> bytes:
         async with aiofiles.open(image.path, 'rb') as img_file:
             data = await img_file.read()
 
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._resize, data, size)
 
-    async def save(self, image_id, data):
+    async def save(self, image_id: str, data: bytes) -> Image:
         loop = asyncio.get_running_loop()
         image = await loop.run_in_executor(None, self._load_from_bytes, data)
         converted = await loop.run_in_executor(None, self._convert, image)

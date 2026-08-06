@@ -236,7 +236,7 @@ and add the following code to it:
 
     class Resource:
 
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             doc = {
                 'images': [
                     {
@@ -611,11 +611,11 @@ POSTs. Open ``images.py`` and add a POST responder to the
         _CHUNK_SIZE_BYTES = 4096
 
         # The resource object must now be initialized with a path used during POST
-        def __init__(self, storage_path):
+        def __init__(self, storage_path: str) -> None:
             self._storage_path = storage_path
 
         # This is the method we implemented before
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             doc = {
                 'images': [
                     {
@@ -731,10 +731,10 @@ operation:
 
     class Resource:
 
-        def __init__(self, image_store):
+        def __init__(self, image_store: ImageStore) -> None:
             self._image_store = image_store
 
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             doc = {
                 'images': [
                     {
@@ -747,7 +747,7 @@ operation:
             resp.content_type = falcon.MEDIA_MSGPACK
             resp.status = falcon.HTTP_200
 
-        def on_post(self, req, resp):
+        def on_post(self, req: falcon.Request, resp: falcon.Response) -> None:
             name = self._image_store.save(req.stream, req.content_type)
             resp.status = falcon.HTTP_201
             resp.location = '/images/' + name
@@ -1136,10 +1136,10 @@ Go ahead and edit your ``images.py`` file to look something like this:
 
     class Collection:
 
-        def __init__(self, image_store):
+        def __init__(self, image_store: ImageStore) -> None:
             self._image_store = image_store
 
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             # TODO: Modify this to return a list of href's based on
             # what images are actually available.
             doc = {
@@ -1325,10 +1325,10 @@ terminal-friendly output. The top of file ``images.py`` should look like this:
 
     class Collection:
 
-        def __init__(self, image_store):
+        def __init__(self, image_store: ImageStore) -> None:
             self._image_store = image_store
 
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             # TODO: Modify this to return a list of href's based on
             # what images are actually available.
             doc = {
@@ -1386,10 +1386,10 @@ and also to enable a minimum value validation.
 
     class Collection:
 
-        def __init__(self, image_store):
+        def __init__(self, image_store: ImageStore) -> None:
             self._image_store = image_store
 
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             max_size = req.get_param_as_int("maxsize", min_value=1, default=-1)
             images = self._image_store.list(max_size)
             doc = {
@@ -1409,10 +1409,10 @@ and also to enable a minimum value validation.
 
     class Item:
 
-        def __init__(self, image_store):
+        def __init__(self, image_store: ImageStore) -> None:
             self._image_store = image_store
 
-        def on_get(self, req, resp, name):
+        def on_get(self, req: falcon.Request, resp: falcon.Response, name: str) -> None:
             resp.content_type = mimetypes.guess_type(name)[0]
             resp.stream, resp.content_length = self._image_store.open(name)
 
@@ -1546,7 +1546,7 @@ message. Add this method below the definition of ``ALLOWED_IMAGE_TYPES``:
 
 .. code:: python
 
-    def validate_image_type(req, resp, resource, params):
+    def validate_image_type(req: falcon.Request, resp: falcon.Response, resource: object, params: dict[str, Any]) -> None:
         if req.content_type not in ALLOWED_IMAGE_TYPES:
             msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
             raise falcon.HTTPBadRequest(title='Bad request', description=msg)
@@ -1576,7 +1576,7 @@ kwargs:
 
 .. code:: python
 
-    def extract_project_id(req, resp, resource, params):
+    def extract_project_id(req: falcon.Request, resp: falcon.Response, resource: object, params: dict[str, Any]) -> None:
         """Adds `project_id` to the list of params for all responders.
 
         Meant to be used as a `before` hook.
@@ -1671,10 +1671,10 @@ as follows:
 
     class Item:
 
-        def __init__(self, image_store):
+        def __init__(self, image_store: ImageStore) -> None:
             self._image_store = image_store
 
-        def on_get(self, req, resp, name):
+        def on_get(self, req: falcon.Request, resp: falcon.Response, name: str) -> None:
             resp.content_type = mimetypes.guess_type(name)[0]
 
             try:

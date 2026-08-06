@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import json
 import mimetypes
@@ -9,10 +11,10 @@ import falcon
 
 
 class Collection:
-    def __init__(self, image_store):
+    def __init__(self, image_store: ImageStore) -> None:
         self._image_store = image_store
 
-    def on_get(self, req, resp):
+    def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
         max_size = req.get_param_as_int('maxsize', min_value=1, default=-1)
         images = self._image_store.list(max_size)
         doc = {'images': [{'href': '/images/' + image} for image in images]}
@@ -20,17 +22,17 @@ class Collection:
         resp.text = json.dumps(doc, ensure_ascii=False)
         resp.status = falcon.HTTP_200
 
-    def on_post(self, req, resp):
+    def on_post(self, req: falcon.Request, resp: falcon.Response) -> None:
         name = self._image_store.save(req.stream, req.content_type)
         resp.status = falcon.HTTP_201
         resp.location = '/images/' + name
 
 
 class Item:
-    def __init__(self, image_store):
+    def __init__(self, image_store: ImageStore) -> None:
         self._image_store = image_store
 
-    def on_get(self, req, resp, name):
+    def on_get(self, req: falcon.Request, resp: falcon.Response, name: str) -> None:
         resp.content_type = mimetypes.guess_type(name)[0]
         resp.stream, resp.content_length = self._image_store.open(name)
 
@@ -43,12 +45,12 @@ class ImageStore:
 
     # Note the use of dependency injection for standard library
     # methods. We'll use these later to avoid monkey-patching.
-    def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
+    def __init__(self, storage_path: str, uuidgen=uuid.uuid4, fopen=io.open) -> None:
         self._storage_path = storage_path
         self._uuidgen = uuidgen
         self._fopen = fopen
 
-    def save(self, image_stream, image_content_type):
+    def save(self, image_stream: io.BufferedReader, image_content_type: str) -> str:
         ext = mimetypes.guess_extension(image_content_type)
         name = f'{self._uuidgen()}{ext}'
         image_path = os.path.join(self._storage_path, name)
@@ -63,7 +65,7 @@ class ImageStore:
 
         return name
 
-    def open(self, name):
+    def open(self, name: str) -> tuple[io.BufferedReader, int]:
         # Always validate untrusted input!
         if not self._IMAGE_NAME_PATTERN.match(name):
             raise OSError('File not found')
@@ -74,7 +76,7 @@ class ImageStore:
 
         return stream, content_length
 
-    def list(self, max_size):
+    def list(self, max_size: int) -> list[str]:
         images = [
             image
             for image in os.listdir(self._storage_path)

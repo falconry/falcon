@@ -12,7 +12,7 @@ class Config:
     DEFAULT_REDIS_HOST = 'redis://localhost'
     DEFAULT_UUID_GENERATOR = uuid.uuid4
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.storage_path = pathlib.Path(
             os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH)
         )

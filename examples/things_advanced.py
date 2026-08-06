@@ -1,7 +1,8 @@
-# examples/things_advanced.py
+from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 import uuid
 from wsgiref import simple_server
 
@@ -11,17 +12,22 @@ import falcon
 
 
 class StorageEngine:
-    def get_things(self, marker, limit):
+    def get_things(self, marker: str, limit: int) -> list[dict[str, Any]]:
         return [{'id': str(uuid.uuid4()), 'color': 'green'}]
 
-    def add_thing(self, thing):
+    def add_thing(self, thing: dict[str, Any]) -> dict[str, Any]:
         thing['id'] = str(uuid.uuid4())
         return thing
 
 
 class StorageError(Exception):
     @staticmethod
-    def handle(req, resp, ex, params):
+    def handle(
+        req: falcon.Request,
+        resp: falcon.Response,
+        ex: Exception,
+        params: dict[str, Any],
+    ) -> None:
         # TODO: Log the error, clean up, etc. before raising
         raise falcon.HTTPInternalServerError()
 
@@ -32,7 +38,7 @@ class SinkAdapter:
         'y': 'https://search.yahoo.com/search',
     }
 
-    def __call__(self, req, resp, engine):
+    def __call__(self, req: falcon.Request, resp: falcon.Response, engine: str) -> None:
         url = self.engines[engine]
         params = {'q': req.get_param('q', True)}
         result = requests.get(url, params=params)
@@ -43,7 +49,7 @@ class SinkAdapter:
 
 
 class AuthMiddleware:
-    def process_request(self, req, resp):
+    def process_request(self, req: falcon.Request, resp: falcon.Response) -> None:
         token = req.get_header('Authorization')
         account_id = req.get_header('Account-ID')
 
@@ -72,12 +78,12 @@ class AuthMiddleware:
                 href='http://docs.example.com/auth',
             )
 
-    def _token_is_valid(self, token, account_id):
+    def _token_is_valid(self, token: str, account_id: str | None) -> bool:
         return True  # Suuuuuure it's valid...
 
 
 class RequireJSON:
-    def process_request(self, req, resp):
+    def process_request(self, req: falcon.Request, resp: falcon.Response) -> None:
         if not req.client_accepts_json:
             raise falcon.HTTPNotAcceptable(
                 description='This API only supports responses encoded as JSON.',
@@ -97,7 +103,7 @@ class JSONTranslator:
     # this particular use case; this example serves only to illustrate
     # what is possible.
 
-    def process_request(self, req, resp):
+    def process_request(self, req: falcon.Request, resp: falcon.Response) -> None:
         # req.stream corresponds to the WSGI wsgi.input environ variable,
         # and allows you to read bytes from the request body.
         #
@@ -125,15 +131,26 @@ class JSONTranslator:
 
             raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
 
-    def process_response(self, req, resp, resource, req_succeeded):
+    def process_response(
+        self,
+        req: falcon.Request,
+        resp: falcon.Response,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None:
         if not hasattr(resp.context, 'result'):
             return
 
         resp.text = json.dumps(resp.context.result)
 
 
-def max_body(limit):
-    def hook(req, resp, resource, params):
+def max_body(limit: int):
+    def hook(
+        req: falcon.Request,
+        resp: falcon.Response,
+        resource: object,
+        params: dict[str, Any],
+    ) -> None:
         length = req.content_length
         if length is not None and length > limit:
             msg = (
@@ -149,11 +166,11 @@ def max_body(limit):
 
 
 class ThingsResource:
-    def __init__(self, db):
+    def __init__(self, db: StorageEngine) -> None:
         self.db = db
         self.logger = logging.getLogger('thingsapp.' + __name__)
 
-    def on_get(self, req, resp, user_id):
+    def on_get(self, req: falcon.Request, resp: falcon.Response, user_id: str) -> None:
         marker = req.get_param('marker') or ''
         limit = req.get_param_as_int('limit') or 50
 
@@ -182,7 +199,7 @@ class ThingsResource:
         resp.status = falcon.HTTP_200
 
     @falcon.before(max_body(64 * 1024))
-    def on_post(self, req, resp, user_id):
+    def on_post(self, req: falcon.Request, resp: falcon.Response, user_id: str) -> None:
         try:
             doc = req.context.doc
         except AttributeError:
