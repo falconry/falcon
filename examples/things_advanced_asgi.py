@@ -22,7 +22,12 @@ class StorageEngine:
 
 class StorageError(Exception):
     @staticmethod
-    async def handle(req: falcon.asgi.Request, resp: falcon.asgi.Response, ex: Exception, params: dict[str, Any]) -> None:
+    async def handle(
+        req: falcon.asgi.Request,
+        resp: falcon.asgi.Response,
+        ex: Exception,
+        params: dict[str, Any],
+    ) -> None:
         # TODO: Log the error, clean up, etc. before raising
         raise falcon.HTTPInternalServerError()
 
@@ -33,7 +38,9 @@ class SinkAdapter:
         'y': 'https://search.yahoo.com/search',
     }
 
-    async def __call__(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, engine: str) -> None:
+    async def __call__(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response, engine: str
+    ) -> None:
         url = self.engines[engine]
         params = {'q': req.get_param('q', True)}
 
@@ -46,7 +53,9 @@ class SinkAdapter:
 
 
 class AuthMiddleware:
-    async def process_request(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
+    async def process_request(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response
+    ) -> None:
         token = req.get_header('Authorization')
         account_id = req.get_header('Account-ID')
 
@@ -80,7 +89,9 @@ class AuthMiddleware:
 
 
 class RequireJSON:
-    async def process_request(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
+    async def process_request(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response
+    ) -> None:
         if not req.client_accepts_json:
             raise falcon.HTTPNotAcceptable(
                 description='This API only supports responses encoded as JSON.',
@@ -100,7 +111,9 @@ class JSONTranslator:
     # this particular use case; this example serves only to illustrate
     # what is possible.
 
-    async def process_request(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
+    async def process_request(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response
+    ) -> None:
         # req.stream corresponds to the WSGI wsgi.input environ variable,
         # and allows you to read bytes from the request body.
         #
@@ -128,7 +141,13 @@ class JSONTranslator:
 
             raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
 
-    async def process_response(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, resource: object, req_succeeded: bool) -> None:
+    async def process_response(
+        self,
+        req: falcon.asgi.Request,
+        resp: falcon.asgi.Response,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None:
         if not hasattr(resp.context, 'result'):
             return
 
@@ -136,7 +155,12 @@ class JSONTranslator:
 
 
 def max_body(limit: int):
-    async def hook(req: falcon.asgi.Request, resp: falcon.asgi.Response, resource: object, params: dict[str, Any]) -> None:
+    async def hook(
+        req: falcon.asgi.Request,
+        resp: falcon.asgi.Response,
+        resource: object,
+        params: dict[str, Any],
+    ) -> None:
         length = req.content_length
         if length is not None and length > limit:
             msg = (
@@ -156,7 +180,9 @@ class ThingsResource:
         self.db = db
         self.logger = logging.getLogger('thingsapp.' + __name__)
 
-    async def on_get(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, user_id: str) -> None:
+    async def on_get(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response, user_id: str
+    ) -> None:
         marker = req.get_param('marker') or ''
         limit = req.get_param_as_int('limit') or 50
 
@@ -185,7 +211,9 @@ class ThingsResource:
         resp.status = falcon.HTTP_200
 
     @falcon.before(max_body(64 * 1024))
-    async def on_post(self, req: falcon.asgi.Request, resp: falcon.asgi.Response, user_id: str) -> None:
+    async def on_post(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response, user_id: str
+    ) -> None:
         try:
             doc = req.context.doc
         except AttributeError:

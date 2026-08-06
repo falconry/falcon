@@ -1,13 +1,16 @@
 from datetime import datetime
 import logging
 import pathlib
+from typing import Any
 
 import uvicorn
 
 from falcon import WebSocketDisconnected
 import falcon.asgi
-from falcon.asgi import Request, Response, WebSocket
-from typing import Any
+from falcon.asgi import Request
+from falcon.asgi import Response
+from falcon.asgi import WebSocket
+
 logger = logging.getLogger('ws-logger')
 logger.setLevel('INFO')
 logger.addHandler(logging.StreamHandler())
@@ -41,7 +44,9 @@ class LoggerMiddleware:
         #   WebSocket handshake before routing.
         pass
 
-    async def process_resource_ws(self, req: Request, ws: WebSocket, resource: object, params: dict[str, Any]) -> None:
+    async def process_resource_ws(
+        self, req: Request, ws: WebSocket, resource: object, params: dict[str, Any]
+    ) -> None:
         # This will be called for the HTTP request that initiates the
         #   WebSocket handshake after routing (if a route matches the
         #   request).

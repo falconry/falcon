@@ -26,7 +26,6 @@ class Image:
     def path(self) -> Path:
         return Path(self._config.storage_path) / self.image_id
 
-
     @property
     def uri(self) -> str:
         return f'/images/{self.image_id}.jpeg'
@@ -102,4 +101,3 @@ class Store:
         stored = Image(self._config, image_id, image.size)
         self._images[image_id] = stored
         return stored
-

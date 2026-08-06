@@ -22,7 +22,12 @@ class StorageEngine:
 
 class StorageError(Exception):
     @staticmethod
-    def handle(req: falcon.Request, resp: falcon.Response, ex: Exception, params: dict[str, Any]) -> None:
+    def handle(
+        req: falcon.Request,
+        resp: falcon.Response,
+        ex: Exception,
+        params: dict[str, Any],
+    ) -> None:
         # TODO: Log the error, clean up, etc. before raising
         raise falcon.HTTPInternalServerError()
 
@@ -126,7 +131,13 @@ class JSONTranslator:
 
             raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
 
-    def process_response(self, req: falcon.Request, resp: falcon.Response, resource: object, req_succeeded: bool) -> None:
+    def process_response(
+        self,
+        req: falcon.Request,
+        resp: falcon.Response,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None:
         if not hasattr(resp.context, 'result'):
             return
 
@@ -134,7 +145,12 @@ class JSONTranslator:
 
 
 def max_body(limit: int):
-    def hook(req: falcon.Request, resp: falcon.Response, resource: object, params: dict[str, Any]) -> None:
+    def hook(
+        req: falcon.Request,
+        resp: falcon.Response,
+        resource: object,
+        params: dict[str, Any],
+    ) -> None:
         length = req.content_length
         if length is not None and length > limit:
             msg = (

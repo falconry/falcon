@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+
 import msgpack
 
 import falcon.asgi
@@ -27,14 +28,19 @@ class RedisCache:
         resp.complete = True
         resp.context.cached = True
 
-    async def process_startup(self, scope: dict[str, Any], event: dict[str, Any]) -> None:
+    async def process_startup(
+        self, scope: dict[str, Any], event: dict[str, Any]
+    ) -> None:
         await self._redis.ping()
 
-    async def process_shutdown(self, scope: dict[str, Any], event: dict[str, Any]) -> None:
+    async def process_shutdown(
+        self, scope: dict[str, Any], event: dict[str, Any]
+    ) -> None:
         await self._redis.aclose()
 
-
-    async def process_request(self, req: falcon.asgi.Request, resp: falcon.asgi.Response) -> None:
+    async def process_request(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response
+    ) -> None:
         resp.context.cached = False
 
         if req.method in self.INVALIDATE_ON:
@@ -49,8 +55,12 @@ class RedisCache:
             resp.set_header(self.CACHE_HEADER, 'Miss')
 
     async def process_response(
-            self, req: falcon.asgi.Request, resp: falcon.asgi.Response, resource: object, req_succeeded: bool
-        ) -> None:
+        self,
+        req: falcon.asgi.Request,
+        resp: falcon.asgi.Response,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None:
         if not req_succeeded:
             return
 
