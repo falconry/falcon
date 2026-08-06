@@ -17,7 +17,7 @@
 This extensions adds hyperlinking for any RFC references that are
 formatted like this::
 
-    RFC 7231; Section 6.5.3
+    RFC 9110; Section 15.5.3
 """
 
 import re
@@ -27,7 +27,7 @@ RFC_PATTERN = re.compile(r'RFC (\d{4}), Section ([\d\.]+)')
 
 
 def _render_section(section_number, rfc_number):
-    template = '`{0} <https://tools.ietf.org/html/rfc{1}#section-{0}>`_'
+    template = '`{0} <https://datatracker.ietf.org/doc/html/rfc{1}#section-{0}>`_'
     return template.format(section_number, rfc_number)
 
 

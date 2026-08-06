@@ -252,7 +252,7 @@ Fixed
   application is not behind a proxy. (`#1678 <https://github.com/falconry/falcon/issues/1678>`__)
 - The :attr:`Response.downloadable_as <falcon.Response.downloadable_as>` property
   is now correctly encoding non-ASCII filenames as per
-  `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_ recommendations. (`#1749 <https://github.com/falconry/falcon/issues/1749>`__)
+  `RFC 6266 <https://datatracker.ietf.org/doc/html/rfc6266#appendix-D>`_ recommendations. (`#1749 <https://github.com/falconry/falcon/issues/1749>`__)
 - The :class:`falcon.routing.CompiledRouter` no longer mistakenly sets route parameters
   while exploring non matching routes. (`#1779 <https://github.com/falconry/falcon/issues/1779>`__)
 - The :func:`~falcon.to_query_str` method now correctly encodes parameter keys

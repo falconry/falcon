@@ -741,7 +741,7 @@ Falcon does not offer official support for parsing nested multipart forms
 ``multipart/mixed`` part) at this time. The usage is considered deprecated
 according to the `living HTML5 standard
 <https://html.spec.whatwg.org/multipage/form-control-infrastructure.html>`_ and
-`RFC 7578, Section 4.3 <https://tools.ietf.org/html/rfc7578#section-4.3>`_.
+`RFC 7578, Section 4.3 <https://datatracker.ietf.org/doc/html/rfc7578#section-4.3>`_.
 
 .. tip::
     If your app absolutely must deal with such legacy forms, the parser may
@@ -812,7 +812,7 @@ value of the query string, for example ``?c={"a":1,"b":2}``, the value will be
 added to ``request.params`` in an unexpected way: ``{'c': ['{"a":1', '"b":2}']}``.
 
 Commas are a reserved character that can be escaped according to
-`RFC 3986 - 2.2. Reserved Characters <https://tools.ietf.org/html/rfc3986#section-2.2>`_,
+`RFC 3986 - 2.2. Reserved Characters <https://datatracker.ietf.org/doc/html/rfc3986#section-2.2>`_,
 so one possible solution is to percent encode any commas that appear in your
 JSON query string.
 
@@ -1092,8 +1092,8 @@ Note that this question only applies to the WSGI flavor of Falcon. The
 requires HTTP header names to be lowercased.
 
 Furthermore, the HTTP2 standard also mandates that header field names MUST be
-converted to lowercase (see `RFC 7540, Section 8.1.2
-<https://httpwg.org/specs/rfc7540.html#rfc.section.8.1.2>`_).
+converted to lowercase (see `RFC 9113, Section 8.2
+<https://datatracker.ietf.org/doc/html/rfc9113#section-8.2>`_).
 
 .. _faq_static_files:
 

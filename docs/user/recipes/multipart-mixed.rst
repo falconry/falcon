@@ -12,7 +12,7 @@ using a nested ``multipart/mixed`` part).
     `living HTML5 standard
     <https://html.spec.whatwg.org/multipage/form-control-infrastructure.html>`_
     and
-    `RFC 7578, Section 4.3 <https://tools.ietf.org/html/rfc7578#section-4.3>`_.
+    `RFC 7578, Section 4.3 <https://datatracker.ietf.org/doc/html/rfc7578#section-4.3>`_.
 
 If your app needs to handle nested forms, this can be done in the same
 fashion as any other part embedded in the form -- by installing an appropriate
@@ -39,7 +39,7 @@ Let us now use the nesting-aware parser in an app:
 
 We should now be able to consume a form containing a nested ``multipart/mixed``
 part (the example is adapted from the now-obsolete
-`RFC 1867 <https://tools.ietf.org/html/rfc1867>`_)::
+`RFC 1867 <https://datatracker.ietf.org/doc/html/rfc1867>`_)::
 
     --AaB03x
     Content-Disposition: form-data; name="field1"

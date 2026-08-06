@@ -7,7 +7,7 @@ Falcon builds upon the
 `ASGI WebSocket Specification <https://asgi.readthedocs.io/en/latest/specs/www.html#websocket>`_
 to provide a simple, no-nonsense WebSocket server implementation.
 
-With support for both `WebSocket <https://tools.ietf.org/html/rfc6455>`_ and
+With support for both `WebSocket <https://datatracker.ietf.org/doc/html/rfc6455>`_ and
 `Server-Sent Events <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events>`_
 (SSE), Falcon facilitates real-time, event-oriented communication between an
 ASGI application and a web browser, mobile app, or other client application.
