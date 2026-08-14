@@ -155,6 +155,28 @@ def test_immediate_disconnect():
         client.simulate_get('/', asgi_disconnect_ttl=0)
 
 
+async def test_app_returns_no_response_status():
+    from falcon.asgi_spec import ScopeType
+
+    async def silent_app(scope, receive, send):
+        if scope['type'] == ScopeType.LIFESPAN:
+            while True:
+                event = await receive()
+                if event['type'] == 'lifespan.startup':
+                    await send({'type': 'lifespan.startup.complete'})
+                elif event['type'] == 'lifespan.shutdown':
+                    await send({'type': 'lifespan.shutdown.complete'})
+                    return
+
+        return
+
+    conductor = testing.ASGIConductor(silent_app)
+
+    async with conductor:
+        with pytest.raises(ConnectionError):
+            await conductor.simulate_get('/')
+
+
 @pytest.mark.parametrize(
     'path, expected',
     [
