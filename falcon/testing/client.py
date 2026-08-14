@@ -962,6 +962,12 @@ async def _simulate_request_asgi(
 
         req_event_emitter.disconnect()
         await task_req
+
+        if resp_event_collector.status is None:
+            # NOTE(AlexChen): The app is expected to emit `http.response.start`
+            #   prior to completing the request.
+            raise ConnectionError('The app did not return a response status.')
+
         return Result(
             resp_event_collector.body_chunks,
             code_to_http_status(resp_event_collector.status),
