@@ -1,0 +1,3 @@
+Internal typing for LRU cache decorators now uses :class:`typing.ParamSpec`
+and a typed wrapper protocol, preserving function argument signatures, return
+types, and the ``cache_clear()`` method.
