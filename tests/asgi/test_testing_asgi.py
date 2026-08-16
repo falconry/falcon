@@ -173,7 +173,7 @@ async def test_app_returns_no_response_status():
     conductor = testing.ASGIConductor(silent_app)
 
     async with conductor:
-        with pytest.raises(ConnectionError):
+        with pytest.raises(RuntimeError):
             await conductor.simulate_get('/')
 
 

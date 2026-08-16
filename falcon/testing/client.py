@@ -966,7 +966,7 @@ async def _simulate_request_asgi(
         if resp_event_collector.status is None:
             # NOTE(AlexChen): The app is expected to emit `http.response.start`
             #   prior to completing the request.
-            raise ConnectionError('The app did not return a response status.')
+            raise RuntimeError('The app did not return a response status.')
 
         return Result(
             resp_event_collector.body_chunks,
