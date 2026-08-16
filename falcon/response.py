@@ -886,7 +886,7 @@ class Response:
     ) -> None:
         """Append a link header to the response.
 
-        (See also: RFC 5988, Section 1)
+        (See also: RFC 8288, Section 1)
 
         Note:
             Calling this method repeatedly will cause each link to be
@@ -935,7 +935,7 @@ class Response:
                 languages.
             type_hint (str): Provides a hint as to the media type of the
                 result of dereferencing the link (default ``None``). As noted
-                in RFC 5988, this is only a hint and does not override the
+                in RFC 8288, this is only a hint and does not override the
                 Content-Type header returned when the link is followed.
             crossorigin (str):  Determines how cross origin requests are handled.
                 Can take values 'anonymous' or 'use-credentials' or None.
@@ -1105,7 +1105,7 @@ class Response:
             case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
             thing.
 
-        (See also: RFC 7233, Section 4.2)
+        (See also: RFC 9110, Section 14.4)
         """,
         _format_range,
     )
@@ -1123,7 +1123,7 @@ class Response:
         case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
         thing.
 
-    (See also: RFC 7233, Section 4.2)
+    (See also: RFC 9110, Section 14.4)
     """
 
     content_type: str | None = _header_property(
@@ -1299,7 +1299,7 @@ class Response:
         value consists of either a single asterisk ("*") or a list of
         header field names (case-insensitive).
 
-        (See also: RFC 7231, Section 7.1.4)
+        (See also: RFC 9110, Section 12.5.5)
         """,
         _format_header_value_list,
     )
@@ -1316,7 +1316,7 @@ class Response:
     value consists of either a single asterisk ("*") or a list of
     header field names (case-insensitive).
 
-    (See also: RFC 7231, Section 7.1.4)
+    (See also: RFC 9110, Section 12.5.5)
     """
 
     accept_ranges: str | None = _header_property(

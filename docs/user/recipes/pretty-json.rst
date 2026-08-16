@@ -36,7 +36,7 @@ express resource representation preferences. Although not a part of the
 REST Framework) and services support requesting a specific JSON indentation
 level using the ``indent`` content-type parameter. This recipe leaves the
 interpretation to the reader as to whether such a parameter adds "new
-functionality" as per `RFC 6836, Section 4.3
+functionality" as per `RFC 6838, Section 4.3
 <https://tools.ietf.org/html/rfc6838#section-4.3>`_.
 
 Assuming we want to add JSON ``indent`` support to a Falcon app, this can be

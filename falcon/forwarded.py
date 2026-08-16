@@ -152,7 +152,7 @@ def _parse_forwarded_header(forwarded: str) -> list[Forwarded]:
                 elif name == 'proto':
                     # NOTE(kgriffs): RFC 7239 only requires that
                     # the "proto" value conform to the Host ABNF
-                    # described in RFC 7230. The Host ABNF, in turn,
+                    # described in RFC 9110. The Host ABNF, in turn,
                     # does not require that the scheme be in any
                     # particular case, so we normalize it here to be
                     # consistent with the WSGI spec that *does*

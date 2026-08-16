@@ -135,7 +135,7 @@ def _parse_etags(etag_str: str) -> list[ETag | Literal['*']] | None:
     ETags. The string may also contain a '*' character, in order to indicate
     that any ETag should match the precondition.
 
-    (See also: RFC 7232, Section 3)
+    (See also: RFC 9110, Section 13.1)
 
     Args:
         etag_str (str): An ASCII header value to parse ETags from. ETag values

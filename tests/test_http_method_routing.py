@@ -8,7 +8,7 @@ import falcon
 import falcon.constants
 import falcon.testing as testing
 
-# RFC 7231, 5789 methods
+# RFC 9110, 5789 methods
 HTTP_METHODS = [
     'CONNECT',
     'DELETE',
@@ -22,7 +22,7 @@ HTTP_METHODS = [
     'QUERY',
 ]
 
-# RFC 2518 and 4918 methods
+# RFC 4918 and 3253 methods
 WEBDAV_METHODS = [
     'CHECKIN',
     'CHECKOUT',

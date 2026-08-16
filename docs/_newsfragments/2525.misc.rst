@@ -1,0 +1,7 @@
+References to obsolete RFCs in docstrings, comments and documentation have been
+updated to their current replacements, most notably the RFC 723x series, which
+is now superseded by RFC 9110 (HTTP Semantics), RFC 9111 (HTTP Caching) and
+RFC 9112 (HTTP/1.1). Section numbers were remapped individually, which also
+corrected the section references of :class:`~falcon.HTTPForbidden` and
+:class:`~falcon.HTTPNotFound`, as these two had been citing each other's
+sections.

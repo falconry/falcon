@@ -55,7 +55,7 @@ TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
 FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 """Similar to :attr:`TRUE_STRINGS`, the values corresponding to boolean ``False``."""
 
-# RFC 7231, 5789 methods
+# RFC 9110, 5789 methods
 HTTP_METHODS = [
     'CONNECT',
     'DELETE',
@@ -73,7 +73,7 @@ HTTP_WG_DRAFT_METHODS = [
     'QUERY',
 ]
 
-# RFC 2518 and 4918 methods
+# RFC 4918 and 3253 methods
 WEBDAV_METHODS = [
     'CHECKIN',
     'CHECKOUT',
@@ -110,7 +110,7 @@ COMBINED_METHODS = (
     + _META_METHODS
 )
 
-# NOTE(kgriffs): According to RFC 7159, most JSON parsers assume
+# NOTE(kgriffs): According to RFC 8259, most JSON parsers assume
 # UTF-8 and so it is the recommended default charset going forward,
 # and indeed, other charsets should not be specified to ensure
 # maximum interoperability.

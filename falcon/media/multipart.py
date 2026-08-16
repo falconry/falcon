@@ -59,7 +59,7 @@ _ALLOWED_CONTENT_HEADERS = frozenset(
     ]
 )
 
-_FILENAME_STAR_RFC5987 = re.compile(r"([\w-]+)'[\w]*'(.+)")
+_FILENAME_STAR_RFC8187 = re.compile(r"([\w-]+)'[\w]*'(.+)")
 
 _CRLF = b'\r\n'
 _CRLF_CRLF = _CRLF + _CRLF
@@ -202,9 +202,9 @@ class BodyPart:
 
             _, params = self._content_disposition
 
-            # NOTE(vytas): Supporting filename* as per RFC 5987, as that has
+            # NOTE(vytas): Supporting filename* as per RFC 8187, as that has
             #   been spotted in the wild, even though RFC 7578 forbids it.
-            match = _FILENAME_STAR_RFC5987.match(params.get('filename*', ''))
+            match = _FILENAME_STAR_RFC8187.match(params.get('filename*', ''))
             if match:
                 charset, filename_raw = match.groups()
                 try:

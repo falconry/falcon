@@ -531,7 +531,7 @@ def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | N
 
 
 def unquote_string(quoted: str) -> str:
-    """Unquote an RFC 7320 "quoted-string".
+    """Unquote an RFC 9110 "quoted-string".
 
     Args:
         quoted (str): Original quoted string
@@ -552,7 +552,7 @@ def unquote_string(quoted: str) -> str:
     tmp_quoted = quoted[1:-1]
 
     # PERF(philiptzou): Most header strings don't contain "quoted-pair" which
-    # defined by RFC 7320. We use this little trick (quick string search) to
+    # defined by RFC 9110. We use this little trick (quick string search) to
     # speed up string parsing by preventing unnecessary processes if possible.
     if '\\' not in tmp_quoted:
         return tmp_quoted

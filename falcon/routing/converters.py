@@ -211,7 +211,7 @@ class UUIDConverter(BaseConverter):
     Identifier: `uuid`
 
     In order to be converted, the field value must consist of a
-    string of 32 hexadecimal digits, as defined in RFC 4122, Section 3.
+    string of 32 hexadecimal digits, as defined in RFC 9562, Section 4.
     Note, however, that hyphens and the URN prefix are optional.
     """
 
