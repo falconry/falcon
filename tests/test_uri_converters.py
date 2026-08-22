@@ -213,3 +213,30 @@ def test_regex_converter(value, pattern, expected):
 def test_regex_converter_no_match(value, pattern):
     c = converters.RegexConverter(pattern)
     assert c.convert(value) is None
+
+
+@pytest.mark.parametrize(
+        "pattern",
+        [
+            "[",              # unterminated character set
+            "(",              # unterminated group
+            "*",              # nothing to repeat
+            "(?P<name>",      # unterminated named group
+            "a{2,1}",         # min repeat greater than max
+            "(?P<1invalid>x)",# invalid group name
+            "\\",             # trailing backslash
+        ],
+    )
+def test_regex_converter_invalid_pattern_raises_value_error(pattern):
+    with pytest.raises(ValueError, match=r'invalid regex pattern for RegexConverter'):
+        converters.RegexConverter(pattern)
+
+
+@pytest.mark.parametrize(
+    'pattern',
+    ['[', '(', '*'],
+)
+def test_regex_converter_invalid_pattern_error_message_includes_pattern(pattern):
+    with pytest.raises(ValueError) as exc_info:
+        converters.RegexConverter(pattern)
+    assert repr(pattern) in str(exc_info.value)
