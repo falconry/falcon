@@ -1,0 +1,1 @@
+New `RegexConverter` has been added to support regex based path variable matching when registering new routes. The newly added converter has been added as a builtin converter.

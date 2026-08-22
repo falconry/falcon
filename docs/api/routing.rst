@@ -295,6 +295,7 @@ Built-in Converters
  ``dt``        :class:`~.DateTimeConverter`       ``/logs/{day:dt("%Y-%m-%d")}``
  ``float``     :class:`~.FloatConverter`          ``/python/versions/{version:float(min=3.7)}``
  ``path``      :class:`~.PathConverter`           ``/prefix/{other:path}``
+ ``regex``     :class:`~.RegexConverter`          ``/prefix/{name:regex([a-zA-z])}``
 ============  =================================  ==================================================================
 
 |
@@ -312,6 +313,9 @@ Built-in Converters
     :members:
 
 .. autoclass:: falcon.routing.PathConverter
+    :members:
+
+.. autoclass:: falcon.routing.RegexConverter
     :members:
 
 .. _routing_custom_converters:
