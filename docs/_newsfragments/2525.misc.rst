@@ -1,0 +1,2 @@
+Citations of obsolete HTTP specifications (RFC 2616 and RFC 7230–7235) have been
+updated to the current HTTP standards (RFC 9110, RFC 9111, and RFC 9112).
