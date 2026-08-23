@@ -1,0 +1,2 @@
+Add lightweight public ASGI scope ``TypedDict`` definitions and use them to
+improve typing for ``falcon.asgi.Request.scope`` and related ASGI internals.

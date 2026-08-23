@@ -57,6 +57,7 @@ from falcon.errors import CompatibilityError
 from falcon.media import MessagePackHandler
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
+from falcon.typing import ASGILifespanScope
 from falcon.typing import Headers
 from falcon.util import async_to_sync
 from falcon.util import CaseInsensitiveDict
@@ -924,7 +925,7 @@ async def _simulate_request_asgi(
             'Please use the method parameter.'
         )
 
-    http_scope.update(extras)
+    cast(dict[str, Any], http_scope).update(extras)
     # ---------------------------------------------------------------------
 
     if asgi_disconnect_ttl == 0:  # Special case
@@ -971,8 +972,8 @@ async def _simulate_request_asgi(
     # ---------------------------------------------------------------------
     # NOTE(kgriffs): 'lifespan' scope
     # ---------------------------------------------------------------------
-    lifespan_scope = {
-        'type': ScopeType.LIFESPAN,
+    lifespan_scope: ASGILifespanScope = {
+        'type': 'lifespan',
         'asgi': {
             'version': '3.0',
             'spec_version': '2.0',
@@ -1130,8 +1131,8 @@ class ASGIConductor:
         self._lifespan_task: asyncio.Task[Any] | None = None
 
     async def __aenter__(self) -> ASGIConductor:
-        lifespan_scope = {
-            'type': ScopeType.LIFESPAN,
+        lifespan_scope: ASGILifespanScope = {
+            'type': 'lifespan',
             'asgi': {
                 'version': '3.0',
                 'spec_version': '2.0',

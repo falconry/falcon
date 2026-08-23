@@ -34,6 +34,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from falcon.typing import ASGILifespanScope
 
 # NOTE(vytas): Mypy still struggles to handle a conditional import in the EAFP
 #   fashion, so we branch on Py version instead (which it does understand).
@@ -260,7 +261,7 @@ class AsgiMiddlewareWithProcessStartup(Protocol):
     """ASGI middleware with startup handler."""
 
     async def process_startup(
-        self, scope: Mapping[str, Any], event: Mapping[str, Any]
+        self, scope: ASGILifespanScope, event: Mapping[str, Any]
     ) -> None: ...
 
 
@@ -268,7 +269,7 @@ class AsgiMiddlewareWithProcessShutdown(Protocol):
     """ASGI middleware with shutdown handler."""
 
     async def process_shutdown(
-        self, scope: Mapping[str, Any], event: Mapping[str, Any]
+        self, scope: ASGILifespanScope, event: Mapping[str, Any]
     ) -> None: ...
 
 

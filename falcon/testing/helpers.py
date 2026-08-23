@@ -44,6 +44,7 @@ import time
 from typing import (
     Any,
     Callable,
+    cast,
     TextIO,
 )
 
@@ -59,6 +60,8 @@ from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
+from falcon.typing import ASGIHTTPScope
+from falcon.typing import ASGIWebSocketScope
 from falcon.util import code_to_http_status
 from falcon.util import uri
 from falcon.util.mediatypes import parse_header
@@ -911,7 +914,7 @@ def create_scope(
     content_length: int | None = None,
     include_server: bool = True,
     cookies: CookieArg | None = None,
-) -> dict[str, Any]:
+) -> ASGIHTTPScope:
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -980,7 +983,7 @@ def create_scope(
         raise ValueError("query_string should not start with '?'")
 
     scope: dict[str, Any] = {
-        'type': ScopeType.HTTP,
+        'type': 'http',
         'asgi': {
             'version': '3.0',
             'spec_version': '2.1',
@@ -1039,7 +1042,7 @@ def create_scope(
         scope, headers, content_length, host, port, scheme, http_version, cookies
     )
 
-    return scope
+    return cast(ASGIHTTPScope, scope)
 
 
 def create_scope_ws(
@@ -1055,7 +1058,7 @@ def create_scope_ws(
     include_server: bool = True,
     subprotocols: str | None = None,
     spec_version: str = '2.1',
-) -> dict[str, Any]:
+) -> ASGIWebSocketScope:
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1100,7 +1103,9 @@ def create_scope_ws(
             advertise to the server (default ``[]``).
     """
 
-    scope = create_scope(
+    scope = cast(
+        dict[str, Any],
+        create_scope(
         path=path,
         query_string=query_string,
         headers=headers,
@@ -1111,9 +1116,10 @@ def create_scope_ws(
         remote_addr=remote_addr,
         root_path=root_path,
         include_server=include_server,
+        ),
     )
 
-    scope['type'] = ScopeType.WS
+    scope['type'] = 'websocket'
     scope['asgi']['spec_version'] = spec_version
     del scope['method']
 
@@ -1122,7 +1128,7 @@ def create_scope_ws(
     if subprotocols is not None:
         scope['subprotocols'] = subprotocols
 
-    return scope
+    return cast(ASGIWebSocketScope, scope)
 
 
 def create_environ(

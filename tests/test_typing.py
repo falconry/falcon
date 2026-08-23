@@ -7,6 +7,7 @@ from uuid import UUID
 import falcon
 import falcon.asgi
 import falcon.testing
+from falcon.typing import ASGIConnectionScope
 
 
 @dataclass
@@ -133,6 +134,22 @@ async def sink_fancy_async_both(
         _sink_impl(req, resp)
         resp.context.comment += ' (sink)'
         resp.media.update(comment=resp.context.comment)
+
+
+def _exercise_asgi_scope_typing(req: FancyAsyncRequest) -> None:
+    scope: ASGIConnectionScope = req.scope
+
+    scheme: str = scope.get('scheme', 'http')
+    root_path: str = scope.get('root_path', '')
+    assert scheme
+    assert root_path == root_path
+
+    if scope['type'] == 'http':
+        method: str = scope['method']
+        assert method
+    else:
+        subprotocols = tuple(scope.get('subprotocols', ()))
+        assert isinstance(subprotocols, tuple)
 
 
 # NOTE(vytas): We don't use fixtures here because that is hard to marry to strict
