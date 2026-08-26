@@ -115,7 +115,6 @@ module = [
     "msgpack",
     "mujson",
     "pyximport",
-    "testtools",
     "uvicorn"
 ]
 ignore_missing_imports = true

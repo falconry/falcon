@@ -1,0 +1,10 @@
+The optional :mod:`testtools` integration in
+:class:`~falcon.testing.TestCase` could trip up ``mypy`` when
+:mod:`testtools` was installed in the environment, since the module is
+conditionally imported under the same name as the standard library's
+:mod:`unittest`. The import is now hidden from type checkers (which
+always see it as :mod:`unittest`), while the runtime behavior of
+preferring :mod:`testtools` when available is unchanged. The
+:class:`~falcon.testing.TestCase` docstring was also reworded to
+clarify that using :mod:`testtools` is not the recommended way to test
+a Falcon app, and points to the pytest-based tutorial instead.

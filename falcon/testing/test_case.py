@@ -18,12 +18,15 @@ This package includes a unittest-style base class and requests-like
 utilities for simulating and validating HTTP requests.
 """
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-try:
-    import testtools as unittest
-except ImportError:  # pragma: nocover
+if TYPE_CHECKING:
     import unittest
+else:
+    try:
+        import testtools as unittest
+    except ImportError:  # pragma: nocover
+        import unittest
 
 import falcon
 import falcon.request
@@ -33,12 +36,16 @@ from falcon.testing.client import Result  # NOQA
 from falcon.testing.client import TestClient
 
 
-class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
+class TestCase(unittest.TestCase, TestClient):
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
         If available, uses :mod:`testtools` in lieu of
-        :mod:`unittest`.
+        :mod:`unittest`. This is purely a runtime convenience for
+        projects that already depend on :mod:`testtools`; it is not
+        the recommended way to test a Falcon app. For new projects,
+        we recommend following the :ref:`pytest-based tutorial
+        <testing_tutorial>` instead.
 
     This base class provides some extra plumbing for unittest-style
     test cases, to help simulate WSGI or ASGI requests without having
