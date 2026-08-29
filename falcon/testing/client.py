@@ -1211,10 +1211,12 @@ class ASGIConductor:
 
         return _AsyncContextManager(self.simulate_request('GET', path, **kwargs))
 
-    def simulate_ws(self, path: str = '/', **kwargs: Any) -> _WSContextManager:
+    def simulate_ws(
+        self, path: str = '/', timeout: float | None = None, **kwargs: Any
+    ) -> helpers._WSContextManager:
         """Simulate a WebSocket connection to an ASGI application.
 
-        All keyword arguments are passed through to
+        All keyword arguments (except `timeout`) are passed through to
         :meth:`falcon.testing.create_scope_ws`.
 
         This method returns an async context manager that can be used to obtain
@@ -1230,14 +1232,19 @@ class ASGIConductor:
                 while some_condition:
                     message = await ws.receive_text()
 
+        Keyword Args:
+            timeout (float): todo writeme
+
+                .. versionadded:: 4.4
+                    The `timeout` keyword argument.
         """
 
         scope = helpers.create_scope_ws(path=path, **kwargs)
-        ws = helpers.ASGIWebSocketSimulator()
+        ws = helpers.ASGIWebSocketSimulator(timeout)
 
         task_req = asyncio.create_task(self.app(scope, ws._emit, ws._collect))
 
-        return _WSContextManager(ws, task_req)
+        return helpers._WSContextManager(ws, task_req, timeout)
 
     async def simulate_head(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a HEAD request to an ASGI application.
@@ -2281,43 +2288,6 @@ class _AsyncContextManager:
         assert self._obj is not None
         await self._obj.finalize()
         self._obj = None
-
-
-class _WSContextManager:
-    def __init__(
-        self, ws: helpers.ASGIWebSocketSimulator, task_req: asyncio.Task[Any]
-    ) -> None:
-        self._ws = ws
-        self._task_req = task_req
-
-    async def __aenter__(self) -> helpers.ASGIWebSocketSimulator:
-        ready_waiter = asyncio.create_task(self._ws.wait_ready())
-
-        # NOTE(kgriffs): Wait on both so that in the case that the request
-        #   task raises an error, we don't just end up masking it with an
-        #   asyncio.TimeoutError.
-        await asyncio.wait(
-            [ready_waiter, self._task_req],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-        if ready_waiter.done():
-            await ready_waiter
-        else:
-            # NOTE(kgriffs): Retrieve the exception, if any
-            await self._task_req
-
-            # NOTE(kgriffs): This should complete gracefully (without a
-            #   timeout). It may raise WebSocketDisconnected, but that
-            #   is expected and desired for "normal" reasons that the
-            #   request task finished without accepting the connection.
-            await ready_waiter
-
-        return self._ws
-
-    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
-        await self._ws.close()
-        await self._task_req
 
 
 def _prepare_sim_args(
