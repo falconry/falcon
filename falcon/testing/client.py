@@ -1233,7 +1233,13 @@ class ASGIConductor:
                     message = await ws.receive_text()
 
         Keyword Args:
-            timeout (float): todo writeme
+            timeout (float): Number of seconds to wait before giving up and
+                raising :class:`TimeoutError`.
+
+                This applies both when waiting for the app to accept or deny
+                the connection (default: 5 seconds), and when waiting for
+                the app's task to complete after the context is exited and
+                the connection is closed (default: 30 seconds).
 
                 .. versionadded:: 4.4
                     The `timeout` keyword argument.

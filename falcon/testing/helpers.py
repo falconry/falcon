@@ -439,6 +439,12 @@ class _WSContextManager:
         try:
             await asyncio.wait_for(self._task_req, self._close_timeout)
         except asyncio.TimeoutError:
+            # TODO(vytas): Here we catch and reraise asyncio.TimeoutError,
+            #   which is a deprecated alias of the built-in TimeoutError since
+            #   Python 3.11; however, we still support 3.10 in the Falcon 4.x
+            #   series.
+            #   In Falcon 5.0, change this and other instances in this file to
+            #   reference TimeoutError directly.
             raise asyncio.TimeoutError(
                 f'Timed out after waiting {self._close_timeout} seconds for '
                 f'the WebSocket task to complete. Check the on_websocket '
