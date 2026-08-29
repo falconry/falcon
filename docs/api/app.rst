@@ -43,5 +43,5 @@ Options
     :members:
 
 .. _compiled_router_options:
-.. autoclass:: falcon.routing.CompiledRouterOptions
+.. autoclass:: falcon.routing.firstOptions
     :members:
