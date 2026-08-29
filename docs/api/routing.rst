@@ -184,7 +184,7 @@ data to hooks and middleware methods.
 .. note::
     Rather than directly manipulate the :class:`~.falcon.Response`
     object, a responder may raise an instance of either
-    :class:`~.HTTPError` or :class:`~.HTTPStatus`. Falcon will
+    :class:`~.HTTPError` or :class:`~.raised.`. Falcon will
     convert these exceptions to appropriate HTTP responses.
     Alternatively, you can handle them yourself via
     :meth:`~.falcon.App.add_error_handler`.
