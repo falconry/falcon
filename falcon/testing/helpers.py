@@ -411,25 +411,36 @@ class _WSContextManager:
     async def __aenter__(self) -> ASGIWebSocketSimulator:
         ready_waiter = asyncio.create_task(self._ws.wait_ready())
 
-        # NOTE(kgriffs): Wait on both so that in the case that the request
-        #   task raises an error, we don't just end up masking it with an
-        #   asyncio.TimeoutError.
-        await asyncio.wait(
-            [ready_waiter, self._task_req],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
+        try:
+            # NOTE(kgriffs): Wait on both so that in the case that the request
+            #   task raises an error, we don't just end up masking it with an
+            #   asyncio.TimeoutError.
+            await asyncio.wait(
+                [ready_waiter, self._task_req],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
 
-        if ready_waiter.done():
-            await ready_waiter
-        else:
-            # NOTE(kgriffs): Retrieve the exception, if any
-            await self._task_req
+            if ready_waiter.done():
+                await ready_waiter
+            else:
+                # NOTE(kgriffs): Retrieve the exception, if any
+                await self._task_req
 
-            # NOTE(kgriffs): This should complete gracefully (without a
-            #   timeout). It may raise WebSocketDisconnected, but that
-            #   is expected and desired for "normal" reasons that the
-            #   request task finished without accepting the connection.
-            await ready_waiter
+                # NOTE(kgriffs): This should complete gracefully (without a
+                #   timeout). It may raise WebSocketDisconnected, but that
+                #   is expected and desired for "normal" reasons that the
+                #   request task finished without accepting the connection.
+                await ready_waiter
+
+        except (Exception, asyncio.CancelledError):
+            # NOTE(vytas): Clean up if we failed to __enter__, e.g., the
+            #   handshake timed out, the app raised, or we were cancelled.
+            # NOTE(vytas): CancelledError is subclassed directly from
+            #   BaseException on 3.8+, hence the explicit inclusion; we only
+            #   cancel() the other tasks and immediately re-raise.
+            self._task_req.cancel()
+            ready_waiter.cancel()
+            raise
 
         return self._ws
 
@@ -549,13 +560,12 @@ class ASGIWebSocketSimulator:
         try:
             await asyncio.wait_for(self._event_handshake_complete.wait(), timeout)
         except asyncio.TimeoutError:
-            msg = (
+            raise asyncio.TimeoutError(
                 f'Timed out after waiting {timeout} seconds for the WebSocket '
                 f'handshake to complete. Check the on_websocket responder and '
                 f'any middleware for any conditions that may be stalling the '
                 f'request flow.'
             )
-            raise asyncio.TimeoutError(msg)
 
         self._require_accepted()
 
