@@ -1239,6 +1239,49 @@ The application can then be used as
     app.add_route('/conn', num)
     app.add_route('/pool', num, suffix='with_pool')
 
+What is a good layout for a Falcon app?
+---------------------------------------
+
+Falcon does not prescribe a project layout, but a small app often works well
+with the application entry point kept separate from resource and storage
+classes::
+
+    look
+    ├── look
+    │   ├── __init__.py
+    │   ├── app.py
+    │   └── images.py
+    └── tests
+        └── test_app.py
+
+In ``app.py``, keep route registration centralized and expose an app factory
+that accepts dependencies. Tests can then pass fakes or mocks, while the server
+entry point can create production dependencies from configuration:
+
+.. code:: python
+
+    import falcon
+
+    from .images import Collection
+    from .images import ImageStore
+    from .images import Item
+
+
+    def create_app(image_store):
+        app = falcon.App()
+        app.add_route('/images', Collection(image_store))
+        app.add_route('/images/{name}', Item(image_store))
+        return app
+
+
+    def get_app():
+        return create_app(ImageStore('/var/lib/look'))
+
+Place resource classes and their related collaborators in modules such as
+``images.py``. As the app grows, split modules by resource area rather than by
+framework concept so routes, resources, and dependencies remain easy to trace.
+The :ref:`WSGI tutorial <tutorial>` develops this layout step by step.
+
 .. _configuration-approaches:
 
 What is the recommended approach for app configuration?
