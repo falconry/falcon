@@ -585,7 +585,7 @@ Note that this example assumes that the
             proper_thing = self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/{}/things/{}'.format(user_id, proper_thing['id'])
+            resp.location = f'/{user_id}/things/{proper_thing["id"]}'
 
 
     # Configure your WSGI server to load "things.app" (app is a WSGI callable)
@@ -803,7 +803,7 @@ Here's the ASGI version of the app from above. Note that it uses the
             proper_thing = await self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
+            resp.location = f'/{user_id}/things/{proper_thing["id"]}'
 
 
     # The app instance is an ASGI callable

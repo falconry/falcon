@@ -143,7 +143,7 @@ class ThingsResource:
         proper_thing = self.db.add_thing(doc)
 
         resp.status = falcon.HTTP_201
-        resp.location = '/{}/things/{}'.format(user_id, proper_thing['id'])
+        resp.location = f'/{user_id}/things/{proper_thing["id"]}'
 
 
 # Configure your WSGI server to load "things.app" (app is a WSGI callable)

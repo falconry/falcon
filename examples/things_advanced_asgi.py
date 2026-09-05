@@ -149,7 +149,7 @@ class ThingsResource:
         proper_thing = await self.db.add_thing(doc)
 
         resp.status = falcon.HTTP_201
-        resp.location = '/{}/things/{}'.format(user_id, proper_thing['id'])
+        resp.location = f'/{user_id}/things/{proper_thing["id"]}'
 
 
 # The app instance is an ASGI callable
