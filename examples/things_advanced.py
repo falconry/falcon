@@ -1,6 +1,5 @@
 # examples/things_advanced.py
 
-import json
 import logging
 import uuid
 from wsgiref import simple_server
@@ -92,46 +91,6 @@ class RequireJSON:
                 )
 
 
-class JSONTranslator:
-    # NOTE: Normally you would simply use req.media and resp.media for
-    # this particular use case; this example serves only to illustrate
-    # what is possible.
-
-    def process_request(self, req, resp):
-        # req.stream corresponds to the WSGI wsgi.input environ variable,
-        # and allows you to read bytes from the request body.
-        #
-        # See also: PEP 3333
-        if req.content_length in (None, 0):
-            # Nothing to do
-            return
-
-        body = req.bounded_stream.read()
-        if not body:
-            raise falcon.HTTPBadRequest(
-                title='Empty request body',
-                description='A valid JSON document is required.',
-            )
-
-        try:
-            req.context.doc = json.loads(body.decode('utf-8'))
-
-        except (ValueError, UnicodeDecodeError):
-            description = (
-                'Could not decode the request body. The '
-                'JSON was incorrect or not encoded as '
-                'UTF-8.'
-            )
-
-            raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
-
-    def process_response(self, req, resp, resource, req_succeeded):
-        if not hasattr(resp.context, 'result'):
-            return
-
-        resp.text = json.dumps(resp.context.result)
-
-
 def max_body(limit):
     def hook(req, resp, resource, params):
         length = req.content_length
@@ -172,29 +131,19 @@ class ThingsResource:
                 title='Service Outage', description=description, retry_after=30
             )
 
-        # NOTE: Normally you would use resp.media for this sort of thing;
-        # this example serves only to demonstrate how the context can be
-        # used to pass arbitrary values between middleware components,
-        # hooks, and resources.
-        resp.context.result = result
+        resp.media = result
 
         resp.set_header('Powered-By', 'Falcon')
         resp.status = falcon.HTTP_200
 
     @falcon.before(max_body(64 * 1024))
     def on_post(self, req, resp, user_id):
-        try:
-            doc = req.context.doc
-        except AttributeError:
-            raise falcon.HTTPBadRequest(
-                title='Missing thing',
-                description='A thing must be submitted in the request body.',
-            )
+        doc = req.get_media()
 
         proper_thing = self.db.add_thing(doc)
 
         resp.status = falcon.HTTP_201
-        resp.location = '/{}/things/{}'.format(user_id, proper_thing['id'])
+        resp.location = f'/{user_id}/things/{proper_thing["id"]}'
 
 
 # Configure your WSGI server to load "things.app" (app is a WSGI callable)
@@ -202,7 +151,6 @@ app = falcon.App(
     middleware=[
         AuthMiddleware(),
         RequireJSON(),
-        JSONTranslator(),
     ]
 )
 
