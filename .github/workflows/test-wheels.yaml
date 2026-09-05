@@ -7,6 +7,10 @@ on:
   push:
     branches:
       - master
+  # TODO(vytas): Remove when demonstrated to pass.
+  pull_request:
+    branches:
+      - master
 
 jobs:
   test-emulated:
@@ -46,11 +50,11 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@294735312765b09d24a2fbec22660ce817587d55 # v4.1.0
+        uses: pypa/cibuildwheel@1828c10ab37f080699c7b81cea34097c684a7074 # v4.2.0
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).
-          CIBW_ENABLE: cpython-prerelease
+          # CIBW_ENABLE: cpython-prerelease
 
           CIBW_ARCHS_LINUX: all
           CIBW_BUILD: ${{ matrix.platform.build }}
