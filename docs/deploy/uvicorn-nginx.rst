@@ -20,43 +20,7 @@ For local development and learning, see the :ref:`ASGI tutorial <tutorial-asgi>`
 and :ref:`ASGI server installation <install_asgi_server>`.
 
 
-Running your Application as a Different User
-''''''''''''''''''''''''''''''''''''''''''''
-
-It is best to execute the application as a different OS user than the one who
-owns the source code for your application. The application user should *NOT*
-have write access to your source. This mitigates the chance that someone could
-write a malicious Python file to your source directory through an upload
-endpoint you might define; when your application restarts, the malicious file is
-loaded and proceeds to cause any number of Bad Things™ to happen.
-
-.. code:: sh
-
-  $ useradd myproject --create-home
-  $ useradd myproject-runner --no-create-home
-
-It is helpful to switch to the project user (myproject) and use the home
-directory as the application environment.
-
-If you are working on a remote server, switch to the myproject user and pull
-down the source code for your application.
-
-.. code:: sh
-
-  $ git clone git@github.com/myorg/myproject.git /home/myproject/src
-
-
-.. note::
-
-  You could use a tarball, zip file, scp or any other means to get your source
-  onto a server.
-
-Next, create a virtual environment which can be used to install your
-dependencies.
-
-.. code:: sh
-
-  $ python3 -m venv /home/myproject/venv
+.. include:: _includes/run-as-different-user.rst
 
 Then install your dependencies, including Uvicorn. For CPython-based production
 deployments, prefer the ``uvicorn[standard]`` extra so that optimized
@@ -70,13 +34,7 @@ dependencies such as ``uvloop`` and ``httptools`` are available (see also
   $ /home/myproject/venv/bin/pip install 'uvicorn[standard]'
 
 
-.. note::
-
-  The exact commands for creating a virtual environment might differ based on
-  the Python version you are using and your operating system. At the end of the
-  day the application needs a virtualenv in /home/myproject/venv with the
-  project dependencies installed. Use the ``pip`` binary within the virtual
-  environment by ``source venv/bin/activate`` or using the full path.
+.. include:: _includes/venv-note.rst
 
 
 Preparing your Application for Service
@@ -137,7 +95,7 @@ public internet) is the front door:
       --port 8000 \
       --workers 2 \
       --proxy-headers \
-      --forwarded-allow-ips='127.0.0.1'
+      --forwarded-allow-ips=127.0.0.1
 
 Run the process as the ``myproject-runner`` user so that the application does
 not have write access to the source tree (same rationale as the uWSGI
@@ -234,6 +192,11 @@ Then, create an NGINX conf file that looks something like this:
 .. code-block:: nginx
   :caption: /etc/nginx/sites-available/myproject.conf
 
+  map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+  }
+
   # Redirect HTTP to HTTPS
   server {
     listen 80;
@@ -266,33 +229,22 @@ Then, create an NGINX conf file that looks something like this:
       # WebSocket support (ASGI)
       proxy_http_version 1.1;
       proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
+      proxy_set_header Connection $connection_upgrade;
     }
   }
 
+.. include:: _includes/tls-note.rst
+
 .. note::
 
-  The above configuration includes HTTPS with a redirect from HTTP, using
-  certificate paths typical of `Let's Encrypt`_. For a plain HTTP-only
-  configuration (e.g., during development), you can simplify to a single
-  ``server`` block listening on port 80 without the ``ssl_*`` directives.
+  The ``map`` plus ``Upgrade`` / ``Connection`` headers are required for
+  WebSocket proxying. The map keeps ordinary HTTP requests from being forced
+  to ``Connection: upgrade``. If your application does not use WebSockets, you
+  may omit the ``map`` block, those two ``proxy_set_header`` lines, and the
+  ``proxy_http_version`` directive; keep the ``X-Forwarded-*`` headers whenever
+  Uvicorn is configured with ``--proxy-headers``.
 
-  For production deployments, use the `Mozilla SSL Configuration Generator`_
-  to generate a configuration tuned to your requirements.
-
-  The ``Upgrade`` / ``Connection`` headers are required for WebSocket proxying.
-  If your application does not use WebSockets, you may omit those two
-  ``proxy_set_header`` lines and the ``proxy_http_version`` directive; keep the
-  ``X-Forwarded-*`` headers whenever Uvicorn is configured with
-  ``--proxy-headers``.
-
-.. _`Mozilla SSL Configuration Generator`: https://ssl-config.mozilla.org/#server=nginx
-
-Finally, start (or restart) NGINX:
-
-.. code-block:: sh
-
-  $ sudo service start nginx
+.. include:: _includes/start-nginx.rst
 
 You should now have a working application. Check your Uvicorn (journal) and
 NGINX logs for errors if the application does not start.
@@ -301,11 +253,10 @@ NGINX logs for errors if the application does not start.
 Further Considerations
 ''''''''''''''''''''''
 
-The NGINX configuration above includes TLS (HTTPS) using `Let's Encrypt`_, which
-offers free, short-term certificates with auto-renewal. Visit the `Let's Encrypt site`_
-to learn how to set up certificates for your domain. Prefer terminating TLS at
-NGINX (or another reverse proxy) rather than configuring certificates on Uvicorn
-itself for this style of deployment.
+.. include:: _includes/letsencrypt-further.rst
+
+Prefer terminating TLS at NGINX (or another reverse proxy) rather than
+configuring certificates on Uvicorn itself for this style of deployment.
 
 Uvicorn supports the ASGI lifespan protocol, which Falcon uses for application
 startup and shutdown hooks. Keep lifespan enabled (the Uvicorn default) unless
@@ -318,12 +269,7 @@ Only trust forwarded headers from your reverse proxy. Misconfigured
 ``--forwarded-allow-ips`` (for example, allowing ``*`` on a public interface)
 can let clients spoof scheme or client IP information.
 
-In addition to setting up NGINX and Uvicorn to run your application, you will of
-course need to deploy a database server or any other services required by your
-application. Due to the wide variety of options and considerations in this
-space, we have chosen not to include ancillary services in this guide. However,
-the Falcon community is always happy to help with deployment questions, so
-`please don't hesitate to ask <https://falcon.readthedocs.io/en/stable/community/help.html#chat>`_.
+.. include:: _includes/ancillary-services.rst
 
 See also:
 
