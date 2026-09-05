@@ -95,6 +95,10 @@ class RequireJSON:
 
 def max_body(limit):
     async def hook(req, resp, resource, params):
+        # NOTE: The limit is enforced via the Content-Length header,
+        #   which is not present in the case of a request using chunked
+        #   transfer encoding (req.content_length would be None), so
+        #   streamed request bodies cannot be limited with this hook.
         length = req.content_length
         if length is not None and length > limit:
             msg = (
