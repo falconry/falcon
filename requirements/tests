@@ -17,7 +17,9 @@ ujson
 
 # it's slow to compile on emulated architectures; wheels missing for some EoL interpreters
 # (and there is a new issue with building on PyPy in Actions, but we don't really need to test it with PyPy)
-python-rapidjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
+# and 3.9 support was dropped upstream, but without a pip-friendly requires-python
+# (see https://github.com/python-rapidjson/python-rapidjson/issues/240)
+python-rapidjson; python_version >= '3.10' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
 
 # wheels are missing some EoL interpreters and non-x86 platforms; build would fail unless rust is available
 # (not available for CPython 3.15 either yet)
