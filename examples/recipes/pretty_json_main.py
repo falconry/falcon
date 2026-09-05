@@ -1,4 +1,5 @@
 import json
+from typing import Any, IO, Optional
 
 import falcon
 
@@ -6,13 +7,15 @@ import falcon
 class CustomJSONHandler(falcon.media.BaseHandler):
     MAX_INDENT_LEVEL = 8
 
-    def deserialize(self, stream, content_type, content_length):
+    def deserialize(
+        self, stream: IO[bytes], content_type: str, content_length: int
+    ) -> Any:
         data = stream.read()
         return json.loads(data.decode())
 
-    def serialize(self, media, content_type):
+    def serialize(self, media: Any, content_type: str) -> bytes:
         _, params = falcon.parse_header(content_type)
-        indent = params.get('indent')
+        indent: Optional[int] = params.get('indent')
         if indent is not None:
             try:
                 indent = int(indent)
