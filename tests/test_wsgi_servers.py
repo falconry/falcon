@@ -105,9 +105,14 @@ def _uvicorn_args(host, port):
 
 
 def _uwsgi_args(host, port):
-    """uWSGI"""
+    """uWSGI (via pyuwsgi)"""
+
+    pytest.importorskip('pyuwsgi')
+
     return (
-        'uwsgi',
+        sys.executable,
+        '-c',
+        'import pyuwsgi; pyuwsgi.run()',
         '--http',
         f'{host}:{port}',
         '--wsgi-file',
