@@ -175,9 +175,13 @@ Conversely, in order to run an ``async``
 `ASGI <https://asgi.readthedocs.io/en/latest/>`_ application server
 (Falcon only supports ASGI 3.0+, aka the single-callable application style).
 
-Uvicorn is a popular choice, owing to its fast and stable
+`Uvicorn <https://uvicorn.dev/>`__ is a popular choice, owing to its fast
 implementation. What is more, Uvicorn is supported on Windows, and on PyPy
 (however, both at a performance loss compared to CPython on Unix-like systems).
+
+`Granian <https://github.com/emmett-framework/granian>`__ is another very
+performant and stable option (often outperforming Uvicorn on both throughput
+and predictable latency).
 
 Falcon is also regularly tested against Daphne, the current ASGI reference
 server.
@@ -187,7 +191,7 @@ For a more in-depth overview of available servers, see also:
 
 .. code:: bash
 
-    $ pip install [uvicorn|daphne|hypercorn]
+    $ pip install [uvicorn|granian|hypercorn]
 
 .. note::
 
@@ -200,7 +204,7 @@ For a more in-depth overview of available servers, see also:
         $ pip install uvicorn[standard]
 
     See also a longer explanation on Uvicorn's website:
-    `Quickstart <https://www.uvicorn.org/#quickstart>`_.
+    `Optional Dependencies <https://uvicorn.dev/installation/#optional-dependencies>`__.
 
 .. _source_code:
 
