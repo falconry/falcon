@@ -395,6 +395,31 @@ def test_uuid_converter_complex_segment(client, resource):
 @pytest.mark.parametrize(
     'uri_template, path, expected',
     [
+        (
+            r'/{product:regex(r"product-(?P<product_id>\d+)")}',
+            '/product-1337',
+            {'product': 'product-1337'},
+        ),
+        (
+            r'/{product:regex(r"product-(?P<product_id>\d+)", "product_id")}',
+            '/product-1337',
+            {'product': '1337'},
+        ),
+    ],
+)
+def test_regex_converter(client, resource, uri_template, path, expected):
+    client.app.add_route(uri_template, resource)
+
+    result = client.simulate_get(path)
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs == expected
+
+
+@pytest.mark.parametrize(
+    'uri_template, path, expected',
+    [
         ('/{food:spam}', '/something', {'food': 'spam!'}),
         (
             '/{food:spam(")")}:{food_too:spam("()")}',
