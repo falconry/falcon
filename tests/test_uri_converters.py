@@ -240,3 +240,29 @@ def test_regex_converter_invalid_pattern_error_message_includes_pattern(pattern)
 def test_regex_converter_invalid_pattern_raises_value_error(pattern):
     with pytest.raises(ValueError, match=r'invalid regex pattern for RegexConverter'):
         converters.RegexConverter(pattern)
+
+
+def test_regex_converter_bytes_pattern():
+    with pytest.raises(ValueError):
+        converters.RegexConverter(b'bytes')
+
+
+def test_regex_converter_invalid_group():
+    with pytest.raises(ValueError):
+        converters.RegexConverter('wow such pattern', group='missing')
+
+
+@pytest.mark.parametrize(
+    'pattern, group, value, expected',
+    [
+        (r'product-(?P<product_id>\d+-\d+)', 'product_id', 'product-13-37', '13-37'),
+        (r'date_(?P<year>\d\d\d\d)?-\d\d-\d\d', 'year', 'date_2026-09-01', '2026'),
+        (r'date_(?P<year>\d\d\d\d)?-\d\d-\d\d', 'year', 'date_09-01', None),
+    ],
+)
+def test_regex_converter_with_group(pattern, group, value, expected):
+    c = converters.RegexConverter(pattern, group)
+    if expected is None:
+        assert c.convert(value) is None
+    else:
+        assert c.convert(value) == expected
