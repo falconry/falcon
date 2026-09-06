@@ -23,7 +23,9 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `alexchen-sys <https://github.com/alexchen-sys>`__
 - `apoorva-01 <https://github.com/apoorva-01>`__
+- `AshayK003 <https://github.com/AshayK003>`__
 - `CaselIT <https://github.com/CaselIT>`__
 - `chbndrhnns <https://github.com/chbndrhnns>`__
 - `KetanHegde <https://github.com/KetanHegde>`__

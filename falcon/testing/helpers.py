@@ -44,6 +44,7 @@ import time
 from typing import (
     Any,
     Callable,
+    Final,
     TextIO,
 )
 
@@ -394,6 +395,78 @@ class _WebSocketState(Enum):
     CLOSED = auto()
 
 
+class _WSContextManager:
+    _DEFAULT_CLOSE_TIMEOUT: Final[float] = 30.0
+
+    def __init__(
+        self,
+        ws: ASGIWebSocketSimulator,
+        task_req: asyncio.Task[Any],
+        close_timeout: float | None,
+    ) -> None:
+        self._ws = ws
+        self._task_req = task_req
+        self._close_timeout = close_timeout or self._DEFAULT_CLOSE_TIMEOUT
+
+    async def __aenter__(self) -> ASGIWebSocketSimulator:
+        ready_waiter = asyncio.create_task(self._ws.wait_ready())
+
+        try:
+            # NOTE(kgriffs): Wait on both so that in the case that the request
+            #   task raises an error, we don't just end up masking it with an
+            #   asyncio.TimeoutError.
+            await asyncio.wait(
+                [ready_waiter, self._task_req],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            if ready_waiter.done():
+                await ready_waiter
+            else:
+                # NOTE(kgriffs): Retrieve the exception, if any
+                await self._task_req
+
+                # NOTE(kgriffs): This should complete gracefully (without a
+                #   timeout). It may raise WebSocketDisconnected, but that
+                #   is expected and desired for "normal" reasons that the
+                #   request task finished without accepting the connection.
+                await ready_waiter
+
+        except (Exception, asyncio.CancelledError):
+            # NOTE(vytas): Clean up if we failed to __enter__, e.g., the
+            #   handshake timed out, the app raised, or we were cancelled.
+            # NOTE(vytas): CancelledError is subclassed directly from
+            #   BaseException on 3.8+, hence the explicit inclusion; we only
+            #   cancel() the other tasks and immediately re-raise.
+            self._task_req.cancel()
+            ready_waiter.cancel()
+            raise
+
+        return self._ws
+
+    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+        await self._ws.close()
+
+        try:
+            await asyncio.wait_for(self._task_req, self._close_timeout)
+        except asyncio.TimeoutError:
+            # TODO(vytas): Here we catch and reraise asyncio.TimeoutError,
+            #   which is a deprecated alias of the built-in TimeoutError since
+            #   Python 3.11; however, we still support 3.10 in the Falcon 4.x
+            #   series.
+            #   In Falcon 5.0, change this and other instances in this file to
+            #   reference TimeoutError directly.
+            raise asyncio.TimeoutError(
+                f'Timed out after waiting {self._close_timeout} seconds for '
+                f'the WebSocket task to complete. Check the on_websocket '
+                f'responder for any conditions that may be preventing the '
+                f'task from terminating cleanly. '
+                f'(If you intentionally want to test how a long running task is '
+                f'cancelled by the ASGI server, you can pass a short timeout '
+                f'value to simulate_ws, and catch this asyncio.TimeoutError.)'
+            )
+
+
 class ASGIWebSocketSimulator:
     """Simulates a WebSocket client for testing a Falcon ASGI app.
 
@@ -409,9 +482,9 @@ class ASGIWebSocketSimulator:
         :meth:`~falcon.testing.ASGIConductor.simulate_ws`.
     """
 
-    _DEFAULT_WAIT_READY_TIMEOUT = 5
+    _DEFAULT_WAIT_READY_TIMEOUT: Final[float] = 5.0
 
-    def __init__(self) -> None:
+    def __init__(self, _timeout: float | None = None) -> None:
         self.__msgpack = None
 
         self._state = _WebSocketState.CONNECT
@@ -424,6 +497,7 @@ class ASGIWebSocketSimulator:
         self._collected_client_events: deque[AsgiEvent] = deque()
 
         self._event_handshake_complete = asyncio.Event()
+        self._wait_ready_timeout = _timeout or self._DEFAULT_WAIT_READY_TIMEOUT
 
     @property
     def ready(self) -> bool:
@@ -469,7 +543,7 @@ class ASGIWebSocketSimulator:
         """  # noqa: D205
         return self._accepted_headers
 
-    async def wait_ready(self, timeout: int | None = None) -> None:
+    async def wait_ready(self, timeout: float | None = None) -> None:
         """Wait until the connection has been accepted or denied.
 
         This coroutine can be awaited in order to pause execution until the
@@ -477,22 +551,21 @@ class ASGIWebSocketSimulator:
         error will be raised to the caller.
 
         Keyword Args:
-            timeout (int): Number of seconds to wait before giving up and
-                raising an error (default: ``5``).
+            timeout (float): Number of seconds to wait before giving up and
+                raising an error (default: ``5.0``).
         """
 
-        timeout = timeout or self._DEFAULT_WAIT_READY_TIMEOUT
+        timeout = timeout or self._wait_ready_timeout
 
         try:
             await asyncio.wait_for(self._event_handshake_complete.wait(), timeout)
         except asyncio.TimeoutError:
-            msg = (
+            raise asyncio.TimeoutError(
                 f'Timed out after waiting {timeout} seconds for the WebSocket '
                 f'handshake to complete. Check the on_websocket responder and '
                 f'any middleware for any conditions that may be stalling the '
                 f'request flow.'
             )
-            raise asyncio.TimeoutError(msg)
 
         self._require_accepted()
 
