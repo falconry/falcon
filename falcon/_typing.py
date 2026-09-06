@@ -35,6 +35,20 @@ from typing import (
     Union,
 )
 
+if sys.version_info >= (3, 10):
+    from typing import Concatenate as Concatenate
+    from typing import ParamSpec as ParamSpec
+
+    _P = ParamSpec('_P')
+else:
+    try:
+        from typing_extensions import Concatenate as Concatenate
+        from typing_extensions import ParamSpec as ParamSpec
+
+        _P = ParamSpec('_P')
+    except ImportError:  # pragma: nocover
+        _P = TypeVar('_P')  # type: ignore[assignment]
+
 # NOTE(vytas): Mypy still struggles to handle a conditional import in the EAFP
 #   fashion, so we branch on Py version instead (which it does understand).
 if sys.version_info >= (3, 11):
@@ -60,8 +74,15 @@ class _Unset(Enum):
 
 
 _T = TypeVar('_T')
+_R_co = TypeVar('_R_co', covariant=True)
 _UNSET = _Unset.UNSET
 UnsetOr = Union[Literal[_Unset.UNSET], _T]
+
+
+class _LruCacheWrapper(Protocol[_P, _R_co]):
+    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_co: ...
+    def cache_clear(self) -> None: ...
+
 
 # NOTE(vytas,jap): TypeVar's "default" argument is only available on 3.13+.
 if sys.version_info >= (3, 13):
