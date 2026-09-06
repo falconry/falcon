@@ -248,12 +248,12 @@ the more popular ones out there, but anything that can load a WSGI app will do.
 ASGI Server
 -----------
 
-In order to serve a Falcon ASGI app, you will need an ASGI server. Uvicorn
-is a popular choice:
+In order to serve a Falcon ASGI app, you will need an ASGI server. Uvicorn and
+Granian are popular choices:
 
 .. code:: bash
 
-    $ pip install uvicorn
+    $ pip install [granian|uvicorn]
 
 Source Code
 -----------
