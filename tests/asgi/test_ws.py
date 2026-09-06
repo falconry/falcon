@@ -1061,7 +1061,7 @@ def test_ws_base_not_implemented():
 
 
 @pytest.mark.slow
-async def test_ws_context_timeout(conductor):
+async def test_ws_enter_context_timeout(conductor):
     class Resource:
         async def on_websocket(self, req, ws):
             await asyncio.sleep(5.1)  # Anything longer than 5 is sufficient
@@ -1071,6 +1071,23 @@ async def test_ws_context_timeout(conductor):
     async with conductor as c:
         with pytest.raises(asyncio.TimeoutError):
             async with c.simulate_ws():
+                pass
+
+
+@pytest.mark.parametrize('timeout_on', ['accept', 'close'])
+async def test_ws_context_timeout(conductor, timeout_on):
+    class SleepyWebSocket:
+        async def on_websocket(self, req, ws):
+            if timeout_on != 'accept':
+                await ws.accept()
+
+            await asyncio.sleep(3600)
+
+    conductor.app.add_route('/', SleepyWebSocket())
+
+    async with conductor as c:
+        with pytest.raises(asyncio.TimeoutError):
+            async with c.simulate_ws(timeout=0.05):
                 pass
 
 

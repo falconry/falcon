@@ -76,7 +76,7 @@ For running our async application, we'll need an
 `ASGI <https://asgi.readthedocs.io/>`_ application server. Popular choices
 include:
 
-* `Uvicorn <https://www.uvicorn.org/>`_
+* `Uvicorn <https://uvicorn.dev/>`_
 * `Daphne <https://github.com/django/daphne/>`_
 * `Hypercorn <https://github.com/pgjones/hypercorn/>`_
 
