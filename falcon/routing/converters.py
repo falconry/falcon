@@ -17,6 +17,7 @@ import abc
 from collections.abc import Iterable
 from datetime import datetime
 from math import isfinite
+import re
 from typing import Any, ClassVar, overload
 import uuid
 
@@ -263,8 +264,6 @@ class RegexConverter(BaseConverter):
     __slots__ = ('_pattern', '_compiled')
 
     def __init__(self, pattern: str) -> None:
-        import re
-
         self._pattern = pattern
         try:
             self._compiled = re.compile(pattern)
