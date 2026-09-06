@@ -258,22 +258,43 @@ class RegexConverter(BaseConverter):
 
     Keyword Args:
         pattern (str): A regex pattern that the value must match.
-            The entire value must match (anchored).
+            The entire value must match (anchored). The pattern must be a
+            :class:`str` (not :class:`bytes`).
+        group(str | None): An optional named group name to return as the
+            converted field value. Note that if the group is optional (e.g.,
+            ``r'product(?P<product_id>\\d+)?')``, and it was omitted in the
+            matched URL segment, it would be treated as a failure to convert
+            the value (resulting in :class:`~falcon.HTTPRouteNotFound`).
     """
 
-    __slots__ = ('_pattern', '_compiled')
+    _pattern: re.Pattern[str]
 
-    def __init__(self, pattern: str) -> None:
-        self._pattern = pattern
+    __slots__ = ('_group', '_pattern')
+
+    def __init__(self, pattern: str, group: str | None = None) -> None:
+        if isinstance(pattern, bytes):
+            raise ValueError(
+                f'invalid regex pattern for RegexConverter: {pattern!r} '
+                f'(bytes patterns are not supported)'
+            )
+
         try:
-            self._compiled = re.compile(pattern)
+            self._pattern = re.compile(pattern)
         except re.error as ex:
             raise ValueError(
                 f'invalid regex pattern for RegexConverter: {pattern!r} ({ex})'
             ) from ex
 
+        self._group = group
+        if group is not None and group not in self._pattern.groupindex:
+            raise ValueError(
+                f'regex pattern {pattern!r} does not contain named group {group!r}'
+            )
+
     def convert(self, value: str) -> str | None:
-        if self._compiled.fullmatch(value):
+        if matched := self._pattern.fullmatch(value):
+            if self._group is not None:
+                return matched.group(self._group)
             return value
         return None
 

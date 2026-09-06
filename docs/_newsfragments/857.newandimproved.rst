@@ -1,1 +1,3 @@
-New `RegexConverter` has been added to support regex based path variable matching when registering new routes. The newly added converter has been added as a builtin converter.
+A new :ref:`built-in field converter <routing_builtin_converters>`,
+:class:`~falcon.routing.RegexConverter`, has been added to support regex-based
+path variable matching.
