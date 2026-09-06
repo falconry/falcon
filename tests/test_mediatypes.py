@@ -121,7 +121,7 @@ _RFC_EXAMPLE_IDS = list(
         )
         for rfc, example_values in (
             ('RFC-7231', _RFC_7231_EXAMPLE_VALUES),
-            ('RFC-9110', _RFC_7231_EXAMPLE_VALUES),
+            ('RFC-9110', _RFC_9110_EXAMPLE_VALUES),
         )
     )
 )

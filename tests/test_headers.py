@@ -57,7 +57,7 @@ class HeaderHelpersResource:
         resp.retry_after = 3601
 
         # Relative URI's are OK per
-        # https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.2
+        # https://datatracker.ietf.org/doc/html/rfc9110#section-10.2.2
         resp.location = '/things/87'
         resp.content_location = '/things/78'
 

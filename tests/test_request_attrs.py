@@ -615,7 +615,7 @@ class TestRequestAttributes:
         expected_desc = (
             'The value provided for the "Range" header is '
             'invalid. It must be a range formatted '
-            'according to RFC 7233.'
+            'according to RFC 9110.'
         )
         self._test_error_details(
             headers,
@@ -734,7 +734,7 @@ class TestRequestAttributes:
         expected_desc = (
             'The value provided for the "{}" '
             'header is invalid. It must be formatted '
-            'according to RFC 7231, Section 7.1.1.1'
+            'according to RFC 9110, Section 5.6.7'
         )
 
         self._test_error_details(
@@ -974,7 +974,7 @@ class TestRequestAttributes:
                     ETag('F9,22'),
                     _make_etag('41, 7F'),
                     _make_etag('22, 41, 7F', is_weak=True),
-                    # NOTE(kgriffs): According to the grammar in RFC 7232, zero
+                    # NOTE(kgriffs): According to the grammar in RFC 9110, zero
                     #  etagc's is acceptable.
                     _make_etag(''),
                     _make_etag('', is_weak=True),

@@ -1105,7 +1105,7 @@ class Response:
             case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
             thing.
 
-        (See also: RFC 7233, Section 4.2)
+        (See also: RFC 9110, Section 14.4)
         """,
         _format_range,
     )
@@ -1123,7 +1123,7 @@ class Response:
         case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
         thing.
 
-    (See also: RFC 7233, Section 4.2)
+    (See also: RFC 9110, Section 14.4)
     """
 
     content_type: str | None = _header_property(
@@ -1299,7 +1299,7 @@ class Response:
         value consists of either a single asterisk ("*") or a list of
         header field names (case-insensitive).
 
-        (See also: RFC 7231, Section 7.1.4)
+        (See also: RFC 9110, Section 12.5.5)
         """,
         _format_header_value_list,
     )
@@ -1316,7 +1316,7 @@ class Response:
     value consists of either a single asterisk ("*") or a list of
     header field names (case-insensitive).
 
-    (See also: RFC 7231, Section 7.1.4)
+    (See also: RFC 9110, Section 12.5.5)
     """
 
     accept_ranges: str | None = _header_property(
