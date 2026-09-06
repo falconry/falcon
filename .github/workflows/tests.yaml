@@ -83,6 +83,7 @@ jobs:
           - env: "zizmor_github"
           # ASGI & WSGI servers
           - env: "daphne"
+          - env: "granian"
           - env: "hypercorn"
           - env: "wsgi_servers"
           # E2E tests

@@ -44,6 +44,25 @@ def _cheroot_args(host, port):
     return args + ('_wsgi_test_app:app',)
 
 
+def _granian_args(host, port):
+    """Granian"""
+
+    pytest.importorskip('granian')
+
+    return (
+        sys.executable,
+        '-m',
+        'granian',
+        '--interface',
+        'wsgi',
+        '--host',
+        host,
+        '--port',
+        str(port),
+        '_wsgi_test_app:app',
+    )
+
+
 def _gunicorn_args(host, port, extra_opts=()):
     """Gunicorn"""
     pytest.importorskip('gunicorn')
@@ -131,7 +150,15 @@ def _waitress_args(host, port):
 
 
 @pytest.fixture(
-    params=['cheroot', 'gunicorn', 'meinheld', 'uvicorn', 'uwsgi', 'waitress']
+    params=[
+        'cheroot',
+        'granian',
+        'gunicorn',
+        'meinheld',
+        'uvicorn',
+        'uwsgi',
+        'waitress',
+    ]
 )
 def wsgi_server(request):
     return request.param
@@ -141,6 +168,7 @@ def wsgi_server(request):
 def server_args(wsgi_server):
     servers = {
         'cheroot': _cheroot_args,
+        'granian': _granian_args,
         'gunicorn': _gunicorn_args,
         'meinheld': _meinheld_args,
         'uvicorn': _uvicorn_args,
