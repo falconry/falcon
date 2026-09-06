@@ -26,6 +26,7 @@ from falcon.routing.converters import DateTimeConverter
 from falcon.routing.converters import FloatConverter
 from falcon.routing.converters import IntConverter
 from falcon.routing.converters import PathConverter
+from falcon.routing.converters import RegexConverter
 from falcon.routing.converters import UUIDConverter
 from falcon.routing.static import StaticRoute
 from falcon.routing.static import StaticRouteAsync
@@ -43,6 +44,7 @@ __all__ = (
     'IntConverter',
     'map_http_methods',
     'PathConverter',
+    'RegexConverter',
     'set_default_responders',
     'StaticRoute',
     'StaticRouteAsync',

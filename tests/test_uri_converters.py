@@ -180,3 +180,63 @@ def test_datetime_converter_default_format():
 def test_uuid_converter(value, expected):
     c = converters.UUIDConverter()
     assert c.convert(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value, pattern, expected',
+    [
+        ('abc', r'abc', 'abc'),
+        ('abc', r'[a-z]+', 'abc'),
+        ('123', r'\d+', '123'),
+        ('abc123', r'[a-z]+\d+', 'abc123'),
+        ('', r'', ''),
+        ('a', r'.', 'a'),
+        ('2023-01-15', r'\d{4}-\d{2}-\d{2}', '2023-01-15'),
+        ('foo_bar', r'\w+', 'foo_bar'),
+    ],
+)
+def test_regex_converter(value, pattern, expected):
+    c = converters.RegexConverter(pattern)
+    assert c.convert(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value, pattern',
+    [
+        ('abc', r'\d+'),
+        ('123', r'[a-z]+'),
+        (' abc', r'abc'),
+        ('ABC', r'[a-z]+'),
+        ('', r'\d+'),
+    ],
+)
+def test_regex_converter_no_match(value, pattern):
+    c = converters.RegexConverter(pattern)
+    assert c.convert(value) is None
+
+
+@pytest.mark.parametrize(
+    'pattern',
+    ['[', '(', '*'],
+)
+def test_regex_converter_invalid_pattern_error_message_includes_pattern(pattern):
+    with pytest.raises(ValueError) as exc_info:
+        converters.RegexConverter(pattern)
+    assert repr(pattern) in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    'pattern',
+    [
+        '[',
+        '(',
+        '*',
+        '(?P<name>',
+        'a{2,1}',
+        '(?P<1invalid>x)',
+        '\\',
+    ],
+)
+def test_regex_converter_invalid_pattern_raises_value_error(pattern):
+    with pytest.raises(ValueError, match=r'invalid regex pattern for RegexConverter'):
+        converters.RegexConverter(pattern)
