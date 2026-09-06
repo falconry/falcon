@@ -17,6 +17,7 @@ import abc
 from collections.abc import Iterable
 from datetime import datetime
 from math import isfinite
+import re
 from typing import Any, ClassVar, overload
 import uuid
 
@@ -26,6 +27,7 @@ __all__ = (
     'FloatConverter',
     'IntConverter',
     'PathConverter',
+    'RegexConverter',
     'UUIDConverter',
 )
 
@@ -249,10 +251,38 @@ class PathConverter(BaseConverter):
         return '/'.join(value)
 
 
+class RegexConverter(BaseConverter):
+    """Field converter used to match a field value against a regular expression.
+
+    Identifier: `regex`
+
+    Keyword Args:
+        pattern (str): A regex pattern that the value must match.
+            The entire value must match (anchored).
+    """
+
+    __slots__ = ('_pattern', '_compiled')
+
+    def __init__(self, pattern: str) -> None:
+        self._pattern = pattern
+        try:
+            self._compiled = re.compile(pattern)
+        except re.error as ex:
+            raise ValueError(
+                f'invalid regex pattern for RegexConverter: {pattern!r} ({ex})'
+            ) from ex
+
+    def convert(self, value: str) -> str | None:
+        if self._compiled.fullmatch(value):
+            return value
+        return None
+
+
 BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
     ('uuid', UUIDConverter),
     ('float', FloatConverter),
     ('path', PathConverter),
+    ('regex', RegexConverter),
 )
