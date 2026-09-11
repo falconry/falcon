@@ -172,7 +172,7 @@ class StaticRoute:
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
     _DISALLOWED_CHARS_PATTERN: ClassVar[Pattern[str]] = re.compile(
-        '[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]'
+        '[\x00-\x1f\x80-\x9f\ufffd?<>:*|\'"]'
     )
 
     # NOTE(vytas): Match the behavior of the underlying os.path.normpath.

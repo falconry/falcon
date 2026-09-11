@@ -112,8 +112,7 @@ def patch_open(monkeypatch):
         '/static/.\x1fssh/authorized_keys',
         '/static/.\x80ssh/authorized_keys',
         '/static/.\x9fssh/authorized_keys',
-        # Reserved characters (~, ?, <, >, :, *, |, ', and ")
-        '/static/~/.ssh/authorized_keys',
+        # Reserved characters (?, <, >, :, *, |, ', and ")
         '/static/.ssh/authorized_key?',
         '/static/.ssh/authorized_key>foo',
         '/static/.ssh/authorized_key|foo',
@@ -206,6 +205,7 @@ _MIME_ALTERNATIVE = {
             'application/octet-stream',
         ),
         ('/static', '/.test.css', '/.test.css', 'text/css'),
+        ('/static', '/~test.css', '/~test.css', 'text/css'),
         ('/some/download/', '/report.pdf', '/report.pdf', 'application/pdf'),
         (
             '/some/download/',
