@@ -169,6 +169,7 @@ def test_read_until_with_size(buffered_reader, size):
     assert stream.read_until(b'--boundary1234567890--', size) == (TEST_DATA[:size])
 
 
+@pytest.mark.slow
 def test_read_until(buffered_reader):
     stream = buffered_reader()
 
@@ -186,6 +187,7 @@ def test_read_until(buffered_reader):
         (13372477, 51637898),
     ],
 )
+@pytest.mark.slow
 def test_irregular_large_read_until(buffered_reader, size1, size2):
     stream = buffered_reader()
     delimiter = b'--boundary1234567890--'
@@ -287,10 +289,7 @@ def test_exhaust(shorter_stream):
 
 def test_readline():
     source = (
-        b'Hello, world!\n'
-        b'A line.\n'
-        b'\n'
-        b'A longer line... \n' + b'SPAM ' * 7 + b'\n' + b'\n'
+        b'Hello, world!\nA line.\n\nA longer line... \n' + b'SPAM ' * 7 + b'\n' + b'\n'
     )
 
     stream = BufferedReader(io.BytesIO(source).read, len(source))
@@ -345,6 +344,7 @@ def test_duck_compatibility_with_io_base(shorter_stream):
     assert not shorter_stream.writeable()
 
 
+@pytest.mark.slow
 def test_fragmented_reads(fragmented_stream):
     b = io.BytesIO()
     fragmented_stream.pipe_until(b'--boundary1234567890--', b)

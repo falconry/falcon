@@ -20,21 +20,17 @@ from collections import UserDict
 from inspect import iscoroutinefunction
 import keyword
 import re
+from re import Pattern
 from threading import Lock
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
-    Optional,
-    Pattern,
-    Set,
-    Tuple,
-    Type,
+    cast,
     TYPE_CHECKING,
     Union,
 )
 
+from falcon._typing import MethodDict
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods
 from falcon.routing.util import set_default_responders
@@ -46,7 +42,6 @@ if TYPE_CHECKING:
     from falcon import Request
 
     _CxElement = Union['_CxParent', '_CxChild']
-    _MethodDict = Dict[str, Callable]
 
 _TAB_STR = ' ' * 4
 _FIELD_PATTERN = re.compile(
@@ -105,7 +100,7 @@ class CompiledRouter:
 
     def __init__(self) -> None:
         self._ast: _CxParent = _CxParent()
-        self._converters: List[converters.BaseConverter] = []
+        self._converters: list[converters.BaseConverter] = []
         self._finder_src: str = ''
 
         self._options = CompiledRouterOptions()
@@ -114,9 +109,9 @@ class CompiledRouter:
         # here to reduce lookup time.
         self._converter_map = self._options.converters.data
 
-        self._patterns: List[Pattern] = []
-        self._return_values: List[CompiledRouterNode] = []
-        self._roots: List[CompiledRouterNode] = []
+        self._patterns: list[Pattern[Any]] = []
+        self._return_values: list[CompiledRouterNode] = []
+        self._roots: list[CompiledRouterNode] = []
 
         # NOTE(caselit): set _find to the delayed compile method to ensure that
         # compile is called when the router is first used
@@ -135,7 +130,7 @@ class CompiledRouter:
         self.find('/')
         return self._finder_src
 
-    def map_http_methods(self, resource: object, **kwargs: Any) -> _MethodDict:
+    def map_http_methods(self, resource: object, **kwargs: Any) -> MethodDict:
         """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
         This method is called from :meth:`~.add_route` and may be overridden to
@@ -162,7 +157,11 @@ class CompiledRouter:
                 resource.
         """
 
-        return map_http_methods(resource, suffix=kwargs.get('suffix', None))
+        return map_http_methods(
+            resource,
+            suffix=kwargs.get('suffix', None),
+            default_to_on_request=self._options.default_to_on_request,
+        )
 
     def add_route(  # noqa: C901
         self, uri_template: str, resource: object, **kwargs: Any
@@ -209,7 +208,24 @@ class CompiledRouter:
 
         method_map = self.map_http_methods(resource, **kwargs)
 
-        set_default_responders(method_map, asgi=asgi)
+        default_responder = None
+
+        if self._options.default_to_on_request:
+            responder_name = 'on_request'
+            suffix = kwargs.get('suffix', None)
+
+            if suffix:
+                responder_name += '_' + suffix
+
+            default_responder = getattr(resource, responder_name, None)
+
+        # NOTE(gespyrop): We do not verify whether the default responder is
+        # a regular synchronous method or a coroutine since it falls under the
+        # general case that will be handled by _require_coroutine_responders()
+        # and _require_non_coroutine_responders().
+        set_default_responders(
+            method_map, asgi=asgi, default_responder=default_responder
+        )
 
         if asgi:
             self._require_coroutine_responders(method_map)
@@ -223,11 +239,11 @@ class CompiledRouter:
 
         path = uri_template.lstrip('/').split('/')
 
-        used_names: Set[str] = set()
+        used_names: set[str] = set()
         for segment in path:
             self._validate_template_segment(segment, used_names)
 
-        def find_cmp_converter(node: CompiledRouterNode) -> Optional[Tuple[str, str]]:
+        def find_cmp_converter(node: CompiledRouterNode) -> tuple[str, str] | None:
             value = [
                 (field, converter)
                 for field, converter, _ in node.var_converter_map
@@ -240,7 +256,7 @@ class CompiledRouter:
             else:
                 return None
 
-        def insert(nodes: List[CompiledRouterNode], path_index: int = 0):
+        def insert(nodes: list[CompiledRouterNode], path_index: int = 0) -> None:
             for node in nodes:
                 segment = path[path_index]
                 if node.matches(segment):
@@ -308,8 +324,10 @@ class CompiledRouter:
     # NOTE(caselit): keep Request as string otherwise sphinx complains that it resolves
     # to multiple classes, since the symbol is imported only for type check.
     def find(
-        self, uri: str, req: Optional['Request'] = None
-    ) -> Optional[Tuple[object, Optional[_MethodDict], Dict[str, Any], Optional[str]]]:
+        self,
+        uri: str,
+        req: 'Request' | None = None,  # noqa: UP037
+    ) -> tuple[object, MethodDict, dict[str, Any], str | None] | None:
         """Search for a route that matches the given partial URI.
 
         Args:
@@ -328,13 +346,13 @@ class CompiledRouter:
         """
 
         path = uri.lstrip('/').split('/')
-        params: Dict[str, Any] = {}
-        node: Optional[CompiledRouterNode] = self._find(
+        params: dict[str, Any] = {}
+        node: CompiledRouterNode | None = self._find(
             path, self._return_values, self._patterns, self._converters, params
         )
 
         if node is not None:
-            return node.resource, node.method_map, params, node.uri_template
+            return node.resource, node.method_map or {}, params, node.uri_template
         else:
             return None
 
@@ -342,7 +360,7 @@ class CompiledRouter:
     # Private
     # -----------------------------------------------------------------
 
-    def _require_coroutine_responders(self, method_map: _MethodDict) -> None:
+    def _require_coroutine_responders(self, method_map: MethodDict) -> None:
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely perform relatively long blocking
@@ -351,12 +369,7 @@ class CompiledRouter:
             #   issue.
             if not iscoroutinefunction(responder) and is_python_func(responder):
                 if _should_wrap_non_coroutines():
-
-                    def let(responder=responder):
-                        method_map[method] = wrap_sync_to_async(responder)
-
-                    let()
-
+                    method_map[method] = wrap_sync_to_async(responder)
                 else:
                     msg = (
                         'The {} responder must be a non-blocking '
@@ -366,7 +379,7 @@ class CompiledRouter:
                     msg = msg.format(responder)
                     raise TypeError(msg)
 
-    def _require_non_coroutine_responders(self, method_map: _MethodDict) -> None:
+    def _require_non_coroutine_responders(self, method_map: MethodDict) -> None:
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely perform relatively long blocking
@@ -382,7 +395,7 @@ class CompiledRouter:
                 msg = msg.format(responder)
                 raise TypeError(msg)
 
-    def _validate_template_segment(self, segment: str, used_names: Set[str]) -> None:
+    def _validate_template_segment(self, segment: str, used_names: set[str]) -> None:
         """Validate a single path segment of a URI template.
 
         1. Ensure field names are valid Python identifiers, since they
@@ -410,8 +423,7 @@ class CompiledRouter:
 
             if name in used_names:
                 msg_template = (
-                    'Field names may not be duplicated '
-                    '("{0}" was used more than once)'
+                    'Field names may not be duplicated ("{0}" was used more than once)'
                 )
                 msg = msg_template.format(name)
                 raise UnacceptableRouteError(msg)
@@ -437,11 +449,11 @@ class CompiledRouter:
 
     def _generate_ast(  # noqa: C901
         self,
-        nodes: List[CompiledRouterNode],
+        nodes: list[CompiledRouterNode],
         parent: _CxParent,
-        return_values: List[CompiledRouterNode],
-        patterns: List[Pattern],
-        params_stack: List[_CxElement],
+        return_values: list[CompiledRouterNode],
+        patterns: list[Pattern[Any]],
+        params_stack: list[_CxElement],
         level: int = 0,
         fast_return: bool = True,
     ) -> None:
@@ -515,12 +527,13 @@ class CompiledRouter:
 
                 else:
                     # NOTE(kgriffs): Simple nodes just capture the entire path
-                    # segment as the value for the param.
+                    # segment as the value for the param. They have a var_name defined
 
+                    field_name = node.var_name
+                    assert field_name is not None
                     if node.var_converter_map:
                         assert len(node.var_converter_map) == 1
 
-                        field_name = node.var_name
                         __, converter_name, converter_argstr = node.var_converter_map[0]
                         converter_class = self._converter_map[converter_name]
 
@@ -547,7 +560,7 @@ class CompiledRouter:
                         parent.append_child(cx_converter)
                         parent = cx_converter
                     else:
-                        params_stack.append(_CxSetParamFromPath(node.var_name, level))
+                        params_stack.append(_CxSetParamFromPath(field_name, level))
 
                     # NOTE(kgriffs): We don't allow multiple simple var nodes
                     # to exist at the same level, e.g.:
@@ -617,7 +630,7 @@ class CompiledRouter:
         self,
         parent: _CxParent,
         node: CompiledRouterNode,
-        params_stack: List[_CxElement],
+        params_stack: list[_CxElement],
     ) -> _CxParent:
         # NOTE(kgriffs): Unroll the converter loop into
         # a series of nested "if" constructs.
@@ -654,7 +667,7 @@ class CompiledRouter:
 
         return parent
 
-    def _compile(self) -> Callable:
+    def _compile(self) -> Callable[..., Any]:
         """Generate Python code for the entire routing tree.
 
         The generated code is compiled and the resulting Python method
@@ -682,24 +695,24 @@ class CompiledRouter:
 
         self._finder_src = '\n'.join(src_lines)
 
-        scope: _MethodDict = {}
+        scope: MethodDict = {}
         exec(compile(self._finder_src, '<string>', 'exec'), scope)
 
         return scope['find']
 
     def _instantiate_converter(
-        self, klass: type, argstr: Optional[str] = None
+        self, klass: type, argstr: str | None = None
     ) -> converters.BaseConverter:
         if argstr is None:
-            return klass()
+            return cast(converters.BaseConverter, klass())
 
         # NOTE(kgriffs): Don't try this at home. ;)
         src = '{0}({1})'.format(klass.__name__, argstr)
-        return eval(src, {klass.__name__: klass})
+        return cast(converters.BaseConverter, eval(src, {klass.__name__: klass}))
 
     def _compile_and_find(
         self,
-        path: List[str],
+        path: list[str],
         _return_values: Any,
         _patterns: Any,
         _converters: Any,
@@ -742,11 +755,11 @@ class CompiledRouterNode:
     def __init__(
         self,
         raw_segment: str,
-        method_map: Optional[_MethodDict] = None,
-        resource: Optional[object] = None,
-        uri_template: Optional[str] = None,
-    ):
-        self.children: List[CompiledRouterNode] = []
+        method_map: MethodDict | None = None,
+        resource: object | None = None,
+        uri_template: str | None = None,
+    ) -> None:
+        self.children: list[CompiledRouterNode] = []
 
         self.raw_segment = raw_segment
         self.method_map = method_map
@@ -759,9 +772,9 @@ class CompiledRouterNode:
 
         # TODO(kgriffs): Rename these since the docs talk about "fields"
         # or "field expressions", not "vars" or "variables".
-        self.var_name: Optional[str] = None
-        self.var_pattern: Optional[Pattern] = None
-        self.var_converter_map: List[Tuple[str, str, str]] = []
+        self.var_name: str | None = None
+        self.var_pattern: Pattern[Any] | None = None
+        self.var_converter_map: list[tuple[str, str, str]] = []
 
         # NOTE(kgriffs): CompiledRouter.add_route validates field names,
         # so here we can just assume they are OK and use the simple
@@ -833,12 +846,12 @@ class CompiledRouterNode:
         if self.is_complex:
             assert self.is_var
 
-    def matches(self, segment: str):
+    def matches(self, segment: str) -> bool:
         """Return True if this node matches the supplied template segment."""
 
         return segment == self.raw_segment
 
-    def conflicts_with(self, segment: str):
+    def conflicts_with(self, segment: str) -> bool:
         """Return True if this node conflicts with a given template segment."""
 
         # NOTE(kgriffs): This method assumes that the caller has already
@@ -895,16 +908,16 @@ class CompiledRouterNode:
         return False
 
 
-class ConverterDict(UserDict):
+class ConverterDict(UserDict[str, type[converters.BaseConverter]]):
     """A dict-like class for storing field converters."""
 
-    data: Dict[str, Type[converters.BaseConverter]]
+    data: dict[str, type[converters.BaseConverter]]
 
-    def __setitem__(self, name, converter):
+    def __setitem__(self, name: str, converter: type[converters.BaseConverter]) -> None:
         self._validate(name)
         UserDict.__setitem__(self, name, converter)
 
-    def _validate(self, name):
+    def _validate(self, name: str) -> None:
         if not _IDENTIFIER_PATTERN.match(name):
             raise ValueError(
                 'Invalid converter name. Names may not be blank, and may '
@@ -916,49 +929,101 @@ class ConverterDict(UserDict):
 class CompiledRouterOptions:
     """Defines a set of configurable router options.
 
-    An instance of this class is exposed via :py:attr:`falcon.App.router_options`
-    and :py:attr:`falcon.asgi.App.router_options` for configuring certain
-    :py:class:`~.CompiledRouter` behaviors.
-
-    Attributes:
-        converters: Represents the collection of named
-            converters that may be referenced in URI template field
-            expressions. Adding additional converters is simply a
-            matter of mapping an identifier to a converter class::
-
-                app.router_options.converters['mc'] = MyConverter
-
-            The identifier can then be used to employ the converter
-            within a URI template::
-
-                app.add_route('/{some_field:mc}', some_resource)
-
-            Converter names may only contain ASCII letters, digits,
-            and underscores, and must start with either a letter or
-            an underscore.
-
-            Warning:
-
-                Converter instances are shared between requests.
-                Therefore, in threaded deployments, care must be taken
-                to implement custom converters in a thread-safe
-                manner.
-
-            (See also: :ref:`Field Converters <routing_field_converters>`)
+    An instance of this class is exposed via :attr:`falcon.App.router_options`
+    and :attr:`falcon.asgi.App.router_options` for configuring certain
+    :class:`~.CompiledRouter` behaviors.
     """
 
-    __slots__ = ('converters',)
-
     converters: ConverterDict
+    """Represents the collection of named converters that may
+    be referenced in URI template field expressions.
 
-    def __init__(self):
+    Adding additional converters is simply a matter of mapping an identifier to
+    a converter class::
+
+        app.router_options.converters['mc'] = MyConverter
+
+    The identifier can then be used to employ the converter within a URI template::
+
+        app.add_route('/{some_field:mc}', some_resource)
+
+    Converter names may only contain ASCII letters, digits, and underscores, and
+    must start with either a letter or an underscore.
+
+    Warning:
+
+        Converter instances are shared between requests.
+        Therefore, in threaded deployments, care must be taken to implement custom
+        converters in a thread-safe manner.
+
+    (See also: :ref:`Field Converters <routing_field_converters>`)
+    """
+
+    default_to_on_request: bool
+    """Allows for providing a default responder by defining `on_request()` on
+    the resource. For example::
+
+        class Resource:
+            def on_request(self, req: Request, resp: Response) -> None:
+                if req.method == 'GET':
+                    ... # handle GET
+                elif req.method == 'POST':
+                    ... # handle post
+                else:
+                    raise HTTPMethodNotAllowed(['GET', 'POST'])
+
+        app = falcon.App()
+        app.router_options.default_to_on_request = True
+
+        app.add_route('/resource', Resource())
+
+    This feature is disabled by default and can be enabled by::
+
+        app.router_options.default_to_on_request = True
+
+    The default responder will only handle methods for which a method-named
+    responder is not provided. For example, a POST request to a resource
+    that defines both `on_post` and `on_request` would only be handled by
+    `on_post`.
+
+    This option does not override `on_options()` or `on_websocket()`.
+    In case `on_options()` needs to be overridden, this can be done explicitly
+    by aliasing::
+
+        on_options = on_request
+
+    or by explicitly calling `on_request()` in `on_options()`::
+
+        def on_options(self, req, resp):
+            self.on_request(req, resp)
+
+    Note:
+        In order for this option to take effect, it must be enabled before
+        calling :meth:`.CompiledRouter.add_route`.
+
+    Warning:
+        Class-level hooks do not wrap default responders by default. Wrapping
+        default responders with class-level hooks can be enabled by setting
+        the value of :data:`falcon.hooks.decorate_on_request` to ``True``::
+
+            import falcon.hooks
+            falcon.hooks.decorate_on_request = True
+
+    .. versionadded:: 4.3
+    """
+
+    __slots__ = ('converters', 'default_to_on_request')
+
+    def __init__(self) -> None:
         object.__setattr__(
             self,
             'converters',
             ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
 
-    def __setattr__(self, name, value) -> None:
+        self.default_to_on_request = False
+
+    def __setattr__(self, name: str, value: Any) -> None:
         if name == 'converters':
             raise AttributeError('Cannot set "converters", please update it in place.')
         super().__setattr__(name, value)
@@ -979,15 +1044,15 @@ class CompiledRouterOptions:
 
 class _CxParent:
     def __init__(self) -> None:
-        self._children: List[_CxElement] = []
+        self._children: list[_CxElement] = []
 
-    def append_child(self, construct: _CxElement):
+    def append_child(self, construct: _CxElement) -> None:
         self._children.append(construct)
 
     def src(self, indentation: int) -> str:
         return self._children_src(indentation + 1)
 
-    def _children_src(self, indentation):
+    def _children_src(self, indentation: int) -> str:
         src_lines = [child.src(indentation) for child in self._children]
 
         return '\n'.join(src_lines)
@@ -1000,12 +1065,12 @@ class _CxChild:
 
 
 class _CxIfPathLength(_CxParent):
-    def __init__(self, comparison, length):
+    def __init__(self, comparison: str, length: int) -> None:
         super().__init__()
         self._comparison = comparison
         self._length = length
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         template = '{0}if path_len {1} {2}:\n{3}'
         return template.format(
             _TAB_STR * indentation,
@@ -1016,12 +1081,12 @@ class _CxIfPathLength(_CxParent):
 
 
 class _CxIfPathSegmentLiteral(_CxParent):
-    def __init__(self, segment_idx, literal):
+    def __init__(self, segment_idx: int, literal: str) -> None:
         super().__init__()
         self._segment_idx = segment_idx
         self._literal = literal
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         template = "{0}if path[{1}] == '{2}':\n{3}"
         return template.format(
             _TAB_STR * indentation,
@@ -1032,13 +1097,13 @@ class _CxIfPathSegmentLiteral(_CxParent):
 
 
 class _CxIfPathSegmentPattern(_CxParent):
-    def __init__(self, segment_idx, pattern_idx, pattern_text):
+    def __init__(self, segment_idx: int, pattern_idx: int, pattern_text: str) -> None:
         super().__init__()
         self._segment_idx = segment_idx
         self._pattern_idx = pattern_idx
         self._pattern_text = pattern_text
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         lines = [
             '{0}match = patterns[{1}].match(path[{2}])  # {3}'.format(
                 _TAB_STR * indentation,
@@ -1054,13 +1119,13 @@ class _CxIfPathSegmentPattern(_CxParent):
 
 
 class _CxIfConverterField(_CxParent):
-    def __init__(self, unique_idx, converter_idx):
+    def __init__(self, unique_idx: int, converter_idx: int) -> None:
         super().__init__()
         self._converter_idx = converter_idx
         self._unique_idx = unique_idx
         self.field_variable_name = 'field_value_{0}'.format(unique_idx)
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         lines = [
             '{0}{1} = converters[{2}].convert(fragment)'.format(
                 _TAB_STR * indentation,
@@ -1077,10 +1142,10 @@ class _CxIfConverterField(_CxParent):
 
 
 class _CxSetFragmentFromField(_CxChild):
-    def __init__(self, field_name):
+    def __init__(self, field_name: str) -> None:
         self._field_name = field_name
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return "{0}fragment = groups.pop('{1}')".format(
             _TAB_STR * indentation,
             self._field_name,
@@ -1088,10 +1153,10 @@ class _CxSetFragmentFromField(_CxChild):
 
 
 class _CxSetFragmentFromPath(_CxChild):
-    def __init__(self, segment_idx):
+    def __init__(self, segment_idx: int) -> None:
         self._segment_idx = segment_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}fragment = path[{1}]'.format(
             _TAB_STR * indentation,
             self._segment_idx,
@@ -1099,10 +1164,10 @@ class _CxSetFragmentFromPath(_CxChild):
 
 
 class _CxSetFragmentFromRemainingPaths(_CxChild):
-    def __init__(self, segment_idx):
+    def __init__(self, segment_idx: int) -> None:
         self._segment_idx = segment_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}fragment = path[{1}:]'.format(
             _TAB_STR * indentation,
             self._segment_idx,
@@ -1110,51 +1175,51 @@ class _CxSetFragmentFromRemainingPaths(_CxChild):
 
 
 class _CxVariableFromPatternMatch(_CxChild):
-    def __init__(self, unique_idx):
+    def __init__(self, unique_idx: int) -> None:
         self._unique_idx = unique_idx
         self.dict_variable_name = 'dict_match_{0}'.format(unique_idx)
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}{1} = match.groupdict()'.format(
             _TAB_STR * indentation, self.dict_variable_name
         )
 
 
 class _CxVariableFromPatternMatchPrefetched(_CxChild):
-    def __init__(self, unique_idx):
+    def __init__(self, unique_idx: int) -> None:
         self._unique_idx = unique_idx
         self.dict_variable_name = 'dict_groups_{0}'.format(unique_idx)
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}{1} = groups'.format(_TAB_STR * indentation, self.dict_variable_name)
 
 
 class _CxPrefetchGroupsFromPatternMatch(_CxChild):
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}groups = match.groupdict()'.format(_TAB_STR * indentation)
 
 
 class _CxReturnNone(_CxChild):
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}return None'.format(_TAB_STR * indentation)
 
 
 class _CxReturnValue(_CxChild):
-    def __init__(self, value_idx):
+    def __init__(self, value_idx: int) -> None:
         self._value_idx = value_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}return return_values[{1}]'.format(
             _TAB_STR * indentation, self._value_idx
         )
 
 
 class _CxSetParamFromPath(_CxChild):
-    def __init__(self, param_name, segment_idx):
+    def __init__(self, param_name: str, segment_idx: int) -> None:
         self._param_name = param_name
         self._segment_idx = segment_idx
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return "{0}params['{1}'] = path[{2}]".format(
             _TAB_STR * indentation,
             self._param_name,
@@ -1163,11 +1228,11 @@ class _CxSetParamFromPath(_CxChild):
 
 
 class _CxSetParamFromValue(_CxChild):
-    def __init__(self, param_name, field_value_name):
+    def __init__(self, param_name: str, field_value_name: str) -> None:
         self._param_name = param_name
         self._field_value_name = field_value_name
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return "{0}params['{1}'] = {2}".format(
             _TAB_STR * indentation,
             self._param_name,
@@ -1176,10 +1241,10 @@ class _CxSetParamFromValue(_CxChild):
 
 
 class _CxSetParamsFromDict(_CxChild):
-    def __init__(self, dict_value_name):
+    def __init__(self, dict_value_name: str) -> None:
         self._dict_value_name = dict_value_name
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return '{0}params.update({1})'.format(
             _TAB_STR * indentation,
             self._dict_value_name,

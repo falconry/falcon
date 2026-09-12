@@ -9,18 +9,33 @@ for convenience::
     tz = falcon.TimezoneGMT()
 """
 
+from __future__ import annotations
+
 import datetime
-from typing import Optional
+
+from .deprecation import deprecated
 
 __all__ = ('TimezoneGMT',)
 
 
 class TimezoneGMT(datetime.tzinfo):
-    """GMT timezone class implementing the :py:class:`datetime.tzinfo` interface."""
+    """GMT timezone class implementing the :class:`datetime.tzinfo` interface.
+
+    .. deprecated:: 4.0
+        :class:`TimezoneGMT` is deprecated, use :attr:`datetime.timezone.utc`
+        instead. (This class will be removed in Falcon 5.0.)
+    """
 
     GMT_ZERO = datetime.timedelta(hours=0)
 
-    def utcoffset(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
+    @deprecated(
+        'TimezoneGMT is deprecated, use datetime.timezone.utc instead. '
+        '(TimezoneGMT will be removed in Falcon 5.0.)'
+    )
+    def __init__(self) -> None:
+        super().__init__()
+
+    def utcoffset(self, dt: datetime.datetime | None) -> datetime.timedelta:
         """Get the offset from UTC.
 
         Args:
@@ -33,7 +48,7 @@ class TimezoneGMT(datetime.tzinfo):
 
         return self.GMT_ZERO
 
-    def tzname(self, dt: Optional[datetime.datetime]) -> str:
+    def tzname(self, dt: datetime.datetime | None) -> str:
         """Get the name of this timezone.
 
         Args:
@@ -45,7 +60,7 @@ class TimezoneGMT(datetime.tzinfo):
 
         return 'GMT'
 
-    def dst(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
+    def dst(self, dt: datetime.datetime | None) -> datetime.timedelta:
         """Return the daylight saving time (DST) adjustment.
 
         Args:

@@ -15,7 +15,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import falcon
 from falcon.http_status import HTTPStatus
@@ -41,14 +41,16 @@ class HTTPMovedPermanently(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
-    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
+    def __init__(self, location: str, headers: Headers | None = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPMovedPermanently, self).__init__(falcon.HTTP_301, headers)
+        super().__init__(falcon.HTTP_301, headers)
 
 
 class HTTPFound(HTTPStatus):
@@ -70,14 +72,16 @@ class HTTPFound(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
-    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
+    def __init__(self, location: str, headers: Headers | None = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPFound, self).__init__(falcon.HTTP_302, headers)
+        super().__init__(falcon.HTTP_302, headers)
 
 
 class HTTPSeeOther(HTTPStatus):
@@ -104,14 +108,16 @@ class HTTPSeeOther(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
-    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
+    def __init__(self, location: str, headers: Headers | None = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPSeeOther, self).__init__(falcon.HTTP_303, headers)
+        super().__init__(falcon.HTTP_303, headers)
 
 
 class HTTPTemporaryRedirect(HTTPStatus):
@@ -133,14 +139,16 @@ class HTTPTemporaryRedirect(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
-    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
+    def __init__(self, location: str, headers: Headers | None = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPTemporaryRedirect, self).__init__(falcon.HTTP_307, headers)
+        super().__init__(falcon.HTTP_307, headers)
 
 
 class HTTPPermanentRedirect(HTTPStatus):
@@ -159,11 +167,13 @@ class HTTPPermanentRedirect(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
-    def __init__(self, location: str, headers: Optional[Headers] = None) -> None:
+    def __init__(self, location: str, headers: Headers | None = None) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
 
-        super(HTTPPermanentRedirect, self).__init__(falcon.HTTP_308, headers)
+        super().__init__(falcon.HTTP_308, headers)

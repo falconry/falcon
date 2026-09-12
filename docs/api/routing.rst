@@ -3,8 +3,6 @@
 Routing
 =======
 
-.. contents:: :local:
-
 Falcon uses resource-based routing to encourage a RESTful architectural style.
 Each resource is represented by a class that is responsible for handling all of
 the HTTP methods that the resource supports.
@@ -29,9 +27,9 @@ associated resource for processing.
 
 Here's a quick example to show how all the pieces fit together:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -66,7 +64,7 @@ Here's a quick example to show how all the pieces fit together:
             images = ImagesResource()
             app.add_route('/images', images)
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -205,9 +203,9 @@ A PUT request to ``'/user/kgriffs'`` would cause the framework to invoke
 the ``on_put()`` responder method on the route's resource class, passing
 ``'kgriffs'`` via an additional `name` argument defined by the responder:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -216,7 +214,7 @@ the ``on_put()`` responder method on the route's resource class, passing
             def on_put(self, req, resp, name):
                 pass
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -297,6 +295,7 @@ Built-in Converters
  ``dt``        :class:`~.DateTimeConverter`       ``/logs/{day:dt("%Y-%m-%d")}``
  ``float``     :class:`~.FloatConverter`          ``/python/versions/{version:float(min=3.7)}``
  ``path``      :class:`~.PathConverter`           ``/prefix/{other:path}``
+ ``re``        :class:`~.RegexConverter`          ``/prefix/{name:re("[a-zA-Z]+")}``
 ============  =================================  ==================================================================
 
 |
@@ -314,6 +313,9 @@ Built-in Converters
     :members:
 
 .. autoclass:: falcon.routing.PathConverter
+    :members:
+
+.. autoclass:: falcon.routing.RegexConverter
     :members:
 
 .. _routing_custom_converters:
@@ -334,14 +336,14 @@ Custom Routers
 --------------
 
 A custom routing engine may be specified when instantiating
-:py:meth:`falcon.App` or :py:meth:`falcon.asgi.App`. For example:
+:meth:`falcon.App` or :meth:`falcon.asgi.App`. For example:
 
 .. code:: python
 
     router = MyRouter()
     app = App(router=router)
 
-Custom routers may derive from the default :py:class:`~.CompiledRouter`
+Custom routers may derive from the default :class:`~.CompiledRouter`
 engine, or implement a completely different routing strategy (such as
 object-based routing).
 
@@ -480,11 +482,24 @@ be used by custom routing engines.
 
 .. autofunction:: falcon.routing.set_default_responders
 
-.. autofunction:: falcon.routing.compile_uri_template
-
 .. autofunction:: falcon.app_helpers.prepare_middleware
 
 .. autofunction:: falcon.app_helpers.prepare_middleware_ws
+
+
+Static File Routes
+------------------
+
+Falcon can serve static files directly from a WSGI or ASGI application
+using the below sink-like :class:`~falcon.routing.StaticRoute`.
+
+Instances of :class:`~falcon.routing.StaticRoute` are normally created via
+:meth:`falcon.App.add_static_route`
+(please see, however, the documentation of :meth:`~falcon.App.add_static_route`
+for the performance implications of serving files through a Python app).
+
+.. autoclass:: falcon.routing.StaticRoute
+    :members:
 
 
 Custom HTTP Methods
@@ -511,9 +526,9 @@ support custom HTTP methods, use one of the following methods:
 Once you have used the appropriate method, your custom methods should be active.
 You then can define request methods like any other HTTP method:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -521,10 +536,29 @@ You then can define request methods like any other HTTP method:
             def on_foo(self, req, resp):
                 pass
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
             # Handle the custom FOO method
             async def on_foo(self, req, resp):
                 pass
+
+If the HTTP method contains a hyphen or other non-alphanumeric character,
+the corresponding responder name will not be a valid Python identifier.
+For example, ``VERSION-CONTROL`` maps to ``on_version-control``. In this
+case, define the responder as a regular method and then assign it to the
+expected responder name on the class with :func:`setattr`::
+
+    class VersionControlResource:
+        def handle_version_control(self, req, resp):
+            pass
+
+
+    setattr(
+        VersionControlResource,
+        'on_version-control',
+        VersionControlResource.handle_version_control,
+    )
+
+    app.add_route('/repos', VersionControlResource())

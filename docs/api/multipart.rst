@@ -3,17 +3,16 @@
 Multipart Forms
 ===============
 
-.. contents:: :local:
-
 Falcon features easy and efficient access to submitted multipart forms by using
 :class:`~falcon.media.MultipartFormHandler` to handle the
 ``multipart/form-data`` :ref:`media <media>` type. This handler is enabled by
 default, allowing you to use ``req.get_media()`` to iterate over the
 :class:`body parts <falcon.media.multipart.BodyPart>` in a form:
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         .. code:: python
 
@@ -38,7 +37,8 @@ default, allowing you to use ``req.get_media()`` to iterate over the
                     # Do something else
                     form_data[part.name] = part.text
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         .. code:: python
 
@@ -69,12 +69,28 @@ default, allowing you to use ``req.get_media()`` to iterate over the
    <multipart_cloud_upload>`. Falcon offers straightforward support for all
    of these scenarios.
 
-Body Part Type
---------------
+Multipart Form and Body Part Types
+----------------------------------
 
-.. autoclass:: falcon.media.multipart.BodyPart
-    :members:
-    :exclude-members: data, media, text
+.. tab-set::
+
+    .. tab-item:: WSGI
+        :sync: wsgi
+
+        .. autoclass:: falcon.media.multipart.MultipartForm
+            :members:
+
+        .. autoclass:: falcon.media.multipart.BodyPart
+            :members:
+
+    .. tab-item:: ASGI
+        :sync: asgi
+
+        .. autoclass:: falcon.asgi.multipart.MultipartForm
+            :members:
+
+        .. autoclass:: falcon.asgi.multipart.BodyPart
+            :members:
 
 .. _multipart_parser_conf:
 
@@ -112,9 +128,10 @@ way is to directly modify the properties of this attribute on the media handler
 In order to use your customized handler in an app, simply replace the default
 handler for ``multipart/form-data`` with the new one:
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         .. code:: python
 
@@ -123,7 +140,8 @@ handler for ``multipart/form-data`` with the new one:
             # handler is instantiated and configured as per the above snippet
             app.req_options.media_handlers[falcon.MEDIA_MULTIPART] = handler
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         .. code:: python
 

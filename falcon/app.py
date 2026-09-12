@@ -14,18 +14,45 @@
 
 """Falcon App class."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 from functools import wraps
 from inspect import iscoroutinefunction
 import pathlib
 import re
+from re import Pattern
 import traceback
-from typing import Callable, Iterable, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    ClassVar,
+    Generic,
+    Literal,
+    overload,
+)
 import warnings
 
 from falcon import app_helpers as helpers
 from falcon import constants
 from falcon import responders
 from falcon import routing
+from falcon._typing import _ExcT
+from falcon._typing import _ReqT
+from falcon._typing import _RespT
+from falcon._typing import AsgiResponderCallable
+from falcon._typing import AsgiResponderWsCallable
+from falcon._typing import ErrorHandler
+from falcon._typing import ErrorSerializer
+from falcon._typing import FindMethod
+from falcon._typing import ProcessResponseMethod
+from falcon._typing import ResponderCallable
+from falcon._typing import SinkCallable
+from falcon._typing import SinkPrefix
+from falcon._typing import StartResponse
+from falcon._typing import SyncMiddleware
+from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPInternalServerError
@@ -37,12 +64,12 @@ from falcon.request import RequestOptions
 from falcon.response import Response
 from falcon.response import ResponseOptions
 import falcon.status_codes as status
-from falcon.typing import ErrorHandler
-from falcon.typing import ErrorSerializer
-from falcon.typing import SinkPrefix
+from falcon.typing import ReadableIO
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
+
+__all__ = ('App',)
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
 # reference via module global is faster than going via self
@@ -63,8 +90,8 @@ _TYPELESS_STATUS_CODES = frozenset(
 )
 
 
-class App:
-    """The main entry point into a Falcon-based WSGI app.
+class App(Generic[_ReqT, _RespT]):
+    '''The main entry point into a Falcon-based WSGI app.
 
     Each App instance provides a callable
     `WSGI <https://www.python.org/dev/peps/pep-3333/>`_ interface
@@ -79,8 +106,8 @@ class App:
 
     Keyword Arguments:
         media_type (str): Default media type to use when initializing
-            :py:class:`~.RequestOptions` and
-            :py:class:`~.ResponseOptions`. The ``falcon``
+            :class:`~.RequestOptions` and
+            :class:`~.ResponseOptions`. The ``falcon``
             module provides a number of constants for common media types,
             such as ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
@@ -90,9 +117,9 @@ class App:
             to implement the methods for the events you would like to
             handle; Falcon simply skips over any missing middleware methods::
 
-                class ExampleComponent:
-                    def process_request(self, req, resp):
-                        \"\"\"Process the request before routing it.
+                class ExampleMiddleware:
+                    def process_request(self, req: Request, resp: Response) -> None:
+                        """Process the request before routing it.
 
                         Note:
                             Because Falcon routes each request based on
@@ -105,10 +132,16 @@ class App:
                                 routed to an on_* responder method.
                             resp: Response object that will be routed to
                                 the on_* responder.
-                        \"\"\"
+                        """
 
-                    def process_resource(self, req, resp, resource, params):
-                        \"\"\"Process the request and resource *after* routing.
+                        def process_resource(
+                            self,
+                            req: Request,
+                            resp: Response,
+                            resource: object,
+                            params: dict[str, Any],
+                        ) -> None:
+                        """Process the request and resource *after* routing.
 
                         Note:
                             This method is only called when the request matches
@@ -127,10 +160,16 @@ class App:
                                 template fields, that will be passed to the
                                 resource's responder method as keyword
                                 arguments.
-                        \"\"\"
+                        """
 
-                    def process_response(self, req, resp, resource, req_succeeded)
-                        \"\"\"Post-processing of the response (after routing).
+                    def process_response(
+                        self,
+                        req: Request,
+                        resp: Response,
+                        resource: object,
+                        req_succeeded: bool
+                    ) -> None:
+                        """Post-processing of the response (after routing).
 
                         Args:
                             req: Request object.
@@ -141,7 +180,7 @@ class App:
                             req_succeeded: True if no exceptions were raised
                                 while the framework processed and routed the
                                 request; otherwise False.
-                        \"\"\"
+                        """
 
             (See also: :ref:`Middleware <middleware>`)
 
@@ -169,7 +208,7 @@ class App:
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests. An instance of :py:class:`~.CORSMiddleware` can instead be
+            requests. An instance of :class:`~.CORSMiddleware` can instead be
             passed to the middleware argument to customize its behaviour.
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
@@ -177,46 +216,33 @@ class App:
         sink_before_static_route (bool): Indicates if the sinks should be processed
             before (when ``True``) or after (when ``False``) the static routes.
             This has an effect only if no route was matched. (default ``True``)
+    '''
 
-    Attributes:
-        req_options: A set of behavioral options related to incoming
-            requests. (See also: :py:class:`~.RequestOptions`)
-        resp_options: A set of behavioral options related to outgoing
-            responses. (See also: :py:class:`~.ResponseOptions`)
-        router_options: Configuration options for the router. If a
-            custom router is in use, and it does not expose any
-            configurable options, referencing this attribute will raise
-            an instance of ``AttributeError``.
+    _META_METHODS: ClassVar[frozenset[str]] = frozenset(constants._META_METHODS)
 
-            (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
-    """
+    _STREAM_BLOCK_SIZE: ClassVar[int] = 8 * 1024  # 8 KiB
 
-    _META_METHODS = frozenset(constants._META_METHODS)
-
-    _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
-
-    _STATIC_ROUTE_TYPE = routing.StaticRoute
+    _STATIC_ROUTE_TYPE: ClassVar[type[routing.StaticRoute]] = routing.StaticRoute
 
     # NOTE(kgriffs): This makes it easier to tell what we are dealing with
     #   without having to import falcon.asgi.
-    _ASGI = False
+    _ASGI: ClassVar[bool] = False
 
     # NOTE(kgriffs): We do it like this rather than just implementing the
     #   methods directly on the class, so that we keep all the default
     #   responders colocated in the same module. This will make it more
     #   likely that the implementations of the async and non-async versions
     #   of the methods are kept in sync (pun intended).
-    _default_responder_bad_request = responders.bad_request
-    _default_responder_path_not_found = responders.path_not_found
+    _default_responder_bad_request: ClassVar[ResponderCallable] = responders.bad_request
+    _default_responder_path_not_found: ClassVar[ResponderCallable] = (
+        responders.path_not_found
+    )
 
     __slots__ = (
         '_cors_enable',
         '_error_handlers',
         '_independent_middleware',
         '_middleware',
-        # NOTE(kgriffs): WebSocket is currently only supported for
-        #   ASGI apps, but we may add support for WSGI at some point.
-        '_middleware_ws',
         '_request_type',
         '_response_type',
         '_router_search',
@@ -231,54 +257,134 @@ class App:
         'resp_options',
     )
 
+    _cors_enable: bool
+    _error_handlers: dict[type[Exception], ErrorHandler[_ReqT, _RespT]]
+    _independent_middleware: bool
+    _middleware: helpers.PreparedMiddlewareResult
+    _request_type: type[_ReqT]
+    _response_type: type[_RespT]
+    _router_search: FindMethod
+    # NOTE(caselit): this should actually be a protocol of the methods required
+    # by a router, hardcoded to CompiledRouter for convenience for now.
+    _router: routing.CompiledRouter
+    _serialize_error: ErrorSerializer[_ReqT, _RespT]
+    _sink_and_static_routes: tuple[
+        tuple[
+            Pattern[str] | routing.StaticRoute,
+            SinkCallable[_ReqT, _RespT] | routing.StaticRoute,
+            bool,
+        ],
+        ...,
+    ]
+    _sink_before_static_route: bool
+    _sinks: list[tuple[Pattern[str], SinkCallable[_ReqT, _RespT], Literal[True]]]
+    _static_routes: list[
+        tuple[routing.StaticRoute, routing.StaticRoute, Literal[False]]
+    ]
+    _unprepared_middleware: list[SyncMiddleware[_ReqT, _RespT]]
+
+    # Attributes
     req_options: RequestOptions
+    """A set of behavioral options related to incoming requests.
+
+    See also: :class:`~.RequestOptions`
+    """
     resp_options: ResponseOptions
+    """A set of behavioral options related to outgoing responses.
+
+    See also: :class:`~.ResponseOptions`
+    """
+
+    @overload
+    def __init__(
+        self: App[Request, Response],
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: App[_ReqT, Response],
+        media_type: str = ...,
+        request_type: type[_ReqT] | None = None,
+        response_type: None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: App[Request, _RespT],
+        media_type: str = ...,
+        request_type: None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        media_type: str = ...,
+        request_type: type[_ReqT] | None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = ...,
+        router: routing.CompiledRouter | None = ...,
+        independent_middleware: bool = ...,
+        cors_enable: bool = ...,
+        sink_before_static_route: bool = ...,
+    ) -> None: ...
 
     def __init__(
         self,
-        media_type=constants.DEFAULT_MEDIA_TYPE,
-        request_type=Request,
-        response_type=Response,
-        middleware=None,
-        router=None,
-        independent_middleware=True,
-        cors_enable=False,
-        sink_before_static_route=True,
-    ):
+        media_type: str = constants.DEFAULT_MEDIA_TYPE,
+        request_type: type[_ReqT] | None = None,
+        response_type: type[_RespT] | None = None,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]]
+        | None = None,
+        router: routing.CompiledRouter | None = None,
+        independent_middleware: bool = True,
+        cors_enable: bool = False,
+        sink_before_static_route: bool = True,
+    ) -> None:
         self._cors_enable = cors_enable
         self._sink_before_static_route = sink_before_static_route
         self._sinks = []
         self._static_routes = []
         self._sink_and_static_routes = ()
 
-        if cors_enable:
-            cm = CORSMiddleware()
-
-            if middleware is None:
-                middleware = [cm]
-            else:
-                try:
-                    # NOTE(kgriffs): Check to see if middleware is an
-                    #   iterable, and if so, append the CORSMiddleware
-                    #   instance.
-                    iter(middleware)
-                    middleware = list(middleware)
-                    middleware.append(cm)
-                except TypeError:
-                    # NOTE(kgriffs): Assume the middleware kwarg references
-                    #   a single middleware component.
-                    middleware = [middleware, cm]
-
-        # set middleware
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
-        self.add_middleware(middleware)
+        self.add_middleware(middleware or [])
+        if cors_enable:
+            self.add_middleware([CORSMiddleware()])
 
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
 
-        self._request_type = request_type
-        self._response_type = response_type
+        self._request_type = request_type or Request  # type: ignore[assignment]
+        self._response_type = response_type or Response  # type: ignore[assignment]
 
         self._error_handlers = {}
         self._serialize_error = helpers.default_serialize_error
@@ -295,7 +401,7 @@ class App:
         self.add_error_handler(HTTPStatus, self._http_status_handler)
 
     def __call__(  # noqa: C901
-        self, env: dict, start_response: Callable
+        self, env: WSGIEnvironment, start_response: StartResponse
     ) -> Iterable[bytes]:
         """WSGI `app` method.
 
@@ -313,11 +419,10 @@ class App:
         """
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
-        resource: Optional[object] = None
-        responder: Optional[Callable] = None
-        params: dict = {}
+        resource: object | None = None
+        params: dict[str, Any] = {}
 
-        dependent_mw_resp_stack: list = []
+        dependent_mw_resp_stack: list[ProcessResponseMethod] = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -334,15 +439,15 @@ class App:
             # response middleware after request middleware succeeds.
             if self._independent_middleware:
                 for process_request in mw_req_stack:
-                    process_request(req, resp)
+                    process_request(req, resp)  # type: ignore[operator]
                     if resp.complete:
                         break
             else:
-                for process_request, process_response in mw_req_stack:
+                for process_request, process_response in mw_req_stack:  # type: ignore[assignment,misc]
                     if process_request and not resp.complete:
-                        process_request(req, resp)
+                        process_request(req, resp)  # type: ignore[operator]
                     if process_response:
-                        dependent_mw_resp_stack.insert(0, process_response)
+                        dependent_mw_resp_stack.insert(0, process_response)  # type: ignore[arg-type]
 
             if not resp.complete:
                 # NOTE(warsaw): Moved this to inside the try except
@@ -352,7 +457,8 @@ class App:
                 # next-hop child resource. In that case, the object
                 # being asked to dispatch to its child will raise an
                 # HTTP exception signalling the problem, e.g. a 404.
-                responder, params, resource, req.uri_template = self._get_responder(req)
+                responder: ResponderCallable
+                responder, params, resource, req.uri_template = self._get_responder(req)  # type: ignore[assignment]
         except Exception as ex:
             if not self._handle_exception(req, resp, ex, params):
                 raise
@@ -372,7 +478,7 @@ class App:
                             break
 
                 if not resp.complete:
-                    responder(req, resp, **params)  # type: ignore
+                    responder(req, resp, **params)
 
                 req_succeeded = True
             except Exception as ex:
@@ -389,8 +495,8 @@ class App:
 
                 req_succeeded = False
 
-        body = []
-        length = 0
+        body: Iterable[bytes] = []
+        length: int | None = 0
 
         try:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
@@ -400,8 +506,8 @@ class App:
 
             req_succeeded = False
 
-        resp_status = code_to_http_status(resp.status)
-        default_media_type = self.resp_options.default_media_type
+        resp_status: str = code_to_http_status(resp.status)
+        default_media_type: str | None = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
@@ -439,17 +545,31 @@ class App:
             if length is not None:
                 resp._headers['content-length'] = str(length)
 
-        headers = resp._wsgi_headers(default_media_type)
+        headers: list[tuple[str, str]] = resp._wsgi_headers(default_media_type)
 
         # Return the response per the WSGI spec.
         start_response(resp_status, headers)
         return body
 
+    # NOTE(caselit): the return type depends on the router, hardcoded to
+    # CompiledRouterOptions for convenience.
     @property
-    def router_options(self):
+    def router_options(self) -> routing.CompiledRouterOptions:
+        """Configuration options for the router.
+
+        If a custom router is in use, and it does not expose any
+        configurable options, referencing this attribute will raise
+        an instance of ``AttributeError``.
+
+        See also: :ref:`CompiledRouterOptions <compiled_router_options>`.
+        """
         return self._router.options
 
-    def add_middleware(self, middleware: Union[object, Iterable]) -> None:
+    def add_middleware(
+        self,
+        middleware: SyncMiddleware[_ReqT, _RespT]
+        | Iterable[SyncMiddleware[_ReqT, _RespT]],
+    ) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -460,13 +580,17 @@ class App:
         """
 
         # NOTE(kgriffs): Since this is called by the initializer, there is
-        #   the chance that middleware may be None.
+        #   the chance that middleware may be empty.
         if middleware:
             try:
-                middleware = list(middleware)  # type: ignore
+                # NOTE(kgriffs): Check to see if middleware is an iterable.
+                middleware = list(
+                    cast(Iterable[SyncMiddleware[_ReqT, _RespT]], middleware)
+                )
             except TypeError:
-                # middleware is not iterable; assume it is just one bare component
-                middleware = [middleware]
+                # NOTE(kgriffs): Middleware is not iterable; assume it is just
+                #   one bare component.
+                middleware = [cast(SyncMiddleware[_ReqT, _RespT], middleware)]
 
             if (
                 self._cors_enable
@@ -494,7 +618,7 @@ class App:
             independent_middleware=self._independent_middleware,
         )
 
-    def add_route(self, uri_template: str, resource: object, **kwargs):
+    def add_route(self, uri_template: str, resource: object, **kwargs: Any) -> None:
         """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
@@ -603,10 +727,10 @@ class App:
     def add_static_route(
         self,
         prefix: str,
-        directory: Union[str, pathlib.Path],
+        directory: str | pathlib.Path,
         downloadable: bool = False,
-        fallback_filename: Optional[str] = None,
-    ):
+        fallback_filename: str | None = None,
+    ) -> None:
         """Add a route to a directory of static files.
 
         Static routes provide a way to serve files directly. This
@@ -674,7 +798,9 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/') -> None:
+    def add_sink(
+        self, sink: SinkCallable[_ReqT, _RespT], prefix: SinkPrefix = r'/'
+    ) -> None:
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
@@ -686,12 +812,44 @@ class App:
         impractical. For example, you might use a sink to create a smart
         proxy that forwards requests to one or more backend services.
 
+        Note:
+            To support CORS preflight requests when using the default CORS middleware,
+            either by setting ``App.cors_enable=True`` or by adding the
+            :class:`~.CORSMiddleware` to the ``App.middleware``, the sink should
+            set the ``Allow`` header in the request to the allowed
+            method values when serving an ``OPTIONS`` request. If the ``Allow`` header
+            is missing from the response, the default CORS middleware will deny the
+            preflight request.
+
         Args:
             sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
 
                 Note:
                     When using an async version of the ``App``, this must be a
-                    coroutine.
+                    coroutine function taking the form
+                    ``func(req, resp, ws=None, **kwargs)``.
+
+                    Similar to
+                    :meth:`error handlers <falcon.asgi.App.add_error_handler>`,
+                    in the case of a WebSocket connection, the
+                    :class:`resp <falcon.asgi.Response>` argument will be
+                    ``None``, whereas the `ws` keyword argument will receive
+                    the :class:`~falcon.asgi.WebSocket` connection object.
+
+                    For backwards-compatibility, when `ws` is absent from the
+                    sink's signature, or a regex match (see **prefix** below)
+                    contains a group named 'ws', the
+                    :class:`~falcon.asgi.WebSocket` object is passed in place
+                    of the incompatible `resp`.
+
+                    This behavior will change in Falcon 5.0: when draining a
+                    WebSocket connection, `resp` will always be set to ``None``
+                    regardless of the sink's signature.
+
+                .. versionadded:: 4.1
+                    If an asynchronous sink callable explicitly defines a `ws`
+                    argument, it is used to pass the
+                    :class:`~falcon.asgi.WebSocket` connection object.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the
@@ -720,6 +878,8 @@ class App:
         if not hasattr(prefix, 'match'):
             # Assume it is a string
             prefix = re.compile(prefix)
+        else:
+            prefix = cast(Pattern[str], prefix)
 
         # NOTE(kgriffs): Insert at the head of the list such that
         # in the case of a duplicate prefix, the last one added
@@ -727,11 +887,25 @@ class App:
         self._sinks.insert(0, (prefix, sink, True))
         self._update_sink_and_static_routes()
 
+    @overload
     def add_error_handler(
         self,
-        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
-        handler: Optional[ErrorHandler] = None,
-    ):
+        exception: type[_ExcT],
+        handler: Callable[[_ReqT, _RespT, _ExcT, dict[str, Any]], None],
+    ) -> None: ...
+
+    @overload
+    def add_error_handler(
+        self,
+        exception: type[Exception] | Iterable[type[Exception]],
+        handler: ErrorHandler[_ReqT, _RespT] | None = None,
+    ) -> None: ...
+
+    def add_error_handler(  # type: ignore[misc]
+        self,
+        exception: type[Exception] | Iterable[type[Exception]],
+        handler: ErrorHandler[_ReqT, _RespT] | None = None,
+    ) -> None:
         """Register a handler for one or more exception types.
 
         Error handlers may be registered for any exception type, including
@@ -810,34 +984,24 @@ class App:
 
         """
 
-        def wrap_old_handler(old_handler):
-            # NOTE(kgriffs): This branch *is* actually tested by
-            #   test_error_handlers.test_handler_signature_shim_asgi() (as
-            #   verified manually via pdb), but for some reason coverage
-            #   tracking isn't picking it up.
-            if iscoroutinefunction(old_handler):  # pragma: no cover
-
-                @wraps(old_handler)
-                async def handler_async(req, resp, ex, params):
-                    await old_handler(ex, req, resp, params)
-
-                return handler_async
-
+        def wrap_old_handler(
+            old_handler: Callable[..., Any],
+        ) -> ErrorHandler[_ReqT, _RespT]:
             @wraps(old_handler)
-            def handler(req, resp, ex, params):
+            def handler(
+                req: _ReqT, resp: _RespT, ex: Exception, params: dict[str, Any]
+            ) -> None:
                 old_handler(ex, req, resp, params)
 
-            return handler
+            return handler  # type: ignore[return-value]
 
         if handler is None:
-            try:
-                handler = exception.handle  # type: ignore
-            except AttributeError:
+            handler = getattr(exception, 'handle', None)
+            if handler is None:
                 raise AttributeError(
-                    'handler must either be specified '
-                    'explicitly or defined as a static'
-                    'method named "handle" that is a '
-                    'member of the given exception class.'
+                    'handler must either be specified explicitly or defined as a '
+                    'static method named "handle" that is a member of the given '
+                    'exception class.'
                 )
 
         # TODO(vytas): Remove this shimming in a future Falcon version.
@@ -851,25 +1015,25 @@ class App:
         ) or arg_names[1:3] in (('req', 'resp'), ('request', 'response')):
             warnings.warn(
                 f'handler is using a deprecated signature; please order its '
-                f'arguments as {handler.__qualname__}(req, resp, ex, params). '
+                f'arguments as {handler.__qualname__}(req, resp, ex, params). '  # type: ignore
                 f'This compatibility shim will be removed in Falcon 5.0.',
                 deprecation.DeprecatedWarning,
             )
             handler = wrap_old_handler(handler)
 
-        exception_tuple: tuple
+        exception_tuple: tuple[type[Exception], ...]
         try:
-            exception_tuple = tuple(exception)  # type: ignore
+            exception_tuple = tuple(exception)  # type: ignore[arg-type]
         except TypeError:
-            exception_tuple = (exception,)
+            exception_tuple = (exception,)  # type: ignore[assignment]
 
         for exc in exception_tuple:
-            if not issubclass(exc, BaseException):
+            if not issubclass(exc, Exception):
                 raise TypeError('"exception" must be an exception type.')
 
             self._error_handlers[exc] = handler
 
-    def set_error_serializer(self, serializer: ErrorSerializer):
+    def set_error_serializer(self, serializer: ErrorSerializer[_ReqT, _RespT]) -> None:
         """Override the default serializer for instances of :class:`~.HTTPError`.
 
         When a responder raises an instance of :class:`~.HTTPError`,
@@ -892,7 +1056,9 @@ class App:
         such as `to_json()` and `to_dict()`, that can be used from
         within custom serializers. For example::
 
-            def my_serializer(req, resp, exception):
+            def my_serializer(
+                req: Request, resp: Response, exception: HTTPError
+            ) -> None:
                 representation = None
 
                 preferred = req.client_prefers((falcon.MEDIA_YAML, falcon.MEDIA_JSON))
@@ -921,14 +1087,23 @@ class App:
     # Helpers that require self
     # ------------------------------------------------------------------------
 
-    def _prepare_middleware(self, middleware=None, independent_middleware=False):
+    def _prepare_middleware(
+        self,
+        middleware: list[SyncMiddleware[_ReqT, _RespT]],
+        independent_middleware: bool = False,
+    ) -> helpers.PreparedMiddlewareResult:
         return helpers.prepare_middleware(
             middleware=middleware, independent_middleware=independent_middleware
         )
 
     def _get_responder(
-        self, req: Request
-    ) -> Tuple[Callable, dict, object, Optional[str]]:
+        self, req: _ReqT
+    ) -> tuple[
+        ResponderCallable | AsgiResponderCallable | AsgiResponderWsCallable,
+        dict[str, Any],
+        object,
+        str | None,
+    ]:
         """Search routes for a matching responder.
 
         Args:
@@ -964,13 +1139,20 @@ class App:
                 # NOTE(kgriffs): Older routers may not return the
                 # template. But for performance reasons they should at
                 # least return None if they don't support it.
-                resource, method_map, params = route
+                resource, method_map, params = route  # type: ignore[misc]
         else:
             # NOTE(kgriffs): Older routers may indicate that no route
             # was found by returning (None, None, None). Therefore, we
             # normalize resource as the flag to indicate whether or not
             # a route was found, for the sake of backwards-compat.
             resource = None
+
+            # NOTE(vytas): This nested fallback chain might make static code
+            #   checkers think that method_map/params may be possibly unbound.
+            #   Since this is merely a compatibility path for old routers, we
+            #   simply initialize these vars here for the sake of clarity.
+            method_map = {}
+            params = {}
 
         if resource is not None:
             try:
@@ -980,7 +1162,7 @@ class App:
                 #   binding self to the default responder method. We could
                 #   decorate the function itself with @staticmethod, but it
                 #   would perhaps be less obvious to the reader why this is
-                #   needed when just looking at the code in the reponder
+                #   needed when just looking at the code in the responder
                 #   module, so we just grab it directly here.
                 responder = self.__class__._default_responder_bad_request
         else:
@@ -990,8 +1172,8 @@ class App:
                 m = matcher.match(path)
                 if m:
                     if is_sink:
-                        params = m.groupdict()
-                    responder = obj
+                        params = m.groupdict()  # type: ignore[union-attr]
+                    responder = obj  # type: ignore[assignment,unused-ignore]
 
                     break
             else:
@@ -1000,7 +1182,7 @@ class App:
         return (responder, params, resource, uri_template)
 
     def _compose_status_response(
-        self, req: Request, resp: Response, http_status: HTTPStatus
+        self, req: _ReqT, resp: _RespT, http_status: HTTPStatus
     ) -> None:
         """Compose a response for the given HTTPStatus instance."""
 
@@ -1017,7 +1199,7 @@ class App:
         resp.text = http_status.text
 
     def _compose_error_response(
-        self, req: Request, resp: Response, error: HTTPError
+        self, req: _ReqT, resp: _RespT, error: HTTPError
     ) -> None:
         """Compose a response for the given HTTPError instance."""
 
@@ -1028,17 +1210,23 @@ class App:
 
         self._serialize_error(req, resp, error)
 
-    def _http_status_handler(self, req, resp, status, params):
+    def _http_status_handler(
+        self, req: _ReqT, resp: _RespT, status: HTTPStatus, params: dict[str, Any]
+    ) -> None:
         self._compose_status_response(req, resp, status)
 
-    def _http_error_handler(self, req, resp, error, params):
+    def _http_error_handler(
+        self, req: _ReqT, resp: _RespT, error: HTTPError, params: dict[str, Any]
+    ) -> None:
         self._compose_error_response(req, resp, error)
 
-    def _python_error_handler(self, req, resp, error, params):
+    def _python_error_handler(
+        self, req: _ReqT, resp: _RespT, error: Exception, params: dict[str, Any]
+    ) -> None:
         req.log_error(traceback.format_exc())
         self._compose_error_response(req, resp, HTTPInternalServerError())
 
-    def _find_error_handler(self, ex):
+    def _find_error_handler(self, ex: Exception) -> ErrorHandler[_ReqT, _RespT] | None:
         # NOTE(csojinb): The `__mro__` class attribute returns the method
         # resolution order tuple, i.e. the complete linear inheritance chain
         # ``(type(ex), ..., object)``. For a valid exception class, the last
@@ -1053,8 +1241,11 @@ class App:
 
             if handler is not None:
                 return handler
+        return None
 
-    def _handle_exception(self, req, resp, ex, params):
+    def _handle_exception(
+        self, req: _ReqT, resp: _RespT, ex: Exception, params: dict[str, Any]
+    ) -> bool:
         """Handle an exception raised from mw or a responder.
 
         Args:
@@ -1093,7 +1284,11 @@ class App:
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
     # to call using self, and this function is called for most
     # requests.
-    def _get_body(self, resp, wsgi_file_wrapper=None):
+    def _get_body(
+        self,
+        resp: Response,
+        wsgi_file_wrapper: Callable[[ReadableIO, int], Iterable[bytes]] | None = None,
+    ) -> tuple[Iterable[bytes], int | None]:
         """Convert resp content into an iterable as required by PEP 333.
 
         Args:
@@ -1116,7 +1311,7 @@ class App:
 
         """
 
-        data = resp.render_body()
+        data: bytes | None = resp.render_body()
         if data is not None:
             return [data], len(data)
 
@@ -1130,11 +1325,13 @@ class App:
                     # TODO(kgriffs): Make block size configurable at the
                     # global level, pending experimentation to see how
                     # useful that would be. See also the discussion on
-                    # this GitHub PR: http://goo.gl/XGrtDz
-                    iterable = wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)
+                    # this GitHub PR:
+                    # https://github.com/falconry/falcon/pull/249#discussion_r11269730
+                    iterable = wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)  # type: ignore[arg-type]
                 else:
                     iterable = helpers.CloseableStreamIterator(
-                        stream, self._STREAM_BLOCK_SIZE
+                        stream,  # type: ignore[arg-type]
+                        self._STREAM_BLOCK_SIZE,
                     )
             else:
                 iterable = stream
@@ -1143,28 +1340,29 @@ class App:
 
         return [], 0
 
-    def _update_sink_and_static_routes(self):
+    def _update_sink_and_static_routes(self) -> None:
         if self._sink_before_static_route:
-            self._sink_and_static_routes = tuple(self._sinks + self._static_routes)
+            self._sink_and_static_routes = tuple(self._sinks + self._static_routes)  # type: ignore[operator]
         else:
-            self._sink_and_static_routes = tuple(self._static_routes + self._sinks)
+            self._sink_and_static_routes = tuple(self._static_routes + self._sinks)  # type: ignore[operator]
 
 
 # TODO(myusko): This class is a compatibility alias, and should be removed
-# in the next major release (4.0).
-class API(App):
+# in Falcon 5.0.
+class API(App[_ReqT, _RespT]):
     """Compatibility alias of :class:`falcon.App`.
 
     ``API`` was renamed to :class:`App <falcon.App>` in Falcon 3.0 in order to
     reflect the breadth of applications that :class:`App <falcon.App>`, and its
     ASGI counterpart in particular, can now be used for.
 
-    This compatibility alias should be considered deprecated; it will be
-    removed in a future release.
+    .. deprecated:: 3.0
+        This compatibility alias is deprecated; it will be removed entirely in
+        Falcon 5.0.
     """
 
     @deprecation.deprecated(
-        'API class may be removed in a future release, use falcon.App instead.'
+        'The API class will be removed in Falcon 5.0, use falcon.App instead.'
     )
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

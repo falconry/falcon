@@ -7,7 +7,11 @@ from falcon import errors
 from falcon import media
 from falcon import testing
 import falcon.asgi
-from falcon.util.deprecation import DeprecatedWarning
+
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
 
 
 def create_client(resource, handlers=None):
@@ -89,7 +93,7 @@ def test_non_ascii_json_serialization(document):
         ('application/x-msgpack'),
     ],
 )
-def test_msgpack(media_type):
+def test_msgpack(media_type, msgpack):
     class TestResource:
         async def on_get(self, req, resp):
             resp.content_type = media_type
@@ -176,8 +180,7 @@ def test_default_media_type():
     assert result.json == doc
 
 
-@pytest.mark.parametrize('monkeypatch_resolver', [True, False])
-def test_mimeparse_edgecases(monkeypatch_resolver):
+def test_mimeparse_edgecases():
     doc = {'something': True}
 
     class TestResource:
@@ -198,21 +201,6 @@ def test_mimeparse_edgecases(monkeypatch_resolver):
                 resp.media = doc
 
     client = create_client(TestResource())
-
-    handlers = client.app.resp_options.media_handlers
-
-    # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
-    #   technically a public method, and so we make sure it still works here.
-    if monkeypatch_resolver:
-
-        def _resolve(media_type, default, raise_not_found=True):
-            with pytest.warns(DeprecatedWarning, match='This undocumented method'):
-                h = handlers.find_by_media_type(
-                    media_type, default, raise_not_found=raise_not_found
-                )
-            return h, None, None
-
-        handlers._resolve = _resolve
 
     result = client.simulate_get('/')
     assert result.json == doc

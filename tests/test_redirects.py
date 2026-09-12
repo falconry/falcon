@@ -1,4 +1,3 @@
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -6,8 +5,8 @@ import falcon.testing as testing
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     resource = RedirectingResource()
     app.add_route('/', resource)
@@ -16,8 +15,8 @@ def client(asgi):
 
 
 @pytest.fixture
-def client_exercising_headers(asgi):
-    app = create_app(asgi)
+def client_exercising_headers(asgi, util):
+    app = util.create_app(asgi)
 
     resource = RedirectingResourceWithHeaders()
     app.add_route('/', resource)

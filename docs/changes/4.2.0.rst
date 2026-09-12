@@ -1,0 +1,106 @@
+Changelog for Falcon 4.2.0
+==========================
+
+.. falcon-release: 2025-11-10
+
+Summary
+-------
+
+Falcon 4.2.0 primarily contains typing enhancements and performance
+optimizations. This release also marks the debut of pre-compiled wheels for the
+:ref:`free-threaded <faq_free_threading>` CPython 3.14 build.
+:ref:`Let us know <chat>` if you are experimenting with scaling Falcon
+applications using free-threading!
+
+The typing improvements focus on making the WSGI and ASGI App types
+:ref:`generic <generic_app_types>` (parametrized by the request and response
+types). This should make it significantly easier to properly annotate
+applications that leverage custom request and/or response types.
+
+Additionally, we have fixed a reproducibility issue (thanks to
+`@bmwiedemann <https://github.com/bmwiedemann>`__ from openSUSE for reporting!)
+in our documentation build process. Regarding packaging Falcon for
+distributions in general, we would like to remind you of the
+:doc:`/community/packaging` that was published with the previous Falcon release
+(4.1.0). We hope this guide proves useful.
+
+This release also incorporates a number of pull requests submitted by our
+community. Sincere thanks to all 8 contributors who made this release possible!
+
+
+Changes to Supported Platforms
+------------------------------
+
+- The end-of-life Python 3.8 is no longer supported.
+  (`#2527 <https://github.com/falconry/falcon/issues/2527>`__)
+
+- Although the Falcon 4.x series is only guaranteed to support Python 3.10+,
+  this release still supports the end-of-life Python 3.9 at runtime using the
+  pure Python wheel.
+
+  (Note that 3.9 is completely unsupported for new development of Falcon apps,
+  as type checking, building documentation, etc, are likely to fail outright.)
+
+- Pre-compiled wheels are no longer provided for the macOS x86_64 (Intel) platform.
+  Falcon will continue to :ref:`install <install>` (from the pure Python wheel)
+  and run on macOS Intel just fine.
+  You can also build the binary from *sdist* yourself.
+  (`#2536 <https://github.com/falconry/falcon/issues/2536>`__)
+
+- Pre-compiled wheels are now available for the
+  `free-threaded <https://docs.python.org/3/howto/free-threading-python.html>`__
+  CPython 3.14 build on selected Linux platforms.
+  (See also: :ref:`faq_free_threading`)
+  (`#2501 <https://github.com/falconry/falcon/issues/2501>`__)
+
+
+New & Improved
+--------------
+
+- The URI encoding functions :func:`~falcon.uri.encode`,
+  :func:`~falcon.uri.encode_check_escaped`, :func:`~falcon.uri.encode_value`, and
+  :func:`~falcon.uri.encode_value_check_escaped` have been reimplemented in
+  Cython, leading to a significant speed bump under CPython (provided Falcon is
+  :ref:`installed <install>` from a binary wheel, or cythonized from a source
+  distribution).
+
+  The performance improvement can reach an order of magnitude, although the
+  actual numbers vary depending on the input data. For instance, on CPython 3.12,
+  calling :func:`~falcon.uri.encode_value` with
+  ``'no-reply@falconframework.org'`` would be sped up ~9x, and using the already
+  encoded value ``'no-reply%40falconframework.org'`` with
+  :func:`~falcon.uri.encode_value_check_escaped` could yield a ~12x speed boost. (`#1169 <https://github.com/falconry/falcon/issues/1169>`__)
+- :class:`falcon.App` and :class:`falcon.asgi.App` have been converted to
+  :class:`generic types <typing.Generic>` parametrized by the request and
+  response types, and popular type checkers such as Mypy and Pyright should now
+  correctly infer the use of custom subclasses passed by `request_type` and
+  `response_type`, respectively. (`#2372 <https://github.com/falconry/falcon/issues/2372>`__)
+- Falcon now supports the retrieval-like ``QUERY`` HTTP method; handlers can be
+  implemented using ``on_query(req, resp, ...)`` on resources.
+  See the IETF draft for details: https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-11.html.
+  (`#2539 <https://github.com/falconry/falcon/issues/2539>`__)
+
+
+Fixed
+-----
+
+- Falcon's documentation build process was not fully reproducible, as the output
+  could vary with the build system's date. The issue was addressed by adding
+  support for setting the build date via the
+  `SOURCE_DATE_EPOCH <https://reproducible-builds.org/docs/source-date-epoch/>`__
+  standardized environment variable. (`#2567 <https://github.com/falconry/falcon/issues/2567>`__)
+
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all of our talented and stylish contributors for this release!
+
+- `AyanAhmedKhan <https://github.com/AyanAhmedKhan>`__
+- `CaselIT <https://github.com/CaselIT>`__
+- `kemingy <https://github.com/kemingy>`__
+- `MannXo <https://github.com/MannXo>`__
+- `sonephyo <https://github.com/sonephyo>`__
+- `TudorGR <https://github.com/TudorGR>`__
+- `vytas7 <https://github.com/vytas7>`__
+- `x612skm <https://github.com/x612skm>`__

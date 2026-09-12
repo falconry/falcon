@@ -23,7 +23,9 @@ in the `falcon` module, and so must be explicitly imported::
     name, port = uri.parse_host('example.org:8080')
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from __future__ import annotations
+
+from typing import Callable, overload
 
 from falcon.constants import PYPY
 
@@ -231,7 +233,7 @@ Returns:
 """
 
 
-def _join_tokens_bytearray(tokens: List[bytes]) -> str:
+def _join_tokens_bytearray(tokens: list[bytes]) -> str:
     decoded_uri = bytearray(tokens[0])
     for token in tokens[1:]:
         token_partial = token[:2]
@@ -245,7 +247,7 @@ def _join_tokens_bytearray(tokens: List[bytes]) -> str:
     return decoded_uri.decode('utf-8', 'replace')
 
 
-def _join_tokens_list(tokens: List[bytes]) -> str:
+def _join_tokens_list(tokens: list[bytes]) -> str:
     decoded = tokens[:1]
     # PERF(vytas): Do not copy list: a simple bool flag is fastest on PyPy JIT.
     skip = True
@@ -339,7 +341,7 @@ def decode(encoded_uri: str, unquote_plus: bool = True) -> str:
 
 def parse_query_string(
     query_string: str, keep_blank: bool = False, csv: bool = False
-) -> Dict[str, Union[str, List[str]]]:
+) -> dict[str, str | list[str]]:
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -386,7 +388,7 @@ def parse_query_string(
 
     """
 
-    params: dict = {}
+    params: dict[str, str | list[str]] = {}
 
     is_encoded = '+' in query_string or '%' in query_string
 
@@ -467,9 +469,17 @@ def parse_query_string(
     return params
 
 
+@overload
+def parse_host(host: str, default_port: int) -> tuple[str, int]: ...
+
+
+@overload
 def parse_host(
-    host: str, default_port: Optional[int] = None
-) -> Tuple[str, Optional[int]]:
+    host: str, default_port: int | None = None
+) -> tuple[str, int | None]: ...
+
+
+def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | None]:
     """Parse a canonical 'host:port' string into parts.
 
     Parse a host string (which may or may not contain a port) into
@@ -554,7 +564,11 @@ def unquote_string(quoted: str) -> str:
 
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
-if not TYPE_CHECKING:
-    if _cy_uri is not None:
-        decode = _cy_uri.decode  # NOQA
-        parse_query_string = _cy_uri.parse_query_string  # NOQA
+if _cy_uri is not None:  # pragma: nocover
+    encode = _cy_uri.encode  # NOQA
+    encode_check_escaped = _cy_uri.encode_check_escaped  # NOQA
+    encode_value = _cy_uri.encode_value  # NOQA
+    encode_value_check_escaped = _cy_uri.encode_value_check_escaped  # NOQA
+
+    decode = _cy_uri.decode  # NOQA
+    parse_query_string = _cy_uri.parse_query_string  # NOQA

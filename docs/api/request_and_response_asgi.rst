@@ -3,9 +3,6 @@
 ASGI Request & Response
 =======================
 
-* `Request`_
-* `Response`_
-
 Instances of the :class:`falcon.asgi.Request` and
 :class:`falcon.asgi.Response` classes are passed into responders as
 the second and third arguments, respectively:
@@ -34,7 +31,6 @@ Request
 .. autoclass:: falcon.asgi.Request
     :members:
     :inherited-members:
-    :exclude-members: media, context_type
 
 .. autoclass:: falcon.asgi.BoundedStream
     :members:
@@ -45,7 +41,7 @@ Response
 .. autoclass:: falcon.asgi.Response
     :members:
     :inherited-members:
-    :exclude-members: context_type, add_link
+    :exclude-members: add_link
 
 .. autoclass:: falcon.asgi.SSEvent
     :members:

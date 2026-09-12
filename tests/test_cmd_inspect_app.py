@@ -1,17 +1,21 @@
 from argparse import Namespace
+import contextlib
 import io
 import sys
 
-from _util import create_app  # NOQA
 import pytest
 
 from falcon import App
 from falcon import inspect
+import falcon.asgi
 from falcon.cmd import inspect_app
-from falcon.testing import redirected
 
 _WIN32 = sys.platform.startswith('win')
-_MODULE = 'tests.test_cmd_inspect_app'
+
+# NOTE(vytas): This is not the cleanest way to import as we lack __init__.py,
+#   but it works as pytest (when operating in the default "prepend" import mode)
+#   inserts the directory of every test file into sys.path.
+_MODULE = 'test_cmd_inspect_app'
 
 
 class DummyResource:
@@ -24,6 +28,11 @@ class DummyResourceAsync:
     async def on_get(self, req, resp):
         resp.text = 'Test\n'
         resp.status = '200 OK'
+
+
+def create_app(asgi):
+    app_cls = falcon.asgi.App if asgi else App
+    return app_cls()
 
 
 def make_app(asgi=False):
@@ -111,7 +120,7 @@ class TestLoadApp:
     def test_load_app(self, name):
         parser = inspect_app.make_parser()
         args = Namespace(
-            app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False
+            app_module=f'{_MODULE}:{name}', route_only=False, verbose=False
         )
         app = inspect_app.load_app(parser, args)
         assert isinstance(app, App)
@@ -128,7 +137,7 @@ class TestLoadApp:
     def test_load_app_error(self, name):
         parser = inspect_app.make_parser()
         args = Namespace(
-            app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False
+            app_module=f'{_MODULE}:{name}', route_only=False, verbose=False
         )
         with pytest.raises(SystemExit):
             inspect_app.load_app(parser, args)
@@ -159,7 +168,7 @@ class TestMain:
             args.append('-i')
         monkeypatch.setattr('sys.argv', args)
         output = io.StringIO()
-        with redirected(stdout=output):
+        with contextlib.redirect_stdout(output):
             inspect_app.main()
         routes = inspect.inspect_routes(_APP)
         sv = inspect.StringVisitor(verbose, internal)
@@ -174,7 +183,7 @@ class TestMain:
             args.append('-i')
         monkeypatch.setattr('sys.argv', args)
         output = io.StringIO()
-        with redirected(stdout=output):
+        with contextlib.redirect_stdout(output):
             inspect_app.main()
         ins = inspect.inspect_app(_APP)
         self.check(output.getvalue().strip(), ins.to_string(verbose, internal))
@@ -189,8 +198,9 @@ def test_route_main(monkeypatch):
 
     monkeypatch.setattr(inspect_app, 'main', mock)
     output = io.StringIO()
-    with redirected(stdout=output):
-        inspect_app.route_main()
+    with contextlib.redirect_stderr(output):
+        with pytest.raises(SystemExit):
+            inspect_app.route_main()
 
-    assert 'deprecated' in output.getvalue()
-    assert called
+    assert 'no longer supported' in output.getvalue()
+    assert not called

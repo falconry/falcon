@@ -16,10 +16,25 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from inspect import iscoroutinefunction
-from typing import IO, Iterable, List, Tuple
+from typing import IO, Literal, Optional, overload, Union
 
 from falcon import util
+from falcon._typing import _AReqT
+from falcon._typing import _ARespT
+from falcon._typing import _ReqT
+from falcon._typing import _RespT
+from falcon._typing import AsgiProcessRequestMethod as APRequest
+from falcon._typing import AsgiProcessRequestWsMethod
+from falcon._typing import AsgiProcessResourceMethod as APResource
+from falcon._typing import AsgiProcessResourceWsMethod
+from falcon._typing import AsgiProcessResponseMethod as APResponse
+from falcon._typing import AsyncMiddleware
+from falcon._typing import ProcessRequestMethod as PRequest
+from falcon._typing import ProcessResourceMethod as PResource
+from falcon._typing import ProcessResponseMethod as PResponse
+from falcon._typing import SyncMiddleware
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError
@@ -35,10 +50,55 @@ __all__ = (
     'CloseableStreamIterator',
 )
 
+PreparedMiddlewareResult = tuple[
+    Union[
+        tuple[PRequest, ...], tuple[tuple[Optional[PRequest], Optional[PResource]], ...]
+    ],
+    tuple[PResource, ...],
+    tuple[PResponse, ...],
+]
+AsyncPreparedMiddlewareResult = tuple[
+    Union[
+        tuple[APRequest, ...],
+        tuple[tuple[Optional[APRequest], Optional[APResource]], ...],
+    ],
+    tuple[APResource, ...],
+    tuple[APResponse, ...],
+]
+
+
+@overload
+def prepare_middleware(
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]],
+    independent_middleware: bool = ...,
+    asgi: Literal[False] = ...,
+) -> PreparedMiddlewareResult: ...
+
+
+@overload
+def prepare_middleware(
+    middleware: Iterable[AsyncMiddleware[_AReqT, _ARespT]],
+    independent_middleware: bool = ...,
+    *,
+    asgi: Literal[True],
+) -> AsyncPreparedMiddlewareResult: ...
+
+
+@overload
+def prepare_middleware(
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]]
+    | Iterable[AsyncMiddleware[_AReqT, _ARespT]],
+    independent_middleware: bool = ...,
+    asgi: bool = ...,
+) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult: ...
+
 
 def prepare_middleware(
-    middleware: Iterable, independent_middleware: bool = False, asgi: bool = False
-) -> Tuple[tuple, tuple, tuple]:
+    middleware: Iterable[SyncMiddleware[_ReqT, _RespT]]
+    | Iterable[AsyncMiddleware[_AReqT, _ARespT]],
+    independent_middleware: bool = False,
+    asgi: bool = False,
+) -> PreparedMiddlewareResult | AsyncPreparedMiddlewareResult:
     """Check middleware interfaces and prepare the methods for request handling.
 
     Note:
@@ -60,9 +120,14 @@ def prepare_middleware(
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    request_mw: List = []
-    resource_mw: List = []
-    response_mw: List = []
+    request_mw: (
+        list[PRequest]
+        | list[tuple[PRequest | None, PResource | None]]
+        | list[APRequest]
+        | list[tuple[APRequest | None, APResource | None]]
+    ) = []
+    resource_mw: list[APResource] | list[PResource] = []
+    response_mw: list[APResponse] | list[PResponse] = []
 
     for component in middleware:
         # NOTE(kgriffs): Middleware that supports both WSGI and ASGI can
@@ -70,22 +135,24 @@ def prepare_middleware(
         #   to distinguish the two. Otherwise, the prefix is unnecessary.
 
         if asgi:
-            process_request = util.get_bound_method(
+            process_request: APRequest | None | PRequest | None = util.get_bound_method(
                 component, 'process_request_async'
             ) or _wrap_non_coroutine_unsafe(
                 util.get_bound_method(component, 'process_request')
             )
 
-            process_resource = util.get_bound_method(
-                component, 'process_resource_async'
-            ) or _wrap_non_coroutine_unsafe(
-                util.get_bound_method(component, 'process_resource')
+            process_resource: APResource | None | PResource | None = (
+                util.get_bound_method(component, 'process_resource_async')
+                or _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_resource')
+                )
             )
 
-            process_response = util.get_bound_method(
-                component, 'process_response_async'
-            ) or _wrap_non_coroutine_unsafe(
-                util.get_bound_method(component, 'process_response')
+            process_response: APResponse | None | PResponse | None = (
+                util.get_bound_method(component, 'process_response_async')
+                or _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_response')
+                )
             )
 
             for m in (process_request, process_resource, process_response):
@@ -143,20 +210,27 @@ def prepare_middleware(
         # together or separately.
         if independent_middleware:
             if process_request:
-                request_mw.append(process_request)
+                request_mw.append(process_request)  # type: ignore[arg-type]
             if process_response:
-                response_mw.insert(0, process_response)
+                response_mw.insert(0, process_response)  # type: ignore[arg-type]
         else:
             if process_request or process_response:
-                request_mw.append((process_request, process_response))
+                request_mw.append((process_request, process_response))  # type: ignore[arg-type]
 
         if process_resource:
-            resource_mw.append(process_resource)
+            resource_mw.append(process_resource)  # type: ignore[arg-type]
 
-    return (tuple(request_mw), tuple(resource_mw), tuple(response_mw))
+    return tuple(request_mw), tuple(resource_mw), tuple(response_mw)  # type: ignore[return-value]
 
 
-def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
+AsyncPreparedMiddlewareWsResult = tuple[
+    tuple[AsgiProcessRequestWsMethod, ...], tuple[AsgiProcessResourceWsMethod, ...]
+]
+
+
+def prepare_middleware_ws(
+    middleware: Iterable[AsyncMiddleware[_AReqT, _ARespT]],
+) -> AsyncPreparedMiddlewareWsResult:
     """Check middleware interfaces and prepare WebSocket methods for request handling.
 
     Note:
@@ -174,8 +248,11 @@ def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    request_mw = []
-    resource_mw = []
+    request_mw: list[AsgiProcessRequestWsMethod] = []
+    resource_mw: list[AsgiProcessResourceWsMethod] = []
+
+    process_request_ws: AsgiProcessRequestWsMethod | None
+    process_resource_ws: AsgiProcessResourceWsMethod | None
 
     for component in middleware:
         process_request_ws = util.get_bound_method(component, 'process_request_ws')
@@ -201,7 +278,7 @@ def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
         if process_resource_ws:
             resource_mw.append(process_resource_ws)
 
-    return request_mw, resource_mw
+    return tuple(request_mw), tuple(resource_mw)
 
 
 def default_serialize_error(req: Request, resp: Response, exception: HTTPError) -> None:
@@ -229,7 +306,18 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    preferred = req.client_prefers((MEDIA_XML, 'text/xml', MEDIA_JSON))
+    options = resp.options
+    predefined = (
+        [MEDIA_JSON, 'text/xml', MEDIA_XML]
+        if options.xml_error_serialization
+        else [MEDIA_JSON]
+    )
+    media_handlers = [mt for mt in options.media_handlers if mt not in predefined]
+    # NOTE(caselit,vytas): Add the registered handlers after the predefined
+    #   ones. This ensures that in the case of an equal match, the first one
+    #   (JSON) is selected and that the q parameter is taken into consideration
+    #   when selecting the media handler.
+    preferred = req.client_prefers(predefined + media_handlers)
 
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media
@@ -248,16 +336,27 @@ def default_serialize_error(req: Request, resp: Response, exception: HTTPError) 
         if '+json' in accept:
             preferred = MEDIA_JSON
         elif '+xml' in accept:
+            # NOTE(caselit): Ignore xml_error_serialization when
+            #   checking if the media should be XML. This gives a chance to
+            #   an XML media handler, if any, to be used.
             preferred = MEDIA_XML
 
     if preferred is not None:
+        handler, _, _ = options.media_handlers._resolve(
+            preferred, MEDIA_JSON, raise_not_found=False
+        )
         if preferred == MEDIA_JSON:
-            handler, _, _ = resp.options.media_handlers._resolve(
-                MEDIA_JSON, MEDIA_JSON, raise_not_found=False
-            )
+            # NOTE(caselit): Special case JSON to ensure that it's always
+            #   possible to serialize an error in JSON even if no JSON handler
+            #   is set in the media_handlers.
             resp.data = exception.to_json(handler)
-        else:
-            resp.data = exception.to_xml()
+        elif handler:
+            # NOTE(caselit): Let the app serialize the response even if it
+            #   needs to re-get the handler, since async handlers may not have
+            #   a sync version available.
+            resp.media = exception.to_dict()
+        elif options.xml_error_serialization:
+            resp.data = exception._to_xml()
 
         # NOTE(kgriffs): No need to append the charset param, since
         #   utf-8 is the default for both JSON and XML.
@@ -283,7 +382,7 @@ class CloseableStreamIterator:
         block_size (int): Number of bytes to read per iteration.
     """
 
-    def __init__(self, stream: IO, block_size: int) -> None:
+    def __init__(self, stream: IO[bytes], block_size: int) -> None:
         self._stream = stream
         self._block_size = block_size
 

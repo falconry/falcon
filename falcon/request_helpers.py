@@ -14,15 +14,16 @@
 
 """Utilities for the Request class."""
 
+from __future__ import annotations
+
 from http import cookies as http_cookies
 import re
+from typing import Any, Literal, TYPE_CHECKING
 
-# TODO: Body, BoundedStream import here is for backwards-compatibility
-# and it should be removed in Falcon 4.0
-from falcon.stream import Body  # NOQA
-from falcon.stream import BoundedStream  # NOQA
 from falcon.util import ETag
 
+if TYPE_CHECKING:
+    from falcon.request import Request
 # https://tools.ietf.org/html/rfc6265#section-4.1.1
 #
 # NOTE(kgriffs): Fortunately we don't have to worry about code points in
@@ -41,7 +42,7 @@ _COOKIE_NAME_RESERVED_CHARS = re.compile(
 _ENTITY_TAG_PATTERN = re.compile(r'([Ww]/)?"([^"]*)"')
 
 
-def parse_cookie_header(header_value):
+def _parse_cookie_header(header_value: str) -> dict[str, list[str]]:
     """Parse a Cookie header value into a dict of named values.
 
     (See also: RFC 6265, Section 5.4)
@@ -61,7 +62,7 @@ def parse_cookie_header(header_value):
     #   https://tools.ietf.org/html/rfc6265#section-4.1.1
     #
 
-    cookies = {}
+    cookies: dict[str, list[str]] = {}
 
     for token in header_value.split(';'):
         name, __, value = token.partition('=')
@@ -102,7 +103,7 @@ def parse_cookie_header(header_value):
     return cookies
 
 
-def header_property(wsgi_name):
+def _header_property(wsgi_name: str) -> Any:
     """Create a read-only header property.
 
     Args:
@@ -114,7 +115,7 @@ def header_property(wsgi_name):
 
     """
 
-    def fget(self):
+    def fget(self: Request) -> str | None:
         try:
             return self.env[wsgi_name] or None
         except KeyError:
@@ -126,7 +127,7 @@ def header_property(wsgi_name):
 # NOTE(kgriffs): Going forward we should privatize helpers, as done here. We
 #   can always move this over to falcon.util if we decide it would be
 #   more generally useful to app developers.
-def _parse_etags(etag_str):
+def _parse_etags(etag_str: str) -> list[ETag | Literal['*']] | None:
     """Parse a string containing one or more HTTP entity-tags.
 
     The string is assumed to be formatted as defined for a precondition
@@ -153,12 +154,12 @@ def _parse_etags(etag_str):
         return None
 
     if etag_str == '*':
-        return [etag_str]
+        return ['*']
 
     if ',' not in etag_str:
         return [ETag.loads(etag_str)]
 
-    etags = []
+    etags: list[ETag | Literal['*']] = []
 
     # PERF(kgriffs): Parsing out the weak string like this turns out to be more
     #   performant than grabbing the entire entity-tag and passing it to

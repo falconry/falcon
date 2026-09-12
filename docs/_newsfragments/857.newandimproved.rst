@@ -1,0 +1,3 @@
+A new :ref:`built-in field converter <routing_builtin_converters>`,
+:class:`~falcon.routing.RegexConverter`, has been added to support regex-based
+path variable matching.

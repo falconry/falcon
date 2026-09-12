@@ -21,3 +21,14 @@ from falcon.util.uri import encode_value_check_escaped
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 from falcon.util.uri import unquote_string
+
+__all__ = (
+    'decode',
+    'encode',
+    'encode_check_escaped',
+    'encode_value',
+    'encode_value_check_escaped',
+    'parse_host',
+    'parse_query_string',
+    'unquote_string',
+)

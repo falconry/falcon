@@ -1,12 +1,15 @@
 import functools
 import json
+import typing
 
-from _util import create_app  # NOQA
-from _util import create_resp  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
+from falcon._typing import Resource
+import falcon.hooks
+from falcon.request import Request
+from falcon.response import Response
 
 # --------------------------------------------------------------------
 # Fixtures
@@ -19,8 +22,8 @@ def wrapped_resource_aware():
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
 
     resource = WrappedRespondersResourceAsync() if asgi else WrappedRespondersResource()
     app.add_route('/', resource)
@@ -127,12 +130,12 @@ class WrappedRespondersResource:
 
 class WrappedRespondersResourceAsync:
     @falcon.after(serialize_body_async)
-    @falcon.after(validate_output, is_async=False)
+    @falcon.after(validate_output)
     async def on_get(self, req, resp):
         self.req = req
         self.resp = resp
 
-    @falcon.after(serialize_body_async, is_async=True)
+    @falcon.after(serialize_body_async)
     async def on_put(self, req, resp):
         self.req = req
         self.resp = resp
@@ -167,7 +170,7 @@ class WrappedClassResource:
 class WrappedClassResourceChild(WrappedClassResource):
     def on_head(self, req, resp):
         # Test passing no extra args
-        super(WrappedClassResourceChild, self).on_head(req, resp)
+        super().on_head(req, resp)
 
 
 class ClassResourceWithURIFields:
@@ -185,9 +188,7 @@ class ClassResourceWithURIFieldsAsync:
 class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
     def on_get(self, req, resp, field1, field2):
         # Test passing mixed args and kwargs
-        super(ClassResourceWithURIFieldsChild, self).on_get(
-            req, resp, field1, field2=field2
-        )
+        super().on_get(req, resp, field1, field2=field2)
 
 
 # NOTE(swistakm): we use both type of hooks (class and method)
@@ -259,8 +260,8 @@ def test_resource_with_uri_fields(client, resource):
     assert resource.fields == ('82074', '58927')
 
 
-def test_resource_with_uri_fields_async():
-    app = create_app(asgi=True)
+def test_resource_with_uri_fields_async(util):
+    app = util.create_app(asgi=True)
 
     resource = ClassResourceWithURIFieldsAsync()
     app.add_route('/{field1}/{field2}', resource)
@@ -275,7 +276,7 @@ def test_resource_with_uri_fields_async():
         resource = ClassResourceWithURIFieldsAsync()
 
         req = testing.create_asgi_req()
-        resp = create_resp(True)
+        resp = util.create_resp(True)
 
         await resource.on_get(req, resp, '1', '2')
         assert resource.fields == ('1', '2')
@@ -342,8 +343,9 @@ class ResourceAwareGameHook:
     VALUES = ('rock', 'scissors', 'paper')
 
     @classmethod
-    def __call__(cls, req, resp, resource):
+    def __call__(cls, req: Request, resp: Response, resource: Resource) -> None:
         assert resource
+        resource = typing.cast(HandGame, resource)
         assert resource.seed in cls.VALUES
         assert resp.text == 'Responder called.'
 
@@ -415,3 +417,112 @@ def test_after_hooks_on_suffixed_resource(game_client, seed, uri, expected):
     resp = game_client.simulate_get(uri)
     assert resp.status_code == 200
     assert resp.headers['X-Hook-Game'] == expected
+
+
+@pytest.fixture()
+def resources_with_on_request(monkeypatch):
+    monkeypatch.setattr(falcon.hooks, 'decorate_on_request', True)
+
+    class namespace:
+        class WrappedDefaultResponderResource:
+            @falcon.after(Smartness())
+            def on_request(self, req, resp):
+                pass
+
+            @falcon.after(Smartness())
+            def on_request_id(self, req, resp, id):
+                pass
+
+        @falcon.after(Smartness())
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, resp, id):
+                pass
+
+        class WrappedDefaultResponderResourceAsync:
+            @falcon.after(Smartness())
+            async def on_request(self, req, resp):
+                pass
+
+            @falcon.after(Smartness())
+            async def on_request_id(self, req, resp, id):
+                pass
+
+        @falcon.after(Smartness())
+        class WrappedClassDefaultResponderResourceAsync:
+            async def on_request(self, req, resp):
+                pass
+
+            async def on_request_id(self, req, resp, id):
+                pass
+
+    return namespace
+
+
+@pytest.mark.parametrize(
+    'resource_cls, asgi',
+    (
+        ('WrappedDefaultResponderResource', False),
+        ('WrappedClassDefaultResponderResource', False),
+        ('WrappedDefaultResponderResourceAsync', True),
+        ('WrappedClassDefaultResponderResourceAsync', True),
+    ),
+)
+def test_decorate_default_responder(
+    util, asgi, resources_with_on_request, resource_cls
+):
+    app = util.create_app(asgi=asgi)
+    app.router_options.default_to_on_request = True
+
+    resource = getattr(resources_with_on_request, resource_cls)()
+
+    app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
+
+    # Test that on_request is wrapped
+    result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert result.text == 'smart'
+
+    # Test that on_request_id is wrapped
+    result = testing.simulate_post(app, '/1')
+
+    assert result.status_code == 200
+    assert result.text == 'smart'
+
+
+def test_decorate_on_request_disabled(util):
+    # NOTE(vytas): falcon.hooks.decorate_on_request is False by default.
+
+    app = util.create_app(asgi=False)
+    app.router_options.default_to_on_request = True
+
+    with pytest.warns(UserWarning):
+
+        @falcon.after(Smartness())
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, resp, id):
+                pass
+
+    resource = WrappedClassDefaultResponderResource()
+
+    app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
+
+    # Test that on_request is not wrapped
+    result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert result.text == ''
+
+    # Test that on_request_id is not wrapped
+    result = testing.simulate_post(app, '/1')
+
+    assert result.status_code == 200
+    assert result.text == ''

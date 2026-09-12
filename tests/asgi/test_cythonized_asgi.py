@@ -31,8 +31,7 @@ if pyximport:
 else:
     _CYTHON_FUNC_TEST_TYPES = []
 
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
-
+pytestmark = pytest.mark.skipif(not pyximport, reason='Cython not installed')
 
 # NOTE(vytas): Cython 3.0+ now correctly marks cythonized coroutines as such,
 #   however, the relevant protocol is only available in Python 3.10+.
@@ -61,7 +60,6 @@ class NOPClass:
         pass
 
 
-@pytest.mark.skipif(not pyximport, reason='Cython not installed')
 @pytest.mark.parametrize('func', _CYTHON_FUNC_TEST_TYPES)
 def test_is_cython_func(func):
     assert not is_python_func(func)
@@ -82,34 +80,30 @@ def test_not_cython_func(func):
     assert is_python_func(func)
 
 
-@pytest.mark.skipif(not pyximport, reason='Cython not installed')
-def test_jsonchema_validator(client):
-    with disable_asgi_non_coroutine_wrapping():
+def test_jsonchema_validator(client, util):
+    with util.disable_asgi_non_coroutine_wrapping():
         if CYTHON_COROUTINE_HINT:
-            client.app.add_route('/', _cythonized.TestResourceWithValidationNoHint())
+            client.app.add_route('/', _cythonized.TestResourceWithValidation())
         else:
             with pytest.raises(TypeError):
                 client.app.add_route(
-                    '/wowsuchfail', _cythonized.TestResourceWithValidationNoHint()
+                    '/wowsuchfail', _cythonized.TestResourceWithValidation()
                 )
-
-            client.app.add_route('/', _cythonized.TestResourceWithValidation())
+            return
 
     client.simulate_get()
 
 
-@pytest.mark.skipif(not pyximport, reason='Cython not installed')
 def test_scheduled_jobs(client):
     resource = _cythonized.TestResourceWithScheduledJobs()
     client.app.add_route('/', resource)
 
     client.simulate_get()
     time.sleep(0.5)
-    assert resource.counter['backround:on_get:async'] == 2
-    assert resource.counter['backround:on_get:sync'] == 40
+    assert resource.counter['background:on_get:async'] == 2
+    assert resource.counter['background:on_get:sync'] == 40
 
 
-@pytest.mark.skipif(not pyximport, reason='Cython not installed')
 def test_scheduled_jobs_type_error(client):
     client.app.add_route(
         '/wowsuchfail', _cythonized.TestResourceWithScheduledJobsAsyncRequired()
@@ -125,16 +119,15 @@ def test_scheduled_jobs_type_error(client):
         client.simulate_get('/wowsuchfail')
 
 
-@pytest.mark.skipif(not pyximport, reason='Cython not installed')
-def test_hooks(client):
-    with disable_asgi_non_coroutine_wrapping():
+def test_hooks(client, util):
+    with util.disable_asgi_non_coroutine_wrapping():
         if CYTHON_COROUTINE_HINT:
-            client.app.add_route('/', _cythonized.TestResourceWithHooksNoHint())
+            client.app.add_route('/', _cythonized.TestResourceWithHooks())
         else:
             with pytest.raises(TypeError):
-                client.app.add_route('/', _cythonized.TestResourceWithHooksNoHint())
+                client.app.add_route('/', _cythonized.TestResourceWithHooks())
 
-            client.app.add_route('/', _cythonized.TestResourceWithHooks())
+            return
 
     result = client.simulate_get()
     assert result.headers['x-answer'] == '42'

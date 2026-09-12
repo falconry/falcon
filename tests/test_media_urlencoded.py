@@ -1,6 +1,5 @@
 import io
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -48,8 +47,8 @@ class MediaMirrorAsync:
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/media', MediaMirrorAsync() if asgi else MediaMirror())
     return testing.TestClient(app)
 

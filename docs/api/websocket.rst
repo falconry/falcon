@@ -3,8 +3,6 @@
 WebSocket (ASGI Only)
 =====================
 
-.. contents:: :local:
-
 Falcon builds upon the
 `ASGI WebSocket Specification <https://asgi.readthedocs.io/en/latest/specs/www.html#websocket>`_
 to provide a simple, no-nonsense WebSocket server implementation.
@@ -35,8 +33,12 @@ middleware objects configured for the app:
 
 .. code:: python
 
+    from typing import Any
+    from falcon.asgi import Request, WebSocket
+
+
     class SomeMiddleware:
-        async def process_request_ws(self, req, ws):
+        async def process_request_ws(self, req: Request, ws: WebSocket) -> None:
             """Process a WebSocket handshake request before routing it.
 
             Note:
@@ -51,7 +53,13 @@ middleware objects configured for the app:
                     on_websocket() after routing.
             """
 
-        async def process_resource_ws(self, req, ws, resource, params):
+        async def process_resource_ws(
+            self,
+            req: Request,
+            ws: WebSocket,
+            resource: object,
+            params: dict[str, Any],
+        ) -> None:
             """Process a WebSocket handshake request after routing.
 
             Note:
@@ -82,11 +90,31 @@ framework would expect an ``on_websocket()`` responder similar to this:
 
 .. code:: python
 
-    async def on_websocket(self, req: Request, ws: WebSocket, account_id: str):
+    async def on_websocket(self, req: Request, ws: WebSocket, account_id: str) -> None:
         pass
 
-If no route matches the path requested in the WebSocket handshake, control then
-passes to a default responder that simply raises an instance of
+Just like other HTTP requests, WebSocket connections can also be handled
+dynamically by :meth:`sinks <falcon.asgi.App.add_sink>`. In order to receive
+a :class:`~falcon.asgi.WebSocket` connection object, the sink method ought to
+define a `ws` keyword argument:
+
+.. code:: python
+
+    async def sink(
+        req: Request,
+        resp: Response | None,
+        ws: WebSocket | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if ws is not None:
+            # WebSocket connection (resp is None)
+            ...
+        else:
+            # Ordinary HTTP request (ws is None)
+            ...
+
+If no route or sink matches the path requested in the WebSocket handshake,
+control then passes to a default responder that simply raises an instance of
 :class:`~.HTTPRouteNotFound`. By default, this error will be rendered as a 403
 response with a 3404 close code. This behavior can be modified by adding a
 custom error handler (see also: :meth:`~falcon.asgi.App.add_error_handler`).
@@ -102,32 +130,36 @@ Lost Connections
 ----------------
 
 When the app attempts to receive a message from the client, the ASGI server
-emits a `disconnect` event if the connection has been lost for any reason. Falcon
-surfaces this event by raising an instance of :class:`~.WebSocketDisconnected`
-to the caller.
+emits a ``disconnect`` event if the connection has been lost for any
+reason. Falcon surfaces this event by raising an instance of
+:class:`~.WebSocketDisconnected` to the caller.
 
-On the other hand, the ASGI spec requires the ASGI server to silently consume
-messages sent by the app after the connection has been lost (i.e.,  it should
-not be considered an error). Therefore, an endpoint that primarily streams
-outbound events to the client might continue consuming resources unnecessarily
-for some time after the connection is lost.
+On the other hand, the ASGI spec previously required the ASGI server to
+silently consume messages sent by the app after the connection has been lost
+(i.e.,  it should not be considered an error). Therefore, an endpoint that
+primarily streams outbound events to the client could continue consuming
+resources unnecessarily for some time after the connection is lost.
+This aspect has been rectified in the ASGI HTTP spec version ``2.4``,
+and calling ``send()``  on a closed connection should now raise an
+error. Unfortunately, not all ASGI servers have adopted this new behavior
+uniformly yet.
 
 As a workaround, Falcon implements a small incoming message queue that is used
 to detect a lost connection and then raise an instance of
-:class:`~.WebSocketDisconnected` to the caller the next time it attempts to send
-a message.
-
-This workaround is only necessary when the app itself does not consume messages
-from the client often enough to quickly detect when the connection is lost.
-Otherwise, Falcon's receive queue can be disabled for a slight performance boost
-by setting :attr:`~falcon.asgi.WebSocketOptions.max_receive_queue` to ``0`` via
+:class:`~.WebSocketDisconnected` to the caller the next time it attempts to
+send a message.
+If your ASGI server of choice adheres to the spec version ``2.4``, this receive
+queue can be safely disabled for a slight performance boost by setting
+:attr:`~falcon.asgi.WebSocketOptions.max_receive_queue` to ``0`` via
 :attr:`~falcon.asgi.App.ws_options`.
+(We may revise this setting, and disable the queue by default in the future if
+our testing indicates that all major ASGI servers have caught up with the
+spec.)
 
-Note also that some ASGI server implementations do not strictly follow the ASGI
-spec in this regard, and in fact will raise an error when the app attempts to
-send a message after the client disconnects. If testing reveals this to be the
-case for your ASGI server of choice, Falcon's own receive queue can be safely
-disabled.
+Furthermore, even on non-compliant or older ASGI servers, this workaround is
+only necessary when the app itself does not consume messages from the client
+often enough to quickly detect when the connection is lost.
+Otherwise, Falcon's receive queue can also be disabled as described above.
 
 .. _ws_error_handling:
 
@@ -214,7 +246,13 @@ one or both payload types, as in the following example.
 
         # The raw BINARY payload will be passed as a byte string
         def deserialize(self, payload: bytes) -> object:
-            return cbor2.loads(payload)
+            try:
+                return cbor2.loads(payload)
+            except cbor2.CBORDecodeError as ex:
+                # NOTE: cbor2's CBORDecodeError is not a subclass of
+                #   ValueError, so we reraise in order to signal an
+                #   invalid payload to Falcon.
+                raise ValueError('error decoding CBOR payload') from ex
 
     app = falcon.asgi.App()
 
@@ -226,7 +264,7 @@ one or both payload types, as in the following example.
     cbor_handler = ProtocolBuffersHandler()
     app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = cbor_handler
 
-The ``falcon`` module defines the following :py:class:`~enum.Enum` values for
+The ``falcon`` module defines the following :class:`~enum.Enum` values for
 specifying the WebSocket payload type:
 
 .. code:: python

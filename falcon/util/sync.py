@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import asyncio
+from collections.abc import Awaitable
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from functools import wraps
 import inspect
 import os
-from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, cast, TypeVar
 
-from falcon.util import deprecated
+from falcon.util import deprecation
 
 __all__ = (
     'async_to_sync',
@@ -50,17 +53,19 @@ class _ActiveRunner:
         if self._runner.get_loop().is_closed():
             # NOTE(vytas): This condition is never hit on _DummyRunner.
             self._runner = self._runner_cls()  # pragma: nocover
-        return self._runner
+        return cast(_DummyRunner, self._runner)
 
 
 _active_runner = _ActiveRunner(getattr(asyncio, 'Runner', _DummyRunner))
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
-create_task = deprecated(
-    'This will be removed in V5. Please use `asyncio.create_task`'
+create_task = deprecation.deprecated(
+    'This alias is deprecated; it will be removed in Falcon 5.0. '
+    'Please use asyncio.create_task() directly.'
 )(asyncio.create_task)
-get_running_loop = deprecated(
-    'This will be removed in V5. Please use `asyncio.get_running_loop`'
+get_running_loop = deprecation.deprecated(
+    'This alias is deprecated; it will be removed in Falcon 5.0. '
+    'Please use asyncio.get_running_loop() directly.'
 )(asyncio.get_running_loop)
 
 
@@ -89,13 +94,13 @@ def wrap_sync_to_async_unsafe(func: Callable[..., Any]) -> Callable[..., Any]:
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Callable[..., Any]:
-        return func(*args, **kwargs)
+        return cast(Callable[..., Any], func(*args, **kwargs))
 
     return wrapper
 
 
 def wrap_sync_to_async(
-    func: Callable[..., Any], threadsafe: Optional[bool] = None
+    func: Callable[..., Any], threadsafe: bool | None = None
 ) -> Callable[..., Any]:
     """Wrap a callable in a coroutine that executes the callable in the background.
 
@@ -198,8 +203,8 @@ def _should_wrap_non_coroutines() -> bool:
 
 
 def _wrap_non_coroutine_unsafe(
-    func: Optional[Callable[..., Any]],
-) -> Union[Callable[..., Awaitable[Any]], Callable[..., Any], None]:
+    func: Callable[..., Any] | None,
+) -> Callable[..., Awaitable[Any]] | Callable[..., Any] | None:
     """Wrap a coroutine using ``wrap_sync_to_async_unsafe()`` for internal test cases.
 
     This method is intended for Falcon's own test suite and should not be

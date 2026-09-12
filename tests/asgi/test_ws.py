@@ -1,8 +1,9 @@
 import asyncio
 from collections import deque
+from contextlib import nullcontext
+import functools
 import os
 
-import cbor2
 import pytest
 
 import falcon
@@ -13,17 +14,24 @@ from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
 from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
+from falcon.util.deprecation import DeprecatedWarning
 
 try:
-    import rapidjson  # type: ignore
+    import cbor2
 except ImportError:
-    rapidjson = None  # type: ignore
+    cbor2 = None  # type: ignore[assignment]
 
 
 try:
-    import msgpack  # type: ignore
+    import msgpack
 except ImportError:
-    msgpack = None  # type: ignore
+    msgpack = None
+
+
+try:
+    import rapidjson
+except ImportError:
+    rapidjson = None  # type: ignore[assignment]
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -50,7 +58,6 @@ def conductor():
     return testing.ASGIConductor(app)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('path', ['/ws/yes', '/ws/no'])
 async def test_ws_not_accepted(path, conductor):
     class SomeResource:
@@ -108,7 +115,7 @@ async def test_ws_not_accepted(path, conductor):
             assert resource.caught_operation_not_allowed
 
 
-@pytest.mark.asyncio
+@pytest.mark.slow
 async def test_echo():  # noqa: C901
     consumer_sleep = 0.01
     producer_loop = 10
@@ -189,7 +196,7 @@ async def test_echo():  # noqa: C901
     # NOTE(kgriffs): The two methods are split across different middleware
     #   classes so that we can test code paths that check for the existence
     #   of one WebSocket middleware method vs the other, and also so that
-    #   we can make sure both the kwarg and the add_middlware() paths
+    #   we can make sure both the kwarg and the add_middleware() paths
     #   succeed.
     app = App(middleware=MiddlewareA())
     app.add_middleware(MiddlewareB())
@@ -226,7 +233,6 @@ async def test_echo():  # noqa: C901
     assert resource.caught_operation_not_allowed
 
 
-@pytest.mark.asyncio
 async def test_path_not_found(conductor):
     async with conductor as c:
         with pytest.raises(falcon.WebSocketDisconnected) as exc_info:
@@ -236,7 +242,6 @@ async def test_path_not_found(conductor):
         assert exc_info.value.code == CloseCode.NOT_FOUND
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('clear_error_handlers', [True, False])
 async def test_responder_raises_unhandled_error(clear_error_handlers, conductor):
     class SomeResource:
@@ -296,7 +301,6 @@ async def test_responder_raises_unhandled_error(clear_error_handlers, conductor)
             assert exc_info.value.code == 3422
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('direction', ['send', 'receive'])
 @pytest.mark.parametrize('explicit_close_client', [True, False])
 @pytest.mark.parametrize('explicit_close_server', [True, False])
@@ -404,9 +408,9 @@ async def test_client_disconnect_early(  # noqa: C901
     assert resource.ws_ready is False
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
+@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
 async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
     # TODO(kgriffs): Refactor to reduce McCabe score
 
@@ -471,6 +475,8 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
         )
 
     if custom_data:
+        if cbor2 is None:
+            pytest.skip('cbor2 is required for this test')
 
         class CBORHandler(media.BinaryBaseHandlerWS):
             def serialize(self, media: object) -> bytes:
@@ -478,7 +484,14 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
 
             # The raw BINARY payload will be passed as a byte string
             def deserialize(self, payload: bytes) -> object:
-                return cbor2.loads(payload)
+                try:
+                    return cbor2.loads(payload)
+                except cbor2.CBORDecodeError as ex:
+                    # NOTE(vytas): As of cbor2 6.0, CBORDecodeError is no
+                    #   longer a subclass of ValueError, so we reraise to
+                    #   signal an invalid payload (mirroring the pattern
+                    #   documented in our WebSocket guide).
+                    raise ValueError('error decoding CBOR payload') from ex
 
         app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = (
             CBORHandler()
@@ -516,7 +529,6 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
         assert doc == doc_expected
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('sample_data', [b'123', b'', b'\xe1\x9a\xa0\xe1', b'\0'])
 async def test_send_receive_data(sample_data, conductor):
     class Resource:
@@ -558,7 +570,6 @@ async def test_send_receive_data(sample_data, conductor):
     assert resource.error_count == 4
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'subprotocols',
     [
@@ -596,7 +607,6 @@ async def test_subprotocol(subprotocols, conductor):
                 resource.test_complete.set()
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'headers',
     [
@@ -645,7 +655,6 @@ async def test_accept_with_headers(headers, conductor):
                 resource.test_complete.set()
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'headers',
     [
@@ -679,7 +688,6 @@ async def test_accept_with_bad_headers(headers, conductor):
     assert isinstance(resource.raised_error, ValueError)
 
 
-@pytest.mark.asyncio
 async def test_accept_with_headers_not_supported(conductor):
     class Resource:
         def __init__(self):
@@ -705,7 +713,6 @@ async def test_accept_with_headers_not_supported(conductor):
     assert isinstance(resource.raised_error, falcon.OperationNotAllowed)
 
 
-@pytest.mark.asyncio
 async def test_missing_ws_handler(conductor):
     class Resource:
         async def on_get(self, req, resp):
@@ -719,7 +726,6 @@ async def test_missing_ws_handler(conductor):
                 pass
 
 
-@pytest.mark.asyncio
 async def test_unexpected_param(conductor):
     class Resource:
         async def on_websocket(self, req, ws):
@@ -733,7 +739,6 @@ async def test_unexpected_param(conductor):
                 pass
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'subprotocol',
     [
@@ -766,7 +771,6 @@ async def test_subprotocol_bad_type(subprotocol, conductor):
                     pass
 
 
-@pytest.mark.asyncio
 async def test_send_receive_wrong_type(conductor):
     class Resource:
         def __init__(self):
@@ -821,7 +825,6 @@ async def test_send_receive_wrong_type(conductor):
     assert resource.error_count == 4
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'options_code',
     [999, 100, 0, -1, 1004, 1005, 1006, 1015, 1016, 1017, 1050, 1099, 'NaN'],
@@ -874,7 +877,6 @@ def test_mw_methods_must_be_coroutines():
             App(middleware=mw)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('version', ['1.9', '20.5', '3.0', '3.1'])
 async def test_bad_spec_version(version, conductor):
     async with conductor as c:
@@ -883,7 +885,6 @@ async def test_bad_spec_version(version, conductor):
                 pass
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('version', ['1.0', '1'])
 async def test_bad_http_version(version, conductor):
     async with conductor as c:
@@ -892,12 +893,11 @@ async def test_bad_http_version(version, conductor):
                 pass
 
 
-@pytest.mark.asyncio
-async def test_bad_first_event():
+@pytest.mark.parametrize('version', ['2.1', '2.3', '2.10.3'])
+async def test_bad_first_event(version):
     app = App()
 
-    scope = testing.create_scope_ws()
-    del scope['asgi']['spec_version']
+    scope = testing.create_scope_ws(spec_version=version)
 
     ws = testing.ASGIWebSocketSimulator()
     wrapped_emit = ws._emit
@@ -917,9 +917,12 @@ async def test_bad_first_event():
 
     assert ws.closed
     assert ws.close_code == CloseCode.SERVER_ERROR
+    if version != '2.1':
+        assert ws.close_reason == 'Internal Server Error'
+    else:
+        assert ws.close_reason == ''
 
 
-@pytest.mark.asyncio
 async def test_missing_http_version():
     app = App()
 
@@ -933,7 +936,6 @@ async def test_missing_http_version():
     await app(scope, ws._emit, ws._collect)
 
 
-@pytest.mark.asyncio
 async def test_missing_spec_version():
     app = App()
 
@@ -947,7 +949,6 @@ async def test_missing_spec_version():
     await app(scope, ws._emit, ws._collect)
 
 
-@pytest.mark.asyncio
 async def test_translate_webserver_error(conductor):
     class Resource:
         def __init__(self):
@@ -957,36 +958,77 @@ async def test_translate_webserver_error(conductor):
         async def on_websocket(self, req, ws):
             await ws.accept()
 
-            async def raise_disconnect(self):
+            async def raise_disconnect(event):
                 raise Exception('Disconnected with code = 1000 (OK)')
 
-            async def raise_protocol_mismatch(self):
+            async def raise_io_error(event, cause=''):
+                class ConnectionClosed(RuntimeError):
+                    pass
+
+                class ClientDisconnected(OSError):
+                    pass
+
+                if cause:
+                    raise ClientDisconnected() from ConnectionClosed(cause)
+                raise ClientDisconnected()
+
+            async def raise_protocol_mismatch(event):
                 raise Exception('protocol accepted must be from the list')
 
-            async def raise_other(self):
+            async def raise_other(event):
                 raise RuntimeError()
 
+            # TODO(vytas): It would be nice to somehow refactor this test not
+            #   to operate on the private members of WebSocket.
+            #   But, OTOH, it is quite useful as it is.
             _asgi_send = ws._asgi_send
+            _original_state = ws._state
 
             ws._asgi_send = raise_other
+            ws._state = _original_state
             try:
                 await ws.send_data(b'123')
             except Exception:
                 self.error_count += 1
 
             ws._asgi_send = raise_protocol_mismatch
+            ws._state = _original_state
             try:
                 await ws.send_data(b'123')
             except ValueError:
                 self.error_count += 1
 
             ws._asgi_send = raise_disconnect
+            ws._state = _original_state
             try:
                 await ws.send_data(b'123')
             except falcon.WebSocketDisconnected:
                 self.error_count += 1
 
+            ws._asgi_send = raise_io_error
+            ws._state = _original_state
+            try:
+                await ws.send_data(b'123')
+            except falcon.WebSocketDisconnected:
+                self.error_count += 1
+
+            ws._asgi_send = functools.partial(raise_io_error, cause='bork3d pipe')
+            ws._state = _original_state
+            try:
+                await ws.send_data(b'123')
+            except falcon.WebSocketDisconnected:
+                self.error_count += 1
+
+            ws._asgi_send = functools.partial(raise_io_error, cause='received 1001')
+            ws._state = _original_state
+            try:
+                await ws.send_data(b'123')
+            except falcon.WebSocketDisconnected:
+                self.error_count += 1
+            assert ws._close_code == 1001
+
             ws._asgi_send = _asgi_send
+            ws._state = _original_state
 
             self.test_complete.set()
 
@@ -996,6 +1038,8 @@ async def test_translate_webserver_error(conductor):
     async with conductor as c:
         async with c.simulate_ws():
             await resource.test_complete.wait()
+
+    assert resource.error_count == 6
 
 
 def test_ws_base_not_implemented():
@@ -1016,8 +1060,8 @@ def test_ws_base_not_implemented():
         bh.deserialize(b'')
 
 
-@pytest.mark.asyncio
-async def test_ws_context_timeout(conductor):
+@pytest.mark.slow
+async def test_ws_enter_context_timeout(conductor):
     class Resource:
         async def on_websocket(self, req, ws):
             await asyncio.sleep(5.1)  # Anything longer than 5 is sufficient
@@ -1030,7 +1074,23 @@ async def test_ws_context_timeout(conductor):
                 pass
 
 
-@pytest.mark.asyncio
+@pytest.mark.parametrize('timeout_on', ['accept', 'close'])
+async def test_ws_context_timeout(conductor, timeout_on):
+    class SleepyWebSocket:
+        async def on_websocket(self, req, ws):
+            if timeout_on != 'accept':
+                await ws.accept()
+
+            await asyncio.sleep(3600)
+
+    conductor.app.add_route('/', SleepyWebSocket())
+
+    async with conductor as c:
+        with pytest.raises(asyncio.TimeoutError):
+            async with c.simulate_ws(timeout=0.05):
+                pass
+
+
 async def test_ws_simulator_client_require_accepted(conductor):
     class Resource:
         async def on_websocket(self, req, ws):
@@ -1049,7 +1109,6 @@ async def test_ws_simulator_client_require_accepted(conductor):
             await ws.receive_text()
 
 
-@pytest.mark.asyncio
 async def test_ws_simulator_collect_edge_cases(conductor):
     class Resource:
         pass
@@ -1057,7 +1116,7 @@ async def test_ws_simulator_collect_edge_cases(conductor):
     conductor.app.add_route('/', Resource())
 
     async with conductor as c:
-        context = c.simulate_ws()
+        context = c.simulate_ws(spec_version='2.3')
         ws = context._ws
 
         m = 'must receive the first websocket.connect'
@@ -1073,10 +1132,11 @@ async def test_ws_simulator_collect_edge_cases(conductor):
 
         await ws.close()
 
-        # NOTE(kgriffs): The collector should just eat all subsequent events
-        #   returned from the ASGI app.
-        for __ in range(100):
-            await ws._collect({'type': EventType.WS_SEND})
+        # NOTE(vytas): The collector should start raising an instance of
+        #   OSError from now on per the ASGI WS spec ver 2.4+.
+        for __ in range(10):
+            with pytest.raises(OSError):
+                await ws._collect({'type': EventType.WS_SEND})
 
         assert not ws._collected_server_events
 
@@ -1088,7 +1148,7 @@ async def test_ws_simulator_collect_edge_cases(conductor):
             event = await ws._emit()
 
 
-@pytest.mark.asyncio
+@pytest.mark.slow
 async def test_ws_responder_never_ready(conductor, monkeypatch):
     async def noop_close(obj, code=None):
         pass
@@ -1128,7 +1188,137 @@ def test_msgpack_missing():
         handler.deserialize(b'{}')
 
 
-@pytest.mark.asyncio
+@pytest.mark.parametrize('reason', ['Client closing connection', '', None])
+async def test_client_close_with_reason(reason, conductor):
+    class Resource:
+        def __init__(self):
+            pass
+
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            while True:
+                try:
+                    await ws.receive_data()
+
+                except falcon.WebSocketDisconnected:
+                    break
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    async with conductor as c:
+        async with c.simulate_ws('/', spec_version='2.3') as ws:
+            await ws.close(4099, reason)
+
+    assert ws.close_code == 4099
+    if reason:
+        assert ws.close_reason == reason
+    else:
+        assert ws.close_reason == ''
+
+
+@pytest.mark.parametrize('reason', ['PEBCAK', 'wow such reason', '', None])
+async def test_close_with_reason_no_cm(conductor, reason):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            text = await ws.receive_text()
+            await ws.send_text(text.upper())
+            await ws.close(4001, reason)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    # NOTE(vytas): Here we don't use the async context manager pattern in order
+    #   to collect coverage under CPython 3.11. It doesn't seem to help though.
+    context = conductor.simulate_ws(spec_version='2.4')
+    ws = context._ws
+
+    await ws.wait_ready()
+    await ws.send_text('Hello, World!')
+    received = await ws.receive_text()
+    assert received == 'HELLO, WORLD!'
+
+    with pytest.raises(falcon.WebSocketDisconnected):
+        await ws.receive_text()
+
+    assert ws.close_reason == (reason or '')
+
+
+@pytest.mark.parametrize('reason', ['PEBCAK', 'wow such reason', '', None])
+@pytest.mark.parametrize('spec_version', ['2.2', '2.3', '2.4'])
+async def test_close_with_reason(conductor, reason, spec_version):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            await ws.close(3400, reason)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+
+    async with conductor as c:
+        async with c.simulate_ws('/', spec_version=spec_version) as ws:
+            # Make sure the responder has a chance to reach the close() statement
+            for _ in range(3):
+                await asyncio.sleep(0)
+            assert ws.closed
+            assert ws.close_code == 3400
+
+    assert ws.close_code == 3400
+    if spec_version == '2.2':
+        assert ws.close_reason == ''
+    else:
+        assert ws.close_reason == reason or 'Bad Request'
+
+
+@pytest.mark.parametrize('no_default', [True, False])
+@pytest.mark.parametrize(
+    'code,expected',
+    [
+        (None, 'Normal Closure'),
+        (1011, 'Internal Server Error'),
+        (3405, 'Method Not Allowed'),
+        (3701, ''),
+        (3702, 'Emacs'),
+        (4042, ''),
+        (4099, 'wow such reason'),
+    ],
+)
+async def test_reason_mapping(no_default, code, expected, conductor):
+    class Resource:
+        def __init__(self):
+            pass
+
+        async def on_websocket(self, req, ws):
+            await ws.accept()
+            await ws.close(code)
+
+    resource = Resource()
+    conductor.app.add_route('/', resource)
+    if no_default:
+        conductor.app.ws_options.default_close_reasons = {}
+    else:
+        # NOTE(vytas): Although it would be fun, we opt not to provide reasons
+        #   for 7xx errors by default.
+        conductor.app.ws_options.default_close_reasons[3702] = 'Emacs'
+        conductor.app.ws_options.default_close_reasons[4099] = 'wow such reason'
+
+    async with conductor as c:
+        with pytest.raises(falcon.WebSocketDisconnected):
+            async with c.simulate_ws('/', spec_version='2.10.3') as ws:
+                await ws.receive_data()
+
+    if code:
+        assert ws.close_code == code
+    else:
+        assert ws.close_code == CloseCode.NORMAL
+
+    if no_default:
+        assert ws.close_reason == ''
+    else:
+        assert ws.close_reason == expected
+
+
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
 @pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
 @pytest.mark.parametrize('accept', [True, False])
@@ -1157,7 +1347,6 @@ async def test_ws_http_error_or_status_response(conductor, status, thing, accept
             assert err.value.code == exp_code
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
 @pytest.mark.parametrize(
     'thing',
@@ -1200,7 +1389,6 @@ class FooBarError(Exception):
     pass
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize('status', [200, 500, 422, 400])
 @pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
 @pytest.mark.parametrize(
@@ -1229,12 +1417,12 @@ async def test_ws_http_error_or_status_error_handler(
 
     if handler_has_ws:
 
-        async def handle_foobar(req, resp, ex, param, ws=None):  # type: ignore
+        async def handle_foobar(req, resp, ex, param, ws=None):
             raise thing(status)
 
     else:
 
-        async def handle_foobar(req, resp, ex, param):  # type: ignore
+        async def handle_foobar(req, resp, ex, param):  # type: ignore[misc]
             raise thing(status)
 
     conductor.app.add_route('/', Resource())
@@ -1255,3 +1443,104 @@ async def test_ws_http_error_or_status_error_handler(
                 async with c.simulate_ws():
                     pass
             assert err.value.code == exp_code
+
+
+@pytest.mark.parametrize('max_receive_queue', [0, 1, 4, 7, 17])
+async def test_max_receive_queue_sizes(conductor, max_receive_queue):
+    class Chat:
+        async def on_websocket(self, req, ws, user):
+            await ws.accept()
+
+            broadcast = [
+                '[Guest123] ping',
+                '[John F. Barbaz] Hi everyone.',
+                f'Hello, {user}!',
+            ]
+
+            while True:
+                await ws.send_text(broadcast.pop())
+
+                msg = await ws.receive_text()
+                if msg == '/quit':
+                    await ws.send_text('Bye!')
+                    await ws.close(reason='Received /quit')
+                    break
+                else:
+                    await ws.send_text(f'[{user}] {msg}')
+
+    conductor.app.ws_options.max_receive_queue = max_receive_queue
+    conductor.app.add_route('/chat/{user}', Chat())
+
+    received = []
+    messages = ['/quit', 'I have to leave this test soon.', 'Hello!']
+
+    async with conductor as c:
+        async with c.simulate_ws('/chat/foobarer') as ws:
+            while messages:
+                received.append(await ws.receive_text())
+
+                await ws.send_text(messages.pop())
+                received.append(await ws.receive_text())
+
+    assert len(received) == 6
+
+
+@pytest.mark.parametrize('sink', ['no-ws-arg', 'with-ws-arg', 'unhashable-obj'])
+async def test_sinks(conductor, sink):
+    async def say_hello(req, resp_or_ws, name):
+        greeting = f'Hello, {name}!'
+        if req.is_websocket:
+            await resp_or_ws.accept()
+            await resp_or_ws.send_text(greeting)
+
+            await resp_or_ws.receive_text()  # Receive /bye
+        else:
+            resp_or_ws.content_type = falcon.MEDIA_TEXT
+            resp_or_ws.text = greeting
+
+    async def sink_no_ws_arg(req, resp_or_ws, name):
+        assert resp_or_ws is not None
+        await say_hello(req, resp_or_ws, name)
+
+    async def sink_with_ws_arg(req, resp, name, ws=None):
+        if ws:
+            assert resp is None
+            await say_hello(req, ws, name)
+        else:
+            assert resp is not None
+            await say_hello(req, resp, name)
+
+    class Unhashable(list):
+        async def __call__(self, req, resp, name, ws=None):
+            await sink_with_ws_arg(req, resp, name, ws=ws)
+
+    sinks = {
+        'no-ws-arg': sink_no_ws_arg,
+        'with-ws-arg': sink_with_ws_arg,
+        'unhashable-obj': Unhashable(),
+    }
+    conductor.app.add_sink(sinks[sink], r'/ws/(?P<name>\w+)')
+
+    async with conductor as c:
+        resp = await c.simulate_get('/ws/World')
+        assert resp.status_code == 200
+        assert resp.text == 'Hello, World!'
+
+        expectation = (
+            pytest.warns(DeprecatedWarning) if sink == 'no-ws-arg' else nullcontext()
+        )
+        with expectation:
+            async with c.simulate_ws('/ws/World') as ws:
+                assert await ws.receive_text() == 'Hello, World!'
+                await ws.send_text('/bye')
+
+
+async def test_static_route(conductor, tmp_path):
+    conductor.app.add_static_route('/static', tmp_path)
+
+    async with conductor as c:
+        with pytest.raises(falcon.WebSocketDisconnected) as exc_info:
+            async with c.simulate_ws('/static/report.json'):
+                pass
+
+        assert exc_info.value.code == 3400

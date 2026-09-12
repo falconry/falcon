@@ -1,4 +1,0 @@
-Previously, it was possible to create an :class:`~falcon.App` with the
-``cors_enable`` option, and add additional :class:`~falcon.CORSMiddleware`,
-leading to unexpected behavior and dysfunctional CORS. This combination now
-explicitly results in a :class:`ValueError`.

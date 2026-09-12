@@ -1,9 +1,11 @@
+from enum import auto
 from enum import Enum
 import os
 import sys
 
 __all__ = (
     'HTTP_METHODS',
+    'HTTP_WG_DRAFT_METHODS',
     'WEBDAV_METHODS',
     'COMBINED_METHODS',
     'DEFAULT_MEDIA_TYPE',
@@ -18,6 +20,8 @@ __all__ = (
     'MEDIA_PNG',
     'MEDIA_TEXT',
     'MEDIA_URLENCODED',
+    'TRUE_STRINGS',
+    'FALSE_STRINGS',
     'MEDIA_XML',
     'MEDIA_YAML',
     'SINGLETON_HEADERS',
@@ -30,12 +34,12 @@ PYPY = sys.implementation.name == 'pypy'
 PYTHON_VERSION = tuple(sys.version_info[:3])
 """Python version information triplet: (major, minor, micro)."""
 
-FALCON_SUPPORTED = PYTHON_VERSION >= (3, 8, 0)
+FALCON_SUPPORTED = PYTHON_VERSION >= (3, 9, 0)
 """Whether this version of Falcon supports the current Python version."""
 
 if not FALCON_SUPPORTED:  # pragma: nocover
     raise ImportError(
-        'Falcon requires Python 3.8+. '
+        'Falcon requires Python 3.9+. '
         '(Recent Pip should automatically pick a suitable Falcon version.)'
     )
 
@@ -45,6 +49,11 @@ ASGI_SUPPORTED = FALCON_SUPPORTED
 This constant is no longer referenced by the framework itself, and left for
 compatibility with Falcon 3.x.
 """
+
+TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
+"""String values that are interpreted as boolean ``True``."""
+FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
+"""Similar to :attr:`TRUE_STRINGS`, the values corresponding to boolean ``False``."""
 
 # RFC 7231, 5789 methods
 HTTP_METHODS = [
@@ -57,6 +66,11 @@ HTTP_METHODS = [
     'POST',
     'PUT',
     'TRACE',
+]
+
+# HTTP methods from HTTP WG drafts
+HTTP_WG_DRAFT_METHODS = [
+    'QUERY',
 ]
 
 # RFC 2518 and 4918 methods
@@ -89,7 +103,11 @@ _META_METHODS = [
 ]
 
 COMBINED_METHODS = (
-    HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS + _META_METHODS
+    HTTP_METHODS
+    + WEBDAV_METHODS
+    + HTTP_WG_DRAFT_METHODS
+    + FALCON_CUSTOM_HTTP_METHODS
+    + _META_METHODS
 )
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume
@@ -102,6 +120,8 @@ MEDIA_JSON = 'application/json'
 # yet been registered. 'application/x-msgpack' is commonly used,
 # but the use of the 'x-' prefix is discouraged by RFC 6838.
 MEDIA_MSGPACK = 'application/msgpack'
+
+MEDIA_PARQUET = 'application/vnd.apache.parquet'
 
 MEDIA_MULTIPART = 'multipart/form-data'
 
@@ -136,6 +156,11 @@ MEDIA_JS = 'text/javascript'
 MEDIA_HTML = 'text/html; charset=utf-8'
 MEDIA_TEXT = 'text/plain; charset=utf-8'
 
+# NOTE(kemingy): According to RFC 4180, common usage of CSV is US-ASCII,
+# but other charsets can also be used. We use UTF-8 to make it compatible
+# with most modern systems.
+MEDIA_CSV = 'text/csv; charset=utf-8'
+
 MEDIA_JPEG = 'image/jpeg'
 MEDIA_PNG = 'image/png'
 MEDIA_GIF = 'image/gif'
@@ -166,6 +191,7 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
     (ext, media_type.split(';', 1)[0])
     for ext, media_type in (
         ('.bmp', MEDIA_BMP),
+        ('.csv', MEDIA_CSV),
         ('.gif', MEDIA_GIF),
         ('.htm', MEDIA_HTML),
         ('.html', MEDIA_HTML),
@@ -174,6 +200,7 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
         ('.js', MEDIA_JS),
         ('.json', MEDIA_JSON),
         ('.mjs', MEDIA_JS),
+        ('.parquet', MEDIA_PARQUET),
         ('.png', MEDIA_PNG),
         ('.txt', MEDIA_TEXT),
         ('.xml', MEDIA_XML),
@@ -182,9 +209,9 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
     )
 )
 
-# NOTE(kgriffs): Special singleton to be used internally whenever using
-#   None would be ambiguous.
-_UNSET = object()
 
-WebSocketPayloadType = Enum('WebSocketPayloadType', 'TEXT BINARY')
-"""Enum representing the two possible WebSocket payload types."""
+class WebSocketPayloadType(Enum):
+    """Enum representing the two possible WebSocket payload types."""
+
+    TEXT = auto()
+    BINARY = auto()

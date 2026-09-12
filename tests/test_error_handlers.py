@@ -1,5 +1,3 @@
-from _util import create_app  # NOQA
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
@@ -11,7 +9,7 @@ from falcon.util.deprecation import DeprecatedWarning
 
 def capture_error(req, resp, ex, params):
     resp.status = falcon.HTTP_723
-    resp.text = 'error: %s' % str(ex)
+    resp.text = f'error: {str(ex)}'
 
 
 async def capture_error_async(*args):
@@ -51,8 +49,8 @@ class ErroredClassResource:
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     app.add_route('/', ErroredClassResource())
     return testing.TestClient(app)
 
@@ -79,6 +77,7 @@ class TestErrorHandler:
     def test_uncaught_python_error(
         self, client, get_headers, resp_content_type, resp_start
     ):
+        client.app.resp_options.xml_error_serialization = True
         result = client.simulate_get(headers=get_headers)
         assert result.status_code == 500
         assert result.headers['content-type'] == resp_content_type
@@ -195,7 +194,7 @@ class TestErrorHandler:
         with pytest.raises(TypeError):
             client.app.add_error_handler(exceptions, capture_error)
 
-    def test_handler_signature_shim(self):
+    def test_handler_signature_shim(self, util):
         def check_args(ex, req, resp):
             assert isinstance(ex, BaseException)
             assert isinstance(req, falcon.Request)
@@ -210,7 +209,7 @@ class TestErrorHandler:
         def legacy_handler3(err, rq, rs, prms):
             check_args(err, rq, rs)
 
-        app = create_app(asgi=False)
+        app = util.create_app(asgi=False)
         app.add_route('/', ErroredClassResource())
         client = testing.TestClient(app)
 
@@ -225,17 +224,14 @@ class TestErrorHandler:
         client.simulate_get()
         client.simulate_head()
 
-    def test_handler_must_be_coroutine_for_asgi(self):
-        async def legacy_handler(err, rq, rs, prms):
-            pass
+    def test_handler_must_be_coroutine_for_asgi(self, util):
+        app = util.create_app(True)
 
-        app = create_app(True)
-
-        with disable_asgi_non_coroutine_wrapping():
+        with util.disable_asgi_non_coroutine_wrapping():
             with pytest.raises(ValueError):
                 app.add_error_handler(Exception, capture_error)
 
-    def test_catch_http_no_route_error(self, asgi):
+    def test_catch_http_no_route_error(self, asgi, util):
         class Resource:
             def on_get(self, req, resp):
                 raise falcon.HTTPNotFound()
@@ -244,7 +240,7 @@ class TestErrorHandler:
             resp.set_header('X-name', ex.__class__.__name__)
             raise ex
 
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/', Resource())
         app.add_error_handler(falcon.HTTPError, capture_error)
 
@@ -275,8 +271,8 @@ class NoBodyResource:
 
 class TestNoBodyWithStatus:
     @pytest.fixture()
-    def body_client(self, asgi):
-        app = create_app(asgi=asgi)
+    def body_client(self, asgi, util):
+        app = util.create_app(asgi=asgi)
         app.add_route('/error', NoBodyResource())
 
         def no_reps(req, resp, exception):
@@ -318,8 +314,8 @@ class CustomErrorResource:
 
 class TestCustomError:
     @pytest.fixture()
-    def body_client(self, asgi):
-        app = create_app(asgi=asgi)
+    def body_client(self, asgi, util):
+        app = util.create_app(asgi=asgi)
         app.add_route('/error', CustomErrorResource())
 
         if asgi:
@@ -330,7 +326,7 @@ class TestCustomError:
 
         else:
 
-            def handle_zero_division(req, resp, ex, params):
+            def handle_zero_division(req, resp, ex, params):  # type: ignore[misc]
                 assert resp.render_body() is None
                 resp.status = falcon.HTTP_719
 

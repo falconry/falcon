@@ -5,7 +5,6 @@ from falcon import testing
 from falcon.asgi import App
 
 
-@pytest.mark.asyncio
 async def test_default_headers():
     class Resource:
         async def on_get(self, req, resp):
@@ -21,7 +20,6 @@ async def test_default_headers():
 
 
 @pytest.mark.parametrize('simulate_method', ['request', 'simulate_request'])
-@pytest.mark.asyncio
 async def test_generic_request(simulate_method):
     class Resource:
         async def on_lock(self, req, resp):
@@ -37,7 +35,6 @@ async def test_generic_request(simulate_method):
         assert result.status_code == 422
 
 
-@pytest.mark.asyncio
 async def test_wsgi_not_supported():
     with pytest.raises(falcon.CompatibilityError):
         async with testing.TestClient(falcon.App()):
@@ -52,7 +49,6 @@ async def test_wsgi_not_supported():
     'method', ['get', 'head', 'post', 'put', 'options', 'patch', 'delete']
 )
 @pytest.mark.parametrize('use_alias', ['alias', 'simulate'])
-@pytest.mark.asyncio
 async def test_responders(method, use_alias):
     class Resource:
         async def on_get(self, req, resp):

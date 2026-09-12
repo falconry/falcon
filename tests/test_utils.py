@@ -1,36 +1,41 @@
-# -*- coding: utf-8 -*-
-
 from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
 import functools
 import http
+import inspect
 import itertools
 import json
 import random
+import sys
 from urllib.parse import quote
 from urllib.parse import unquote_plus
 
-from _util import create_app  # NOQA
-from _util import to_coroutine  # NOQA
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
-from falcon import util
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_MSGPACK
 from falcon.constants import MEDIA_URLENCODED
 from falcon.constants import MEDIA_YAML
+import falcon.util
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util import structures
 from falcon.util import uri
+from falcon.util.time import TimezoneGMT
+
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
 
 
 @pytest.fixture
-def app(asgi):
-    return create_app(asgi)
+def app(asgi, util):
+    return util.create_app(asgi)
 
 
 def _arbitrary_uris(count, length):
@@ -106,7 +111,7 @@ class TestFalconUtils:
     def test_deprecated_decorator(self):
         msg = 'Please stop using this thing. It is going away.'
 
-        @util.deprecated(msg)
+        @falcon.util.deprecated(msg)
         def old_thing():
             pass
 
@@ -126,21 +131,22 @@ class TestFalconUtils:
 
     def test_dt_to_http(self):
         assert (
-            falcon.dt_to_http(datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
+            falcon.dt_to_http(datetime(2013, 4, 4, tzinfo=timezone.utc))
+            == 'Thu, 04 Apr 2013 00:00:00 GMT'
         )
 
         assert (
-            falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54))
+            falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc))
             == 'Thu, 04 Apr 2013 10:28:54 GMT'
         )
 
     def test_http_date_to_dt(self):
         assert falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT') == datetime(
-            2013, 4, 4
+            2013, 4, 4, tzinfo=timezone.utc
         )
 
         assert falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 GMT') == datetime(
-            2013, 4, 4, 10, 28, 54
+            2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc
         )
 
         with pytest.raises(ValueError):
@@ -148,7 +154,7 @@ class TestFalconUtils:
 
         assert falcon.http_date_to_dt(
             'Thu, 04-Apr-2013 10:28:54 GMT', obs_date=True
-        ) == datetime(2013, 4, 4, 10, 28, 54)
+        ) == datetime(2013, 4, 4, 10, 28, 54, tzinfo=timezone.utc)
 
         with pytest.raises(ValueError):
             falcon.http_date_to_dt('Sun Nov  6 08:49:37 1994')
@@ -158,11 +164,14 @@ class TestFalconUtils:
 
         assert falcon.http_date_to_dt(
             'Sun Nov  6 08:49:37 1994', obs_date=True
-        ) == datetime(1994, 11, 6, 8, 49, 37)
+        ) == datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc)
 
         assert falcon.http_date_to_dt(
             'Sunday, 06-Nov-94 08:49:37 GMT', obs_date=True
-        ) == datetime(1994, 11, 6, 8, 49, 37)
+        ) == datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc)
+
+        with pytest.raises(ValueError):
+            falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 EST')
 
     def test_pack_query_params_none(self):
         assert falcon.to_query_str({}) == ''
@@ -177,8 +186,7 @@ class TestFalconUtils:
         assert falcon.to_query_str({'things': ['a', 'b']}) == '?things=a,b'
 
         expected = (
-            '?things=a&things=b&things=&things=None'
-            '&things=true&things=false&things=0'
+            '?things=a&things=b&things=&things=None&things=true&things=false&things=0'
         )
 
         actual = falcon.to_query_str(
@@ -241,33 +249,66 @@ class TestFalconUtils:
         assert uri.encode('%26') == '%2526'
         assert uri.decode(uri.encode('%26')) == '%26'
 
-    def test_uri_encode_double(self):
-        url = 'http://example.com/v1/fiz bit/messages'
-        expected = 'http://example.com/v1/fiz%20bit/messages'
+    @pytest.mark.parametrize(
+        'url,expected',
+        [
+            (
+                'http://example.com/v1/fiz bit/messages',
+                'http://example.com/v1/fiz%20bit/messages',
+            ),
+            (
+                'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true',
+                'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true',
+            ),
+            (
+                'http://example.com/v1/fiz%bit/mess%ages/%',
+                'http://example.com/v1/fiz%25bit/mess%25ages/%25',
+            ),
+            ('http://example.com/%%', 'http://example.com/%25%25'),
+            (
+                'http://something?redirect_uri=http%3A%2F%2Fsite',
+                'http://something?redirect_uri=http%3A%2F%2Fsite',
+            ),
+        ],
+    )
+    def test_uri_encode_double(self, url, expected):
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
-        url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        expected = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
+    @pytest.mark.parametrize(
+        'value,expected',
+        [
+            ('', ''),
+            ('%', '%25'),
+            ('fiz bit/fizzy', 'fiz%20bit%2Ffizzy'),
+            ('e\u00e7ho', 'e%C3%A7ho'),
+            ('key_%2', 'key_%252'),
+            ('%%', '%25%25'),
+            ('http%3A%2F%2Fsite', 'http%3A%2F%2Fsite'),
+        ],
+    )
+    def test_uri_encode_value_double(self, value, expected):
+        assert (
+            uri.encode_value_check_escaped(uri.encode_value_check_escaped(value))
+            == expected
+        )
 
-        url = 'http://example.com/v1/fiz%bit/mess%ages/%'
-        expected = 'http://example.com/v1/fiz%25bit/mess%25ages/%25'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
-
-        url = 'http://example.com/%%'
-        expected = 'http://example.com/%25%25'
-        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
-
-        # NOTE(kgriffs): Specific example cited in GH issue
-        url = 'http://something?redirect_uri=http%3A%2F%2Fsite'
-        assert uri.encode_check_escaped(url) == url
-
+    def test_uri_encode_double_hexchars(self):
         hex_digits = 'abcdefABCDEF0123456789'
         for c1 in hex_digits:
             for c2 in hex_digits:
-                url = 'http://example.com/%' + c1 + c2
+                url = f'http://example.com/{c1}{c2}'
                 encoded = uri.encode_check_escaped(uri.encode_check_escaped(url))
                 assert encoded == url
+
+    def test_uri_encode_value_double_hexchars(self):
+        hex_digits = 'abcdefABCDEF0123456789'
+        for c1 in hex_digits:
+            for c2 in hex_digits:
+                value = f'example-%{c1}{c2}'
+                encoded = uri.encode_value_check_escaped(
+                    uri.encode_value_check_escaped(value)
+                )
+                assert encoded == value
 
     def test_uri_encode_value(self):
         assert uri.encode_value('abcd') == 'abcd'
@@ -316,11 +357,19 @@ class TestFalconUtils:
             ('+%80', ' �'),
             ('+++%FF+++', '   �   '),  # impossible byte
             ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
-            ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
         ],
     )
     def test_uri_decode_bad_unicode(self, encoded, expected, decode_approach):
         assert uri.decode(encoded) == expected
+
+    def test_uri_decode_paired_utf16_surrogates(self, decode_approach):
+        # NOTE(vytas): On GraalPy, this yields only '��', however, we allow
+        #   both variants assuming GraalPy might eventually get fixed.
+        #   See also https://github.com/oracle/graalpython/issues/875.
+        expected = (
+            {'��', '������'} if sys.implementation.name == 'graalpy' else {'������'}
+        )
+        assert uri.decode('%ed%ae%80%ed%b0%80') in expected
 
     def test_uri_decode_unquote_plus(self, decode_approach):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
@@ -329,6 +378,15 @@ class TestFalconUtils:
         )
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=False) == (
             '/disk/lost+found/fd0'
+        )
+
+        # NOTE(apoorva-01): A plus followed by two hex digits must not be
+        #   decoded as a percent sequence when unquote_plus is False (#2670).
+        assert uri.decode('+00', unquote_plus=False) == '+00'
+        assert uri.decode('+00', unquote_plus=True) == ' 00'
+        assert (
+            uri.decode('2026-06-29T23:11:38.964935+00:00.jpg', unquote_plus=False)
+            == '2026-06-29T23:11:38.964935+00:00.jpg'
         )
 
         assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9') == (
@@ -486,34 +544,6 @@ class TestFalconUtils:
         assert uri.parse_host('falcon.example.com:9876') == ('falcon.example.com', 9876)
         assert uri.parse_host('falcon.example.com:42') == ('falcon.example.com', 42)
 
-    def test_get_http_status_warns(self):
-        with pytest.warns(UserWarning, match='Please use falcon'):
-            falcon.get_http_status(400)
-
-    @pytest.mark.filterwarnings('ignore')
-    def test_get_http_status(self):
-        assert falcon.get_http_status(404) == falcon.HTTP_404
-        assert falcon.get_http_status(404.3) == falcon.HTTP_404
-        assert falcon.get_http_status('404.3') == falcon.HTTP_404
-        assert falcon.get_http_status(404.9) == falcon.HTTP_404
-        assert falcon.get_http_status('404') == falcon.HTTP_404
-        assert falcon.get_http_status(123) == '123 Unknown'
-        with pytest.raises(ValueError):
-            falcon.get_http_status('not_a_number')
-        with pytest.raises(ValueError):
-            falcon.get_http_status(0)
-        with pytest.raises(ValueError):
-            falcon.get_http_status(0)
-        with pytest.raises(ValueError):
-            falcon.get_http_status(99)
-        with pytest.raises(ValueError):
-            falcon.get_http_status(-404.3)
-        with pytest.raises(ValueError):
-            falcon.get_http_status('-404')
-        with pytest.raises(ValueError):
-            falcon.get_http_status('-404.3')
-        assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
-
     @pytest.mark.parametrize(
         'v_in,v_out',
         [
@@ -627,23 +657,56 @@ class TestFalconUtils:
         assert not weak_67aB43.strong_compare(weak_67ab43_one)
 
     @pytest.mark.parametrize(
-        'filename,expected',
+        'filename,max_length,expected',
         [
-            ('.', '_'),
-            ('..', '_.'),
-            ('hello.txt', 'hello.txt'),
-            ('Ąžuolai žaliuos.jpeg', 'A_z_uolai_z_aliuos.jpeg'),
-            ('/etc/shadow', '_etc_shadow'),
-            ('. ⬅ a dot', '____a_dot'),
-            ('C:\\Windows\\kernel32.dll', 'C__Windows_kernel32.dll'),
+            ('.', None, '_'),
+            ('..', None, '_.'),
+            ('hello.txt', None, 'hello.txt'),
+            ('Ąžuolai žaliuos.jpeg', None, 'A_z_uolai_z_aliuos.jpeg'),
+            ('/etc/shadow', None, '_etc_shadow'),
+            ('. ⬅ a dot', None, '____a_dot'),
+            ('C:\\Windows\\kernel32.dll', None, 'C__Windows_kernel32.dll'),
+            ('hello.txt', 8, 'hell.txt'),
+            ('hello.txt', 5, 'h.txt'),
+            ('hello.txt', 4, 'hell'),
+            ('Ąžuolai žaliuos.jpeg', 0, 'A_z_uolai_z_aliuos.jpeg'),
+            ('Ąžuolai žaliuos.jpeg', 10, 'A_z_u.jpeg'),
+            ('Ąžuolai žaliuos.jpeg', 6, 'A.jpeg'),
+            ('Ąžuolai žaliuos.jpeg', 5, 'A_z_u'),
+            ('Ąžuolai žaliuos.jpeg', 3, 'A_z'),
+            ('Ąžuolai žaliuos.jpeg', 1, 'A'),
+            ('.emacs.d/init.el', 11, '_emacs.d.el'),
+            ('~/.emacs.d/init.el', 11, '__.emacs.el'),
+            ('. ⬅ a dot', 10, '____a_dot'),
         ],
     )
-    def test_secure_filename(self, filename, expected):
-        assert misc.secure_filename(filename) == expected
+    def test_secure_filename(self, filename, max_length, expected):
+        assert misc.secure_filename(filename, max_length) == expected
 
     def test_secure_filename_empty_value(self):
         with pytest.raises(ValueError):
             misc.secure_filename('')
+
+    def test_secure_filename_invalid_max_length(self):
+        with pytest.raises(ValueError):
+            misc.secure_filename('Document.pdf', -11)
+
+    @pytest.mark.parametrize(
+        'filename,max_length,expected',
+        [
+            ('con', None, '_con'),
+            ('nul.txt', None, '_nul.txt'),
+            ('CoM1.log', None, '_CoM1.log'),
+            ('lpt9', None, '_lpt9'),
+            ('con.txt', 7, '_co.txt'),
+            ('conduit.txt', None, 'conduit.txt'),
+        ],
+    )
+    def test_secure_filename_windows_reserved_names(
+        self, monkeypatch, filename, max_length, expected
+    ):
+        monkeypatch.setattr(misc.os, 'name', 'nt')
+        assert misc.secure_filename(filename, max_length) == expected
 
     def test_misc_isascii(self):
         with pytest.warns(deprecation.DeprecatedWarning):
@@ -652,12 +715,14 @@ class TestFalconUtils:
 
 @pytest.mark.parametrize(
     'protocol,method',
-    zip(
-        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
-        falcon.HTTP_METHODS * 2,
+    tuple(
+        zip(
+            ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
+            falcon.HTTP_METHODS * 2,
+        )
     ),
 )
-def test_simulate_request_protocol(asgi, protocol, method):
+def test_simulate_request_protocol(asgi, protocol, method, util):
     sink_called = [False]
 
     def sink(req, resp):
@@ -665,9 +730,9 @@ def test_simulate_request_protocol(asgi, protocol, method):
         assert req.protocol == protocol
 
     if asgi:
-        sink = to_coroutine(sink)
+        sink = util.to_coroutine(sink)
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_sink(sink, '/test')
 
     client = testing.TestClient(app)
@@ -693,16 +758,16 @@ def test_simulate_request_protocol(asgi, protocol, method):
         testing.simulate_delete,
     ],
 )
-def test_simulate_free_functions(asgi, simulate):
+def test_simulate_free_functions(asgi, simulate, util):
     sink_called = [False]
 
     def sink(req, resp):
         sink_called[0] = True
 
     if asgi:
-        sink = to_coroutine(sink)
+        sink = util.to_coroutine(sink)
 
-    app = create_app(asgi)
+    app = util.create_app(asgi)
     app.add_sink(sink, '/test')
 
     simulate(app, '/test')
@@ -734,7 +799,11 @@ class TestFalconTestingUtils:
         assert response.json == falcon.HTTPNotFound().to_dict()
 
     def test_httpnow_alias_for_backwards_compat(self):
-        assert testing.httpnow is util.http_now
+        # Ensure that both the alias and decorated alias work
+        assert (
+            testing.httpnow is falcon.util.http_now
+            or inspect.unwrap(testing.httpnow) is falcon.util.http_now
+        )
 
     def test_default_headers(self, app):
         resource = testing.SimpleTestResource()
@@ -798,7 +867,7 @@ class TestFalconTestingUtils:
             '\xe9\xe8',
         ),
     )
-    def test_repr_result_when_body_varies(self, asgi, value, simulate):
+    def test_repr_result_when_body_varies(self, asgi, util, value, simulate):
         if isinstance(value, str):
             value = bytes(value, 'UTF-8')
 
@@ -807,7 +876,7 @@ class TestFalconTestingUtils:
         else:
             resource = testing.SimpleTestResource(body=value)
 
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/hello', resource)
 
         result = simulate(app, '/hello')
@@ -827,7 +896,7 @@ class TestFalconTestingUtils:
 
         expected_content = ' '.join(filter(None, args))
 
-        expected_result = 'Result<{}>'.format(expected_content)
+        expected_result = f'Result<{expected_content}>'
 
         assert str(result) == expected_result
 
@@ -836,8 +905,130 @@ class TestFalconTestingUtils:
         header = [('Not-content-type', 'no!')]
         result = falcon.testing.Result([value], falcon.HTTP_200, header)
 
-        expected_result = 'Result<200 OK {}>'.format(value)
+        expected_result = f'Result<200 OK {value}>'
         assert str(result) == expected_result
+
+    @pytest.mark.parametrize(
+        'simulate',
+        [
+            testing.simulate_get,
+            testing.simulate_post,
+        ],
+    )
+    @pytest.mark.parametrize(
+        'value',
+        (
+            'd\xff\xff\x00',
+            'quick fox jumps over the lazy dog',
+            '{"hello": "WORLD!"}',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+            '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+            '\xe9\xe8',
+        ),
+    )
+    def test_rich_repr_result_when_body_varies(self, asgi, util, value, simulate):
+        if isinstance(value, str):
+            value = bytes(value, 'UTF-8')
+
+        if asgi:
+            resource = testing.SimpleTestResourceAsync(body=value)
+        else:
+            resource = testing.SimpleTestResource(body=value)
+
+        app = util.create_app(asgi)
+        app.add_route('/hello', resource)
+
+        result: falcon.testing.Result = simulate(app, '/hello')  # type: ignore[annotation-unchecked]
+        captured_resp = resource.captured_resp
+        content = captured_resp.text
+
+        if len(value) > 40:
+            content = value[:20] + b'...' + value[-20:]
+        else:
+            content = value
+
+        args = [
+            captured_resp.status,
+            captured_resp.headers['content-type'],
+            str(content),
+        ]
+
+        status_color: str  # type: ignore[annotation-unchecked]
+
+        for prefix, color in (
+            ('1', 'blue'),
+            ('2', 'green'),
+            ('3', 'magenta'),
+            ('4', 'red'),
+            ('5', 'red'),
+        ):
+            if captured_resp.status.startswith(prefix):
+                status_color = color
+
+        result_template = (
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
+        )
+        expected_result = result_template.format(status_color, *args)
+
+        assert result.__rich__() == expected_result
+
+    @pytest.mark.parametrize(
+        'value',
+        (
+            'd\xff\xff\x00',
+            'quick fox jumps over the lazy dog',
+            '{"hello": "WORLD!"}',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+            '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+            '\xe9\xe8',
+        ),
+    )
+    @pytest.mark.parametrize(
+        'status_color_pair',
+        (
+            (falcon.HTTP_101, 'blue'),
+            (falcon.HTTP_200, 'green'),
+            (falcon.HTTP_301, 'magenta'),
+            (falcon.HTTP_404, 'red'),
+            (falcon.HTTP_500, 'red'),
+        ),
+    )
+    def test_rich_repr_with_different_statuses(self, asgi, status_color_pair, value):
+        expected_status, expected_color = status_color_pair
+
+        if isinstance(value, str):
+            value = bytes(value, 'UTF-8')
+
+        result = falcon.testing.Result(
+            [value], expected_status, [('content-type', 'dummy')]
+        )
+
+        if len(value) > 40:
+            content = value[:20] + b'...' + value[-20:]
+        else:
+            content = value
+
+        expected_result_template = (
+            '[bold]Result[/]<[bold {}]{}[/] [italic yellow]{}[/] [grey50]{}[/]>'
+        )
+
+        expected_result = expected_result_template.format(
+            expected_color, expected_status, 'dummy', content
+        )
+
+        assert result.__rich__() == expected_result
+
+    def test_rich_repr_7xx(self):
+        # NOTE(vytas): Regression test for unbound status_color found by pyright.
+        result = falcon.testing.Result(
+            [b'Eight Megabytes and Constantly Swapping\n'],
+            falcon.HTTP_702,
+            [('content-type', 'gnu/emacs')],
+        )
+        rich_repr = result.__rich__()
+        assert '702' in rich_repr
+        assert 'Emacs' in rich_repr
+        assert 'cyan' in rich_repr
 
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
@@ -957,11 +1148,11 @@ class TestFalconTestingUtils:
             },
         ],
     )
-    def test_simulate_json_body(self, asgi, document):
+    def test_simulate_json_body(self, asgi, util, document):
         resource = (
             testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
         )
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/', resource)
 
         json_types = ('application/json', 'application/json; charset=UTF-8')
@@ -1042,8 +1233,8 @@ class TestFalconTestingUtils:
         for header, value in expected_headers:
             assert resource.captured_req.get_header(header) == value
 
-    def test_override_method_with_extras(self, asgi):
-        app = create_app(asgi)
+    def test_override_method_with_extras(self, asgi, util):
+        app = util.create_app(asgi)
         app.add_route('/', testing.SimpleTestResource(body='test'))
         client = testing.TestClient(app)
 
@@ -1065,12 +1256,12 @@ class TestFalconTestingUtils:
             'application/yaml',
         ],
     )
-    def test_simulate_content_type(self, content_type):
+    def test_simulate_content_type(self, util, content_type):
         class MediaMirror:
             def on_post(self, req, resp):
                 resp.media = req.media
 
-        app = create_app(asgi=False)
+        app = util.create_app(asgi=False)
         app.add_route('/', MediaMirror())
 
         client = testing.TestClient(app)
@@ -1096,7 +1287,9 @@ class TestFalconTestingUtils:
             MEDIA_URLENCODED,
         ],
     )
-    def test_simulate_content_type_extra_handler(self, asgi, content_type):
+    def test_simulate_content_type_extra_handler(
+        self, asgi, util, content_type, msgpack
+    ):
         class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):
                 super().__init__()
@@ -1118,7 +1311,7 @@ class TestFalconTestingUtils:
                 resp.content_type = content_type
 
         resource = TestResourceAsync() if asgi else TestResource()
-        app = create_app(asgi)
+        app = util.create_app(asgi)
         app.add_route('/', resource)
 
         json_handler = TrackingJSONHandler()
@@ -1209,8 +1402,8 @@ class TestNoApiClass(testing.TestCase):
 
 class TestSetupApi(testing.TestCase):
     def setUp(self):
-        super(TestSetupApi, self).setUp()
-        with pytest.warns(UserWarning, match='API class may be removed in a future'):
+        super().setUp()
+        with pytest.warns(UserWarning, match='API class will be removed in Falcon 5.0'):
             self.app = falcon.API()
         self.app.add_route('/', testing.SimpleTestResource(body='test'))
 
@@ -1234,6 +1427,33 @@ def test_get_argnames():
     assert misc.get_argnames(foo) == ['a', 'b', 'c']
     assert misc.get_argnames(Bar()) == ['a', 'b']
     assert misc.get_argnames(functools.partial(foo, 42)) == ['b', 'c']
+
+
+def test_has_arg_name():
+    def foo(a, b, c):
+        pass
+
+    class Bar:
+        def __call__(self, a, b):
+            pass
+
+    class Baz(list):
+        def __call__(self, a, b):
+            pass
+
+    assert misc._has_arg_name(foo, 'a')
+    assert misc._has_arg_name(foo, 'b')
+    assert misc._has_arg_name(foo, 'c')
+
+    bar = Bar()
+    assert misc._has_arg_name(bar, 'a')
+    assert misc._has_arg_name(bar, 'b')
+    assert not misc._has_arg_name(bar, 'c')
+
+    baz = Baz()
+    assert misc._has_arg_name(baz, 'a')
+    assert misc._has_arg_name(baz, 'b')
+    assert not misc._has_arg_name(baz, 'c')
 
 
 class TestContextType:
@@ -1357,7 +1577,7 @@ class TestContextType:
 
         assert repr(ctx) == type_name + "({'details': None})"
         assert str(ctx) == type_name + "({'details': None})"
-        assert '{}'.format(ctx) == type_name + "({'details': None})"
+        assert f'{ctx}' == type_name + "({'details': None})"
 
         with pytest.raises(TypeError):
             {ctx: ctx}
@@ -1415,9 +1635,11 @@ class TestDeprecatedArgs:
         assert 'a_function(...)' in str(recwarn[0].message)
 
 
-def test_json_deprecation():
-    with pytest.warns(deprecation.DeprecatedWarning, match='json'):
-        util.json
+def test_TimezoneGMT():
+    with pytest.warns(deprecation.DeprecatedWarning):
+        tz = TimezoneGMT()
 
-    with pytest.raises(AttributeError):
-        util.some_imaginary_module
+    z = timedelta(0)
+    assert tz.tzname(None) == 'GMT'
+    assert tz.dst(None) == z
+    assert tz.utcoffset(None) == z

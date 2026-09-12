@@ -8,6 +8,11 @@ from falcon import media
 from falcon import testing
 
 
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
+
+
 @pytest.fixture
 def client():
     return create_client()
@@ -94,7 +99,7 @@ def test_non_ascii_json_serialization(document):
         ('application/x-msgpack'),
     ],
 )
-def test_msgpack(media_type):
+def test_msgpack(media_type, msgpack):
     client = create_client(
         {
             'application/msgpack': media.MessagePackHandler(),

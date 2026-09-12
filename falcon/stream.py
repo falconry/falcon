@@ -17,12 +17,14 @@
 from __future__ import annotations
 
 import io
-from typing import BinaryIO, Callable, List, Optional, TypeVar, Union
+from typing import BinaryIO, Callable, TypeVar, Union
+
+from falcon.util import deprecated
 
 __all__ = ('BoundedStream',)
 
 
-Result = TypeVar('Result', bound=Union[bytes, List[bytes]])
+Result = TypeVar('Result', bound=Union[bytes, list[bytes]])
 
 
 class BoundedStream(io.IOBase):
@@ -43,12 +45,6 @@ class BoundedStream(io.IOBase):
         stream: Instance of ``socket._fileobject`` from
             ``environ['wsgi.input']``
         stream_len: Expected content length of the stream.
-
-    Attributes:
-        eof (bool): ``True`` if there is no more data to read from
-            the stream, otherwise ``False``.
-        is_exhausted (bool): Deprecated alias for `eof`.
-
     """
 
     def __init__(self, stream: BinaryIO, stream_len: int) -> None:
@@ -65,7 +61,7 @@ class BoundedStream(io.IOBase):
 
     next = __next__
 
-    def _read(self, size: Optional[int], target: Callable[[int], Result]) -> Result:
+    def _read(self, size: int | None, target: Callable[[int], Result]) -> Result:
         """Proxy reads to the underlying stream.
 
         Args:
@@ -103,7 +99,7 @@ class BoundedStream(io.IOBase):
         """Return ``False`` always."""
         return False
 
-    def read(self, size: Optional[int] = None) -> bytes:
+    def read(self, size: int | None = None) -> bytes:
         """Read from the stream.
 
         Args:
@@ -117,7 +113,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(size, self.stream.read)
 
-    def readline(self, limit: Optional[int] = None) -> bytes:
+    def readline(self, limit: int | None = None) -> bytes:
         """Read a line from the stream.
 
         Args:
@@ -131,7 +127,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(limit, self.stream.readline)
 
-    def readlines(self, hint: Optional[int] = None) -> List[bytes]:
+    def readlines(self, hint: int | None = None) -> list[bytes]:
         """Read lines from the stream.
 
         Args:
@@ -146,9 +142,9 @@ class BoundedStream(io.IOBase):
         return self._read(hint, self.stream.readlines)
 
     def write(self, data: bytes) -> None:
-        """Raise IOError always; writing is not supported."""
+        """Raise OSError always; writing is not supported."""
 
-        raise IOError('Stream is not writeable')
+        raise OSError('Stream is not writeable')
 
     def exhaust(self, chunk_size: int = 64 * 1024) -> None:
         """Exhaust the stream.
@@ -166,9 +162,20 @@ class BoundedStream(io.IOBase):
 
     @property
     def eof(self) -> bool:
+        """``True`` if there is no more data to read from the stream,
+        otherwise ``False``.
+        """  # noqa: D205
         return self._bytes_remaining <= 0
 
-    is_exhausted = eof
+    @property
+    # NOTE(caselit): Deprecated long ago. Warns since 4.0.
+    @deprecated(
+        'Use `eof` instead. (This compatibility alias will be removed in Falcon 5.0.)',
+        is_property=True,
+    )
+    def is_exhausted(self) -> bool:
+        """Deprecated alias for `eof`."""
+        return self.eof
 
 
 # NOTE(kgriffs): Alias for backwards-compat

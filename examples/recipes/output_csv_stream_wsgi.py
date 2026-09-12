@@ -1,5 +1,7 @@
 import csv
 
+import falcon
+
 
 class Report:
     class PseudoTextStream:
@@ -27,6 +29,6 @@ class Report:
             stream.clear()
 
     def on_get(self, req, resp):
-        resp.content_type = 'text/csv'
+        resp.content_type = falcon.MEDIA_CSV
         resp.downloadable_as = 'report.csv'
         resp.stream = self.fibonacci_generator()

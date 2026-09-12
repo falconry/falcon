@@ -41,7 +41,9 @@ class Hello:
         resp.set_header('X-Falcon', 'deprecated')
 
         resp.content_type = falcon.MEDIA_TEXT
-        resp.body = 'Hello, World!\n'
+        resp.text = 'Hello, World!\n'
+
+        resp.add_link('/removed-methods/add-link', 'bookmark')
 
 
 app = application = falcon.App()

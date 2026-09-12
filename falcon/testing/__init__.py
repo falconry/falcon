@@ -18,7 +18,13 @@ Falcon's testing module contains various test classes and utility
 functions to support functional testing for both Falcon-based apps and
 the Falcon framework itself.
 
-The testing framework supports both unittest and pytest::
+The testing framework supports both :mod:`unittest` and
+`pytest <https://docs.pytest.org/>`__.
+
+Tests are normally carried out by simulating HTTP requests by calling the
+corresponding :class:`TestClient` methods, e.g.,
+:meth:`~falcon.testing.TestClient.simulate_get`,
+:meth:`~falcon.testing.TestClient.simulate_post`, etc::
 
     # -----------------------------------------------------------------
     # unittest
@@ -72,6 +78,26 @@ The testing framework supports both unittest and pytest::
 
         result = client.simulate_get('/messages/42')
         assert result.json == doc
+
+As shown above, the responses rendered by the application are encapsulated by
+the test :class:`Result`.
+
+Tip:
+    :class:`Result` objects implement a ``__rich__`` method for facilitating a
+    rich-text representation when used together with the popular
+    `rich <https://rich.readthedocs.io/>`__ library.
+
+    For instance, provided you have installed both Falcon and ``rich`` into
+    your environment, you should be able to see a prettier rendition of the
+    below 404-result:
+
+    >>> import falcon
+    >>> import falcon.testing
+    >>> import rich.pretty
+    >>> rich.pretty.install()
+    >>> client = falcon.testing.TestClient(falcon.App())
+    >>> client.get('/endpoint')
+    Result<404 Not Found application/json b'{"title": "404 Not Found"}'>
 """
 
 # Hoist classes and functions into the falcon.testing namespace
@@ -115,6 +141,56 @@ from falcon.testing.resource import SimpleTestResourceAsync
 from falcon.testing.srmock import StartResponseMock
 from falcon.testing.test_case import TestCase
 
+__all__ = (
+    # client
+    'ASGIConductor',
+    'Cookie',
+    'Result',
+    'ResultBodyStream',
+    'simulate_delete',
+    'simulate_get',
+    'simulate_head',
+    'simulate_options',
+    'simulate_patch',
+    'simulate_post',
+    'simulate_put',
+    'simulate_request',
+    'StreamedResult',
+    'TestClient',
+    # helpers
+    'ASGILifespanEventEmitter',
+    'ASGIRequestEventEmitter',
+    'ASGIResponseEventCollector',
+    'ASGIWebSocketSimulator',
+    'closed_wsgi_iterable',
+    'create_asgi_req',
+    'create_environ',
+    'create_req',
+    'create_scope',
+    'create_scope_ws',
+    'DEFAULT_HOST',
+    'DEFAULT_UA',
+    'get_encoding_from_headers',
+    'get_unused_port',
+    'rand_string',
+    'redirected',
+    # resource
+    'capture_responder_args',
+    'capture_responder_args_async',
+    'set_resp_defaults',
+    'set_resp_defaults_async',
+    'SimpleTestResource',
+    'SimpleTestResourceAsync',
+    # srmock
+    'StartResponseMock',
+    # test_case
+    'TestCase',
+)
+
+
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
-# TODO: remove in falcon 4
-httpnow = _util.http_now
+# TODO(vytas): Remove in Falcon 5.0.
+httpnow = _util.deprecated(
+    'This method is deprecated and will be removed in Falcon 5.0. '
+    'Use `falcon.util.http_now` instead.'
+)(_util.http_now)

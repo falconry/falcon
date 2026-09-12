@@ -3,18 +3,18 @@ import itertools
 import os
 import random
 
-from _util import create_app  # NOQA: I100
 import pytest
 
 import falcon
 from falcon import media
 from falcon import testing
+from falcon.media.multipart import MultipartParseOptions
 from falcon.util import BufferedReader
 
-try:
-    import msgpack  # type: ignore
-except ImportError:
-    msgpack = None
+
+@pytest.fixture(scope='session')
+def msgpack():
+    return pytest.importorskip('msgpack')
 
 
 EXAMPLE1 = (
@@ -68,19 +68,19 @@ EXAMPLE3 = (
 )
 
 LOREM_IPSUM = (
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod '
-    'tempor incididunt ut labore et dolore magna aliqua. Dolor sed viverra '
-    'ipsum nunc aliquet bibendum enim. In massa tempor nec feugiat. Nunc '
-    'aliquet bibendum enim facilisis gravida. Nisl nunc mi ipsum faucibus '
-    'vitae aliquet nec ullamcorper. Amet luctus venenatis lectus magna '
-    'fringilla. Volutpat maecenas volutpat blandit aliquam etiam erat velit '
-    'scelerisque in. Egestas egestas fringilla phasellus faucibus scelerisque '
-    'eleifend. Sagittis orci a scelerisque purus semper eget duis. Nulla '
-    'pharetra diam sit amet nisl suscipit. Sed adipiscing diam donec '
-    'adipiscing tristique risus nec feugiat in. Fusce ut placerat orci nulla. '
-    'Pharetra vel turpis nunc eget lorem dolor. Tristique senectus et netus '
-    'et malesuada.\n'
-).encode()
+    b'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod '
+    b'tempor incididunt ut labore et dolore magna aliqua. Dolor sed viverra '
+    b'ipsum nunc aliquet bibendum enim. In massa tempor nec feugiat. Nunc '
+    b'aliquet bibendum enim facilisis gravida. Nisl nunc mi ipsum faucibus '
+    b'vitae aliquet nec ullamcorper. Amet luctus venenatis lectus magna '
+    b'fringilla. Volutpat maecenas volutpat blandit aliquam etiam erat velit '
+    b'scelerisque in. Egestas egestas fringilla phasellus faucibus scelerisque '
+    b'eleifend. Sagittis orci a scelerisque purus semper eget duis. Nulla '
+    b'pharetra diam sit amet nisl suscipit. Sed adipiscing diam donec '
+    b'adipiscing tristique risus nec feugiat in. Fusce ut placerat orci nulla. '
+    b'Pharetra vel turpis nunc eget lorem dolor. Tristique senectus et netus '
+    b'et malesuada.\n'
+)
 
 EXAMPLE4 = (
     b'--boundary\r\n'
@@ -210,7 +210,7 @@ def test_invalid_text_or_charset(charset, data):
         b'--BOUNDARY\r\n'
         b'Content-Disposition: form-data; name="text"\r\n'
         b'Content-Type: text/plain; '
-        + 'charset={}\r\n\r\n'.format(charset).encode()
+        + f'charset={charset}\r\n\r\n'.encode()
         + data
         + b'\r\n'
         b'--BOUNDARY\r\n'
@@ -290,17 +290,24 @@ def test_body_part_properties():
 
     for part in form:
         if part.content_type == 'application/json':
+            # NOTE(vytas): This is not a typo, but a test that the name
+            #   property can be safely referenced multiple times.
             assert part.name == part.name == 'document'
         elif part.name == 'file1':
+            # NOTE(vytas): This is not a typo, but a test that the filename
+            #   property can be safely referenced multiple times.
             assert part.filename == part.filename == 'test.txt'
             assert part.secure_filename == part.filename
 
 
-def test_empty_filename():
+def test_empty_or_missing_filename():
     data = (
         b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
         b'Content-Disposition: form-data; name="file"; filename=\r\n\r\n'
         b'An empty filename.\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'Content-Disposition: form-data; name="no file";\r\n\r\n'
+        b'No filename.\r\n'
         b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
     )
 
@@ -309,10 +316,16 @@ def test_empty_filename():
     stream = BufferedReader(io.BytesIO(data).read, len(data))
     form = handler.deserialize(stream, content_type, len(data))
 
+    parts = 0
     for part in form:
-        assert part.filename == ''
+        parts += 1
+        if part.name == 'file':
+            assert part.filename == ''
+        else:
+            assert part.filename is None
         with pytest.raises(falcon.MediaMalformedError):
             part.secure_filename
+    assert parts == 2
 
 
 class MultipartAnalyzer:
@@ -401,26 +414,24 @@ class AsyncMultipartAnalyzer:
 
 
 @pytest.fixture
-def custom_client(asgi):
+def custom_client(asgi, util, msgpack):
     def _factory(options):
         multipart_handler = media.MultipartFormHandler()
         for key, value in options.items():
             setattr(multipart_handler.parse_options, key, value)
-        req_handlers = media.Handlers(
-            {
-                falcon.MEDIA_JSON: media.JSONHandler(),
-                falcon.MEDIA_MULTIPART: multipart_handler,
-            }
-        )
+        req_handlers = {
+            falcon.MEDIA_JSON: media.JSONHandler(),
+            falcon.MEDIA_MULTIPART: multipart_handler,
+        }
+        resp_handlers = {
+            falcon.MEDIA_JSON: media.JSONHandler(),
+        }
+        if msgpack:
+            resp_handlers[falcon.MEDIA_MSGPACK] = media.MessagePackHandler()
 
-        app = create_app(asgi)
-        app.req_options.media_handlers = req_handlers
-        app.resp_options.media_handlers = media.Handlers(
-            {
-                falcon.MEDIA_JSON: media.JSONHandler(),
-                falcon.MEDIA_MSGPACK: media.MessagePackHandler(),
-            }
-        )
+        app = util.create_app(asgi)
+        app.req_options.media_handlers = media.Handlers(req_handlers)
+        app.resp_options.media_handlers = media.Handlers(resp_handlers)
 
         resource = AsyncMultipartAnalyzer() if asgi else MultipartAnalyzer()
         app.add_route('/submit', resource)
@@ -476,6 +487,25 @@ def test_upload_multipart(client):
     ]
 
 
+@pytest.mark.parametrize('epilogue', ['', '--', '\n', '\n\n', ' <-- no CRLF', '💥'])
+def test_epilogue(client, epilogue):
+    # NOTE(vytas): According to RFC 2046, actually including an epilogue might
+    #   require a trailing CRLF first, but we do not mandate it either.
+    form_body = EXAMPLE1[:-2] + epilogue.encode()
+
+    resp = client.simulate_post(
+        '/submit',
+        headers={
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+        },
+        body=form_body,
+    )
+
+    assert resp.status_code == 200
+    assert [part['name'] for part in resp.json] == ['hello', 'document', 'file1']
+
+
 @pytest.mark.parametrize('truncated_by', [1, 2, 3, 4])
 def test_truncated_form(client, truncated_by):
     resp = client.simulate_post(
@@ -484,7 +514,8 @@ def test_truncated_form(client, truncated_by):
             'Content-Type': 'multipart/form-data; '
             'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
-        body=EXAMPLE1[:-truncated_by],
+        # NOTE(vytas): The trailing \r\n is not mandatory, hence +2.
+        body=EXAMPLE1[: -(truncated_by + 2)],
     )
 
     assert resp.status_code == 400
@@ -494,14 +525,14 @@ def test_truncated_form(client, truncated_by):
     }
 
 
-def test_unexected_form_structure(client):
+def test_unexpected_form_structure(client):
     resp1 = client.simulate_post(
         '/submit',
         headers={
             'Content-Type': 'multipart/form-data; '
             'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
-        body=EXAMPLE1[:-2] + b'--\r\n',
+        body=EXAMPLE1[:-4] + b'__\r\n',
     )
 
     assert resp1.status_code == 400
@@ -565,19 +596,19 @@ def test_too_many_body_parts(custom_client, max_body_part_count):
         assert len(resp.json) == EXAMPLE2_PART_COUNT
 
 
-@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
-def test_random_form(client):
+@pytest.mark.parametrize('close_delimiter', ['--', '--\r\n'])
+def test_random_form(client, close_delimiter, msgpack):
     part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
     form_data = (
         b''.join(
-            '--{}\r\n'.format(HASH_BOUNDARY).encode()
-            + 'Content-Disposition: form-data; name="p{}"\r\n'.format(i).encode()
+            f'--{HASH_BOUNDARY}\r\n'.encode()
+            + f'Content-Disposition: form-data; name="p{i}"\r\n'.encode()
             + b'Content-Type: application/x-falcon-urandom\r\n\r\n'
             + part_data[i]
             + b'\r\n'
             for i in range(64)
         )
-        + '--{}--\r\n'.format(HASH_BOUNDARY).encode()
+        + f'--{HASH_BOUNDARY}{close_delimiter}'.encode()
     )
 
     handler = media.MultipartFormHandler()
@@ -754,6 +785,46 @@ def test_filename_star(client):
     }
 
 
+@pytest.mark.parametrize(
+    'max_length,expected',
+    [
+        (None, '__Arrow.txt'),
+        (0, '__Arrow.txt'),
+        (4, '__Ar'),
+        (5, '_.txt'),
+        (7, '__A.txt'),
+        (10, '__Arro.txt'),
+        (64, '__Arrow.txt'),
+    ],
+)
+def test_max_secure_filename_length(custom_client, max_length, expected):
+    client = custom_client({'max_secure_filename_length': max_length})
+
+    data = (
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'Content-Disposition: form-data; name="file"; '
+        b'filename=\xe2\xac\x85 Arrow.txt\r\n\r\n'
+        b'A unicode arrow in the filename.\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
+    )
+    content_type = 'multipart/form-data; boundary=' + 'a0d738bcdb30449eb0d13f4b72c2897e'
+
+    resp = client.simulate_post(
+        '/submit', headers={'Content-Type': content_type}, body=data
+    )
+    assert resp.status_code == 200
+    assert resp.json == [
+        {
+            'content_type': 'text/plain',
+            'data': 'A unicode arrow in the filename.',
+            'filename': '⬅ Arrow.txt',
+            'name': 'file',
+            'secure_filename': expected,
+            'text': 'A unicode arrow in the filename.',
+        }
+    ]
+
+
 @pytest.mark.parametrize('max_headers_size', [64, 140, 141, 142, 256, 1024])
 def test_headers_edge_cases(custom_client, max_headers_size):
     client = custom_client({'max_body_part_headers_size': max_headers_size})
@@ -816,13 +887,13 @@ def test_deserialize_custom_media(custom_client):
         def deserialize(self, stream, content_type, content_length):
             first_byte = stream.read(1)
             if first_byte:
-                return '0x{:02x}'.format(first_byte[0])
+                return f'0x{first_byte[0]:02x}'
             return ''
 
         async def deserialize_async(self, stream, content_type, content_length):
             first_byte = await stream.read(1)
             if first_byte:
-                return '0x{:02x}'.format(first_byte[0])
+                return f'0x{first_byte[0]:02x}'
             return ''
 
     handlers = media.Handlers({'application/x-falcon-first-byte': FirstByteHandler()})
@@ -848,3 +919,14 @@ def test_deserialize_custom_media(custom_client):
 
     assert resp.status_code == 200
     assert resp.json == ['', '0x48']
+
+
+def test_multipart_parse_options_default_handlers_unique():
+    parse_options_one = MultipartParseOptions()
+    parse_options_two = MultipartParseOptions()
+
+    parse_options_one.media_handlers.pop(falcon.MEDIA_JSON)
+
+    assert parse_options_one.media_handlers is not parse_options_two.media_handlers
+    assert len(parse_options_one.media_handlers) == 1
+    assert len(parse_options_two.media_handlers) >= 2

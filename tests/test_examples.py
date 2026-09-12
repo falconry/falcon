@@ -1,11 +1,28 @@
 import pytest
 
-try:
-    import httpx
-except ImportError:
-    httpx = None  # type: ignore
-
 import falcon.testing as testing
+
+
+@pytest.fixture(scope='session')
+def httpx():
+    return pytest.importorskip('httpx')
+
+
+@pytest.fixture(scope='session')
+def requests():
+    return pytest.importorskip('requests')
+
+
+def test_quote(util):
+    quote = util.load_module('examples/quote.py')
+
+    resp = testing.simulate_get(quote.app, '/quote')
+
+    assert resp.status_code == 200
+    assert resp.json == {
+        'author': 'Grace Hopper',
+        'quote': "I've always been more interested in the future than in the past.",
+    }
 
 
 def test_things(asgi, util):
@@ -21,26 +38,38 @@ def test_things(asgi, util):
     )
 
 
-@pytest.mark.skipif(
-    httpx is None, reason='things_advanced_asgi.py requires httpx [not found]'
-)
-def test_things_advanced(asgi, util):
+def test_things_advanced(asgi, util, httpx, requests):
     suffix = '_asgi' if asgi else ''
     advanced = util.load_module(f'examples/things_advanced{suffix}.py')
 
-    # NOTE(vytas): The ASGI example explicitly requires Content-Length
-    #   (its middleware errors out otherwise with 400).
-    #   Should we change this?
-    resp1 = testing.simulate_get(
-        advanced.app, '/1337/things', headers={'Content-Length': '0'}
-    )
+    resp1 = testing.simulate_get(advanced.app, '/1337/things')
     assert resp1.status_code == 401
 
     resp2 = testing.simulate_get(
         advanced.app,
         '/1337/things',
-        headers={'Authorization': 'custom-token', 'Content-Length': '0'},
+        headers={'Authorization': 'custom-token'},
     )
     assert resp2.status_code == 200
     assert len(resp2.json) == 1
     assert resp2.json[0]['color'] == 'green'
+
+    resp3 = testing.simulate_post(
+        advanced.app,
+        '/1337/things',
+        headers={'Authorization': 'custom-token', 'Content-Type': 'application/json'},
+        body='{"key": "value"}',
+    )
+    assert resp3.status_code == 201
+
+    resp4 = testing.simulate_post(
+        advanced.app,
+        '/1337/things',
+        headers={
+            'Authorization': 'custom-token',
+            'Content-Type': 'application/json',
+            'Content-Length': '1',
+        },
+        body='',
+    )
+    assert resp4.status_code == 400

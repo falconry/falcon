@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import typing
 import uuid
 
@@ -9,15 +10,21 @@ from falcon.asgi import Response
 from falcon.asgi import SSEvent
 from falcon.asgi import WebSocket
 
+logger = logging.getLogger(__name__)
+
 
 class Emitter:
     POLL_TIMEOUT = 3.0
 
     def __init__(self) -> None:
         self._done: bool = False
-        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue()
+        # NOTE(tang-vu): Bounded queue prevents unbounded memory growth when
+        #   SSE consumers stop reading but remain connected. While unlikely in
+        #   this short-lived E2E test, this guards against memory leaks in
+        #   long-running scenarios, and demonstrates safe concurrency patterns.
+        self._queue: asyncio.Queue[SSEvent] = asyncio.Queue(maxsize=32)
 
-    async def events(self) -> typing.AsyncGenerator[typing.Optional[SSEvent], None]:
+    async def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
         try:
             yield SSEvent(text='SSE CONNECTED')
 
@@ -36,7 +43,14 @@ class Emitter:
 
     async def enqueue(self, message: str) -> None:
         event = SSEvent(text=message, event_id=str(uuid.uuid4()))
-        await self._queue.put(event)
+        try:
+            self._queue.put_nowait(event)
+        except asyncio.QueueFull:
+            logger.warning(
+                'SSE emitter queue full (maxsize=%d), dropping message. '
+                'This indicates a slow or stalled consumer.',
+                self._queue.maxsize,
+            )
 
     @property
     def done(self) -> bool:
@@ -69,7 +83,7 @@ class Hub:
             # TODO(vytas): What if this overlaps with another ongoing send?
             await ws.send_text(text)
 
-    def events(self) -> typing.AsyncGenerator[typing.Optional[SSEvent], None]:
+    def events(self) -> typing.AsyncGenerator[SSEvent | None, None]:
         emitter = Emitter()
         self._update_emitters()
         self._emitters.add(emitter)

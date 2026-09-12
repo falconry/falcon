@@ -2,8 +2,9 @@ import errno
 import io
 import os
 import pathlib
+import posixpath
+from unittest import mock
 
-import _util  # NOQA
 import pytest
 
 import falcon
@@ -13,22 +14,45 @@ from falcon.routing.static import _BoundedFile
 import falcon.testing as testing
 
 
+def normalize_path(path):
+    # NOTE(vytas): On CPython 3.13, ntpath.isabs() no longer returns True for
+    #   Unix-like absolute paths that start with a single \.
+    #   We work around this in tests by prepending a fake drive D:\ on Windows.
+    #   See also: https://github.com/python/cpython/issues/117352
+    is_pathlib_path = isinstance(path, pathlib.Path)
+    if not is_pathlib_path and not posixpath.isabs(path):
+        return path
+
+    path = os.path.normpath(path)
+    if path.startswith('\\'):
+        path = 'D:' + path
+    return pathlib.Path(path) if is_pathlib_path else path
+
+
 @pytest.fixture()
-def client(asgi):
-    app = _util.create_app(asgi=asgi)
+def client(asgi, util, monkeypatch):
+    def add_static_route_normalized(obj, prefix, directory, **kwargs):
+        add_static_route_orig(obj, prefix, normalize_path(directory), **kwargs)
+
+    app = util.create_app(asgi=asgi)
+
+    app_cls = type(app)
+    add_static_route_orig = app_cls.add_static_route
+    monkeypatch.setattr(app_cls, 'add_static_route', add_static_route_normalized)
+
     client = testing.TestClient(app)
     client.asgi = asgi
     return client
 
 
-def create_sr(asgi, *args, **kwargs):
+def create_sr(asgi, prefix, directory, **kwargs):
     sr_type = StaticRouteAsync if asgi else StaticRoute
-    return sr_type(*args, **kwargs)
+    return sr_type(prefix, normalize_path(directory), **kwargs)
 
 
 @pytest.fixture
 def patch_open(monkeypatch):
-    def patch(content=None, validate=None):
+    def patch(content=None, validate=None, mtime=1736617934):
         def open(path, mode):
             class FakeFD(int):
                 pass
@@ -36,6 +60,7 @@ def patch_open(monkeypatch):
             class FakeStat:
                 def __init__(self, size):
                     self.st_size = size
+                    self.st_mtime = mtime
 
             if validate:
                 validate(path)
@@ -111,15 +136,14 @@ def patch_open(monkeypatch):
         '/static/\ufffdsomething',
     ],
 )
-def test_bad_path(asgi, uri, patch_open):
+def test_bad_path(asgi, util, uri, patch_open):
     patch_open(b'')
 
-    sr_type = StaticRouteAsync if asgi else StaticRoute
-    sr = sr_type('/static', '/var/www/statics')
+    sr = create_sr(asgi, '/static', '/var/www/statics')
 
-    req = _util.create_req(asgi, host='test.com', path=uri, root_path='statics')
+    req = util.create_req(asgi, host='test.com', path=uri, root_path='statics')
 
-    resp = _util.create_resp(asgi)
+    resp = util.create_resp(asgi)
 
     with pytest.raises(falcon.HTTPNotFound):
         if asgi:
@@ -205,7 +229,7 @@ _MIME_ALTERNATIVE = {
         ),
     ],
 )
-def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, patch_open):
+def test_good_path(asgi, util, uri_prefix, uri_path, expected_path, mtype, patch_open):
     patch_open()
 
     sr = create_sr(asgi, uri_prefix, '/var/www/statics')
@@ -213,9 +237,9 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, patch_open)
     req_path = uri_prefix[:-1] if uri_prefix.endswith('/') else uri_prefix
     req_path += uri_path
 
-    req = _util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
+    req = util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
 
-    resp = _util.create_resp(asgi)
+    resp = util.create_resp(asgi)
 
     if asgi:
 
@@ -229,7 +253,7 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, patch_open)
         body = resp.stream.read()
 
     assert resp.content_type in _MIME_ALTERNATIVE.get(mtype, (mtype,))
-    assert body.decode() == os.path.normpath('/var/www/statics' + expected_path)
+    assert body.decode() == normalize_path('/var/www/statics' + expected_path)
     assert resp.headers.get('accept-ranges') == 'bytes'
 
 
@@ -339,15 +363,15 @@ def test_bad_range_requests(client, range_header, exp_status, patch_open):
         assert response.headers.get('Content-Range') == 'bytes */16'
 
 
-def test_pathlib_path(asgi, patch_open):
+def test_pathlib_path(asgi, util, patch_open):
     patch_open()
 
     sr = create_sr(asgi, '/static/', pathlib.Path('/var/www/statics'))
     req_path = '/static/css/test.css'
 
-    req = _util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
+    req = util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
 
-    resp = _util.create_resp(asgi)
+    resp = util.create_resp(asgi)
 
     if asgi:
 
@@ -360,7 +384,7 @@ def test_pathlib_path(asgi, patch_open):
         sr(req, resp)
         body = resp.stream.read()
 
-    assert body.decode() == os.path.normpath('/var/www/statics/css/test.css')
+    assert body.decode() == normalize_path('/var/www/statics/css/test.css')
 
 
 def test_lifo(client, patch_open):
@@ -371,11 +395,11 @@ def test_lifo(client, patch_open):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
+    assert response.text == normalize_path('/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/x/thingtoo.zip')
+    assert response.text == normalize_path('/opt/somesite/x/thingtoo.zip')
 
 
 def test_lifo_negative(client, patch_open):
@@ -386,11 +410,11 @@ def test_lifo_negative(client, patch_open):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
+    assert response.text == normalize_path('/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath(
+    assert response.text == normalize_path(
         '/opt/somesite/downloads/archive/thingtoo.zip'
     )
 
@@ -447,17 +471,23 @@ def test_downloadable_not_found(client):
 )
 @pytest.mark.parametrize('downloadable', [True, False])
 def test_fallback_filename(
-    asgi, uri, default, expected, content_type, downloadable, patch_open, monkeypatch
+    asgi,
+    util,
+    uri,
+    default,
+    expected,
+    content_type,
+    downloadable,
+    patch_open,
+    monkeypatch,
 ):
     def validate(path):
-        if os.path.normpath(default) not in path:
-            raise IOError()
+        if normalize_path(default) not in path:
+            raise OSError()
 
     patch_open(validate=validate)
 
-    monkeypatch.setattr(
-        'os.path.isfile', lambda file: os.path.normpath(default) in file
-    )
+    monkeypatch.setattr('os.path.isfile', lambda file: normalize_path(default) in file)
 
     sr = create_sr(
         asgi,
@@ -469,8 +499,8 @@ def test_fallback_filename(
 
     req_path = '/static/' + uri
 
-    req = _util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
-    resp = _util.create_resp(asgi)
+    req = util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
+    resp = util.create_resp(asgi)
 
     if asgi:
 
@@ -484,7 +514,7 @@ def test_fallback_filename(
         body = resp.stream.read()
 
     assert sr.match(req.path)
-    expected_content = os.path.normpath(os.path.join('/var/www/statics', expected))
+    expected_content = normalize_path(os.path.join('/var/www/statics', expected))
     assert body.decode() == expected_content
     assert resp.content_type in _MIME_ALTERNATIVE.get(content_type, (content_type,))
     assert resp.headers.get('accept-ranges') == 'bytes'
@@ -511,7 +541,7 @@ def test_e2e_fallback_filename(
 ):
     def validate(path):
         if 'index' not in path or 'raise' in path:
-            raise IOError()
+            raise OSError()
 
     patch_open(validate=validate)
 
@@ -529,7 +559,7 @@ def test_e2e_fallback_filename(
             assert response.status == falcon.HTTP_404
         else:
             assert response.status == falcon.HTTP_200
-            assert response.text == os.path.normpath(directory + expected)
+            assert response.text == normalize_path(directory + expected)
             assert int(response.headers['Content-Length']) == len(response.text)
 
     test('/static', '/opt/somesite/static/', static_exp)
@@ -589,3 +619,141 @@ def test_file_closed(client, patch_open):
 
     assert patch_open.current_file is not None
     assert patch_open.current_file.closed
+
+
+def test_options_request(client, patch_open):
+    patch_open()
+
+    client.app.add_middleware(falcon.CORSMiddleware())
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_options(
+        path='/static/foo/bar.txt',
+        headers={'Origin': 'localhost', 'Access-Control-Request-Method': 'GET'},
+    )
+    assert resp.status_code == 200
+    assert resp.text == ''
+    assert int(resp.headers['Content-Length']) == 0
+    assert resp.headers['Access-Control-Allow-Methods'] == 'GET'
+
+
+def test_last_modified(client, patch_open):
+    mtime = (1736617934, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    response = client.simulate_request(path='/assets/css/main.css')
+    assert response.status == falcon.HTTP_200
+    assert response.headers['Last-Modified'] == mtime[1]
+
+
+def test_if_modified_since(client, patch_open):
+    mtime = (1736617934.133701, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:14 GMT'},
+    )
+    assert resp.status == falcon.HTTP_304
+    assert resp.text == ''
+
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:13 GMT'},
+    )
+    assert resp.status == falcon.HTTP_200
+    assert resp.text != ''
+
+
+def test_fstat_error(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch('os.fstat') as m:
+        m.side_effect = OSError
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_404
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
+
+
+def test_set_range_error(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    with mock.patch('falcon.routing.static._set_range') as m:
+        m.side_effect = OSError()
+        resp = client.simulate_request(path='/assets/css/main.css')
+
+    assert resp.status == falcon.HTTP_404
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
+
+
+def test_etag(client, patch_open):
+    mtime = 1736617934.133701
+    patch_open(mtime=mtime)
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+    resp = client.simulate_request(path='/assets/css/main.css')
+    assert resp.headers['ETag'] == f'"{int(mtime):x}-{len(resp.text):x}"'
+
+
+@pytest.mark.parametrize(
+    'if_none_match, is_304',
+    [
+        ('*', True),
+        ('"6782afce-9"', True),
+        ('"6782afce-9", "foo"', True),
+        ('W/"6782afce-9"', True),
+        ('"foo"', False),
+    ],
+)
+def test_if_none_match(client, patch_open, if_none_match, is_304):
+    patch_open(content=b'test_data', mtime=1736617934.133701)
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+    resp = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={'If-None-Match': if_none_match},
+    )
+    if is_304:
+        assert resp.status == falcon.HTTP_304
+        assert resp.text == ''
+    else:
+        assert resp.status == falcon.HTTP_200
+        assert resp.text == 'test_data'
+
+
+def test_if_none_match_precedence(client, patch_open):
+    """Make sure If-None-Match always takes precedence over If-Modified-Since."""
+    mtime = (1736617934.133701, 'Sat, 11 Jan 2025 17:52:14 GMT')
+    patch_open(mtime=mtime[0])
+
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+    resp1 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={
+            'If-None-Match': '"foo"',
+            'If-Modified-Since': mtime[1],
+        },
+    )
+    assert resp1.status == falcon.HTTP_200
+    assert resp1.text != ''
+
+    resp2 = client.simulate_request(
+        path='/assets/css/main.css',
+        headers={
+            'If-None-Match': resp1.headers['ETag'],
+            'If-Modified-Since': 'Sat, 11 Jan 2025 17:52:13 GMT',
+        },
+    )
+    assert resp2.status == falcon.HTTP_304
+    assert resp2.text == ''

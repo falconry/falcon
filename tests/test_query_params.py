@@ -1,14 +1,17 @@
 from datetime import date
 from datetime import datetime
+from datetime import timezone
 import json
 from uuid import UUID
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
 from falcon.errors import HTTPInvalidParam
+from falcon.errors import HTTPMissingParam
+from falcon.errors import MediaMalformedError
 import falcon.testing as testing
+from falcon.util import deprecation
 
 
 class Resource(testing.SimpleTestResource):
@@ -38,18 +41,36 @@ class Resource(testing.SimpleTestResource):
         pass
 
 
+@pytest.fixture(scope='session')
+def yaml():
+    return pytest.importorskip('yaml')
+
+
 @pytest.fixture
 def resource():
     return Resource()
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     if not asgi:
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
     return testing.TestClient(app)
+
+
+@pytest.fixture
+def yaml_handler(yaml):
+    class YAMLHandler:
+        def deserialize(self, stream, content_type, content_length):
+            try:
+                return yaml.safe_load(stream)
+            except ValueError as ex:
+                raise MediaMalformedError('YAML') from ex
+
+    return YAMLHandler()
 
 
 def simulate_request_get_query_params(client, path, query_string, **kwargs):
@@ -798,7 +819,7 @@ class TestQueryParams:
     def test_get_date_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '2015-04-20'
-        query_string = 'thedate={}'.format(date_value)
+        query_string = f'thedate={date_value}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_date('thedate') == date(2015, 4, 20)
@@ -813,7 +834,7 @@ class TestQueryParams:
     def test_get_date_valid_with_format(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '20150420'
-        query_string = 'thedate={}'.format(date_value)
+        query_string = f'thedate={date_value}'
         format_string = '%Y%m%d'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -824,7 +845,7 @@ class TestQueryParams:
     def test_get_date_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '2015-04-20'
-        query_string = 'thedate={}'.format(date_value)
+        query_string = f'thedate={date_value}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
@@ -834,7 +855,7 @@ class TestQueryParams:
     def test_get_date_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = 'notarealvalue'
-        query_string = 'thedate={}'.format(date_value)
+        query_string = f'thedate={date_value}'
         format_string = '%Y%m%d'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -844,10 +865,12 @@ class TestQueryParams:
     def test_get_datetime_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '2015-04-20T10:10:10Z'
-        query_string = 'thedate={}'.format(date_value)
+        query_string = f'thedate={date_value}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_datetime('thedate') == datetime(2015, 4, 20, 10, 10, 10)
+        assert req.get_param_as_datetime('thedate') == datetime(
+            2015, 4, 20, 10, 10, 10, tzinfo=timezone.utc
+        )
 
     def test_get_datetime_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -856,32 +879,54 @@ class TestQueryParams:
         req = resource.captured_req
         assert req.get_param_as_datetime('thedate') is None
 
-    def test_get_datetime_valid_with_format(self, simulate_request, client, resource):
+    @pytest.mark.parametrize(
+        'format_string, date_value, expected',
+        [
+            ('%Y%m%d %H:%M:%S', '20150420 10:10:10', datetime(2015, 4, 20, 10, 10, 10)),
+            (
+                '%Y-%m-%dT%H:%M:%SZ',
+                '2015-04-20T10:10:10Z',
+                datetime(2015, 4, 20, 10, 10, 10),
+            ),
+            (
+                '%Y%m%dT%H:%M:%S.%fZ',
+                '20150420T10:10:10.133701Z',
+                datetime(2015, 4, 20, 10, 10, 10, 133701),
+            ),
+        ],
+    )
+    def test_get_datetime_valid_with_format(
+        self, simulate_request, client, resource, format_string, date_value, expected
+    ):
         client.app.add_route('/', resource)
-        date_value = '20150420 10:10:10'
-        query_string = 'thedate={}'.format(date_value)
-        format_string = '%Y%m%d %H:%M:%S'
+        query_string = f'thedate={date_value}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_datetime(
-            'thedate', format_string=format_string
-        ) == datetime(2015, 4, 20, 10, 10, 10)
+        assert (
+            req.get_param_as_datetime(
+                'thedate',
+                format_string=format_string,
+            )
+            == expected
+        )
 
     def test_get_datetime_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         datetime_value = '2015-04-20T10:10:10Z'
-        query_string = 'thedate={}'.format(datetime_value)
+        query_string = f'thedate={datetime_value}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
         req.get_param_as_datetime('thedate', store=store)
         assert len(store) != 0
-        assert store.get('thedate') == datetime(2015, 4, 20, 10, 10, 10)
+        assert store.get('thedate') == datetime(
+            2015, 4, 20, 10, 10, 10, tzinfo=timezone.utc
+        )
 
     def test_get_datetime_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = 'notarealvalue'
-        query_string = 'thedate={}'.format(date_value)
+        query_string = f'thedate={date_value}'
         format_string = '%Y%m%dT%H:%M:%S'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -891,7 +936,7 @@ class TestQueryParams:
     def test_get_dict_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'payload={}'.format(json.dumps(payload_dict))
+        query_string = f'payload={json.dumps(payload_dict)}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_json('payload') == payload_dict
@@ -899,7 +944,7 @@ class TestQueryParams:
     def test_get_dict_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'notthepayload={}'.format(json.dumps(payload_dict))
+        query_string = f'notthepayload={json.dumps(payload_dict)}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_json('payload') is None
@@ -907,7 +952,7 @@ class TestQueryParams:
     def test_get_dict_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'payload={}'.format(json.dumps(payload_dict))
+        query_string = f'payload={json.dumps(payload_dict)}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
@@ -917,7 +962,7 @@ class TestQueryParams:
     def test_get_dict_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = 'foobar'
-        query_string = 'payload={}'.format(payload_dict)
+        query_string = f'payload={payload_dict}'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         with pytest.raises(HTTPInvalidParam):
@@ -926,7 +971,7 @@ class TestQueryParams:
     def test_get_param_as_json_handler_json(self, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'payload={}'.format(json.dumps(payload_dict))
+        query_string = f'payload={json.dumps(payload_dict)}'
         client.app.req_options.media_handlers[falcon.MEDIA_JSON]._loads = lambda x: {
             'x': 'y'
         }
@@ -937,11 +982,90 @@ class TestQueryParams:
     def test_get_param_as_json_no_handler_json(self, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'payload={}'.format(json.dumps(payload_dict))
+        query_string = f'payload={json.dumps(payload_dict)}'
         client.app.req_options.media_handlers.pop(falcon.MEDIA_JSON)
         client.simulate_get(path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_json('payload') == {'foo': 'bar'}
+
+    def test_get_param_as_media_valid(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        payload_dict = {'foo': 'bar'}
+        query_string = f'payload={json.dumps(payload_dict)}'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+        assert (
+            req.get_param_as_media('payload', media_type=falcon.MEDIA_JSON)
+            == payload_dict
+        )
+
+    def test_get_param_as_media_missing(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        payload_dict = {'foo': 'bar'}
+        query_string = f'notthepayload={json.dumps(payload_dict)}'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+        assert req.get_param_as_media('payload', media_type=falcon.MEDIA_JSON) is None
+
+    def test_get_param_as_media_invalid(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        simulate_request(client=client, path='/', query_string='payload=foobar')
+        req = resource.captured_req
+        with pytest.raises(HTTPInvalidParam):
+            req.get_param_as_media('payload', media_type=falcon.MEDIA_JSON)
+
+    def test_get_param_as_media_default_media_type(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.default_media_type = falcon.MEDIA_JSON
+        payload_dict = {'foo': 'bar'}
+        query_string = f'payload={json.dumps(payload_dict)}'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+        # Call without media_type to trigger fallback to default_media_type
+        assert req.get_param_as_media('payload') == payload_dict
+
+    def test_get_param_as_media_no_handler(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        simulate_request(client=client, path='/', query_string='payload=test')
+        req = resource.captured_req
+        with pytest.raises(ValueError, match='No media handler is configured'):
+            req.get_param_as_media('payload', media_type='application/xml')
+
+    def test_get_param_as_media_yaml(
+        self, simulate_request, client, resource, yaml_handler
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.media_handlers[falcon.MEDIA_YAML] = yaml_handler
+        simulate_request(client=client, path='/', query_string='data={k1:+1,k2:+true}')
+        req = resource.captured_req
+
+        result = req.get_param_as_media('data', media_type=falcon.MEDIA_YAML)
+        assert result == {'k1': 1, 'k2': True}
+
+    def test_get_param_as_media_default_yaml(
+        self, simulate_request, client, resource, yaml_handler
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.default_media_type = falcon.MEDIA_YAML
+        client.app.req_options.media_handlers[falcon.MEDIA_YAML] = yaml_handler
+        simulate_request(client=client, path='/', query_string='data={k1:+1,k2:+true}')
+        req = resource.captured_req
+
+        result = req.get_param_as_media('data')
+        assert result == {'k1': 1, 'k2': True}
+
+    def test_get_param_as_media_no_default_handler(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.default_media_type = falcon.MEDIA_YAML
+        simulate_request(client=client, path='/', query_string='data={k1:+1,k2:+true}')
+        req = resource.captured_req
+
+        with pytest.raises(ValueError, match='No media handler is configured'):
+            req.get_param_as_media('data')
 
     def test_has_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -955,6 +1079,120 @@ class TestQueryParams:
         assert not req.has_param('bee')
         # There is not a None key
         assert not req.has_param(None)
+
+
+class TestGetParamAsDict:
+    def test_deep_object(self, asgi, util):
+        req = util.create_req(asgi, query_string='user[name]=Ash&user[age]=36')
+        assert req.get_param_as_dict('user', deep_object=True) == {
+            'name': 'Ash',
+            'age': '36',
+        }
+
+    def test_deep_object_multiple_objects(self, asgi, util):
+        req = util.create_req(
+            asgi,
+            query_string=(
+                'user[name]=Ash&user[age]=36&other[name]=Misty&other[age]=10'
+            ),
+        )
+        assert req.get_param_as_dict('user', deep_object=True) == {
+            'name': 'Ash',
+            'age': '36',
+        }
+        assert req.get_param_as_dict('other', deep_object=True) == {
+            'name': 'Misty',
+            'age': '10',
+        }
+
+    def test_deep_object_empty_value(self, asgi, util):
+        req = util.create_req(asgi, query_string='user[empty]=')
+        assert req.get_param_as_dict('user', deep_object=True) == {'empty': ''}
+
+    def test_deep_object_repeated_key(self, asgi, util):
+        # NOTE: A repeated deep-object key yields a list internally; only
+        #   the first value is kept.
+        req = util.create_req(
+            asgi, query_string='user[name]=Bond&user[name]=Blofeld&user[id]=007'
+        )
+        assert req.get_param_as_dict('user', deep_object=True) == {
+            'name': 'Bond',
+            'id': '007',
+        }
+
+    def test_deep_object_skips_non_matching(self, asgi, util):
+        req = util.create_req(
+            asgi, query_string='user[name]=Ash&weird%5D=looking&user_agent=test'
+        )
+        assert req.get_param_as_dict('user', deep_object=True) == {'name': 'Ash'}
+
+    def test_deep_object_missing_required(self, asgi, util):
+        req = util.create_req(asgi)
+        with pytest.raises(HTTPMissingParam):
+            req.get_param_as_dict('user', deep_object=True, required=True)
+
+    def test_deep_object_default(self, asgi, util):
+        req = util.create_req(asgi)
+        default = {'fallback': '1'}
+        assert (
+            req.get_param_as_dict('user', deep_object=True, default=default) is default
+        )
+
+    def test_deep_object_store(self, asgi, util):
+        req = util.create_req(asgi, query_string='user[name]=Ash&user[age]=36')
+        store = {}
+        result = req.get_param_as_dict('user', deep_object=True, store=store)
+        assert result == {'name': 'Ash', 'age': '36'}
+        assert store == {'user': {'name': 'Ash', 'age': '36'}}
+
+    def test_deep_object_ignores_delimiter(self, asgi, util):
+        req = util.create_req(asgi, query_string='user[name]=Ash&user[age]=36')
+        assert req.get_param_as_dict('user', deep_object=True, delimiter='|') == {
+            'name': 'Ash',
+            'age': '36',
+        }
+
+    def test_pairs(self, asgi, util):
+        req = util.create_req(asgi, query_string='pair=a&pair=1&pair=b&pair=2')
+        assert req.get_param_as_dict('pair') == {'a': '1', 'b': '2'}
+
+    def test_pairs_odd_length(self, asgi, util):
+        req = util.create_req(asgi, query_string='pair=a&pair=b&pair=c')
+        with pytest.raises(HTTPInvalidParam):
+            req.get_param_as_dict('pair')
+
+    def test_pairs_missing_required(self, asgi, util):
+        req = util.create_req(asgi)
+        with pytest.raises(HTTPMissingParam):
+            req.get_param_as_dict('pair', required=True)
+
+    def test_pairs_default(self, asgi, util):
+        req = util.create_req(asgi)
+        default = {'x': 'y'}
+        assert req.get_param_as_dict('pair', default=default) is default
+
+    def test_pairs_store(self, asgi, util):
+        req = util.create_req(asgi, query_string='pair=a&pair=1&pair=b&pair=2')
+        store = {}
+        result = req.get_param_as_dict('pair', store=store)
+        assert result == {'a': '1', 'b': '2'}
+        assert store == {'pair': {'a': '1', 'b': '2'}}
+
+    @pytest.mark.parametrize(
+        'query_string,delimiter',
+        [
+            ('pair=a|1|b|2', '|'),
+            ('pair=a|1|b|2', 'pipeDelimited'),
+            ('pair=a 1 b 2', ' '),
+            ('pair=a%201%20b%202', 'spaceDelimited'),
+        ],
+    )
+    def test_pairs_delimiter(self, asgi, util, query_string, delimiter):
+        req = util.create_req(asgi, query_string=query_string)
+        assert req.get_param_as_dict('pair', delimiter=delimiter) == {
+            'a': '1',
+            'b': '2',
+        }
 
 
 class TestPostQueryParams:
@@ -1017,20 +1255,20 @@ class TestPostQueryParams:
         req = resource.captured_req
         assert req.get_param('q') is None
 
-    def test_asgi_raises_error(self, resource):
-        app = create_app(asgi=True)
+    def test_asgi_raises_error(self, util, resource):
+        app = util.create_app(asgi=True)
         app.add_route('/', resource)
-        app.req_options.auto_parse_form_urlencoded = True
+        with pytest.warns(deprecation.DeprecatedWarning):
+            app.req_options.auto_parse_form_urlencoded = True
 
         with pytest.raises(RuntimeError) as exc_info:
             testing.simulate_get(app, '/')
         assert 'RequestOptions.auto_parse_form_urlencoded' in exc_info.value.args[0]
 
 
-@pytest.mark.parametrize('asgi', [True, False])
 class TestPostQueryParamsDefaultBehavior:
-    def test_dont_auto_parse_by_default(self, asgi):
-        app = create_app(asgi)
+    def test_dont_auto_parse_by_default(self, asgi, util):
+        app = util.create_app(asgi)
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 

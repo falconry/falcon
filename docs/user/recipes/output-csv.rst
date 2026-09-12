@@ -9,19 +9,21 @@ file is a fairly common back-end service task.
 The easiest approach is to simply write CSV rows to an ``io.StringIO`` stream,
 and then assign its value to :attr:`resp.text <falcon.Response.text>`:
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         .. literalinclude:: ../../../examples/recipes/output_csv_text_wsgi.py
             :language: python
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         .. literalinclude:: ../../../examples/recipes/output_csv_text_asgi.py
             :language: python
 
-Here we set the response ``Content-Type`` to ``"text/csv"`` as
+Here we set the response ``Content-Type`` to :data:`~falcon.constants.MEDIA_CSV` as
 recommended by `RFC 4180 <https://tools.ietf.org/html/rfc4180>`_, and assign
 the downloadable file name ``report.csv`` via the ``Content-Disposition``
 header (see also: :ref:`serve-downloadable-as`).
@@ -38,14 +40,16 @@ our own pseudo stream object. Our stream's ``write()`` method will simply
 accumulate the CSV data in a list. We will then set :attr:`resp.stream
 <falcon.Response.stream>` to a generator yielding data chunks from this list:
 
-.. tabs::
+.. tab-set::
 
-    .. group-tab:: WSGI
+    .. tab-item:: WSGI
+        :sync: wsgi
 
         .. literalinclude:: ../../../examples/recipes/output_csv_stream_wsgi.py
             :language: python
 
-    .. group-tab:: ASGI
+    .. tab-item:: ASGI
+        :sync: asgi
 
         .. literalinclude:: ../../../examples/recipes/output_csv_stream_wsgi.py
             :language: python

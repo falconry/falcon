@@ -6,15 +6,15 @@ path via simulate_get(), vs. probing the router directly.
 """
 
 from datetime import datetime
+from datetime import timezone
 import math
 import uuid
 
-from _util import as_params  # NOQA
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
 from falcon import testing
+from falcon.routing.converters import RegexConverter
 from falcon.routing.util import SuffixedMethodNotFoundError
 
 _TEST_UUID = uuid.uuid4()
@@ -22,6 +22,15 @@ _TEST_UUID_2 = uuid.uuid4()
 _TEST_UUID_STR = str(_TEST_UUID)
 _TEST_UUID_STR_2 = str(_TEST_UUID_2)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
+
+
+def _as_params(*values, prefix=''):
+    # NOTE(caselit): each value must be a tuple/list even when using one
+    #   single argument
+    return [
+        pytest.param(*value, id=f'{prefix}_{i}' if prefix else f'{i}')
+        for i, value in enumerate(values, 1)
+    ]
 
 
 class IDResource:
@@ -134,8 +143,8 @@ def resource():
 
 
 @pytest.fixture
-def client(asgi):
-    return testing.TestClient(create_app(asgi))
+def client(asgi, util):
+    return testing.TestClient(util.create_app(asgi))
 
 
 def test_root_path(client, resource):
@@ -176,7 +185,7 @@ def test_special_chars(client, resource):
     ],
 )
 def test_single(client, resource, field_name):
-    template = '/widgets/{{{}}}'.format(field_name)
+    template = f'/widgets/{{{field_name}}}'
 
     client.app.add_route(template, resource)
 
@@ -194,7 +203,7 @@ def test_single_path_segment(client):
 
 
 @pytest.mark.parametrize(
-    'uri_template,',
+    'uri_template',
     [
         '/{id:int}',
         '/{id:int(3)}',
@@ -216,7 +225,7 @@ def test_int_converter(client, uri_template):
 
 @pytest.mark.parametrize('id_value', [2, 2.1, 1.9])
 @pytest.mark.parametrize(
-    'uri_template,',
+    'uri_template',
     [
         '/{id:float}',
         '/{id:float(1)}',
@@ -228,12 +237,12 @@ def test_float_converter(client, uri_template, id_value):
     resource1 = IDResource()
     client.app.add_route(uri_template, resource1)
 
-    result = client.simulate_get('/{0}'.format(id_value))
+    result = client.simulate_get(f'/{id_value}')
 
     assert result.status_code == 200
     assert resource1.called
     assert resource1.id == id_value
-    assert resource1.req.path == '/{0}'.format(id_value)
+    assert resource1.req.path == f'/{id_value}'
 
 
 @pytest.mark.parametrize('value', ['nan', '-inf', 'inf'])
@@ -258,7 +267,7 @@ def test_float_converter_non_finite_disallowed(client):
 
 
 @pytest.mark.parametrize(
-    'uri_template,',
+    'uri_template',
     [
         '/{id:int(2)}',
         '/{id:int(min=124)}',
@@ -281,7 +290,7 @@ def test_int_converter_rejections(client, uri_template):
         (
             '/{start_year:int}-to-{timestamp:dt}',
             '/1961-to-1969-07-21T02:56:00Z',
-            datetime(1969, 7, 21, 2, 56, 0),
+            datetime(1969, 7, 21, 2, 56, 0, tzinfo=timezone.utc),
         ),
         (
             '/{start_year:int}-to-{timestamp:dt("%Y-%m-%d")}',
@@ -313,7 +322,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
 
 @pytest.mark.parametrize(
     'uri_template, path, expected',
-    as_params(
+    _as_params(
         (
             '/widgets/{widget_id:uuid}',
             '/widgets/' + _TEST_UUID_STR,
@@ -326,7 +335,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         ),
         (
             '/versions/diff/{left:uuid()}...{right:uuid()}',
-            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            f'/versions/diff/{_TEST_UUID_STR}...{_TEST_UUID_STR_2}',
             {
                 'left': _TEST_UUID,
                 'right': _TEST_UUID_2,
@@ -334,7 +343,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         ),
         (
             '/versions/diff/{left:uuid}...{right:uuid()}',
-            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            f'/versions/diff/{_TEST_UUID_STR}...{_TEST_UUID_STR_2}',
             {
                 'left': _TEST_UUID,
                 'right': _TEST_UUID_2,
@@ -342,7 +351,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         ),
         (
             '/versions/diff/{left:uuid()}...{right:uuid}',
-            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            f'/versions/diff/{_TEST_UUID_STR}...{_TEST_UUID_STR_2}',
             {
                 'left': _TEST_UUID,
                 'right': _TEST_UUID_2,
@@ -376,12 +385,37 @@ def test_uuid_converter_complex_segment(client, resource):
     first_uuid = uuid.uuid4()
     last_uuid = uuid.uuid4()
 
-    result = client.simulate_get('/pages/{}...{}'.format(first_uuid, last_uuid))
+    result = client.simulate_get(f'/pages/{first_uuid}...{last_uuid}')
 
     assert result.status_code == 200
     assert resource.called
     assert resource.captured_kwargs['first'] == first_uuid
     assert resource.captured_kwargs['last'] == last_uuid
+
+
+@pytest.mark.parametrize(
+    'uri_template, path, expected',
+    [
+        (
+            r'/{product:re(r"product-(?P<product_id>\d+)")}',
+            '/product-1337',
+            {'product': 'product-1337'},
+        ),
+        (
+            r'/{product:re(r"product-(?P<product_id>\d+)", "product_id")}',
+            '/product-1337',
+            {'product': '1337'},
+        ),
+    ],
+)
+def test_regex_converter(client, resource, uri_template, path, expected):
+    client.app.add_route(uri_template, resource)
+
+    result = client.simulate_get(path)
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs == expected
 
 
 @pytest.mark.parametrize(
@@ -416,6 +450,26 @@ def test_converter_custom(client, resource, uri_template, path, expected):
     assert result.status_code == 200
     assert resource.called
     assert resource.captured_kwargs == expected
+
+
+def test_converter_custom_repath(client, resource):
+    class RePathConverter(RegexConverter):
+        CONSUME_MULTIPLE_SEGMENTS = True
+
+        def convert(self, value):
+            if isinstance(value, list):
+                value = '/'.join(value)
+
+            return super().convert(value)
+
+    client.app.router_options.converters['repath'] = RePathConverter
+    client.app.add_route('/{spam:repath("spam(\\x2fspam)*")}', resource)
+
+    result = client.simulate_get('/spam/spam/spam/spam')
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs == {'spam': 'spam/spam/spam/spam'}
 
 
 def test_single_trailing_slash(client):

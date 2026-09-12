@@ -1,0 +1,19 @@
+Changelog for Falcon 4.0.1
+==========================
+
+.. falcon-release: 2024-10-22
+
+Summary
+-------
+
+This is a minor point release addressing a Python distribution issue in
+Falcon 4.0.0.
+
+
+Fixed
+-----
+
+- Installing Falcon 4.0.0 unexpectedly copies many unintended directories from the
+  source tree to the venv's ``site-packages``. This issue has been rectified, and
+  our CI has been extended with new tests (that verify what is actually installed
+  from the distribution) to make sure this regression does not resurface. (`#2384 <https://github.com/falconry/falcon/issues/2384>`__)

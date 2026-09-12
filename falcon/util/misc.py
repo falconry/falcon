@@ -23,12 +23,17 @@ framework itself. These functions are hoisted into the front-door
     now = falcon.http_now()
 """
 
+from __future__ import annotations
+
+from collections.abc import Mapping
 import datetime
 import functools
 import http
 import inspect
+import os
+import os.path
 import re
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable
 import unicodedata
 
 from falcon import status_codes
@@ -53,7 +58,6 @@ __all__ = (
     'to_query_str',
     'get_bound_method',
     'get_argnames',
-    'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
     'secure_filename',
@@ -62,6 +66,20 @@ __all__ = (
 _DEFAULT_HTTP_REASON = 'Unknown'
 
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
+_WINDOWS_RESERVED_FILENAMES = frozenset(
+    {
+        'CON',
+        'PRN',
+        'AUX',
+        'NUL',
+        'CONIN$',
+        'CONOUT$',
+        *(f'COM{i}' for i in range(1, 10)),
+        *(f'LPT{i}' for i in range(1, 10)),
+    }
+)
+
+_UTC_TIMEZONE = datetime.timezone.utc
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
 _strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
@@ -83,8 +101,10 @@ utcnow: Callable[[], datetime.datetime] = deprecated(
 # NOTE(kgriffs,vytas): This is tested in the PyPy gate but we do not want devs
 #   to have to install PyPy to check coverage on their workstations, so we use
 #   the nocover pragma here.
-def _lru_cache_nop(maxsize: int) -> Callable[[Callable], Callable]:  # pragma: nocover
-    def decorator(func: Callable) -> Callable:
+def _lru_cache_nop(
+    maxsize: int,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:  # pragma: nocover
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
         func.cache_clear = lambda: None  # type: ignore
@@ -99,10 +119,10 @@ def _lru_cache_nop(maxsize: int) -> Callable[[Callable], Callable]:  # pragma: n
 if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = functools.lru_cache  # type: ignore
+    _lru_cache_for_simple_logic = functools.lru_cache
 
 
-def is_python_func(func: Union[Callable, Any]) -> bool:
+def is_python_func(func: Callable[..., Any] | Any) -> bool:
     """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
@@ -170,15 +190,24 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
     Raises:
         ValueError: http_date doesn't match any of the available time formats
-    """
+        ValueError: http_date doesn't match allowed timezones
 
+    .. versionchanged:: 4.0
+        This function now returns timezone-aware :class:`~datetime.datetime`
+        objects.
+    """
     if not obs_date:
         # PERF(kgriffs): This violates DRY, but we do it anyway
         #   to avoid the overhead of setting up a tuple, looping
         #   over it, and setting up exception handling blocks each
         #   time around the loop, in the case that we don't actually
         #   need to check for multiple formats.
-        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+        # NOTE(vytas): According to RFC 9110, Section 5.6.7, the only allowed
+        #   value for the TIMEZONE field [of IMF-fixdate] is %s"GMT", so we
+        #   simply hardcode GMT in the strptime expression.
+        return _strptime(http_date, '%a, %d %b %Y %H:%M:%S GMT').replace(
+            tzinfo=_UTC_TIMEZONE
+        )
 
     time_formats = (
         '%a, %d %b %Y %H:%M:%S %Z',
@@ -190,7 +219,15 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
     # Loop through the formats and return the first that matches
     for time_format in time_formats:
         try:
-            return _strptime(http_date, time_format)
+            # NOTE(chgad,vytas): As per now-obsolete RFC 850, Section 2.1.4
+            #   (and later references in newer RFCs) the TIMEZONE field may be
+            #   be one of many abbreviations such as EST, MDT, etc; which are
+            #   not equivalent to UTC.
+            #   However, Python seems unable to parse any such abbreviations
+            #   except GMT and UTC due to a bug/lacking implementation
+            #   (see https://github.com/python/cpython/issues/66571); so we can
+            #   indiscriminately assume UTC after all.
+            return _strptime(http_date, time_format).replace(tzinfo=_UTC_TIMEZONE)
         except ValueError:
             continue
 
@@ -199,7 +236,9 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
 
 
 def to_query_str(
-    params: dict, comma_delimited_lists: bool = True, prefix: bool = True
+    params: Mapping[str, Any] | None,
+    comma_delimited_lists: bool = True,
+    prefix: bool = True,
 ) -> str:
     """Convert a dictionary of parameters to a query string.
 
@@ -258,7 +297,7 @@ def to_query_str(
     return query_str[:-1]
 
 
-def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[..., Any]]:
+def get_bound_method(obj: object, method_name: str) -> None | Callable[..., Any]:
     """Get a bound method of the given object by name.
 
     Args:
@@ -285,7 +324,7 @@ def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[...,
     return method
 
 
-def get_argnames(func: Callable) -> List[str]:
+def get_argnames(func: Callable[..., Any]) -> list[str]:
     """Introspect the arguments of a callable.
 
     Args:
@@ -314,48 +353,21 @@ def get_argnames(func: Callable) -> List[str]:
     return args
 
 
-@deprecated('Please use falcon.code_to_http_status() instead.')
-def get_http_status(
-    status_code: Union[str, int], default_reason: str = _DEFAULT_HTTP_REASON
-) -> str:
-    """Get both the http status code and description from just a code.
+@functools.lru_cache
+def _has_arg_name_cached(func: Callable[..., Any], name: str) -> bool:
+    return name in get_argnames(func)
 
-    Warning:
-        As of Falcon 3.0, this method has been deprecated in favor of
-        :meth:`~falcon.code_to_http_status`.
 
-    Args:
-        status_code: integer or string that can be converted to an integer
-        default_reason: default text to be appended to the status_code
-            if the lookup does not find a result
-
-    Returns:
-        str: status code e.g. "404 Not Found"
-
-    Raises:
-        ValueError: the value entered could not be converted to an integer
-
-    """
-    # sanitize inputs
+def _has_arg_name(func: Callable[..., Any], name: str) -> bool:
     try:
-        code = float(status_code)  # float can validate values like "401.1"
-        code = int(code)  # converting to int removes the decimal places
-        if code < 100:
-            raise ValueError
-    except ValueError:
-        raise ValueError(
-            'get_http_status failed: "%s" is not a valid status code', status_code
-        )
-
-    # lookup the status code
-    try:
-        return getattr(status_codes, 'HTTP_' + str(code))
-    except AttributeError:
-        # not found
-        return str(code) + ' ' + default_reason
+        return _has_arg_name_cached(func, name)
+    except TypeError:
+        # NOTE(vytas): Most probably the exception was thrown by the LRU cache
+        #   indicating that the func object was unhashable.
+        return name in get_argnames(func)
 
 
-def secure_filename(filename: str) -> str:
+def secure_filename(filename: str, max_length: int | None = None) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -372,31 +384,67 @@ def secure_filename(filename: str) -> str:
         'Bold_Digit_1'
         >>> secure_filename('Ångström unit physics.pdf')
         'A_ngstro_m_unit_physics.pdf'
+        >>> secure_filename('Ångström unit physics.pdf', max_length=19)
+        'A_ngstro_m_unit.pdf'
+
+    .. versionchanged:: 4.3
+        Reserved Windows device filenames are escaped with a leading
+        underscore (``_``) when running on Windows.
 
     Args:
         filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
+        max_length (Optional[int]): Maximum allowed length of the sanitized
+            filename. The sanitized filename is truncated while attempting to
+            preserve its extension. If the provided name has no extension, or
+            the extension is too long, itself, only the head is retained.
+
+            .. versionadded:: 4.1
 
     Returns:
-        str: The sanitized filename.
+        str: The sanitized filename (truncated to `max_length` characters).
 
     Raises:
         ValueError: the provided filename is an empty string.
     """
-    # TODO(vytas): max_length (int): Maximum length of the returned
-    #     filename. Should the returned filename exceed this restriction, it is
-    #     truncated while attempting to preserve the extension.
     if not filename:
         raise ValueError('filename may not be an empty string')
 
     filename = unicodedata.normalize('NFKD', filename)
     if filename.startswith('.'):
         filename = filename.replace('.', '_', 1)
-    return _UNSAFE_CHARS.sub('_', filename)
+
+    filename = _UNSAFE_CHARS.sub('_', filename)
+
+    if (
+        os.name == 'nt'
+        and filename.partition('.')[0].rstrip(' ').upper()
+        in _WINDOWS_RESERVED_FILENAMES
+    ):
+        filename = '_' + filename
+
+    if max_length and len(filename) > max_length:
+        root, ext = os.path.splitext(filename)
+
+        # NOTE(perodriguezl): Reserve space for the extension if present.
+        allowed_root_len = max_length - len(ext)
+
+        # NOTE(vytas): The remaining root must consist of at least one char.
+        #   Simply drop the tail otherwise.
+        if allowed_root_len > 0:
+            filename = root[:allowed_root_len] + ext
+        elif max_length <= 0:
+            # PERF(vytas): We catch this unlikely programming error here
+            #   in order not to waste CPU cycles earlier.
+            raise ValueError('if provided, max_length must be a positive int')
+        else:
+            filename = filename[:max_length]
+
+    return filename
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def http_status_to_code(status: Union[http.HTTPStatus, int, bytes, str]) -> int:
+def http_status_to_code(status: http.HTTPStatus | int | bytes | str) -> int:
     """Normalize an HTTP status to an integer code.
 
     This function takes a member of :class:`http.HTTPStatus`, an HTTP status
@@ -434,7 +482,7 @@ def http_status_to_code(status: Union[http.HTTPStatus, int, bytes, str]) -> int:
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
+def code_to_http_status(status: int | http.HTTPStatus | bytes | str) -> str:
     """Normalize an HTTP status to an HTTP status line string.
 
     This function takes a member of :class:`http.HTTPStatus`, an ``int`` status
@@ -444,9 +492,8 @@ def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
     An LRU is used to minimize lookup time.
 
     Note:
-        Unlike the deprecated :func:`get_http_status`, this function will not
-        attempt to coerce a string status to an integer code, assuming the
-        string already denotes an HTTP status line.
+        This function will not attempt to coerce a string status to an
+        integer code, assuming the string already denotes an HTTP status line.
 
     Args:
         status: The status code or enum to normalize.
@@ -477,12 +524,13 @@ def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
     try:
         # NOTE(kgriffs): We do this instead of using http.HTTPStatus since
         #   the Falcon module defines a larger number of codes.
-        return getattr(status_codes, 'HTTP_' + str(code))
+        # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
+        return getattr(status_codes, 'HTTP_' + str(code))  # type: ignore[no-any-return]
     except AttributeError:
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
-def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
+def _encode_items_to_latin1(data: dict[str, str]) -> list[tuple[bytes, bytes]]:
     """Decode all key/values of a dict to Latin-1.
 
     Args:
@@ -502,6 +550,6 @@ def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
 
 _encode_items_to_latin1 = _cy_encode_items_to_latin1 or _encode_items_to_latin1
 
-isascii = deprecated('This will be removed in V5. Please use `str.isascii`')(
-    str.isascii
-)
+isascii = deprecated(
+    'This method will be removed in Falcon 5.0; please use str.isascii() instead.'
+)(str.isascii)

@@ -72,7 +72,7 @@ class ChatSocket {
 
         let input = document.getElementById(this.inputId);
         input.disabled = true;
-        input.value = 'DISCONNECTED';
+        input.value = `DISCONNECTED (${event.code} ${event.reason})`;
     }
 }
 

@@ -1,9 +1,9 @@
 from datetime import datetime
+from datetime import timezone
 import math
 import string
 import uuid
 
-from _util import as_params
 import pytest
 
 from falcon.routing import converters
@@ -11,6 +11,15 @@ from falcon.routing import converters
 _TEST_UUID = uuid.uuid4()
 _TEST_UUID_STR = str(_TEST_UUID)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
+
+
+def _as_params(*values, prefix=''):
+    # NOTE(caselit): each value must be a tuple/list even when using one
+    #   single argument
+    return [
+        pytest.param(*value, id=f'{prefix}_{i}' if prefix else f'{i}')
+        for i, value in enumerate(values, 1)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -145,12 +154,14 @@ def test_datetime_converter(value, format_string, expected):
 
 def test_datetime_converter_default_format():
     c = converters.DateTimeConverter()
-    assert c.convert('2017-07-03T14:30:01Z') == datetime(2017, 7, 3, 14, 30, 1)
+    assert c.convert('2017-07-03T14:30:01Z') == datetime(
+        2017, 7, 3, 14, 30, 1, tzinfo=timezone.utc
+    )
 
 
 @pytest.mark.parametrize(
     'value, expected',
-    as_params(
+    _as_params(
         (_TEST_UUID_STR, _TEST_UUID),
         (_TEST_UUID_STR.replace('-', '', 1), _TEST_UUID),
         (_TEST_UUID_STR_SANS_HYPHENS, _TEST_UUID),
@@ -169,3 +180,89 @@ def test_datetime_converter_default_format():
 def test_uuid_converter(value, expected):
     c = converters.UUIDConverter()
     assert c.convert(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value, pattern, expected',
+    [
+        ('abc', r'abc', 'abc'),
+        ('abc', r'[a-z]+', 'abc'),
+        ('123', r'\d+', '123'),
+        ('abc123', r'[a-z]+\d+', 'abc123'),
+        ('', r'', ''),
+        ('a', r'.', 'a'),
+        ('2023-01-15', r'\d{4}-\d{2}-\d{2}', '2023-01-15'),
+        ('foo_bar', r'\w+', 'foo_bar'),
+    ],
+)
+def test_regex_converter(value, pattern, expected):
+    c = converters.RegexConverter(pattern)
+    assert c.convert(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value, pattern',
+    [
+        ('abc', r'\d+'),
+        ('123', r'[a-z]+'),
+        (' abc', r'abc'),
+        ('ABC', r'[a-z]+'),
+        ('', r'\d+'),
+    ],
+)
+def test_regex_converter_no_match(value, pattern):
+    c = converters.RegexConverter(pattern)
+    assert c.convert(value) is None
+
+
+@pytest.mark.parametrize(
+    'pattern',
+    ['[', '(', '*'],
+)
+def test_regex_converter_invalid_pattern_error_message_includes_pattern(pattern):
+    with pytest.raises(ValueError) as exc_info:
+        converters.RegexConverter(pattern)
+    assert repr(pattern) in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    'pattern',
+    [
+        '[',
+        '(',
+        '*',
+        '(?P<name>',
+        'a{2,1}',
+        '(?P<1invalid>x)',
+        '\\',
+    ],
+)
+def test_regex_converter_invalid_pattern_raises_value_error(pattern):
+    with pytest.raises(ValueError, match=r'invalid regex pattern for RegexConverter'):
+        converters.RegexConverter(pattern)
+
+
+def test_regex_converter_bytes_pattern():
+    with pytest.raises(ValueError):
+        converters.RegexConverter(b'bytes')
+
+
+def test_regex_converter_invalid_group():
+    with pytest.raises(ValueError):
+        converters.RegexConverter('wow such pattern', group='missing')
+
+
+@pytest.mark.parametrize(
+    'pattern, group, value, expected',
+    [
+        (r'product-(?P<product_id>\d+-\d+)', 'product_id', 'product-13-37', '13-37'),
+        (r'date_(?P<year>\d\d\d\d)?-\d\d-\d\d', 'year', 'date_2026-09-01', '2026'),
+        (r'date_(?P<year>\d\d\d\d)?-\d\d-\d\d', 'year', 'date_09-01', None),
+    ],
+)
+def test_regex_converter_with_group(pattern, group, value, expected):
+    c = converters.RegexConverter(pattern, group)
+    if expected is None:
+        assert c.convert(value) is None
+    else:
+        assert c.convert(value) == expected

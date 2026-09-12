@@ -16,95 +16,26 @@
 
 from __future__ import annotations
 
-import re
-from typing import Callable, Dict, Optional
+from typing import TYPE_CHECKING
 
 from falcon import constants
 from falcon import responders
-from falcon.util.deprecation import deprecated
+
+if TYPE_CHECKING:
+    from falcon._typing import AsgiResponderCallable
+    from falcon._typing import MethodDict
+    from falcon._typing import ResponderCallable
 
 
 class SuffixedMethodNotFoundError(Exception):
-    def __init__(self, message):
-        super(SuffixedMethodNotFoundError, self).__init__(message)
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
         self.message = message
 
 
-# NOTE(kgriffs): Published method; take care to avoid breaking changes.
-@deprecated('This method will be removed in Falcon 4.0.')
-def compile_uri_template(template):
-    """Compile the given URI template string into a pattern matcher.
-
-    This function can be used to construct custom routing engines that
-    iterate through a list of possible routes, attempting to match
-    an incoming request against each route's compiled regular expression.
-
-    Each field is converted to a named group, so that when a match
-    is found, the fields can be easily extracted using
-    :py:meth:`re.MatchObject.groupdict`.
-
-    This function does not support the more flexible templating
-    syntax used in the default router. Only simple paths with bracketed
-    field expressions are recognized. For example::
-
-        /
-        /books
-        /books/{isbn}
-        /books/{isbn}/characters
-        /books/{isbn}/characters/{name}
-
-    Warning:
-        If the template contains a trailing slash character, it will be
-        stripped.
-
-        Note that this is **different** from :ref:`the default behavior
-        <trailing_slash_in_path>` of :func:`~falcon.App.add_route` used
-        with the default :class:`~falcon.routing.CompiledRouter`.
-
-        The :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`
-        request option is not considered by ``compile_uri_template()``.
-
-
-    Args:
-        template(str): The template to compile. Note that field names are
-            restricted to ASCII a-z, A-Z, and the underscore character.
-
-    Returns:
-        tuple: (template_field_names, template_regex)
-
-    .. deprecated:: 3.1
-    """
-
-    if not isinstance(template, str):
-        raise TypeError('uri_template is not a string')
-
-    if not template.startswith('/'):
-        raise ValueError("uri_template must start with '/'")
-
-    if '//' in template:
-        raise ValueError("uri_template may not contain '//'")
-
-    if template != '/' and template.endswith('/'):
-        template = template[:-1]
-
-    # template names should be able to start with A-Za-z
-    # but also contain 0-9_ in the remaining portion
-    expression_pattern = r'{([a-zA-Z]\w*)}'
-
-    # Get a list of field names
-    fields = set(re.findall(expression_pattern, template))
-
-    # Convert Level 1 var patterns to equivalent named regex groups
-    escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
-    pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
-    pattern = r'\A' + pattern + r'\Z'
-
-    return fields, re.compile(pattern, re.IGNORECASE)
-
-
 def map_http_methods(
-    resource: object, suffix: Optional[str] = None
-) -> Dict[str, Callable]:
+    resource: object, suffix: str | None = None, default_to_on_request: bool = False
+) -> MethodDict:
     """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
@@ -119,6 +50,11 @@ def map_http_methods(
             a suffix is provided, Falcon will map GET requests to
             ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
             etc.
+        default_to_on_request (bool): If True, it prevents a
+            ``SuffixedMethodNotFoundError`` from being raised on resources
+            defining ``on_request_{suffix}()``.
+            (See also: :ref:`CompiledRouterOptions <compiled_router_options>`.)
+
 
     Returns:
         dict: A mapping of HTTP methods to explicitly defined resource responders.
@@ -142,8 +78,12 @@ def map_http_methods(
             if callable(responder):
                 method_map[method] = responder
 
+    has_default_responder = default_to_on_request and hasattr(
+        resource, f'on_request_{suffix}'
+    )
+
     # If suffix is specified and doesn't map to any methods, raise an error
-    if suffix and not method_map:
+    if suffix and not method_map and not has_default_responder:
         raise SuffixedMethodNotFoundError(
             'No responders found for the specified suffix'
         )
@@ -151,7 +91,11 @@ def map_http_methods(
     return method_map
 
 
-def set_default_responders(method_map, asgi=False):
+def set_default_responders(
+    method_map: MethodDict,
+    asgi: bool = False,
+    default_responder: ResponderCallable | AsgiResponderCallable | None = None,
+) -> None:
     """Map HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
@@ -159,6 +103,11 @@ def set_default_responders(method_map, asgi=False):
             defined in a resource.
         asgi (bool): ``True`` if using an ASGI app, ``False`` otherwise
             (default ``False``).
+        default_responder: An optional default responder for unimplemented
+            resource methods (default: ``None``). If not provided, a new
+            responder for
+            :class:`"405 Method Not Allowed" <falcon.HTTPMethodNotAllowed>`
+            is constructed.
     """
 
     # Attach a resource for unsupported HTTP methods
@@ -169,11 +118,21 @@ def set_default_responders(method_map, asgi=False):
     if 'OPTIONS' not in method_map:
         # OPTIONS itself is intentionally excluded from the Allow header
         opt_responder = responders.create_default_options(allowed_methods, asgi=asgi)
-        method_map['OPTIONS'] = opt_responder
+        method_map['OPTIONS'] = opt_responder  # type: ignore[assignment]
         allowed_methods.append('OPTIONS')
 
-    na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
+    if 'WEBSOCKET' not in method_map:
+        # Explicitly assign 405 Method Not Allowed to avoid
+        # using the default responder for WEBSOCKET
+        method_map['WEBSOCKET'] = responders.create_method_not_allowed(
+            allowed_methods, asgi=asgi
+        )  # type: ignore[assignment]
+
+    if default_responder is None:
+        default_responder = responders.create_method_not_allowed(
+            allowed_methods, asgi=asgi
+        )
 
     for method in constants.COMBINED_METHODS:
         if method not in method_map:
-            method_map[method] = na_responder
+            method_map[method] = default_responder  # type: ignore[assignment]

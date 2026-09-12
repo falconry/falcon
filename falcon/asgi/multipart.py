@@ -1,4 +1,4 @@
-# Copyright 2019-2023 by Vytautas Liuolia.
+# Copyright 2019-2026 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,24 @@
 
 """ASGI multipart form media handler components."""
 
+from __future__ import annotations
+
+from collections.abc import AsyncIterator
+from collections.abc import Awaitable
+from typing import (
+    Any,
+    TYPE_CHECKING,
+)
+
+from falcon._typing import _UNSET
 from falcon.asgi.reader import BufferedReader
 from falcon.errors import DelimiterError
 from falcon.media import multipart
+from falcon.typing import AsyncReadableIO
 from falcon.util.mediatypes import parse_header
+
+if TYPE_CHECKING:
+    from falcon.media.multipart import MultipartParseOptions
 
 _ALLOWED_CONTENT_HEADERS = multipart._ALLOWED_CONTENT_HEADERS
 _CRLF = multipart._CRLF
@@ -27,7 +41,43 @@ MultipartParseError = multipart.MultipartParseError
 
 
 class BodyPart(multipart.BodyPart):
-    async def get_data(self):
+    """Represents a body part in a multipart form in an ASGI application.
+
+    Note:
+        :class:`BodyPart` is meant to be instantiated directly only by the
+        :class:`MultipartFormHandler` parser.
+    """
+
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            stream: BufferedReader,
+            headers: dict[bytes, bytes],
+            parse_options: MultipartParseOptions,
+        ): ...
+
+    stream: BufferedReader  # type: ignore[assignment]
+    """File-like input object for reading the body part of the
+    multipart form request, if any. This object provides direct access
+    to the server's data stream and is non-seekable. The stream is
+    automatically delimited according to the multipart stream boundary.
+
+    With the exception of being buffered to keep track of the boundary,
+    the wrapped body part stream interface and behavior mimic
+    :attr:`Request.stream <falcon.asgi.Request.stream>`.
+
+    Similarly to :attr:`BoundedStream <falcon.asgi.BoundedStream>`,
+    the most efficient way to read the body part content is asynchronous
+    iteration over part data chunks:
+
+    .. code:: python
+
+        async for data_chunk in part.stream:
+            pass
+    """
+
+    async def get_data(self) -> bytes:  # type: ignore[override]
         if self._data is None:
             max_size = self._parse_options.max_body_part_buffer_size + 1
             self._data = await self.stream.read(max_size)
@@ -36,8 +86,21 @@ class BodyPart(multipart.BodyPart):
 
         return self._data
 
-    async def get_media(self):
-        if self._media is None:
+    async def get_media(self) -> Any:
+        """Return a deserialized form of the multipart body part.
+
+        When called, this method will attempt to deserialize the body part
+        stream using the Content-Type header as well as the media-type handlers
+        configured via :class:`~falcon.media.multipart.MultipartParseOptions`.
+
+        The result will be cached and returned in subsequent calls::
+
+            deserialized_media = await part.get_media()
+
+        Returns:
+            object: The deserialized media representation.
+        """
+        if self._media is _UNSET:
             handler, _, _ = self._parse_options.media_handlers._resolve(
                 self.content_type, 'text/plain'
             )
@@ -52,7 +115,7 @@ class BodyPart(multipart.BodyPart):
 
         return self._media
 
-    async def get_text(self):
+    async def get_text(self) -> str | None:  # type: ignore[override]
         content_type, options = parse_header(self.content_type)
         if content_type != 'text/plain':
             return None
@@ -65,13 +128,61 @@ class BodyPart(multipart.BodyPart):
                 description='invalid text or charset: {}'.format(charset)
             ) from err
 
-    data = property(get_data)
-    media = property(get_media)
-    text = property(get_text)
+    data: Awaitable[bytes] = property(get_data)  # type: ignore[assignment]
+    """Property that acts as a convenience alias for :meth:`~.get_data`.
+
+    The ``await`` keyword must still be added when referencing
+    the property::
+
+        # Equivalent to: content = await part.get_data()
+        content = await part.data
+    """
+    media: Awaitable[Any] = property(get_media)  # type: ignore[assignment]
+    """Property that acts as a convenience alias for :meth:`~.get_media`.
+
+    The ``await`` keyword must still be added when referencing
+    the property::
+
+        # Equivalent to: deserialized_media = await part.get_media()
+        deserialized_media = await part.media
+    """
+    text: Awaitable[bytes] = property(get_text)  # type: ignore[assignment]
+    """Property that acts as a convenience alias for :meth:`~.get_text`.
+
+    The ``await`` keyword must still be added when referencing
+    the property::
+
+        # Equivalent to: decoded_text = await part.get_text()
+        decoded_text = await part.text
+    """
 
 
 class MultipartForm:
-    def __init__(self, stream, boundary, content_length, parse_options):
+    """Iterable object that returns each form part as :class:`BodyPart` instances.
+
+    Typical usage illustrated below::
+
+        async def on_post(self, req: Request, resp: Response) -> None:
+            form: MultipartForm = await req.get_media()
+
+            async for part in form:
+                if part.name == 'foo':
+                    ...
+                else:
+                    ...
+
+    Note:
+        :class:`MultipartForm` is meant to be instantiated directly only by the
+        :class:`MultipartFormHandler` parser.
+    """
+
+    def __init__(
+        self,
+        stream: AsyncReadableIO,
+        boundary: bytes,
+        content_length: int | None,
+        parse_options: MultipartParseOptions,
+    ) -> None:
         self._stream = (
             stream if isinstance(stream, BufferedReader) else BufferedReader(stream)
         )
@@ -83,10 +194,10 @@ class MultipartForm:
         self._dash_boundary = b'--' + boundary
         self._parse_options = parse_options
 
-    def __aiter__(self):
+    def __aiter__(self) -> AsyncIterator[BodyPart]:
         return self._iterate_parts()
 
-    async def _iterate_parts(self):
+    async def _iterate_parts(self) -> AsyncIterator[BodyPart]:
         prologue = True
         delimiter = self._dash_boundary
         stream = self._stream
@@ -107,13 +218,20 @@ class MultipartForm:
                     delimiter = _CRLF + delimiter
                     prologue = False
 
-                separator = await stream.read_until(_CRLF, 2, consume_delimiter=True)
-                if separator == b'--':
-                    # NOTE(vytas): boundary delimiter + '--\r\n' signals the
-                    # end of a multipart form.
+                # NOTE(vytas): Interpretations of RFC 2046, Appendix A, vary
+                #   as to whether the closing `--` must be followed by CRLF.
+                #   While the absolute majority of HTTP clients and browsers
+                #   do append it as a common convention, it seems that this is
+                #   not mandated by the RFC, so we do not require it either.
+                # NOTE(vytas): Certain versions of the Undici client
+                #   (Node's fetch implementation) do not follow the convention.
+                if await stream.peek(2) == b'--':
+                    # NOTE(vytas): boundary delimiter + '--' signals the end of
+                    #   a multipart form.
+                    await stream.read(2)
                     break
-                elif separator:
-                    raise MultipartParseError(description='unexpected form structure')
+
+                await stream.read_until(_CRLF, 0, consume_delimiter=True)
 
             except DelimiterError as err:
                 raise MultipartParseError(

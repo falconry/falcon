@@ -1,7 +1,6 @@
 import datetime
 import itertools
 
-from _util import create_req  # NOQA
 import pytest
 
 import falcon
@@ -10,6 +9,7 @@ from falcon.request import RequestOptions
 from falcon.request_helpers import _parse_etags
 import falcon.testing as testing
 import falcon.uri
+from falcon.util import DeprecatedWarning
 from falcon.util.structures import ETag
 
 _HTTP_VERSIONS = ['1.0', '1.1', '2']
@@ -32,6 +32,13 @@ def _make_etag(value, is_weak=False):
     return etag
 
 
+# NOTE(vytas): create_req is very heavily used in this module in unittest-style
+#   classes, so we simply recreate the function here.
+def create_req(asgi, options=None, **environ_or_scope_kwargs):
+    create_method = testing.create_asgi_req if asgi else testing.create_req
+    return create_method(options=options, **environ_or_scope_kwargs)
+
+
 def test_missing_qs():
     env = testing.create_environ()
     if 'QUERY_STRING' in env:
@@ -46,10 +53,22 @@ def test_app_missing():
     del env['SCRIPT_NAME']
     req = Request(env)
 
-    assert req.app == ''
+    assert req.root_path == ''
+    with pytest.warns(DeprecatedWarning):
+        assert req.app == ''
 
 
-@pytest.mark.parametrize('asgi', [True, False])
+def test_root_path_non_ascii_wsgi():
+    env = testing.create_environ()
+
+    script_name = '/café'.encode().decode('iso-8859-1')
+    env['SCRIPT_NAME'] = script_name
+
+    req = Request(env)
+
+    assert req.root_path == '/café'
+
+
 class TestRequestAttributes:
     def setup_method(self, method):
         asgi = self._item.callspec.getparam('asgi')
@@ -128,7 +147,9 @@ class TestRequestAttributes:
 
         scheme = req.scheme
         host = req.get_header('host')
-        app = req.app
+        app = req.root_path
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == app
         path = req.path
         query_string = req.query_string
 
@@ -692,7 +713,7 @@ class TestRequestAttributes:
         ],
     )
     def test_date(self, asgi, header, attr):
-        date = datetime.datetime(2013, 4, 4, 5, 19, 18)
+        date = datetime.datetime(2013, 4, 4, 5, 19, 18, tzinfo=datetime.timezone.utc)
         date_str = 'Thu, 04 Apr 2013 05:19:18 GMT'
 
         headers = {header: date_str}
@@ -896,15 +917,19 @@ class TestRequestAttributes:
         )
 
         assert req.port == port
-        assert req.netloc == '{}:{}'.format(host, port)
+        assert req.netloc == f'{host}:{port}'
 
     def test_app_present(self, asgi):
         req = create_req(asgi, root_path='/moving-pictures')
-        assert req.app == '/moving-pictures'
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == '/moving-pictures'
+        assert req.root_path == '/moving-pictures'
 
     def test_app_blank(self, asgi):
         req = create_req(asgi, root_path='')
-        assert req.app == ''
+        with pytest.warns(DeprecatedWarning):
+            assert req.app == ''
+        assert req.root_path == ''
 
     @pytest.mark.parametrize(
         'etag,expected_value',
@@ -998,6 +1023,63 @@ class TestRequestAttributes:
 
         assert _parse_etags(header_value) is None
 
+    def test_get_param_as_list_comma_delimited(self, asgi):
+        req = create_req(asgi, query_string='names=Luke,Leia,Han')
+        result = req.get_param_as_list('names', delimiter=',')
+        assert result == ['Luke', 'Leia', 'Han']
+
+    @pytest.mark.parametrize('delimiter', [' ', 'spaceDelimited'])
+    def test_get_param_as_list_space_delimited(self, asgi, delimiter):
+        req = create_req(asgi, query_string='names=Luke%20Leia%20Han')
+        result = req.get_param_as_list('names', delimiter=delimiter)
+        assert result == ['Luke', 'Leia', 'Han']
+
+    @pytest.mark.parametrize(
+        'query_string', ['names=Luke|Leia|Han', 'names=Luke%7CLeia%7CHan']
+    )
+    @pytest.mark.parametrize('delimiter', ['|', 'pipeDelimited'])
+    def test_get_param_as_list_pipe_delimited(self, asgi, query_string, delimiter):
+        req = create_req(asgi, query_string=query_string)
+        result = req.get_param_as_list('names', delimiter=delimiter)
+        assert result == ['Luke', 'Leia', 'Han']
+
+    def test_get_param_as_list_unsupported_delimiter(self, asgi):
+        req = create_req(asgi, query_string='names=Luke;Leia;Han')
+        with pytest.raises(ValueError):
+            req.get_param_as_list('names', delimiter=';')
+
+    @pytest.mark.parametrize('delimiter', ['pipeDelimited', 'spaceDelimited'])
+    def test_get_param_as_list_parse_qs_csv_vs_delimiter(self, asgi, delimiter):
+        options = falcon.RequestOptions()
+        options.auto_parse_qs_csv = True
+
+        req = create_req(
+            asgi, query_string='names=value 1,value|2,value 3', options=options
+        )
+
+        result = req.get_param_as_list('names', delimiter=delimiter)
+
+        assert result == ['value 1', 'value|2', 'value 3']
+
+    @pytest.mark.parametrize('delimiter', [' ', 'spaceDelimited'])
+    def test_get_param_as_list_multiple_values_vs_delimiter(self, asgi, delimiter):
+        req = create_req(
+            asgi, query_string='phrase=quick%20brown%20fox&phrase=lazy%20dog'
+        )
+        result = req.get_param_as_list('phrase', delimiter=delimiter)
+        assert result == ['quick brown fox', 'lazy dog']
+
+    @pytest.mark.parametrize('value', ['12345', '1768042793-1337'])
+    def test_last_event_id(self, asgi, value):
+        req = create_req(asgi, headers={'Last-Event-ID': value})
+        assert req.last_event_id == value
+
+    @pytest.mark.parametrize('value', [None, '', ' '])
+    def test_last_event_id_missing(self, asgi, value):
+        headers = {'Last-Event-ID': value} if value is not None else {}
+        req = create_req(asgi, headers=headers)
+        assert req.last_event_id is None
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
@@ -1009,7 +1091,7 @@ class TestRequestAttributes:
 
         try:
             getattr(req, attr_name)
-            pytest.fail('{} not raised'.format(error_type.__name__))
+            pytest.fail(f'{error_type.__name__} not raised')
         except error_type as ex:
             assert ex.title == title
             assert ex.description == description

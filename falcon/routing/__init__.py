@@ -26,11 +26,27 @@ from falcon.routing.converters import DateTimeConverter
 from falcon.routing.converters import FloatConverter
 from falcon.routing.converters import IntConverter
 from falcon.routing.converters import PathConverter
+from falcon.routing.converters import RegexConverter
 from falcon.routing.converters import UUIDConverter
 from falcon.routing.static import StaticRoute
 from falcon.routing.static import StaticRouteAsync
-from falcon.routing.util import compile_uri_template
 from falcon.routing.util import map_http_methods
 from falcon.routing.util import set_default_responders
 
 DefaultRouter = CompiledRouter
+
+__all__ = (
+    'BaseConverter',
+    'CompiledRouter',
+    'CompiledRouterOptions',
+    'DateTimeConverter',
+    'FloatConverter',
+    'IntConverter',
+    'map_http_methods',
+    'PathConverter',
+    'RegexConverter',
+    'set_default_responders',
+    'StaticRoute',
+    'StaticRouteAsync',
+    'UUIDConverter',
+)

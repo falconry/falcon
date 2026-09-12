@@ -28,25 +28,22 @@ for convenience::
 
 from __future__ import annotations
 
+from collections.abc import ItemsView
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import KeysView
 from collections.abc import Mapping
 from collections.abc import MutableMapping
+from collections.abc import ValuesView
 from typing import (
     Any,
-    Dict,
-    ItemsView,
-    Iterable,
-    Iterator,
-    KeysView,
-    Optional,
-    Tuple,
     TYPE_CHECKING,
-    ValuesView,
 )
 
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
 # then we will need write tests and remove the "no cover" pragma.
-class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
+class CaseInsensitiveDict(MutableMapping[str, tuple[str, Any]]):  # pragma: no cover
     """A case-insensitive ``dict``-like object.
 
     Implements all methods and operations of
@@ -74,8 +71,8 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 
     """
 
-    def __init__(self, data: Optional[Iterable[Tuple[str, Any]]] = None, **kwargs: Any):
-        self._store: Dict[str, Tuple[str, Any]] = dict()
+    def __init__(self, data: Iterable[tuple[str, Any]] | None = None, **kwargs: Any):
+        self._store: dict[str, tuple[str, Any]] = dict()
         if data is None:
             data = {}
         self.update(data, **kwargs)
@@ -97,7 +94,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
     def __len__(self) -> int:
         return len(self._store)
 
-    def lower_items(self) -> Iterator[Tuple[str, Any]]:
+    def lower_items(self) -> Iterator[tuple[str, Any]]:
         """Like iteritems(), but with all lowercase keys."""
         return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
 
@@ -141,6 +138,14 @@ class Context:
     'lru'
     >>> 'cache_strategy' in context
     True
+
+    Although we have decided to maintain the mapping interface in the
+    foreseeable future, new code should prefer the attribute-based approach, as
+    it is more performant.
+
+    What is more, if you continue to use the mapping interface
+    (or mix-and-match), care needs to be taken not to overwrite :class:`dict`
+    methods such as :meth:`~dict.items`, :meth:`~dict.values`, etc.
     """
 
     # NOTE(vytas): Define synthetic attr access methods (under TYPE_CHECKING)
@@ -156,7 +161,7 @@ class Context:
     def __contains__(self, key: str) -> bool:
         return self.__dict__.__contains__(key)
 
-    def __getitem__(self, key: str) -> Optional[Any]:
+    def __getitem__(self, key: str) -> Any | None:
         # PERF(vytas): On CPython, using this mapping interface (instead of a
         #   standard dict) to get, set and delete items incurs overhead
         #   approximately comparable to that of two function calls
@@ -202,7 +207,7 @@ class Context:
         ctx.update(self.__dict__)
         return ctx
 
-    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    def get(self, key: str, default: Any | None = None) -> Any | None:
         return self.__dict__.get(key, default)
 
     def items(self) -> ItemsView[str, Any]:
@@ -211,21 +216,19 @@ class Context:
     def keys(self) -> KeysView[str]:
         return self.__dict__.keys()
 
-    def pop(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    def pop(self, key: str, default: Any | None = None) -> Any | None:
         return self.__dict__.pop(key, default)
 
-    def popitem(self) -> Tuple[str, Any]:
+    def popitem(self) -> tuple[str, Any]:
         return self.__dict__.popitem()
 
-    def setdefault(
-        self, key: str, default_value: Optional[Any] = None
-    ) -> Optional[Any]:
+    def setdefault(self, key: str, default_value: Any | None = None) -> Any | None:
         return self.__dict__.setdefault(key, default_value)
 
     def update(self, items: dict[str, Any]) -> None:
         self.__dict__.update(items)
 
-    def values(self) -> ValuesView:
+    def values(self) -> ValuesView[Any]:
         return self.__dict__.values()
 
 
@@ -259,13 +262,10 @@ class ETag(str):
             resp.status = falcon.HTTP_200
 
     (See also: RFC 7232)
-
-    Attributes:
-        is_weak (bool): ``True`` if the entity-tag is weak, otherwise ``False``.
-
     """
 
-    is_weak = False
+    is_weak: bool = False
+    """``True`` if the entity-tag is weak, otherwise ``False``."""
 
     def strong_compare(self, other: ETag) -> bool:
         """Perform a strong entity-tag comparison.

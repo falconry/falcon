@@ -1,0 +1,23 @@
+Changelog for Falcon 4.3.1
+==========================
+
+.. falcon-release: 2026-06-16
+
+Summary
+-------
+
+This is a :ref:`SemVer <semver>` patch release that makes Falcon's own test
+suite compatible with the recently released ``cbor2`` 6.x series.
+
+Documentation and tests aside, this release is functionally identical to
+:doc:`Falcon 4.3.0 <4.3.0>`.
+
+
+Misc
+----
+
+- Falcon's test suite is now compatible with the ``cbor2`` 6.x series, whose
+  ``CBORDecodeError`` is no longer a subclass of :class:`ValueError`. This is a
+  test-only change with no impact on Falcon's runtime behavior (Falcon has zero
+  hard dependencies outside of the standard library, and ``cbor2`` is only used
+  in our own test suite). (`#2663 <https://github.com/falconry/falcon/issues/2663>`__)

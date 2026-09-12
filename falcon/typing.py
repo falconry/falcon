@@ -1,4 +1,4 @@
-# Copyright 2021-2023 by Vytautas Liuolia.
+# Copyright 2024 by Federico Caselli
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,54 +11,57 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Shorthand definitions for more complex types."""
+"""Public Falcon type alias definitions."""
 
 from __future__ import annotations
 
-import http
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Pattern,
-    Tuple,
-    TYPE_CHECKING,
-    Union,
-)
+from collections.abc import AsyncIterator
+from typing import Optional, Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from falcon.request import Request
-    from falcon.response import Response
+    from falcon.asgi import SSEvent
+
+__all__ = (
+    'Headers',
+    'ReadableIO',
+    'AsyncReadableIO',
+    'SSEEmitter',
+)
+
+Headers = dict[str, str]
+"""Mutable headers dictionary used by :class:`~falcon.Response` objects.
+
+(Note that the :attr:`req.headers <falcon.Request.headers>` property is
+annotated as a read-only mapping instead of this type.)
+
+.. versionadded:: 4.0
+"""
 
 
-Link = Dict[str, str]
+# WSGI
+class ReadableIO(Protocol):
+    """File-like protocol that defines only a read method.
 
-# Error handlers
-ErrorHandler = Callable[['Request', 'Response', BaseException, dict], Any]
+    .. versionadded:: 4.0
+    """
 
-# Error serializers
-ErrorSerializer = Callable[['Request', 'Response', BaseException], Any]
+    def read(self, n: int | None = ..., /) -> bytes: ...
 
-JSONSerializable = Union[
-    Dict[str, 'JSONSerializable'],
-    List['JSONSerializable'],
-    Tuple['JSONSerializable', ...],
-    bool,
-    float,
-    int,
-    str,
-    None,
-]
 
-# Sinks
-SinkPrefix = Union[str, Pattern]
+# ASGI
+class AsyncReadableIO(Protocol):
+    """Async file-like protocol that defines only a read method, and is iterable.
 
-# TODO(vytas): Is it possible to specify a Callable or a Protocol that defines
-#   type hints for the two first parameters, but accepts any number of keyword
-#   arguments afterwords?
-# class SinkCallable(Protocol):
-#     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
-Headers = Dict[str, str]
-HeaderList = Union[Headers, List[Tuple[str, str]]]
-ResponseStatus = Union[http.HTTPStatus, str, int]
+    .. versionadded:: 4.0
+    """
+
+    async def read(self, n: int | None = ..., /) -> bytes: ...
+    def __aiter__(self) -> AsyncIterator[bytes]: ...
+
+
+SSEEmitter = AsyncIterator[Optional['SSEvent']]
+"""Async generator or iterator over Server-Sent Events
+(instances of :class:`falcon.asgi.SSEvent`).
+
+.. versionadded:: 4.0
+"""

@@ -16,33 +16,87 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
 from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
+import os
 import re
-import typing as t
+from typing import (
+    Any,
+    Callable,
+    cast,
+    TYPE_CHECKING,
+    TypeVar,
+    Union,
+)
+import warnings
 
 from falcon.constants import COMBINED_METHODS
+from falcon.constants import TRUE_STRINGS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
-if t.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
+    from typing import Concatenate, ParamSpec
+
     import falcon as wsgi
     from falcon import asgi
+    from falcon._typing import AsgiResponderMethod
+    from falcon._typing import Resource
+    from falcon._typing import Responder
+    from falcon._typing import ResponderMethod
+
+    _FN = ParamSpec('_FN')
+
+_R = TypeVar('_R', bound=Union['Responder', 'Resource'])
+
 
 _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
 )
+_DECORABLE_ON_REQUEST_METHOD_NAME = re.compile(r'^on_request(_\w+)?$')
 
-Resource = object
-Responder = t.Callable
-ResponderOrResource = t.Union[Responder, Resource]
-Action = t.Callable
+_ON_REQUEST_SKIPPED_WARNING = (
+    'Skipping decoration of default responder {responder_name!r} on resource '
+    '{resource_name!r}. To enable decorating default responders with '
+    'class-level hooks, set falcon.hooks.decorate_on_request to True '
+    '(or set the environment variable FALCON_DECORATE_ON_REQUEST=1).'
+)
+
+decorate_on_request = os.environ.get('FALCON_DECORATE_ON_REQUEST', '0') in TRUE_STRINGS
+"""Apply class-level hooks to ``on_request`` (and ``on_request_{suffix}``) methods.
+
+This module-level attribute is disabled by default; wrapping default responders
+with class-level hooks can be enabled by setting the value of
+`decorate_on_request` to ``True``::
+
+    import falcon.hooks
+    falcon.hooks.decorate_on_request = True
+
+The value of this attribute must be patched before importing a module where
+resource classes are actually decorated. In the case setting this value
+beforehand is not possible, wrapping default responders with class-level hooks
+can also be enabled by setting the ``FALCON_DECORATE_ON_REQUEST`` environment
+variable to a truthy value. For example:
+
+.. code:: bash
+
+    $ export FALCON_DECORATE_ON_REQUEST=1
+"""
 
 
 def before(
-    action: Action, *args: t.Any, is_async: bool = False, **kwargs: t.Any
-) -> t.Callable[[ResponderOrResource], ResponderOrResource]:
+    action: Callable[
+        Concatenate[wsgi.Request, wsgi.Response, Resource, dict[str, Any], _FN], None
+    ]
+    | Callable[
+        Concatenate[asgi.Request, asgi.Response, Resource, dict[str, Any], _FN],
+        Awaitable[None],
+    ],
+    *args: _FN.args,
+    **kwargs: _FN.kwargs,
+) -> Callable[[_R], _R]:
     """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
@@ -73,60 +127,58 @@ def before(
             and *params* arguments.
 
     Keyword Args:
-        is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
-            the decorated responder is a coroutine function (i.e., that it
-            is defined with ``async def``) or that it returns an awaitable
-            coroutine object.
-
-            Normally, when the function source is declared using ``async def``,
-            the resulting function object is flagged to indicate it returns a
-            coroutine when invoked, and this can be automatically detected.
-            However, it is possible to use a regular function to return an
-            awaitable coroutine object, in which case a hint is required to let
-            the framework know what to expect. Also, a hint is always required
-            when using a cythonized coroutine function, since Cython does not
-            flag them in a way that can be detected in advance, even when the
-            function is declared using ``async def``.
-
         **kwargs: Any additional keyword arguments will be passed through to
             *action*.
     """
 
-    def _before(responder_or_resource: ResponderOrResource) -> ResponderOrResource:
+    def _before(responder_or_resource: _R) -> _R:
         if isinstance(responder_or_resource, type):
-            resource = responder_or_resource
-
-            for responder_name, responder in getmembers(resource, callable):
+            for responder_name, responder in getmembers(
+                responder_or_resource, callable
+            ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    # This pattern is necessary to capture the current value of
-                    # responder in the do_before_all closure; otherwise, they
-                    # will capture the same responder variable that is shared
-                    # between iterations of the for loop, above.
-                    responder = t.cast(Responder, responder)
+                    responder = cast('Responder', responder)
+                    do_before_all = _wrap_with_before(responder, action, args, kwargs)
 
-                    def let(responder: Responder = responder) -> None:
+                    setattr(responder_or_resource, responder_name, do_before_all)
+
+                if _DECORABLE_ON_REQUEST_METHOD_NAME.match(responder_name):
+                    # Only wrap default responders if decorate_on_request is set to True
+                    if decorate_on_request:
+                        responder = cast('Responder', responder)
                         do_before_all = _wrap_with_before(
-                            responder, action, args, kwargs, is_async
+                            responder, action, args, kwargs
                         )
 
-                        setattr(resource, responder_name, do_before_all)
+                        setattr(responder_or_resource, responder_name, do_before_all)
+                    else:
+                        warnings.warn(
+                            _ON_REQUEST_SKIPPED_WARNING.format(
+                                responder_name=responder_name,
+                                resource_name=responder_or_resource.__name__,
+                            ),
+                            UserWarning,
+                        )
 
-                    let()
-
-            return resource
+            return cast(_R, responder_or_resource)
 
         else:
-            responder = t.cast(Responder, responder_or_resource)
-            do_before_one = _wrap_with_before(responder, action, args, kwargs, is_async)
+            responder = cast('Responder', responder_or_resource)
+            do_before_one = _wrap_with_before(responder, action, args, kwargs)
 
-            return do_before_one
+            return cast(_R, do_before_one)
 
     return _before
 
 
 def after(
-    action: Action, *args: t.Any, is_async: bool = False, **kwargs: t.Any
-) -> t.Callable[[ResponderOrResource], ResponderOrResource]:
+    action: Callable[Concatenate[wsgi.Request, wsgi.Response, Resource, _FN], None]
+    | Callable[
+        Concatenate[asgi.Request, asgi.Response, Resource, _FN], Awaitable[None]
+    ],
+    *args: _FN.args,
+    **kwargs: _FN.kwargs,
+) -> Callable[[_R], _R]:
     """Execute the given action function *after* the responder.
 
     Args:
@@ -140,49 +192,44 @@ def after(
             arguments.
 
     Keyword Args:
-        is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
-            the decorated responder is a coroutine function (i.e., that it
-            is defined with ``async def``) or that it returns an awaitable
-            coroutine object.
-
-            Normally, when the function source is declared using ``async def``,
-            the resulting function object is flagged to indicate it returns a
-            coroutine when invoked, and this can be automatically detected.
-            However, it is possible to use a regular function to return an
-            awaitable coroutine object, in which case a hint is required to let
-            the framework know what to expect. Also, a hint is always required
-            when using a cythonized coroutine function, since Cython does not
-            flag them in a way that can be detected in advance, even when the
-            function is declared using ``async def``.
-
         **kwargs: Any additional keyword arguments will be passed through to
             *action*.
     """
 
-    def _after(responder_or_resource: ResponderOrResource) -> ResponderOrResource:
+    def _after(responder_or_resource: _R) -> _R:
         if isinstance(responder_or_resource, type):
-            resource = t.cast(Resource, responder_or_resource)
-
-            for responder_name, responder in getmembers(resource, callable):
+            for responder_name, responder in getmembers(
+                responder_or_resource, callable
+            ):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
-                    responder = t.cast(Responder, responder)
+                    responder = cast('Responder', responder)
+                    do_after_all = _wrap_with_after(responder, action, args, kwargs)
 
-                    def let(responder: Responder = responder) -> None:
-                        do_after_all = _wrap_with_after(
-                            responder, action, args, kwargs, is_async
+                    setattr(responder_or_resource, responder_name, do_after_all)
+
+                if _DECORABLE_ON_REQUEST_METHOD_NAME.match(responder_name):
+                    # Only wrap default responders if decorate_on_request is set to True
+                    if decorate_on_request:
+                        responder = cast('Responder', responder)
+                        do_after_all = _wrap_with_after(responder, action, args, kwargs)
+
+                        setattr(responder_or_resource, responder_name, do_after_all)
+                    else:
+                        warnings.warn(
+                            _ON_REQUEST_SKIPPED_WARNING.format(
+                                responder_name=responder_name,
+                                resource_name=responder_or_resource.__name__,
+                            ),
+                            UserWarning,
                         )
 
-                        setattr(resource, responder_name, do_after_all)
-
-                    let()
-
-            return resource
+            return cast(_R, responder_or_resource)
 
         else:
-            responder = t.cast(Responder, responder_or_resource)
-            do_after_one = _wrap_with_after(responder, action, args, kwargs, is_async)
+            responder = cast('Responder', responder_or_resource)
+            do_after_one = _wrap_with_after(responder, action, args, kwargs)
 
-            return do_after_one
+            return cast(_R, do_after_one)
 
     return _after
 
@@ -194,10 +241,9 @@ def after(
 
 def _wrap_with_after(
     responder: Responder,
-    action: Action,
-    action_args: t.Any,
-    action_kwargs: t.Any,
-    is_async: bool,
+    action: Callable[..., None | Awaitable[None]],
+    action_args: Any,
+    action_kwargs: Any,
 ) -> Responder:
     """Execute the given action function after a responder method.
 
@@ -207,65 +253,61 @@ def _wrap_with_after(
             method, taking the form ``func(req, resp, resource)``.
         action_args: Additional positional arguments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
-        is_async: Set to ``True`` for cythonized responders that are
-            actually coroutine functions, since such responders can not
-            be auto-detected. A hint is also required for regular functions
-            that happen to return an awaitable coroutine object.
     """
 
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
+    do_after_responder: Responder
 
-    if is_async or iscoroutinefunction(responder):
-        # NOTE(kgriffs): I manually verified that the implicit "else" branch
-        #   is actually covered, but coverage isn't tracking it for
-        #   some reason.
-        if not is_async:  # pragma: nocover
-            async_action = _wrap_non_coroutine_unsafe(action)
-        else:
-            async_action = action
+    if iscoroutinefunction(responder):
+        async_action = cast(
+            Callable[..., Awaitable[None]], _wrap_non_coroutine_unsafe(action)
+        )
+        async_responder = cast('AsgiResponderMethod', responder)
 
-        @wraps(responder)
+        @wraps(async_responder)
         async def do_after(
-            self: ResponderOrResource,
+            self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
-            *args: t.Any,
-            **kwargs: t.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            await responder(self, req, resp, **kwargs)
-            assert async_action
+            await async_responder(self, req, resp, **kwargs)
             await async_action(req, resp, self, *action_args, **action_kwargs)
 
+        do_after_responder = cast('AsgiResponderMethod', do_after)
     else:
+        sync_action = cast(Callable[..., None], action)
+        sync_responder = cast('ResponderMethod', responder)
 
-        @wraps(responder)
+        @wraps(sync_responder)
         def do_after(
-            self: ResponderOrResource,
+            self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
-            *args: t.Any,
-            **kwargs: t.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            responder(self, req, resp, **kwargs)
-            action(req, resp, self, *action_args, **action_kwargs)
+            sync_responder(self, req, resp, **kwargs)
+            sync_action(req, resp, self, *action_args, **action_kwargs)
 
-    return do_after
+        do_after_responder = cast('ResponderMethod', do_after)
+    return do_after_responder
 
 
 def _wrap_with_before(
     responder: Responder,
-    action: Action,
-    action_args: t.Tuple[t.Any, ...],
-    action_kwargs: t.Dict[str, t.Any],
-    is_async: bool,
-) -> t.Union[t.Callable[..., t.Awaitable[None]], t.Callable[..., None]]:
+    action: Callable[..., None | Awaitable[None]],
+    action_args: tuple[Any, ...],
+    action_kwargs: dict[str, Any],
+) -> Responder:
     """Execute the given action function before a responder method.
 
     Args:
@@ -274,60 +316,57 @@ def _wrap_with_before(
             method, taking the form ``func(req, resp, resource, params)``.
         action_args: Additional positional arguments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
-        is_async: Set to ``True`` for cythonized responders that are
-            actually coroutine functions, since such responders can not
-            be auto-detected. A hint is also required for regular functions
-            that happen to return an awaitable coroutine object.
     """
 
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
+    do_before_responder: Responder
 
-    if is_async or iscoroutinefunction(responder):
-        # NOTE(kgriffs): I manually verified that the implicit "else" branch
-        #   is actually covered, but coverage isn't tracking it for
-        #   some reason.
-        if not is_async:  # pragma: nocover
-            async_action = _wrap_non_coroutine_unsafe(action)
-        else:
-            async_action = action
+    if iscoroutinefunction(responder):
+        async_action = cast(
+            Callable[..., Awaitable[None]], _wrap_non_coroutine_unsafe(action)
+        )
+        async_responder = cast('AsgiResponderMethod', responder)
 
-        @wraps(responder)
+        @wraps(async_responder)
         async def do_before(
-            self: ResponderOrResource,
+            self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
-            *args: t.Any,
-            **kwargs: t.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            assert async_action
             await async_action(req, resp, self, kwargs, *action_args, **action_kwargs)
-            await responder(self, req, resp, **kwargs)
+            await async_responder(self, req, resp, **kwargs)
 
+        do_before_responder = cast('AsgiResponderMethod', do_before)
     else:
+        sync_action = cast(Callable[..., None], action)
+        sync_responder = cast('ResponderMethod', responder)
 
-        @wraps(responder)
+        @wraps(sync_responder)
         def do_before(
-            self: ResponderOrResource,
+            self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
-            *args: t.Any,
-            **kwargs: t.Any,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            action(req, resp, self, kwargs, *action_args, **action_kwargs)
-            responder(self, req, resp, **kwargs)
+            sync_action(req, resp, self, kwargs, *action_args, **action_kwargs)
+            sync_responder(self, req, resp, **kwargs)
 
-    return do_before
+        do_before_responder = cast('ResponderMethod', do_before)
+    return do_before_responder
 
 
 def _merge_responder_args(
-    args: t.Tuple[t.Any, ...], kwargs: t.Dict[str, t.Any], argnames: t.List[str]
+    args: tuple[Any, ...], kwargs: dict[str, Any], argnames: list[str]
 ) -> None:
     """Merge responder args into kwargs.
 

@@ -1,0 +1,5 @@
+When a route was only served by a catch-all ``on_request()`` responder, with
+no HTTP methods explicitly mapped via ``on_get()``, ``on_post()``, etc., the
+default OPTIONS responder rendered an empty Allow header, misleadingly
+indicating that the resource allows no methods at all.
+The Allow header is now omitted when the list of allowed methods is empty.

@@ -9,7 +9,7 @@ from falcon import testing
 from . import _asgi_test_app
 
 
-@pytest.mark.asyncio
+@pytest.mark.slow
 async def test_asgi_request_event_emitter_hang():
     # NOTE(kgriffs): This tests the ASGI server behavior that
     #   ASGIRequestEventEmitter simulates when emit() is called
@@ -36,7 +36,6 @@ async def test_asgi_request_event_emitter_hang():
     assert (elapsed + 0.1) > expected_elapsed_min
 
 
-@pytest.mark.asyncio
 async def test_ignore_extra_asgi_events():
     collect = testing.ASGIResponseEventCollector()
 
@@ -49,7 +48,6 @@ async def test_ignore_extra_asgi_events():
     assert len(collect.events) == 2
 
 
-@pytest.mark.asyncio
 async def test_invalid_asgi_events():
     collect = testing.ASGIResponseEventCollector()
 
@@ -210,3 +208,21 @@ def test_immediate_disconnect():
 
     with pytest.raises(ConnectionError):
         client.simulate_get('/', asgi_disconnect_ttl=0)
+
+
+@pytest.mark.parametrize(
+    'path, expected',
+    [
+        ('/cache/http%3A%2F%2Ffalconframework.org/status', True),
+        (
+            '/cache/http%3A%2F%2Ffalconframework.org/status?param1=value1&param2=value2',
+            False,
+        ),
+    ],
+)
+def test_create_scope_preserve_raw_path(path, expected):
+    scope = testing.create_scope(path=path)
+    if expected:
+        assert scope['raw_path'] == path.encode()
+    else:
+        assert scope['raw_path'] != path.encode()

@@ -1,2 +1,0 @@
-The web servers used for tests are now run through :any:`sys.executable` in
-order to ensure that they respect the virtualenv in which tests are being run.

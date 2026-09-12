@@ -10,4 +10,4 @@ class Pong:
         resp.content_type = falcon.MEDIA_TEXT
         resp.text = 'PONG\n'
         # TODO(vytas): Properly type Response.status.
-        resp.status = HTTPStatus.OK  # type: ignore
+        resp.status = HTTPStatus.OK

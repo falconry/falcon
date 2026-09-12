@@ -22,7 +22,7 @@ formatted like this::
 
 import re
 
-
+IETF_DOCS = 'https://datatracker.ietf.org/doc/html'
 RFC_PATTERN = re.compile(r'RFC (\d{4}), Section ([\d\.]+)')
 
 
@@ -40,11 +40,10 @@ def _process_line(line):
     section = m.group(2)
 
     template = (
-        '`RFC {rfc}, Section {section} '
-        '<https://tools.ietf.org/html/rfc{rfc}#section-{section}>`_'
+        '`RFC {rfc}, Section {section} <{ietf_docs}/rfc{rfc}#section-{section}>`__'
     )
 
-    rendered_text = template.format(rfc=rfc, section=section)
+    rendered_text = template.format(rfc=rfc, section=section, ietf_docs=IETF_DOCS)
 
     return line[: m.start()] + rendered_text + line[m.end() :]
 

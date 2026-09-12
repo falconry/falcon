@@ -4,11 +4,11 @@ import time
 
 import pytest
 
-from falcon import runs_sync
 from falcon import testing
 from falcon.asgi import App
 
 
+@pytest.mark.slow
 def test_multiple():
     class SomeResource:
         def __init__(self):
@@ -16,10 +16,10 @@ def test_multiple():
 
         async def on_get(self, req, resp):
             async def background_job_async():
-                self.counter['backround:on_get:async'] += 1
+                self.counter['background:on_get:async'] += 1
 
             def background_job_sync():
-                self.counter['backround:on_get:sync'] += 20
+                self.counter['background:on_get:sync'] += 20
 
             with pytest.raises(TypeError):
                 resp.schedule(background_job_sync)
@@ -31,10 +31,10 @@ def test_multiple():
 
         async def on_post(self, req, resp):
             async def background_job_async():
-                self.counter['backround:on_get:async'] += 1000
+                self.counter['background:on_get:async'] += 1000
 
             def background_job_sync():
-                self.counter['backround:on_get:sync'] += 2000
+                self.counter['background:on_get:sync'] += 2000
 
             resp.schedule(background_job_async)
             resp.schedule(background_job_async)
@@ -43,7 +43,7 @@ def test_multiple():
 
         async def on_put(self, req, resp):
             async def background_job_async():
-                self.counter['backround:on_get:async'] += 1000
+                self.counter['background:on_get:async'] += 1000
 
             c = background_job_async()
 
@@ -64,8 +64,8 @@ def test_multiple():
 
     time.sleep(0.5)
 
-    assert resource.counter['backround:on_get:async'] == 2002
-    assert resource.counter['backround:on_get:sync'] == 4040
+    assert resource.counter['background:on_get:async'] == 2002
+    assert resource.counter['background:on_get:sync'] == 4040
 
     result = client.simulate_put()
     assert result.status_code == 500
@@ -137,7 +137,6 @@ def callback_app(simple_resource):
         ('GET', '/stream', 'One\nTwo\nThree\n'),
     ],
 )
-@runs_sync
 async def test_callback(callback_app, simple_resource, method, uri, expected):
     async with testing.ASGIConductor(callback_app) as conductor:
         resp = await conductor.simulate_request(method, uri)

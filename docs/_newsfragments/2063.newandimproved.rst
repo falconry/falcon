@@ -1,7 +1,0 @@
-A new property, :attr:`~falcon.Request.headers_lower`, was added to provide a
-unified, self-documenting way to get a copy of all request headers with
-lowercase names to facilitate case-insensitive matching. This is especially
-useful for middleware components that need to be compatible with both WSGI and
-ASGI. :attr:`~falcon.Request.headers_lower` was added in lieu of introducing a
-breaking change to the WSGI :attr:`~falcon.Request.headers` property that
-returns uppercase header names from the WSGI ``environ`` dictionary.

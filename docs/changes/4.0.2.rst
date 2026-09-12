@@ -1,0 +1,40 @@
+Changelog for Falcon 4.0.2
+==========================
+
+.. falcon-release: 2024-11-06
+
+Summary
+-------
+
+This is a minor point release to fix some missed re-exports for type checkers.
+In addition, we have also included a couple of documentation improvements.
+
+
+Fixed
+-----
+
+- Running Mypy on code that uses parts of ``falcon.testing``
+  would previously lead to errors like::
+
+    Name "falcon.testing.TestClient" is not defined
+
+  This has been fixed by explicitly exporting the names that are
+  imported into the ``falcon.testing`` namespace. (`#2387 <https://github.com/falconry/falcon/issues/2387>`__)
+
+
+Misc
+----
+
+- The printable PDF version of our documentation was enabled on Read the Docs. (`#2365 <https://github.com/falconry/falcon/issues/2365>`__)
+
+
+Contributors to this Release
+----------------------------
+
+Many thanks to those who contributed to this bugfix release:
+
+- `AkshayAwate <https://github.com/AkshayAwate>`__
+- `CaselIT <https://github.com/CaselIT>`__
+- `chitvs <https://github.com/chitvs>`__
+- `jap <https://github.com/jap>`__
+- `vytas7 <https://github.com/vytas7>`__

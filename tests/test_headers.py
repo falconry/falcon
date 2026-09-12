@@ -1,7 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
 
-from _util import create_app  # NOQA
 import pytest
 
 import falcon
@@ -13,8 +12,8 @@ SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     return testing.TestClient(app)
 
 
@@ -57,7 +56,8 @@ class HeaderHelpersResource:
         resp.last_modified = self.last_modified
         resp.retry_after = 3601
 
-        # Relative URI's are OK per http://goo.gl/DbVqR
+        # Relative URI's are OK per
+        # https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.2
         resp.location = '/things/87'
         resp.content_location = '/things/78'
 
@@ -218,10 +218,7 @@ class AppendHeaderResource:
             ' Max-Age=600; path=/'
         )
         resp.append_header('Set-Cookie', c1)
-        c2 = (
-            'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT;'
-            ' Max-Age=0'
-        )
+        c2 = 'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0'
         resp.append_header('seT-cookie', c2)
 
 
@@ -339,14 +336,14 @@ class TestHeaders:
         result = client.simulate_get()
         assert result.headers['Content-Length'] == '0'
 
-    def test_declared_content_length_overriden_by_body_length(self, client):
+    def test_declared_content_length_overridden_by_body_length(self, client):
         resource = ContentLengthHeaderResource(42, body=SAMPLE_BODY)
         client.app.add_route('/', resource)
         result = client.simulate_get()
 
         assert result.headers['Content-Length'] == str(len(SAMPLE_BODY))
 
-    def test_declared_content_length_overriden_by_data_length(self, client):
+    def test_declared_content_length_overridden_by_data_length(self, client):
         data = SAMPLE_BODY.encode()
 
         resource = ContentLengthHeaderResource(42, data=data)
@@ -404,7 +401,7 @@ class TestHeaders:
 
         # Exercise any result caching and associated abuse mitigations
         for i in range(10000):
-            assert req.get_header('X-Not-Found-{0}'.format(i)) is None
+            assert req.get_header(f'X-Not-Found-{i}') is None
 
     @pytest.mark.parametrize('with_double_quotes', [True, False])
     def test_unset_header(self, client, with_double_quotes):
@@ -501,8 +498,8 @@ class TestHeaders:
             ('text/plain', 'Hello ISO-8859-1!'),
         ],
     )
-    def test_override_default_media_type(self, asgi, client, content_type, body):
-        client.app = create_app(asgi=asgi, media_type=content_type)
+    def test_override_default_media_type(self, asgi, util, client, content_type, body):
+        client.app = util.create_app(asgi=asgi, media_type=content_type)
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
@@ -510,10 +507,10 @@ class TestHeaders:
         assert result.headers['Content-Type'] == content_type
 
     @pytest.mark.parametrize('asgi', [True, False])
-    def test_override_default_media_type_missing_encoding(self, asgi, client):
+    def test_override_default_media_type_missing_encoding(self, asgi, util, client):
         body = '{"msg": "Hello Unicode! \U0001f638"}'
 
-        client.app = create_app(asgi=asgi, media_type='application/json')
+        client.app = util.create_app(asgi=asgi, media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
@@ -867,12 +864,12 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.add_link('/things/2842', 'next')
+        resource.append_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.add_link(uri, 'http://example.com/\u00e7runchy')
+        resource.append_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
+        resource.append_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 

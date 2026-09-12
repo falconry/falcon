@@ -1,14 +1,10 @@
-.. raw:: html
+.. image:: https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg
+   :align: center
+   :alt: Falcon logo
+   :target: https://falconframework.org/
+   :width: 100 %
 
-    <a href="https://falconframework.org" target="_blank">
-    <img
-        src="https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg"
-        alt="Falcon web framework logo"
-        style="width:100%"
-    >
-    </a>
-
-|Build Status| |Docs| |codecov.io|
+|Build status| |Docs| |codecov.io| |PyPI package| |Python versions|
 
 The Falcon Web Framework
 ========================
@@ -23,7 +19,7 @@ clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
-champ under CPython 3.8+ and PyPy 3.8+.
+champ under CPython 3.9+ and PyPy 3.9+.
 
 Quick Links
 -----------
@@ -79,7 +75,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic HTTP error responses
 - Straightforward exception handling
 - Snappy testing with WSGI/ASGI helpers and mocks
-- CPython 3.8+ and PyPy 3.8+ support
+- CPython 3.9+ and PyPy 3.9+ support
 
 .. Patron list starts here. For Python package, we substitute this section with:
    Support Falcon Development
@@ -88,31 +84,12 @@ Falcon tries to do as little as possible while remaining highly effective.
 A Big Thank You to Our Patrons!
 -------------------------------
 
-.. raw:: html
+|Backer:TestMuAI| |Backer:GovCert| |Backer:Sentry|
 
-    <p>
-    <a href="https://www.govcert.lu/" target="_blank"><img src="https://falconframework.org/assets/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
-     </p>
-
-    <p>
-        <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/assets/rabota.jpg" height="30" alt="Examination RU" style="margin-right: 10px"></a>
-
-        <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/assets/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
-
-        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/algolia.svg" height="30" alt="Algolia"></a>
-
-        <a href="https://www.salesforce.com" target="_blank"><img src="https://falconframework.org/assets/salesforce.svg" height="30" alt="Salesforce"></a>
-    </p>
-
-    <p>
-        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/misaka.svg" height="30" alt="Misaka Network"></a>
-        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/likalo.png" height="30" alt="Likalo"></a>
-    </p>
-
-.. Patron list ends here (see the comment above this section).
-
-Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
-prioritized support.
+Has Falcon helped you make an awesome app? Show your support today with a
+one-time donation or by becoming a patron.
+Supporters get cool gear, an opportunity to promote their brand to Python
+developers, and prioritized support.
 
 * `Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
 
@@ -210,7 +187,7 @@ PyPy
 ^^^^
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.8+ is supported as of PyPy v7.3.7+.
+PyPy3.9+ is supported as of PyPy v7.3.10+.
 
 .. code:: bash
 
@@ -226,7 +203,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.8+.
+`CPython <https://www.python.org/downloads/>`__ 3.9+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
@@ -240,63 +217,21 @@ Or, to install the latest beta or release candidate, if any:
 
     $ pip install --pre falcon
 
-In order to provide an extra speed boost, Falcon can compile itself with
-Cython. Wheels containing pre-compiled binaries are available from PyPI for
-several common platforms. However, if a wheel for your platform of choice is not
-available, you can install the source distribution. The installation process
-will automatically try to cythonize Falcon for your environment, falling back to
-a normal pure-Python install if any issues are encountered during the
-cythonization step:
+In order to provide an extra speed boost, Falcon automatically compiles itself
+with `Cython <https://cython.org/>`__ under any
+`PEP 517 <https://peps.python.org/pep-0517/>`__\-compliant installer.
 
-.. code:: bash
-
-    $ pip install --no-binary :all: falcon
-
-If you want to verify that Cython is being invoked, simply
-pass the verbose flag `-v` to pip in order to echo the compilation commands.
-
-The cythonization step is only active when using the ``CPython`` Python
-implementation, so installing using ``PyPy`` will skip it.
-If you want to skip Cython compilation step and install
-the pure-Python version directly you can set the environment variable
-``FALCON_DISABLE_CYTHON`` to a non empty value before install:
-
-.. code:: bash
-
-    $ FALCON_DISABLE_CYTHON=Y pip install -v --no-binary :all: falcon
-
-Please note that ``pip>=10`` is required to be able to install Falcon from
-source.
-
-**Installing on OS X**
-
-Xcode Command Line Tools are required to compile Cython. Install them
-with this command:
-
-.. code:: bash
-
-    $ xcode-select --install
-
-The Clang compiler treats unrecognized command-line options as
-errors, for example:
-
-.. code:: bash
-
-    clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
-
-You might also see warnings about unused functions. You can work around
-these issues by setting additional Clang C compiler flags as follows:
-
-.. code:: bash
-
-    $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
+For your convenience, wheels containing pre-compiled binaries are available
+from PyPI for the majority of common platforms. Even if a binary build for your
+platform of choice is not available, ``pip`` will pick a pure-Python wheel.
+You can also cythonize Falcon for your environment; see our
+`Installation docs <https://falcon.readthedocs.io/en/stable/user/install.html>`__
+for more information on this and other advanced options.
 
 Dependencies
 ^^^^^^^^^^^^
 
-Falcon does not require the installation of any other packages, although if
-Cython has been installed into the environment, it will be used to optimize
-the framework as explained above.
+Falcon does not require the installation of any other packages.
 
 WSGI Server
 -----------
@@ -313,12 +248,12 @@ the more popular ones out there, but anything that can load a WSGI app will do.
 ASGI Server
 -----------
 
-In order to serve a Falcon ASGI app, you will need an ASGI server. Uvicorn
-is a popular choice:
+In order to serve a Falcon ASGI app, you will need an ASGI server. Uvicorn and
+Granian are popular choices:
 
 .. code:: bash
 
-    $ pip install uvicorn
+    $ pip install [granian|uvicorn]
 
 Source Code
 -----------
@@ -343,7 +278,7 @@ available to your app without having to reinstall the package:
 .. code:: bash
 
     $ cd falcon
-    $ pip install -e .
+    $ FALCON_DISABLE_CYTHON=Y pip install -e .
 
 You can manually test changes to the Falcon framework by switching to the
 directory of the cloned repo and then running pytest:
@@ -409,7 +344,7 @@ WSGI app (the ASGI version is included further down):
     # other things) that you think in terms of resources and state
     # transitions, which map to HTTP verbs.
     class ThingsResource:
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
             resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
@@ -457,13 +392,15 @@ The ASGI version of the example is similar:
 
     import falcon
     import falcon.asgi
+    from falcon.asgi import Request
+    from falcon.asgi import Response
 
 
     # Falcon follows the REST architectural style, meaning (among
     # other things) that you think in terms of resources and state
     # transitions, which map to HTTP verbs.
     class ThingsResource:
-        async def on_get(self, req, resp):
+        async def on_get(self, req: Request, resp: Response) -> None:
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
             resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
@@ -504,17 +441,16 @@ Note that this example assumes that the
 
     # examples/things_advanced.py
 
-    import json
     import logging
     import uuid
     from wsgiref import simple_server
 
-    import falcon
     import requests
+
+    import falcon
 
 
     class StorageEngine:
-
         def get_things(self, marker, limit):
             return [{'id': str(uuid.uuid4()), 'color': 'green'}]
 
@@ -524,15 +460,13 @@ Note that this example assumes that the
 
 
     class StorageError(Exception):
-
         @staticmethod
-        def handle(ex, req, resp, params):
+        def handle(req, resp, ex, params):
             # TODO: Log the error, clean up, etc. before raising
             raise falcon.HTTPInternalServerError()
 
 
     class SinkAdapter:
-
         engines = {
             'ddg': 'https://duckduckgo.com',
             'y': 'https://search.yahoo.com/search',
@@ -543,13 +477,12 @@ Note that this example assumes that the
             params = {'q': req.get_param('q', True)}
             result = requests.get(url, params=params)
 
-            resp.status = str(result.status_code) + ' ' + result.reason
+            resp.status = falcon.code_to_http_status(result.status_code)
             resp.content_type = result.headers['content-type']
             resp.text = result.text
 
 
     class AuthMiddleware:
-
         def process_request(self, req, resp):
             token = req.get_header('Authorization')
             account_id = req.get_header('Account-ID')
@@ -557,95 +490,66 @@ Note that this example assumes that the
             challenges = ['Token type="Fernet"']
 
             if token is None:
-                description = ('Please provide an auth token '
-                               'as part of the request.')
+                description = 'Please provide an auth token as part of the request.'
 
-                raise falcon.HTTPUnauthorized(title='Auth token required',
-                                              description=description,
-                                              challenges=challenges,
-                                              href='http://docs.example.com/auth')
+                raise falcon.HTTPUnauthorized(
+                    title='Auth token required',
+                    description=description,
+                    challenges=challenges,
+                    href='http://docs.example.com/auth',
+                )
 
             if not self._token_is_valid(token, account_id):
-                description = ('The provided auth token is not valid. '
-                               'Please request a new token and try again.')
+                description = (
+                    'The provided auth token is not valid. '
+                    'Please request a new token and try again.'
+                )
 
-                raise falcon.HTTPUnauthorized(title='Authentication required',
-                                              description=description,
-                                              challenges=challenges,
-                                              href='http://docs.example.com/auth')
+                raise falcon.HTTPUnauthorized(
+                    title='Authentication required',
+                    description=description,
+                    challenges=challenges,
+                    href='http://docs.example.com/auth',
+                )
 
         def _token_is_valid(self, token, account_id):
             return True  # Suuuuuure it's valid...
 
 
     class RequireJSON:
-
         def process_request(self, req, resp):
             if not req.client_accepts_json:
                 raise falcon.HTTPNotAcceptable(
                     description='This API only supports responses encoded as JSON.',
-                    href='http://docs.examples.com/api/json')
+                    href='http://docs.examples.com/api/json',
+                )
 
             if req.method in ('POST', 'PUT'):
                 if 'application/json' not in req.content_type:
                     raise falcon.HTTPUnsupportedMediaType(
                         title='This API only supports requests encoded as JSON.',
-                        href='http://docs.examples.com/api/json')
+                        href='http://docs.examples.com/api/json',
+                    )
 
-
-    class JSONTranslator:
-        # NOTE: Normally you would simply use req.media and resp.media for
-        # this particular use case; this example serves only to illustrate
-        # what is possible.
-
-        def process_request(self, req, resp):
-            # req.stream corresponds to the WSGI wsgi.input environ variable,
-            # and allows you to read bytes from the request body.
-            #
-            # See also: PEP 3333
-            if req.content_length in (None, 0):
-                # Nothing to do
-                return
-
-            body = req.stream.read()
-            if not body:
-                raise falcon.HTTPBadRequest(title='Empty request body',
-                                            description='A valid JSON document is required.')
-
-            try:
-                req.context.doc = json.loads(body.decode('utf-8'))
-
-            except (ValueError, UnicodeDecodeError):
-                description = ('Could not decode the request body. The '
-                               'JSON was incorrect or not encoded as '
-                               'UTF-8.')
-
-                raise falcon.HTTPBadRequest(title='Malformed JSON',
-                                            description=description)
-
-        def process_response(self, req, resp, resource, req_succeeded):
-            if not hasattr(resp.context, 'result'):
-                return
-
-            resp.text = json.dumps(resp.context.result)
 
 
     def max_body(limit):
-
         def hook(req, resp, resource, params):
             length = req.content_length
             if length is not None and length > limit:
-                msg = ('The size of the request is too large. The body must not '
-                       'exceed ' + str(limit) + ' bytes in length.')
+                msg = (
+                    'The size of the request is too large. The body must not '
+                    'exceed ' + str(limit) + ' bytes in length.'
+                )
 
-                raise falcon.HTTPPayloadTooLarge(
-                    title='Request body is too large', description=msg)
+                raise falcon.HTTPContentTooLarge(
+                    title='Request body is too large', description=msg
+                )
 
         return hook
 
 
     class ThingsResource:
-
         def __init__(self, db):
             self.db = db
             self.logger = logging.getLogger('thingsapp.' + __name__)
@@ -659,44 +563,38 @@ Note that this example assumes that the
             except Exception as ex:
                 self.logger.error(ex)
 
-                description = ('Aliens have attacked our base! We will '
-                               'be back as soon as we fight them off. '
-                               'We appreciate your patience.')
+                description = (
+                    'Aliens have attacked our base! We will '
+                    'be back as soon as we fight them off. '
+                    'We appreciate your patience.'
+                )
 
                 raise falcon.HTTPServiceUnavailable(
-                    title='Service Outage',
-                    description=description,
-                    retry_after=30)
+                    title='Service Outage', description=description, retry_after=30
+                )
 
-            # NOTE: Normally you would use resp.media for this sort of thing;
-            # this example serves only to demonstrate how the context can be
-            # used to pass arbitrary values between middleware components,
-            # hooks, and resources.
-            resp.context.result = result
+            resp.media = result
 
             resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
 
         @falcon.before(max_body(64 * 1024))
         def on_post(self, req, resp, user_id):
-            try:
-                doc = req.context.doc
-            except AttributeError:
-                raise falcon.HTTPBadRequest(
-                    title='Missing thing',
-                    description='A thing must be submitted in the request body.')
+            doc = req.get_media()
 
             proper_thing = self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
+            resp.location = f'/{user_id}/things/{proper_thing["id"]}'
+
 
     # Configure your WSGI server to load "things.app" (app is a WSGI callable)
-    app = falcon.App(middleware=[
-        AuthMiddleware(),
-        RequireJSON(),
-        JSONTranslator(),
-    ])
+    app = falcon.App(
+        middleware=[
+            AuthMiddleware(),
+            RequireJSON(),
+        ]
+    )
 
     db = StorageEngine()
     things = ThingsResource(db)
@@ -712,7 +610,7 @@ Note that this example assumes that the
     sink = SinkAdapter()
     app.add_sink(sink, r'/search/(?P<engine>ddg|y)\Z')
 
-    # Useful for debugging problems in your API; works with pdb.set_trace(). You
+    # Useful for debugging problems in your App; works with pdb.set_trace(). You
     # can also use Gunicorn to host your app. Gunicorn can be configured to
     # auto-restart workers when it detects a code change, and it also works
     # with pdb.
@@ -759,7 +657,6 @@ Here's the ASGI version of the app from above. Note that it uses the
 
     # examples/things_advanced_asgi.py
 
-    import json
     import logging
     import uuid
 
@@ -850,52 +747,21 @@ Here's the ASGI version of the app from above. Note that it uses the
                         href='http://docs.examples.com/api/json')
 
 
-    class JSONTranslator:
-        # NOTE: Normally you would simply use req.get_media() and resp.media for
-        # this particular use case; this example serves only to illustrate
-        # what is possible.
-
-        async def process_request(self, req, resp):
-            # NOTE: Test explicitly for 0, since this property could be None in
-            # the case that the Content-Length header is missing (in which case we
-            # can't know if there is a body without actually attempting to read
-            # it from the request stream.)
-            if req.content_length == 0:
-                # Nothing to do
-                return
-
-            body = await req.stream.read()
-            if not body:
-                raise falcon.HTTPBadRequest(title='Empty request body',
-                                            description='A valid JSON document is required.')
-
-            try:
-                req.context.doc = json.loads(body.decode('utf-8'))
-
-            except (ValueError, UnicodeDecodeError):
-                description = ('Could not decode the request body. The '
-                               'JSON was incorrect or not encoded as '
-                               'UTF-8.')
-
-                raise falcon.HTTPBadRequest(title='Malformed JSON',
-                                            description=description)
-
-        async def process_response(self, req, resp, resource, req_succeeded):
-            if not hasattr(resp.context, 'result'):
-                return
-
-            resp.text = json.dumps(resp.context.result)
 
 
     def max_body(limit):
 
         async def hook(req, resp, resource, params):
+            # NOTE: The limit is enforced via the Content-Length header,
+            #   which is not present in the case of a request using chunked
+            #   transfer encoding (req.content_length would be None), so
+            #   streamed request bodies cannot be limited with this hook.
             length = req.content_length
             if length is not None and length > limit:
                 msg = ('The size of the request is too large. The body must not '
                        'exceed ' + str(limit) + ' bytes in length.')
 
-                raise falcon.HTTPPayloadTooLarge(
+                raise falcon.HTTPContentTooLarge(
                     title='Request body is too large', description=msg)
 
         return hook
@@ -925,35 +791,25 @@ Here's the ASGI version of the app from above. Note that it uses the
                     description=description,
                     retry_after=30)
 
-            # NOTE: Normally you would use resp.media for this sort of thing;
-            # this example serves only to demonstrate how the context can be
-            # used to pass arbitrary values between middleware components,
-            # hooks, and resources.
-            resp.context.result = result
+            resp.media = result
 
             resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
 
         @falcon.before(max_body(64 * 1024))
         async def on_post(self, req, resp, user_id):
-            try:
-                doc = req.context.doc
-            except AttributeError:
-                raise falcon.HTTPBadRequest(
-                    title='Missing thing',
-                    description='A thing must be submitted in the request body.')
+            doc = await req.get_media()
 
             proper_thing = await self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
+            resp.location = f'/{user_id}/things/{proper_thing["id"]}'
 
 
     # The app instance is an ASGI callable
     app = falcon.asgi.App(middleware=[
         # AuthMiddleware(),
         RequireJSON(),
-        JSONTranslator(),
     ])
 
     db = StorageEngine()
@@ -991,7 +847,8 @@ we invite you to take a look at the issues listed under our
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
 
-Please note that all contributors and maintainers of this project are subject to our `Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
+Please note that all contributors and maintainers of this project are subject to our
+`Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
 
 Before submitting a pull request, please ensure you have added/updated
 the appropriate tests (and that all existing tests still pass with your
@@ -1027,7 +884,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2024 by Individual and corporate contributors as
+Copyright 2013-2026 by Individual and corporate contributors as
 noted in the individual source files.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -1042,10 +899,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+.. |Build status| image:: https://github.com/falconry/falcon/actions/workflows/tests.yaml/badge.svg
+    :target: https://github.com/falconry/falcon/actions/workflows/tests.yaml
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
-    :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
-.. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
-   :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
+    :target: https://falcon.readthedocs.io/en/stable/?badge=stable
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
-   :target: http://codecov.io/gh/falconry/falcon
+    :target: https://codecov.io/gh/falconry/falcon
+.. |PyPI package| image:: https://badge.fury.io/py/falcon.svg
+    :target: https://pypi.org/project/falcon/
+.. |Python versions| image:: https://img.shields.io/pypi/pyversions/falcon.svg
+    :target: https://pypi.org/project/falcon/
+.. |Backer:TestMuAI| image:: https://falconframework.org/assets/testmu-ai-black.png
+    :alt: TestMu AI
+    :height: 60px
+    :target: https://www.testmuai.com/?utm_medium=sponsor&utm_source=falcon
+.. |Backer:GovCert| image:: https://falconframework.org/assets/govcert.png
+    :alt: CERT Gouvernemental Luxembourg
+    :height: 60px
+    :target: https://www.govcert.lu/
+.. |Backer:Sentry| image:: https://falconframework.org/assets/sentry-dark.svg
+    :alt: Sentry
+    :height: 60px
+    :target: https://sentry.io

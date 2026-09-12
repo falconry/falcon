@@ -22,6 +22,7 @@ from falcon import testing
 )
 @pytest.mark.parametrize('extra_body', [True, False])
 @pytest.mark.parametrize('set_content_length', [True, False])
+@pytest.mark.slow
 def test_read_all(body, extra_body, set_content_length):
     if extra_body and not set_content_length:
         pytest.skip(
@@ -165,7 +166,6 @@ def test_filelike():
     falcon.async_to_sync(test_iteration)
 
 
-@falcon.runs_sync
 async def test_iterate_streaming_request():
     events = iter(
         (
@@ -179,9 +179,9 @@ async def test_iterate_streaming_request():
 
     async def receive():
         event = next(events)
-        assert (
-            event['type'] != 'http.disconnect'
-        ), 'would hang until the client times out'
+        assert event['type'] != 'http.disconnect', (
+            'would hang until the client times out'
+        )
         return event
 
     s = asgi.BoundedStream(receive)
@@ -273,7 +273,6 @@ def test_exhaust_with_disconnect():
     falcon.async_to_sync(t)
 
 
-@falcon.runs_sync
 async def test_exhaust():
     emitter = testing.ASGIRequestEventEmitter(b'123456798' * 1024)
     stream = asgi.BoundedStream(emitter)

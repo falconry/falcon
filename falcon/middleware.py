@@ -1,12 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Optional, Union
+from collections.abc import Iterable
+from typing import Literal, TYPE_CHECKING
 
-from .request import Request
-from .response import Response
+from ._typing import _AReqT
+from ._typing import _ARespT
+from ._typing import UniversalMiddlewareWithProcessResponse
+
+if TYPE_CHECKING:
+    from .asgi.request import Request as AsgiRequest
+    from .asgi.response import Response as AsgiResponse
+    from .request import Request
+    from .response import Response
 
 
-class CORSMiddleware(object):
+class CORSMiddleware(UniversalMiddlewareWithProcessResponse[_AReqT, _ARespT]):
     """CORS Middleware.
 
     This middleware provides a simple out-of-the box CORS policy, including handling
@@ -16,6 +24,15 @@ class CORSMiddleware(object):
 
     * https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
     * https://www.w3.org/TR/cors/#resource-processing-model
+
+    Note:
+        Falcon will automatically add OPTIONS responders if they are missing from the
+        responder instances added to the routes. When providing a custom ``on_options``
+        method, the ``Allow`` headers in the response should be set to the allowed
+        method values. If the ``Allow`` header is missing from the response,
+        this middleware will deny the preflight request.
+
+        This is also valid when using a sink function.
 
     Keyword Arguments:
         allow_origins (Union[str, Iterable[str]]): List of origins to allow (case
@@ -36,18 +53,30 @@ class CORSMiddleware(object):
             The string ``'*'`` acts as a wildcard, matching every allowed origin,
             while ``None`` disallows all origins. This parameter takes effect only
             if the origin is allowed by the ``allow_origins`` argument.
-            (Default ``None``).
+            (default ``None``).
+        allow_private_network (bool):
+            If ``True``, the server includes the
+            ``Access-Control-Allow-Private-Network`` header in responses to
+            CORS preflight (OPTIONS) requests. This indicates that the resource is
+            willing to respond to requests from less-public IP address spaces
+            (e.g., from public site to private device).
+            (default ``False``).
 
+            See also:
+            https://wicg.github.io/private-network-access/#private-network-request-heading
     """
+
+    allow_origins: Literal['*'] | frozenset[str]
 
     def __init__(
         self,
-        allow_origins: Union[str, Iterable[str]] = '*',
-        expose_headers: Optional[Union[str, Iterable[str]]] = None,
-        allow_credentials: Optional[Union[str, Iterable[str]]] = None,
+        allow_origins: str | Iterable[str] = '*',
+        expose_headers: str | Iterable[str] | None = None,
+        allow_credentials: str | Iterable[str] | None = None,
+        allow_private_network: bool = False,
     ):
         if allow_origins == '*':
-            self.allow_origins = allow_origins
+            self.allow_origins = '*'
         else:
             if isinstance(allow_origins, str):
                 allow_origins = [allow_origins]
@@ -74,6 +103,7 @@ class CORSMiddleware(object):
                     'as a string literal, not inside an iterable.'
                 )
         self.allow_credentials = allow_credentials
+        self.allow_private_network = allow_private_network
 
     def process_response(
         self, req: Request, resp: Response, resource: object, req_succeeded: bool
@@ -120,9 +150,28 @@ class CORSMiddleware(object):
                 'Access-Control-Request-Headers', default='*'
             )
 
-            resp.set_header('Access-Control-Allow-Methods', allow)
-            resp.set_header('Access-Control-Allow-Headers', allow_headers)
-            resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
+            if allow is None:
+                # there is no allow set, remove all access control headers
+                resp.delete_header('Access-Control-Allow-Methods')
+                resp.delete_header('Access-Control-Allow-Headers')
+                resp.delete_header('Access-Control-Max-Age')
+                resp.delete_header('Access-Control-Expose-Headers')
+                resp.delete_header('Access-Control-Allow-Origin')
+            else:
+                resp.set_header('Access-Control-Allow-Methods', allow)
+                resp.set_header('Access-Control-Allow-Headers', allow_headers)
+                resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
-    async def process_response_async(self, *args: Any) -> None:
-        self.process_response(*args)
+            if self.allow_private_network and (
+                req.get_header('Access-Control-Request-Private-Network') == 'true'
+            ):
+                resp.set_header('Access-Control-Allow-Private-Network', 'true')
+
+    async def process_response_async(
+        self,
+        req: AsgiRequest,
+        resp: AsgiResponse,
+        resource: object,
+        req_succeeded: bool,
+    ) -> None:
+        self.process_response(req, resp, resource, req_succeeded)

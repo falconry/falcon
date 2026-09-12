@@ -39,8 +39,8 @@ Create the following directory structure::
       └── app.py
 
 
-And next we'll install Falcon and Uvicorn in our freshly created virtual
-environment:
+And next we'll :ref:`install Falcon <install>` and Uvicorn in our freshly
+created virtual environment:
 
 .. code-block:: bash
 

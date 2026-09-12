@@ -1,21 +1,26 @@
+from __future__ import annotations
+
 from functools import partial
 import json
+from typing import Any, Callable
 
 from falcon import errors
 from falcon import http_error
 from falcon.media.base import BaseHandler
 from falcon.media.base import TextBaseHandlerWS
+from falcon.typing import AsyncReadableIO
+from falcon.typing import ReadableIO
 
 
 class JSONHandler(BaseHandler):
     """JSON media handler.
 
-    This handler uses Python's standard :py:mod:`json` library by default, but
+    This handler uses Python's standard :mod:`json` library by default, but
     can be easily configured to use any of a number of third-party JSON
     libraries, depending on your needs. For example, you can often
     realize a significant performance boost under CPython by using an
-    alternative library. Good options in this respect include `orjson`,
-    `python-rapidjson`, and `mujson`.
+    alternative library. Good options in this respect include
+    :ref:`msgspec <msgspec_recipe>`, `orjson`, `python-rapidjson`, and `mujson`.
 
     This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
     to parse an empty body, or a :class:`falcon.MediaMalformedError`
@@ -25,6 +30,8 @@ class JSONHandler(BaseHandler):
         If you are deploying to PyPy, we recommend sticking with the standard
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
+
+    .. _custom-media-json-library:
 
     .. rubric:: Custom JSON library
 
@@ -148,19 +155,34 @@ class JSONHandler(BaseHandler):
         loads (func): Function to use when deserializing JSON requests.
     """
 
-    def __init__(self, dumps=None, loads=None):
+    def __init__(
+        self,
+        dumps: Callable[[Any], str | bytes] | None = None,
+        loads: Callable[[str], Any] | None = None,
+    ) -> None:
         self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self._loads = loads or json.loads
+        self._deserialization_errors: tuple[type[Exception], ...] = (ValueError,)
 
         # PERF(kgriffs): Test dumps once up front so we can set the
         #     proper serialize implementation.
         result = self._dumps({'message': 'Hello World'})
         if isinstance(result, str):
-            self.serialize = self._serialize_s
-            self.serialize_async = self._serialize_async_s
+            self.serialize = self._serialize_s  # type: ignore[method-assign]
+            self.serialize_async = self._serialize_async_s  # type: ignore[method-assign]
         else:
-            self.serialize = self._serialize_b
-            self.serialize_async = self._serialize_async_b
+            self.serialize = self._serialize_b  # type: ignore[method-assign]
+            self.serialize_async = self._serialize_async_b  # type: ignore[method-assign]
+
+        # PERF(vytas): Try to detect nonstandard deserialization exception
+        #   classes (that do not subclass ValueError) up front, and add them to
+        #   the tuple of known deserialization errors.
+        try:
+            self._loads('frozenset({1})')
+        except Exception as ex:
+            error_cls = type(ex)
+            if not issubclass(error_cls, ValueError):
+                self._deserialization_errors += (error_cls,)
 
         # NOTE(kgriffs): To be safe, only enable the optimized protocol when
         #   not subclassed.
@@ -168,41 +190,51 @@ class JSONHandler(BaseHandler):
             self._serialize_sync = self.serialize
             self._deserialize_sync = self._deserialize
 
-    def _deserialize(self, data):
+    def _deserialize(self, data: bytes) -> Any:
         if not data:
             raise errors.MediaNotFoundError('JSON')
         try:
             return self._loads(data.decode())
-        except ValueError as err:
-            raise errors.MediaMalformedError('JSON') from err
+        except self._deserialization_errors as ex:
+            raise errors.MediaMalformedError('JSON') from ex
 
-    def deserialize(self, stream, content_type, content_length):
+    def deserialize(
+        self,
+        stream: ReadableIO,
+        content_type: str | None,
+        content_length: int | None,
+    ) -> Any:
         return self._deserialize(stream.read())
 
-    async def deserialize_async(self, stream, content_type, content_length):
+    async def deserialize_async(
+        self,
+        stream: AsyncReadableIO,
+        content_type: str | None,
+        content_length: int | None,
+    ) -> Any:
         return self._deserialize(await stream.read())
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def _serialize_s(self, media, content_type=None) -> bytes:
-        return self._dumps(media).encode()
+    def _serialize_s(self, media: Any, content_type: str | None = None) -> bytes:
+        return self._dumps(media).encode()  # type: ignore[union-attr]
 
-    async def _serialize_async_s(self, media, content_type) -> bytes:
-        return self._dumps(media).encode()
+    async def _serialize_async_s(self, media: Any, content_type: str | None) -> bytes:
+        return self._dumps(media).encode()  # type: ignore[union-attr]
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def _serialize_b(self, media, content_type=None) -> bytes:
-        return self._dumps(media)
+    def _serialize_b(self, media: Any, content_type: str | None = None) -> bytes:
+        return self._dumps(media)  # type: ignore[return-value]
 
-    async def _serialize_async_b(self, media, content_type) -> bytes:
-        return self._dumps(media)
+    async def _serialize_async_b(self, media: Any, content_type: str | None) -> bytes:
+        return self._dumps(media)  # type: ignore[return-value]
 
 
 class JSONHandlerWS(TextBaseHandlerWS):
     """WebSocket media handler for de(serializing) JSON to/from TEXT payloads.
 
-    This handler uses Python's standard :py:mod:`json` library by default, but
+    This handler uses Python's standard :mod:`json` library by default, but
     can be easily configured to use any of a number of third-party JSON
     libraries, depending on your needs. For example, you can often
     realize a significant performance boost under CPython by using an
@@ -257,7 +289,11 @@ class JSONHandlerWS(TextBaseHandlerWS):
 
     __slots__ = ['dumps', 'loads']
 
-    def __init__(self, dumps=None, loads=None):
+    def __init__(
+        self,
+        dumps: Callable[[Any], str] | None = None,
+        loads: Callable[[str], Any] | None = None,
+    ) -> None:
         self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self._loads = loads or json.loads
 
@@ -268,4 +304,4 @@ class JSONHandlerWS(TextBaseHandlerWS):
         return self._loads(payload)
 
 
-http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()  # type: ignore
+http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()

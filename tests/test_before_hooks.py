@@ -2,12 +2,10 @@ import functools
 import io
 import json
 
-from _util import create_app  # NOQA
-from _util import create_resp  # NOQA
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 import pytest
 
 import falcon
+import falcon.hooks
 import falcon.testing as testing
 
 
@@ -23,7 +21,7 @@ def validate_param(req, resp, resource, params, param_name, maxval=100):
 
     limit = req.get_param_as_int(param_name)
     if limit and int(limit) > maxval:
-        msg = '{0} must be <= {1}'.format(param_name, maxval)
+        msg = f'{param_name} must be <= {maxval}'
         raise falcon.HTTPBadRequest(title='Out of Range', description=msg)
 
 
@@ -117,7 +115,7 @@ class WrappedRespondersResourceChild(WrappedRespondersResource):
 
     def on_put(self, req, resp):
         # Test passing no extra args
-        super(WrappedRespondersResourceChild, self).on_put(req, resp)
+        super().on_put(req, resp)
 
 
 class WrappedRespondersBodyParserResource:
@@ -197,13 +195,13 @@ class TestFieldResource:
 class TestFieldResourceChild(TestFieldResource):
     def on_get(self, req, resp, id):
         # Test passing a single extra arg
-        super(TestFieldResourceChild, self).on_get(req, resp, id)
+        super().on_get(req, resp, id)
 
 
 class TestFieldResourceChildToo(TestFieldResource):
     def on_get(self, req, resp, id):
         # Test passing a single kwarg, but no extra args
-        super(TestFieldResourceChildToo, self).on_get(req, resp, id=id)
+        super().on_get(req, resp, id=id)
 
 
 @falcon.before(bunnies)
@@ -220,7 +218,7 @@ class ZooResource:
 
 class ZooResourceChild(ZooResource):
     def on_get(self, req, resp):
-        super(ZooResourceChild, self).on_get(
+        super().on_get(
             req,
             resp,
             # Test passing a mixture of args and kwargs
@@ -246,8 +244,8 @@ def resource():
 
 
 @pytest.fixture
-def client(asgi, request, resource):
-    app = create_app(asgi)
+def client(asgi, util, request, resource):
+    app = util.create_app(asgi)
     app.add_route('/', resource)
     return testing.TestClient(app)
 
@@ -337,20 +335,20 @@ def test_parser_sync(body, doc):
         (None, None),
     ],
 )
-def test_parser_async(body, doc):
-    with disable_asgi_non_coroutine_wrapping():
+def test_parser_async(body, doc, util):
+    with util.disable_asgi_non_coroutine_wrapping():
 
         class WrappedRespondersBodyParserAsyncResource:
-            @falcon.before(validate_param_async, 'limit', 100, is_async=True)
+            @falcon.before(validate_param_async, 'limit', 100)
             @falcon.before(parse_body_async)
             async def on_get(self, req, resp, doc=None):
                 self.doc = doc
 
-            @falcon.before(parse_body_async, is_async=False)
+            @falcon.before(parse_body_async)
             async def on_put(self, req, resp, doc=None):
                 self.doc = doc
 
-    app = create_app(asgi=True)
+    app = util.create_app(asgi=True)
 
     resource = WrappedRespondersBodyParserAsyncResource()
     app.add_route('/', resource)
@@ -365,7 +363,7 @@ def test_parser_async(body, doc):
         resource = WrappedRespondersBodyParserAsyncResource()
 
         req = testing.create_asgi_req()
-        resp = create_resp(True)
+        resp = util.create_resp(True)
 
         await resource.on_get(req, resp, doc)
         assert resource.doc == doc
@@ -462,7 +460,7 @@ class PiggybackingCollection:
         self._sequence += 1
         itemid = self._sequence
         self._items[itemid] = dict(req.media, itemid=itemid)
-        resp.location = '/items/{}'.format(itemid)
+        resp.location = f'/items/{itemid}'
         resp.status = falcon.HTTP_CREATED
 
 
@@ -475,15 +473,15 @@ class PiggybackingCollectionAsync(PiggybackingCollection):
         doc = await req.get_media()
 
         self._items[itemid] = dict(doc, itemid=itemid)
-        resp.location = '/items/{}'.format(itemid)
+        resp.location = f'/items/{itemid}'
         resp.status = falcon.HTTP_CREATED
 
 
-@pytest.fixture(params=[True, False])
-def app_client(request):
-    items = PiggybackingCollectionAsync() if request.param else PiggybackingCollection()
+@pytest.fixture()
+def app_client(asgi, util):
+    items = PiggybackingCollectionAsync() if asgi else PiggybackingCollection()
 
-    app = create_app(asgi=request.param)
+    app = util.create_app(asgi)
     app.add_route('/items', items, suffix='collection')
     app.add_route('/items/{itemid:int}', items)
 
@@ -518,7 +516,7 @@ def test_piggybacking_resource_post_and_delete(app_client):
 
         assert len(app_client.simulate_get('/items').json) == number
 
-    resp = app_client.simulate_delete('/items/{}'.format(number))
+    resp = app_client.simulate_delete(f'/items/{number}')
     assert resp.status_code == 204
     assert resp.headers['X-Fish-Trait'] == 'wet'
     assert resp.headers['X-Hook-Applied'] == '1'
@@ -534,3 +532,110 @@ def test_decorable_name_pattern():
     resource = PiggybackingCollection()
     assert resource.on_head_() == 'I shall not be decorated.'
     assert resource.on_header() == 'I shall not be decorated.'
+
+
+@pytest.fixture()
+def resources_with_on_request(monkeypatch):
+    monkeypatch.setattr(falcon.hooks, 'decorate_on_request', True)
+
+    class namespace:
+        class WrappedDefaultResponderResource:
+            @falcon.before(header_hook)
+            def on_request(self, req, resp):
+                pass
+
+            @falcon.before(header_hook)
+            def on_request_id(self, req, res, id):
+                pass
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, res, id):
+                pass
+
+        class WrappedDefaultResponderResourceAsync:
+            @falcon.before(header_hook)
+            async def on_request(self, req, resp):
+                pass
+
+            @falcon.before(header_hook)
+            async def on_request_id(self, req, res, id):
+                pass
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResourceAsync:
+            async def on_request(self, req, resp):
+                pass
+
+            async def on_request_id(self, req, res, id):
+                pass
+
+    return namespace
+
+
+@pytest.mark.parametrize(
+    'resource_cls, asgi',
+    (
+        ('WrappedDefaultResponderResource', False),
+        ('WrappedClassDefaultResponderResource', False),
+        ('WrappedDefaultResponderResourceAsync', True),
+        ('WrappedClassDefaultResponderResourceAsync', True),
+    ),
+)
+def test_default_responder(util, asgi, resources_with_on_request, resource_cls):
+    app = util.create_app(asgi=asgi)
+    app.router_options.default_to_on_request = True
+
+    resource = getattr(resources_with_on_request, resource_cls)()
+
+    app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
+
+    # Test that on_request is wrapped
+    result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert result.headers['X-Hook-Applied'] == '1'
+
+    # Test that on_request_id is wrapped
+    result = testing.simulate_post(app, '/1')
+
+    assert result.status_code == 200
+    assert result.headers['X-Hook-Applied'] == '1'
+
+
+def test_decorate_on_response_disabled(util):
+    # NOTE(vytas): falcon.hooks.decorate_on_request is False by default.
+
+    app = util.create_app(asgi=False)
+    app.router_options.default_to_on_request = True
+
+    with pytest.warns(UserWarning):
+
+        @falcon.before(header_hook)
+        class WrappedClassDefaultResponderResource:
+            def on_request(self, req, resp):
+                pass
+
+            def on_request_id(self, req, res, id):
+                pass
+
+    resource = WrappedClassDefaultResponderResource()
+
+    app.add_route('/', resource)
+    app.add_route('/{id}', resource, suffix='id')
+
+    # Test that on_request is not wrapped
+    result = testing.simulate_post(app, '/')
+
+    assert result.status_code == 200
+    assert 'X-Hook-Applied' not in result.headers
+
+    # Test that on_request_id is not wrapped
+    result = testing.simulate_post(app, '/1')
+
+    assert result.status_code == 200
+    assert 'X-Hook-Applied' not in result.headers

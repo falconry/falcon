@@ -8,9 +8,15 @@ See also: https://opencollective.com/falcon
 
 * [GOVCERT.LU](https://www.govcert.lu/)
 
-## Commercial Patrons
+## Gold Patrons
+
+* [TestMu AI](https://www.testmuai.com/)
+* [Sentry](https://sentry.io/)
+
+## Past Commercial Patrons
 
 * [Algolia](https://www.algolia.com/)
+* [EaseUS RecExperts](https://recorder.easeus.com/)
 * [Examination RU](https://www.kontrolnaya-rabota.ru/s/)
 * [Likalo](https://github.com/LikaloLLC)
 * [Misaka Network](https://www.misaka.io/)
@@ -20,11 +26,14 @@ See also: https://opencollective.com/falcon
 
 ## Our Talented and Stylish Community Patrons
 
+* Aaron Bishop
 * Andrei Drang
 * Gerardo Cardenas
 * Hagar Marmari
 * Ivan Petukhov
 * Konstantinos Mouratidis
-* Vlad Shulkevich
+* Markopoulos Spyros
 * Vincent Albanese
+* Vlad Shulkevich
+* William Fuener
 * Zach Riddle

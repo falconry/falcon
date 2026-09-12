@@ -15,14 +15,13 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from falcon.util import http_status_to_code
-from falcon.util.deprecation import AttributeRemovedError
 
 if TYPE_CHECKING:
-    from falcon.typing import HeaderList
-    from falcon.typing import ResponseStatus
+    from falcon._typing import HeaderArg
+    from falcon._typing import ResponseStatus
 
 
 class HTTPStatus(Exception):
@@ -40,24 +39,26 @@ class HTTPStatus(Exception):
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-
-    Attributes:
-        status (Union[str,int]): The HTTP status line or integer code for
-            the status that this exception represents.
-        status_code (int): HTTP status code normalized from :attr:`status`.
-        headers (dict): Extra headers to add to the response.
-        text (str): String representing response content. Falcon will encode
-            this value as UTF-8 in the response.
-
     """
 
     __slots__ = ('status', 'headers', 'text')
 
+    status: ResponseStatus
+    """The HTTP status line or integer code for the status that this exception
+    represents.
+    """
+    headers: HeaderArg | None
+    """Extra headers to add to the response."""
+    text: str | None
+    """String representing response content.
+    Falcon will encode this value as UTF-8 in the response.
+    """
+
     def __init__(
         self,
         status: ResponseStatus,
-        headers: Optional[HeaderList] = None,
-        text: Optional[str] = None,
+        headers: HeaderArg | None = None,
+        text: str | None = None,
     ) -> None:
         self.status = status
         self.headers = headers
@@ -65,11 +66,6 @@ class HTTPStatus(Exception):
 
     @property
     def status_code(self) -> int:
-        return http_status_to_code(self.status)
-
-    @property  # type: ignore
-    def body(self):
-        raise AttributeRemovedError(
-            'The body attribute is no longer supported. '
-            'Please use the text attribute instead.'
-        )
+        """HTTP status code normalized from :attr:`status`."""
+        # TODO(0xMattB): Modify decorator to return proper type (see PR #2629).
+        return http_status_to_code(self.status)  # type: ignore[no-any-return]

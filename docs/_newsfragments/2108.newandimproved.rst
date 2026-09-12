@@ -1,4 +1,0 @@
-A new ``status_code`` attribute was added to the :attr:`falcon.Response <falcon.Response.status_code>`,
-:attr:`falcon.asgi.Response <falcon.Response.status_code>`,
-:attr:`HTTPStatus <falcon.HTTPStatus.status_code>`,
-and :attr:`HTTPError <falcon.HTTPError.status_code>` classes.

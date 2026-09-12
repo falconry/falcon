@@ -3,12 +3,6 @@
 Inspect Module
 ==============
 
-* `Using Inspect Functions`_
-* `Inspect Functions Reference`_
-* `Router Inspection`_
-* `Information Classes`_
-* `Visitor Classes`_
-
 This module can be used to inspect a Falcon application to obtain information
 about its registered routes, middleware objects, static routes, sinks and
 error handlers. The entire application can be inspected at once using the

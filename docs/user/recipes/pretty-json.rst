@@ -48,7 +48,7 @@ implemented with a :ref:`custom media handler <custom-media-handler-type>`:
 
 Furthermore, we'll need to implement content-type negotiation to accept the
 indented JSON content type for response serialization. The bare-minimum
-example uses a middleware component as described here: :ref:`content-type-negotiaton`.
+example uses a middleware component as described here: :ref:`content-type-negotiation`.
 
 After installing this handler for ``application/json`` response media, as well
 as adding the negotiation middleware, we should be able to produce indented

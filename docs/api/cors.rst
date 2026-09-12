@@ -29,9 +29,9 @@ can be exposed.
 Usage
 -----
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -45,7 +45,7 @@ Usage
             app = falcon.App(middleware=falcon.CORSMiddleware(
                 allow_origins='example.com', allow_credentials='*'))
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 

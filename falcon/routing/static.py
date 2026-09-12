@@ -1,17 +1,52 @@
+from __future__ import annotations
+
 import asyncio
+from datetime import datetime
+from datetime import timezone
 from functools import partial
 import io
 import os
+from pathlib import Path
 import re
+from re import Pattern
+from typing import Any, ClassVar, IO, TYPE_CHECKING
 
 import falcon
+from falcon.typing import ReadableIO
+
+if TYPE_CHECKING:
+    from falcon import asgi
+    from falcon import Request
+    from falcon import Response
 
 
-def _open_range(file_path, req_range):
-    """Open a file for a ranged request.
+def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result]:
+    """Open a file for a static file request and read file stat.
 
     Args:
-        file_path (str): Path to the file to open.
+        file_path (Union[str, Path]): Path to the file to open.
+    Returns:
+        tuple: Tuple of (BufferedReader, stat_result).
+    """
+    fh: io.BufferedReader | None = None
+    try:
+        fh = io.open(file_path, 'rb')  # noqa: UP020
+        st = os.fstat(fh.fileno())
+    except OSError:
+        if fh is not None:
+            fh.close()
+        raise falcon.HTTPNotFound()
+    return fh, st
+
+
+def _set_range(
+    fh: io.BufferedReader, st: os.stat_result, req_range: tuple[int, int] | None
+) -> tuple[ReadableIO, int, tuple[int, int, int] | None]:
+    """Process file handle for a ranged request.
+
+    Args:
+        fh (io.BufferedReader): file handle of the file.
+        st (os.stat_result): fs stat result of the file.
         req_range (Optional[Tuple[int, int]]): Request.range value.
     Returns:
         tuple: Three-member tuple of (stream, content-length, content-range).
@@ -20,8 +55,7 @@ def _open_range(file_path, req_range):
             possibly bounded, and the content-range will be a tuple of
             (start, end, size).
     """
-    fh = io.open(file_path, 'rb')
-    size = os.fstat(fh.fileno()).st_size
+    size = st.st_size
     if req_range is None:
         return fh, size, None
 
@@ -58,6 +92,27 @@ def _open_range(file_path, req_range):
     return _BoundedFile(fh, length), length, (start, end, size)
 
 
+def _is_not_modified(
+    req: falcon.Request, current_etag: str, last_modified: datetime
+) -> bool:
+    """Check whether the requested resource can be served with 304 Not Modified."""
+
+    # NOTE(Cycloctane): RFC 9110 Section 13.1.3: A recipient MUST ignore
+    #   If-Modified-Since if the request contains an If-None-Match header
+    #   field. See also:
+    #   https://www.rfc-editor.org/rfc/rfc9110#section-13.1.3-5
+    #   https://www.rfc-editor.org/rfc/rfc9110#section-13.2.2
+    if req.if_none_match is not None:
+        return (len(req.if_none_match) == 1 and req.if_none_match[0] == '*') or any(
+            current_etag == etag for etag in req.if_none_match
+        )
+
+    if req.if_modified_since is not None:
+        return last_modified <= req.if_modified_since
+
+    return False
+
+
 class _BoundedFile:
     """Wrap a file to only allow part of it to be read.
 
@@ -68,14 +123,14 @@ class _BoundedFile:
         length (int): Number of bytes that may be read.
     """
 
-    def __init__(self, fh, length):
+    def __init__(self, fh: IO[bytes], length: int) -> None:
         self.fh = fh
         self.close = fh.close
         self.remaining = length
 
-    def read(self, size=-1):
+    def read(self, size: int | None = -1) -> bytes:
         """Read the underlying file object, within the specified bounds."""
-        if size < 0:
+        if size is None or size < 0:
             size = self.remaining
         else:
             size = min(size, self.remaining)
@@ -116,16 +171,27 @@ class StaticRoute:
     """
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
-    _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]')
+    _DISALLOWED_CHARS_PATTERN: ClassVar[Pattern[str]] = re.compile(
+        '[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]'
+    )
 
     # NOTE(vytas): Match the behavior of the underlying os.path.normpath.
-    _DISALLOWED_NORMALIZED_PREFIXES = ('..' + os.path.sep, os.path.sep)
+    _DISALLOWED_NORMALIZED_PREFIXES: ClassVar[tuple[str, ...]] = (
+        '..' + os.path.sep,
+        os.path.sep,
+    )
 
     # NOTE(kgriffs): If somehow an executable code exploit is triggerable, this
     # minimizes how much can be included in the payload.
-    _MAX_NON_PREFIXED_LEN = 512
+    _MAX_NON_PREFIXED_LEN: ClassVar[int] = 512
 
-    def __init__(self, prefix, directory, downloadable=False, fallback_filename=None):
+    def __init__(
+        self,
+        prefix: str,
+        directory: str | Path,
+        downloadable: bool = False,
+        fallback_filename: str | None = None,
+    ) -> None:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
 
@@ -151,14 +217,20 @@ class StaticRoute:
         self._prefix = prefix
         self._downloadable = downloadable
 
-    def match(self, path):
+    def match(self, path: str) -> bool:
         """Check whether the given path matches this route."""
         if self._fallback_filename is None:
             return path.startswith(self._prefix)
         return path.startswith(self._prefix) or path == self._prefix[:-1]
 
-    def __call__(self, req, resp):
+    def __call__(self, req: Request, resp: Response, **kw: Any) -> None:
         """Resource responder for this route."""
+        assert not kw
+        if req.method == 'OPTIONS':
+            # it's likely a CORS request. Set the allow header to the appropriate value.
+            resp.set_header('Allow', 'GET')
+            resp.set_header('Content-Length', '0')
+            return
 
         without_prefix = req.path[len(self._prefix) :]
 
@@ -188,24 +260,38 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        req_range = req.range
-        if req.range_unit != 'bytes':
-            req_range = None
-        try:
-            stream, length, content_range = _open_range(file_path, req_range)
-            resp.set_stream(stream, length)
-        except IOError:
-            if self._fallback_filename is None:
-                raise falcon.HTTPNotFound()
+        if self._fallback_filename is None:
+            fh, st = _open_file(file_path)
+        else:
             try:
-                stream, length, content_range = _open_range(
-                    self._fallback_filename, req_range
-                )
-                resp.set_stream(stream, length)
+                fh, st = _open_file(file_path)
+            except falcon.HTTPNotFound:
+                fh, st = _open_file(self._fallback_filename)
                 file_path = self._fallback_filename
-            except IOError:
-                raise falcon.HTTPNotFound()
 
+        etag = f'{int(st.st_mtime):x}-{st.st_size:x}'
+        resp.etag = etag
+
+        last_modified = datetime.fromtimestamp(st.st_mtime, timezone.utc)
+        # NOTE(vytas): Strip the microsecond part because that is not reflected
+        #   in HTTP date, and when the client passes a previous value via
+        #   If-Modified-Since, it will look as if our copy is ostensibly newer.
+        last_modified = last_modified.replace(microsecond=0)
+        resp.last_modified = last_modified
+
+        if _is_not_modified(req, etag, last_modified):
+            fh.close()
+            resp.status = falcon.HTTP_304
+            return
+
+        req_range = req.range if req.range_unit == 'bytes' else None
+        try:
+            stream, length, content_range = _set_range(fh, st, req_range)
+        except OSError:
+            fh.close()
+            raise falcon.HTTPNotFound()
+
+        resp.set_stream(stream, length)
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
             suffix, 'application/octet-stream'
@@ -222,22 +308,31 @@ class StaticRoute:
 class StaticRouteAsync(StaticRoute):
     """Subclass of StaticRoute with modifications to support ASGI apps."""
 
-    async def __call__(self, req, resp):
-        super().__call__(req, resp)
+    async def __call__(  # type: ignore[override]
+        self,
+        req: asgi.Request,
+        resp: asgi.Response,
+        ws: asgi.WebSocket | None = None,
+        **kw: Any,
+    ) -> None:
+        if ws is not None:
+            raise falcon.HTTPBadRequest()
 
-        # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking
-        resp.stream = _AsyncFileReader(resp.stream)
+        super().__call__(req, resp, **kw)
+        if resp.stream is not None:  # None when in an option request
+            # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking
+            resp.stream = _AsyncFileReader(resp.stream)  # type: ignore[assignment,arg-type]
 
 
 class _AsyncFileReader:
     """Adapts a standard file I/O object so that reads are non-blocking."""
 
-    def __init__(self, file):
+    def __init__(self, file: IO[bytes]) -> None:
         self._file = file
         self._loop = asyncio.get_running_loop()
 
-    async def read(self, size=-1):
+    async def read(self, size: int = -1) -> bytes:
         return await self._loop.run_in_executor(None, partial(self._file.read, size))
 
-    async def close(self):
+    async def close(self) -> None:
         await self._loop.run_in_executor(None, self._file.close)

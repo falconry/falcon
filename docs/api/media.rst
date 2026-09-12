@@ -3,8 +3,6 @@
 Media
 =====
 
-.. contents:: :local:
-
 Falcon allows for easy and customizable internet media type handling. By
 default Falcon only enables handlers for JSON and HTML (URL-encoded and
 multipart) forms. However, additional handlers can be configured through the
@@ -26,9 +24,9 @@ Zero configuration is needed if you're creating a JSON API. Simply use
 :attr:`~falcon.asgi.Response.media` (ASGI) to let Falcon
 do the heavy lifting for you.
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
@@ -52,7 +50,7 @@ do the heavy lifting for you.
                     resp.media = {'message': message}
                     resp.status = falcon.HTTP_200
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
@@ -82,6 +80,8 @@ do the heavy lifting for you.
     will only process request media the first time it is referenced. Subsequent
     interactions will use a cached object.
 
+.. _media_validation:
+
 Validating Media
 ----------------
 
@@ -94,7 +94,7 @@ media type that JSON also supports (i.e. dicts, lists, etc).
 If JSON Schema does not meet your needs, a custom validator may be
 implemented in a similar manner to the one above.
 
-.. _content-type-negotiaton:
+.. _content-type-negotiation:
 
 Content-Type Negotiation
 ------------------------
@@ -109,22 +109,26 @@ response.
 If you do need full negotiation, it is very easy to bridge the gap using
 middleware. Here is an example of how this can be done:
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: WSGI
+    .. tab-item:: WSGI
 
         .. code:: python
 
+            from falcon import Request, Response
+
             class NegotiationMiddleware:
-                def process_request(self, req, resp):
+                def process_request(self, req: Request, resp: Response) -> None:
                     resp.content_type = req.accept
 
-    .. tab:: ASGI
+    .. tab-item:: ASGI
 
         .. code:: python
 
+            from falcon.asgi import Request, Response
+
             class NegotiationMiddleware:
-                async def process_request(self, req, resp):
+                async def process_request(self, req: Request, resp: Response) -> None:
                     resp.content_type = req.accept
 
 
@@ -293,6 +297,8 @@ common media type strings, including the following:
     falcon.MEDIA_MSGPACK
     falcon.MEDIA_MULTIPART
     falcon.MEDIA_URLENCODED
+    falcon.MEDIA_CSV
+    falcon.MEDIA_PARQUET
     falcon.MEDIA_YAML
     falcon.MEDIA_XML
     falcon.MEDIA_HTML

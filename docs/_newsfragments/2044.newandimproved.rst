@@ -1,4 +1,0 @@
-An informative representation was added to :class:`testing.Result <falcon.testing.Result>`
-for easier development and interpretation of failed tests. The form of ``__repr__`` is as follows:
-``Result<{status_code} {content-type header} {content}>``, where the content part will reflect
-up to 40 bytes of the result's content.

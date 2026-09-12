@@ -1,5 +1,5 @@
-from _util import create_app  # NOQA
-from _util import disable_asgi_non_coroutine_wrapping  # NOQA
+from pathlib import Path
+
 import pytest
 
 import falcon
@@ -7,17 +7,17 @@ from falcon import testing
 
 
 @pytest.fixture
-def client(asgi):
-    app = create_app(asgi)
+def client(asgi, util):
+    app = util.create_app(asgi)
     return testing.TestClient(app)
 
 
 @pytest.fixture(scope='function')
-def cors_client(asgi):
+def cors_client(asgi, util):
     # NOTE(kgriffs): Disable wrapping to test that built-in middleware does
     #   not require it (since this will be the case for non-test apps).
-    with disable_asgi_non_coroutine_wrapping():
-        app = create_app(asgi, cors_enable=True)
+    with util.disable_asgi_non_coroutine_wrapping():
+        app = util.create_app(asgi, cors_enable=True)
     return testing.TestClient(app)
 
 
@@ -28,6 +28,12 @@ class CORSHeaderResource:
     def on_delete(self, req, resp):
         resp.set_header('Access-Control-Allow-Origin', 'example.com')
         resp.text = "I'm a CORS test response"
+
+
+class CORSOptionsResource:
+    def on_options(self, req, resp):
+        # No allow header set
+        resp.set_header('Content-Length', '0')
 
 
 class TestCorsMiddleware:
@@ -82,6 +88,21 @@ class TestCorsMiddleware:
             result.headers['Access-Control-Max-Age'] == '86400'
         )  # 24 hours in seconds
 
+    def test_enabled_cors_handles_preflight_custom_option(self, cors_client):
+        cors_client.app.add_route('/', CORSOptionsResource())
+        result = cors_client.simulate_options(
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+                ('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type'),
+            )
+        )
+        assert 'Access-Control-Allow-Methods' not in result.headers
+        assert 'Access-Control-Allow-Headers' not in result.headers
+        assert 'Access-Control-Max-Age' not in result.headers
+        assert 'Access-Control-Expose-Headers' not in result.headers
+        assert 'Access-Control-Allow-Origin' not in result.headers
+
     def test_enabled_cors_handles_preflighting_no_headers_in_req(self, cors_client):
         cors_client.app.add_route('/', CORSHeaderResource())
         result = cors_client.simulate_options(
@@ -96,11 +117,81 @@ class TestCorsMiddleware:
             result.headers['Access-Control-Max-Age'] == '86400'
         )  # 24 hours in seconds
 
+    def test_enabled_cors_static_route(self, cors_client):
+        cors_client.app.add_static_route('/static', Path(__file__).parent)
+        result = cors_client.simulate_options(
+            f'/static/{Path(__file__).name}',
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+            ),
+        )
+
+        assert result.headers['Access-Control-Allow-Methods'] == 'GET'
+        assert result.headers['Access-Control-Allow-Headers'] == '*'
+        assert result.headers['Access-Control-Max-Age'] == '86400'
+        assert result.headers['Access-Control-Allow-Origin'] == '*'
+
+    @pytest.mark.parametrize('support_options', [True, False])
+    def test_enabled_cors_sink_route(self, cors_client, support_options):
+        def my_sink(req, resp):
+            if req.method == 'OPTIONS' and support_options:
+                resp.set_header('ALLOW', 'GET')
+            else:
+                resp.text = 'my sink'
+
+        cors_client.app.add_sink(my_sink, '/sink')
+        result = cors_client.simulate_options(
+            '/sink/123',
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+            ),
+        )
+
+        if support_options:
+            assert result.headers['Access-Control-Allow-Methods'] == 'GET'
+            assert result.headers['Access-Control-Allow-Headers'] == '*'
+            assert result.headers['Access-Control-Max-Age'] == '86400'
+            assert result.headers['Access-Control-Allow-Origin'] == '*'
+        else:
+            assert 'Access-Control-Allow-Methods' not in result.headers
+            assert 'Access-Control-Allow-Headers' not in result.headers
+            assert 'Access-Control-Max-Age' not in result.headers
+            assert 'Access-Control-Expose-Headers' not in result.headers
+            assert 'Access-Control-Allow-Origin' not in result.headers
+
+    @pytest.mark.parametrize('include_request_private_network', (True, False))
+    def test_disabled_cors_private_network(
+        self, cors_client, include_request_private_network
+    ):
+        # default scenario for cors middleware, where
+        # allow private network is off by default
+
+        cors_client.app.add_route('/', CORSHeaderResource())
+
+        headers = (
+            ('Origin', 'localhost'),
+            ('Access-Control-Request-Method', 'GET'),
+        )
+
+        if include_request_private_network:
+            headers = (
+                *headers,
+                ('Access-Control-Request-Private-Network', 'true'),
+            )
+
+        result = cors_client.simulate_options('/', headers=headers)
+
+        h = result.headers
+
+        assert 'Access-Control-Allow-Private-Network' not in h
+
 
 @pytest.fixture(scope='function')
-def make_cors_client(asgi):
+def make_cors_client(asgi, util):
     def make(middleware):
-        app = create_app(asgi, middleware=middleware)
+        app = util.create_app(asgi, middleware=middleware)
         return testing.TestClient(app)
 
     return make
@@ -228,3 +319,19 @@ class TestCustomCorsMiddleware:
         assert res.headers['Access-Control-Expose-Headers'] == exp
         h = dict(res.headers.lower_items()).keys()
         assert 'Access-Control-Allow-Credentials'.lower() not in h
+
+    def test_enabled_cors_private_network_headers(self, make_cors_client):
+        client = make_cors_client(falcon.CORSMiddleware(allow_private_network=True))
+
+        client.app.add_route('/', CORSHeaderResource())
+
+        res = client.simulate_options(
+            '/',
+            headers=(
+                ('Origin', 'localhost'),
+                ('Access-Control-Request-Method', 'GET'),
+                ('Access-Control-Request-Private-Network', 'true'),
+            ),
+        )
+
+        assert res.headers['Access-Control-Allow-Private-Network'] == 'true'

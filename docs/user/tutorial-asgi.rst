@@ -32,7 +32,7 @@ WSGI tutorial::
       └── app.py
 
 We'll create a *virtualenv* using the ``venv`` module from the standard library
-(Falcon requires Python 3.8+)::
+(Falcon requires Python 3.9+)::
 
   $ mkdir asgilook
   $ python3 -m venv asgilook/.venv
@@ -49,10 +49,9 @@ We'll create a *virtualenv* using the ``venv`` module from the standard library
    `pipenv <https://pipenv.pypa.io/>`_,
    particularly when it comes to hopping between several environments.
 
-Next, install Falcon into your *virtualenv*. ASGI support requires version
-3.0 or higher::
+Next, :ref:`install Falcon <install>` into your *virtualenv*::
 
-  $ pip install "falcon>=3.*"
+  $ pip install falcon
 
 You can then create a basic :class:`Falcon ASGI application <falcon.asgi.App>`
 by adding an ``asgilook/app.py`` module with the following contents:
@@ -77,14 +76,14 @@ For running our async application, we'll need an
 `ASGI <https://asgi.readthedocs.io/>`_ application server. Popular choices
 include:
 
-* `Uvicorn <https://www.uvicorn.org/>`_
+* `Uvicorn <https://uvicorn.dev/>`_
 * `Daphne <https://github.com/django/daphne/>`_
 * `Hypercorn <https://github.com/pgjones/hypercorn/>`_
 
 For a simple tutorial application like ours, any of the above should do.
 Let's pick the popular ``uvicorn`` for now::
 
-  $ pip install uvicorn
+  $ pip install uvicorn[standard]
 
 See also: :ref:`ASGI Server Installation <install_asgi_server>`.
 
@@ -115,6 +114,90 @@ We can verify it works by trying to access the URL provided above by
 Woohoo, it works!!!
 
 Well, sort of. Onwards to adding some real functionality!
+
+.. _debugging_asgi_applications:
+
+Debugging ASGI Applications
+---------------------------
+
+While developing and testing a Falcon ASGI application along the lines of this
+tutorial, you may encounter unexpected issues or behaviors, be it a copy-paste
+mistake, an idea that didn't work out, or unusual input where validation falls
+outside of the scope of this tutorial.
+
+Unlike WSGI, the ASGI specification has no standard mechanism for logging
+errors back to the application server, so Falcon falls back to the stdlib's
+:mod:`logging` (using the ``falcon`` :class:`logger <logging.Logger>`).
+
+As a well-behaved library, Falcon does not preconfigure any loggers since that
+might interfere with the user's logging setup.
+(Starting with Falcon :doc:`4.3 </changes/4.3.0>`, however, the framework no
+longer adds an instance of :class:`logging.NullHandler` to the ``falcon``
+logger, so error tracebacks may still reach ``sys.stderr`` via the
+:any:`logging.lastResort` handler.)
+
+Here's how you can set up basic logging in your ASGI Falcon application via
+:func:`logging.basicConfig`:
+
+.. code:: python
+
+    import logging
+
+    import falcon
+
+    logging.basicConfig(level=logging.INFO)
+
+
+    class ErrorResource:
+        def on_get(self, req, resp):
+            raise Exception('Something went wrong!')
+
+
+    app = falcon.App()
+    app.add_route('/error', ErrorResource())
+
+When the above route is accessed, Falcon will catch the unhandled exception and
+automatically log an error message. Below is an example of what the log output
+might look like:
+
+.. code-block:: none
+
+    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
+    Traceback (most recent call last):
+      File "/path/to/your/app.py", line 123, in __call__
+        resp = resource.on_get(req, resp)
+      File "/path/to/your/app.py", line 7, in on_get
+        raise Exception("Something went wrong!")
+    Exception: Something went wrong!
+
+Your ASGI application server may also provide means to configure logging.
+For instance, Uvicorn (that we are using in this tutorial) can be pointed to a
+logging configuration via the ``--log-config`` command line parameter (or via
+its config file)::
+
+  uvicorn --log-config logging.yaml asgilook.app:app
+
+A suitable logging configuration (including the ``falcon`` logger) for Uvicorn
+could look like:
+
+.. literalinclude:: ../../examples/asgilook/logging.yaml
+    :caption: logging.yaml
+    :language: python
+
+Falcon's tracebacks should now blend into Uvicorn's own logs seamlessly.
+You can also configure logging to files, syslog, or other destinations, in this way.
+
+.. note::
+    While logging is helpful for development and debugging, be mindful of
+    logging sensitive information. Ensure that log files are stored securely
+    and are not accessible to unauthorized users.
+
+.. note::
+    Unhandled errors are only logged automatically by Falcon's default error
+    handler for :class:`Exception`. If you
+    :meth:`replace this handler <falcon.asgi.App.add_error_handler>` with your
+    own generic :class:`Exception` handler, you are responsible for logging or
+    reporting these errors yourself.
 
 .. _asgi_tutorial_config:
 
@@ -900,7 +983,7 @@ Let's give it a try::
   $ pytest tests/test_images.py
 
   ========================= test session starts ==========================
-  platform linux -- Python 3.8.0, pytest-6.2.1, py-1.10.0, pluggy-0.13.1
+  platform linux -- Python 3.12.11, pytest-8.4.1, pluggy-1.6.0
   rootdir: /falcon/tutorials/asgilook
   collected 1 item
 
@@ -963,56 +1046,6 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
     strategies such as blending different types of tests and/or running the same
     tests in multiple environments would most probably involve running
     ``coverage`` directly, and combining results.
-
-Debugging ASGI Applications
----------------------------
-(This section also applies to WSGI applications)
-
-While developing and testing ASGI applications, understanding how to configure
-and utilize logging can be helpful, especially when you encounter unexpected
-issues or behaviors.
-
-By default, Falcon does not set up logging for you,
-but Python's built-in :mod:`logging` module provides a flexible framework for
-emitting and capturing log messages. Here's how you can set up basic logging in
-your ASGI Falcon application:
-
-.. code:: python
-
-    import logging
-
-    import falcon
-
-
-    logging.basicConfig(level=logging.INFO)
-
-    class ErrorResource:
-        def on_get(self, req, resp):
-            raise Exception('Something went wrong!')
-
-    app = falcon.App()
-    app.add_route('/error', ErrorResource())
-
-
-When the above route is accessed, Falcon will catch the unhandled exception and
-automatically log an error message. Below is an example of what the log output
-might look like:
-
-.. code-block:: none
-
-    ERROR:falcon.asgi.app:Unhandled exception in ASGI application
-    Traceback (most recent call last):
-      File "path/to/falcon/app.py", line 123, in __call__
-        resp = resource.on_get(req, resp)
-      File "/path/to/your/app.py", line 7, in on_get
-        raise Exception("Something went wrong!")
-    Exception: Something went wrong!
-
-
-.. note::
-   While logging is helpful for development and debugging, be mindful of logging
-   sensitive information. Ensure that log files are stored securely and are not
-   accessible to unauthorized users.
 
 What Now?
 ---------

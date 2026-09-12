@@ -11,11 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import abc
+from collections.abc import Iterable
 from datetime import datetime
 from math import isfinite
-from typing import Optional
+import re
+from typing import Any, ClassVar, overload
 import uuid
 
 __all__ = (
@@ -23,6 +26,8 @@ __all__ = (
     'DateTimeConverter',
     'FloatConverter',
     'IntConverter',
+    'PathConverter',
+    'RegexConverter',
     'UUIDConverter',
 )
 
@@ -34,7 +39,7 @@ strptime = datetime.strptime
 class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
-    CONSUME_MULTIPLE_SEGMENTS = False
+    CONSUME_MULTIPLE_SEGMENTS: ClassVar[bool] = False
     """When set to ``True`` it indicates that this converter will consume
     multiple URL path segments. Currently a converter with
     ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the end of the URL template
@@ -42,19 +47,19 @@ class BaseConverter(metaclass=abc.ABCMeta):
     segments.
     """
 
-    @abc.abstractmethod  # pragma: no cover
-    def convert(self, value):
+    @abc.abstractmethod
+    def convert(self, value: str) -> Any:
         """Convert a URI template field value to another format or type.
 
         Args:
-            value (str or List[str]): Original string to convert.
+            value (str or list[str]): Original string to convert.
                 If ``CONSUME_MULTIPLE_SEGMENTS=True`` this value is a
                 list of strings containing the path segments matched by
                 the converter.
 
         Returns:
             object: Converted field value, or ``None`` if the field
-                can not be converted.
+            can not be converted.
         """
 
 
@@ -65,7 +70,7 @@ def _consumes_multiple_segments(converter: object) -> bool:
 class IntConverter(BaseConverter):
     """Converts a field value to an int.
 
-    Identifier: `int`
+    Identifier: ``int``
 
     Keyword Args:
         num_digits (int): Require the value to have the given
@@ -76,14 +81,19 @@ class IntConverter(BaseConverter):
 
     __slots__ = ('_num_digits', '_min', '_max')
 
-    def __init__(self, num_digits=None, min=None, max=None):
+    def __init__(
+        self,
+        num_digits: int | None = None,
+        min: int | None = None,
+        max: int | None = None,
+    ) -> None:
         if num_digits is not None and num_digits < 1:
             raise ValueError('num_digits must be at least 1')
         self._num_digits = num_digits
         self._min = min
         self._max = max
 
-    def convert(self, value):
+    def convert(self, value: str) -> int | None:
         if self._num_digits is not None and len(value) != self._num_digits:
             return None
 
@@ -96,47 +106,62 @@ class IntConverter(BaseConverter):
             return None
 
         try:
-            value = int(value)
+            converted = int(value)
         except ValueError:
             return None
 
-        return self._validate_min_max_value(value)
-
-    def _validate_min_max_value(self, value):
-        if self._min is not None and value < self._min:
-            return None
-        if self._max is not None and value > self._max:
-            return None
-
-        return value
+        return _validate_min_max_value(self, converted)
 
 
-class FloatConverter(IntConverter):
+@overload
+def _validate_min_max_value(converter: IntConverter, value: int) -> int | None: ...
+
+
+@overload
+def _validate_min_max_value(
+    converter: FloatConverter, value: float
+) -> float | None: ...
+
+
+def _validate_min_max_value(
+    converter: IntConverter | FloatConverter, value: int | float
+) -> int | float | None:
+    if converter._min is not None and value < converter._min:
+        return None
+    if converter._max is not None and value > converter._max:
+        return None
+
+    return value
+
+
+class FloatConverter(BaseConverter):
     """Converts a field value to an float.
 
-    Identifier: `float`
+    Identifier: ``float``
 
     Keyword Args:
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.
         finite (bool) : Determines whether or not to only match ordinary
             finite numbers (default: ``True``). Set to ``False`` to match
-            nan, inf, and -inf in addition to finite numbers.
+            ``nan``, ``inf``, and ``-inf`` in addition to finite numbers.
+
+    .. versionadded:: 4.0
     """
 
-    __slots__ = '_finite'
+    __slots__ = '_finite', '_min', '_max'
 
     def __init__(
         self,
-        min: Optional[float] = None,
-        max: Optional[float] = None,
+        min: float | None = None,
+        max: float | None = None,
         finite: bool = True,
-    ):
+    ) -> None:
         self._min = min
         self._max = max
         self._finite = finite if finite is not None else True
 
-    def convert(self, value: str):
+    def convert(self, value: str) -> float | None:
         if value.strip() != value:
             return None
 
@@ -149,26 +174,33 @@ class FloatConverter(IntConverter):
         except ValueError:
             return None
 
-        return self._validate_min_max_value(converted)
+        return _validate_min_max_value(self, converted)
 
 
 class DateTimeConverter(BaseConverter):
     """Converts a field value to a datetime.
 
-    Identifier: `dt`
+    Identifier: ``dt``
 
     Keyword Args:
         format_string (str): String used to parse the field value
             into a datetime. Any format recognized by strptime() is
-            supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+            supported (default ``'%Y-%m-%dT%H:%M:%S%z'``).
+
+    .. versionchanged:: 4.0
+        The default value of `format_string` was changed from
+        ``'%Y-%m-%dT%H:%M:%SZ'`` to ``'%Y-%m-%dT%H:%M:%S%z'``.
+
+        The new format is a superset of the old one parsing-wise, however, the
+        converted :class:`~datetime.datetime` object is now timezone-aware.
     """
 
     __slots__ = ('_format_string',)
 
-    def __init__(self, format_string='%Y-%m-%dT%H:%M:%SZ'):
+    def __init__(self, format_string: str = '%Y-%m-%dT%H:%M:%S%z') -> None:
         self._format_string = format_string
 
-    def convert(self, value):
+    def convert(self, value: str) -> datetime | None:
         try:
             return strptime(value, self._format_string)
         except ValueError:
@@ -178,14 +210,14 @@ class DateTimeConverter(BaseConverter):
 class UUIDConverter(BaseConverter):
     """Converts a field value to a uuid.UUID.
 
-    Identifier: `uuid`
+    Identifier: ``uuid``
 
     In order to be converted, the field value must consist of a
     string of 32 hexadecimal digits, as defined in RFC 4122, Section 3.
     Note, however, that hyphens and the URN prefix are optional.
     """
 
-    def convert(self, value):
+    def convert(self, value: str) -> uuid.UUID | None:
         try:
             return uuid.UUID(value)
         except ValueError:
@@ -194,6 +226,8 @@ class UUIDConverter(BaseConverter):
 
 class PathConverter(BaseConverter):
     """Field converted used to match the rest of the path.
+
+    Identifier: ``path``
 
     This field converter matches the remainder of the URL path,
     returning it as a string.
@@ -209,12 +243,97 @@ class PathConverter(BaseConverter):
     (the default), while it will *not* match when that option is ``True``.
 
     (See also: :ref:`trailing_slash_in_path`)
+
+    .. versionadded:: 4.0
     """
 
     CONSUME_MULTIPLE_SEGMENTS = True
 
-    def convert(self, value):
+    def convert(self, value: Iterable[str]) -> str:
         return '/'.join(value)
+
+
+class RegexConverter(BaseConverter):
+    """Field converter used to match a field value against a regular expression.
+
+    Identifier: ``re``
+
+    In the current iteration, this field converter only captures a single URL
+    segment (unlike :class:`PathConverter`). However, if needed, you can easily
+    :ref:`customize <routing_custom_converters>` it by subclassing and enabling
+    ``CONSUME_MULTIPLE_SEGMENTS``::
+
+        class RePathConverter(RegexConverter):
+            CONSUME_MULTIPLE_SEGMENTS = True
+
+            def convert(self, value: str | list[str]) -> str:
+                if not isinstance(value, str):
+                    value = '/'.join(value)
+                return super().convert(value)
+
+        # <...>
+
+        # Register the new converter class
+        app.router_options.converters['repath'] = RePathConverter
+
+    Note:
+        In certain edge case scenarios, the ``/`` and ``}`` characters inside a
+        converter's arguments may get misinterpreted as part of the URI
+        template structure. It is possible to work around the problem by using
+        hexadecimal escape sequences in lieu of the "problematic" characters,
+        even though it looks awkward (note that the ``\\`` part of the sequence
+        must be first escaped as a literal backslash inside the URI template
+        before it is interpreted again)::
+
+            app.add_route('/{spam:repath("spam(\\\\x2fspam)*")}', resource)
+
+        Here we are using the above custom ``repath`` converter to match any
+        number of ``/spam/spam/.../spam`` segments.
+
+        (See also the discussion on the GitHub issue
+        `#2062 <https://github.com/falconry/falcon/issues/2062>`__.)
+
+    Keyword Args:
+        pattern (str): A regex pattern that the value must match.
+            The entire value must match (anchored). The pattern must be a
+            :class:`str` (not :class:`bytes`).
+        group(str | None): An optional named group to return as the converted
+            field value. Note that if the group is optional (e.g.,
+            ``r'product(?P<id>\\d+)?')``, and it was omitted in the matched URL
+            segment, it would be treated as a failure to convert the value
+            (resulting in :class:`~falcon.HTTPRouteNotFound`).
+    """
+
+    _pattern: re.Pattern[str]
+
+    __slots__ = ('_group', '_pattern')
+
+    def __init__(self, pattern: str, group: str | None = None) -> None:
+        if isinstance(pattern, bytes):
+            raise ValueError(
+                f'invalid regex pattern for RegexConverter: {pattern!r} '
+                f'(bytes patterns are not supported)'
+            )
+
+        try:
+            self._pattern = re.compile(pattern)
+        except re.error as ex:
+            raise ValueError(
+                f'invalid regex pattern for RegexConverter: {pattern!r} ({ex})'
+            ) from ex
+
+        self._group = group
+        if group is not None and group not in self._pattern.groupindex:
+            raise ValueError(
+                f'regex pattern {pattern!r} does not contain named group {group!r}'
+            )
+
+    def convert(self, value: str) -> str | None:
+        if matched := self._pattern.fullmatch(value):
+            if self._group is not None:
+                return matched.group(self._group)
+            return value
+        return None
 
 
 BUILTIN = (
@@ -223,4 +342,5 @@ BUILTIN = (
     ('uuid', UUIDConverter),
     ('float', FloatConverter),
     ('path', PathConverter),
+    ('re', RegexConverter),
 )
