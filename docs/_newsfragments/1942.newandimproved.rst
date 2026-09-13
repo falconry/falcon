@@ -1,12 +1,5 @@
-Previously, there was no clean way to observe all exceptions raised while
-processing requests (for instance, in order to log them, or to submit them to an
-error tracking or observability service such as Sentry or OpenTelemetry) short
-of overriding the framework's default error handlers.
-
-To afford this, a new :meth:`~falcon.App.set_error_reporter` method was added
-that registers a synchronous callback to be invoked with every exception passed
-to the app's error handling, including instances of :class:`~falcon.HTTPError`
-and :class:`~falcon.HTTPStatus`, as well as with exceptions that the app is
-unable to handle (for instance, when an error handler itself fails), without
-changing how these exceptions are handled.
+A new :class:`~falcon.App` method, :meth:`~falcon.App.set_error_reporter`,
+was added for observing all exceptions raised while processing requests
+(for instance, in order to log them, or to submit them to an error tracking or
+observability service).
 Error reporters are supported by both WSGI and ASGI applications.
