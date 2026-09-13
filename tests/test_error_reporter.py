@@ -1,3 +1,5 @@
+import io
+
 import pytest
 
 import falcon
@@ -45,6 +47,14 @@ def reporter(util):
 @pytest.fixture()
 def client(reporter):
     return reporter.client
+
+
+@pytest.fixture()
+def wsgierrors():
+    # NOTE(vytas): Falcon does not log the exceptions it leaves for the WSGI
+    #   app server to handle (and log); this stream captures whatever the
+    #   framework logs, so that we can assert it stayed empty.
+    return io.StringIO()
 
 
 def test_report_none(client, reporter):
@@ -114,21 +124,33 @@ def test_handler_raises_http_error(client, reporter):
     ]
 
 
-def test_handler_raises_exception(client, reporter):
+@pytest.mark.parametrize('set_reporter', (True, False))
+def test_handler_raises_exception(util, reporter, wsgierrors, set_reporter):
+    class Inverse:
+        def on_get(self, req, resp):
+            1 / 0
+
     def handle_error(req, resp, ex, params):
         raise RuntimeError(f'application error: {ex}')
-        raise falcon.HTTPUnprocessableEntity(description=str(ex))
 
-    client.app.add_error_handler(ZeroDivisionError, handle_error)
+    app = util.create_app(False)
+    app.add_route('/inverse', Inverse())
+    app.add_error_handler(ZeroDivisionError, handle_error)
+    if set_reporter:
+        app.set_error_reporter(reporter.report)
 
     with pytest.raises(RuntimeError):
-        client.get('/inverse/0.0')
+        falcon.testing.simulate_get(app, '/inverse', wsgierrors=wsgierrors)
 
-    assert reporter.log == [(ZeroDivisionError, True), (RuntimeError, False)]
+    assert reporter.log == (
+        [(ZeroDivisionError, True), (RuntimeError, False)] if set_reporter else []
+    )
+    # NOTE(vytas): The RuntimeError is left for the WSGI app server to handle.
+    assert wsgierrors.getvalue() == ''
 
 
 @pytest.mark.parametrize('set_reporter', (True, False))
-def test_report_fatal_error_starting_resp(util, reporter, set_reporter):
+def test_report_fatal_error_starting_resp(util, reporter, wsgierrors, set_reporter):
     class StrangeMiddleware:
         def process_response(self, req, resp, rsrc, succeeded):
             resp.status = object()
@@ -142,8 +164,10 @@ def test_report_fatal_error_starting_resp(util, reporter, set_reporter):
         app.set_error_reporter(reporter.report)
 
     with pytest.raises(ValueError):
-        falcon.testing.simulate_get(app, '/')
+        falcon.testing.simulate_get(app, '/', wsgierrors=wsgierrors)
 
     assert reporter.log == (
         [(falcon.HTTPRouteNotFound, True), (ValueError, False)] if set_reporter else []
     )
+    # NOTE(vytas): The ValueError is left for the WSGI app server to handle.
+    assert wsgierrors.getvalue() == ''

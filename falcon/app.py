@@ -565,8 +565,6 @@ class App(Generic[_ReqT, _RespT]):
         except Exception as ex:
             if self._report_error is not None:
                 self._report_error(req, ex, params, False)
-            else:
-                req.log_error(traceback.format_exc())
             raise
 
     # NOTE(caselit): the return type depends on the router, hardcoded to
@@ -1307,34 +1305,31 @@ class App(Generic[_ReqT, _RespT]):
             # NOTE(caselit): Reset body, data and media before calling the handler.
             resp.text = resp.data = resp.media = None
 
-            if err_handler is not None:
-                try:
-                    err_handler(req, resp, ex, params)
-                except HTTPStatus as status:
-                    if self._report_error is not None:
-                        self._report_error(req, status, params, True)
-                    self._compose_status_response(req, resp, status)
-                except HTTPError as error:
-                    if self._report_error is not None:
-                        self._report_error(req, error, params, True)
-                    self._compose_error_response(req, resp, error)
+            try:
+                err_handler(req, resp, ex, params)
+            except HTTPStatus as status:
+                if self._report_error is not None:
+                    self._report_error(req, status, params, True)
+                self._compose_status_response(req, resp, status)
+            except HTTPError as error:
+                if self._report_error is not None:
+                    self._report_error(req, error, params, True)
+                self._compose_error_response(req, resp, error)
 
-                return True
+            return True
 
         except Exception as handler_ex:
             if handler_ex is ex:
                 # NOTE(vytas): The handler opted to reraise the same exception;
                 #   we assume that it is preferred to handle errors outside of
                 #   the Falcon app (as Hug used to do).
+                #   (And the same ex object has already been reported.)
                 raise
 
             # PERF(vytas): Only call the reporter if a third party one is
             #   installed (instead having a default catch-all method).
             if self._report_error is not None:
                 self._report_error(req, handler_ex, params, False)
-            else:
-                # NOTE(vytas): Our default inline "reporter".
-                req.log_error(traceback.format_exc())
 
             # NOTE(vytas): Reraise the handler/serializer exception here since
             #   (1) the original ex has already been reported as handled=True, and

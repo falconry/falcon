@@ -1,3 +1,5 @@
+import io
+
 import pytest
 
 import falcon
@@ -262,8 +264,13 @@ class TestErrorHandler:
         app = util.create_app(asgi)
         app.set_error_serializer(faulty_serializer)
 
+        wsgierrors = io.StringIO()
         with pytest.raises(ZeroDivisionError):
-            falcon.testing.simulate_get(app, '/404')
+            falcon.testing.simulate_get(app, '/404', wsgierrors=wsgierrors)
+
+        # NOTE(vytas): The error is left for the app server to handle (and log);
+        #   wsgierrors is unused with ASGI, but passing it is harmless.
+        assert wsgierrors.getvalue() == ''
 
 
 class NoBodyResource:
