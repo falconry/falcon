@@ -14,6 +14,7 @@ import pytest
 
 import falcon
 from falcon import testing
+from falcon.routing.converters import RegexConverter
 from falcon.routing.util import SuffixedMethodNotFoundError
 
 _TEST_UUID = uuid.uuid4()
@@ -395,6 +396,31 @@ def test_uuid_converter_complex_segment(client, resource):
 @pytest.mark.parametrize(
     'uri_template, path, expected',
     [
+        (
+            r'/{product:re(r"product-(?P<product_id>\d+)")}',
+            '/product-1337',
+            {'product': 'product-1337'},
+        ),
+        (
+            r'/{product:re(r"product-(?P<product_id>\d+)", "product_id")}',
+            '/product-1337',
+            {'product': '1337'},
+        ),
+    ],
+)
+def test_regex_converter(client, resource, uri_template, path, expected):
+    client.app.add_route(uri_template, resource)
+
+    result = client.simulate_get(path)
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs == expected
+
+
+@pytest.mark.parametrize(
+    'uri_template, path, expected',
+    [
         ('/{food:spam}', '/something', {'food': 'spam!'}),
         (
             '/{food:spam(")")}:{food_too:spam("()")}',
@@ -424,6 +450,26 @@ def test_converter_custom(client, resource, uri_template, path, expected):
     assert result.status_code == 200
     assert resource.called
     assert resource.captured_kwargs == expected
+
+
+def test_converter_custom_repath(client, resource):
+    class RePathConverter(RegexConverter):
+        CONSUME_MULTIPLE_SEGMENTS = True
+
+        def convert(self, value):
+            if isinstance(value, list):
+                value = '/'.join(value)
+
+            return super().convert(value)
+
+    client.app.router_options.converters['repath'] = RePathConverter
+    client.app.add_route('/{spam:repath("spam(\\x2fspam)*")}', resource)
+
+    result = client.simulate_get('/spam/spam/spam/spam')
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs == {'spam': 'spam/spam/spam/spam'}
 
 
 def test_single_trailing_slash(client):

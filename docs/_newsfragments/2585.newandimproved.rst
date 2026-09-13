@@ -1,0 +1,11 @@
+Previously, it was not possible to cleanly test the case where a
+:ref:`WebSocket <ws>` responder would keep running without sending or receiving
+any messages --
+:meth:`ASGIConductor.simulate_ws <falcon.testing.ASGIConductor.simulate_ws>`
+would hang forever upon exiting the context.
+
+To afford this scenario, a new optional `timeout` keyword argument was added to
+:meth:`~falcon.testing.ASGIConductor.simulate_ws` that limits how long the test
+harness waits, both for the handshake (accept or deny), and for the app's task
+to complete after the connection is closed; when the deadline passes, an
+instance of :class:`TimeoutError` is raised.

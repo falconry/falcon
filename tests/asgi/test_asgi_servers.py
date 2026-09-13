@@ -555,6 +555,24 @@ def _daphne_factory(host, port):
     )
 
 
+def _granian_factory(host, port):
+    return subprocess.Popen(
+        (
+            sys.executable,
+            '-m',
+            'granian',
+            '--interface',
+            'asgi',
+            '--host',
+            host,
+            '--port',
+            str(port),
+            '_asgi_test_app:application',
+        ),
+        cwd=_MODULE_DIR,
+    )
+
+
 def _hypercorn_factory(host, port):
     if _WIN32:
         script = f"""
@@ -608,9 +626,16 @@ def _can_run(factory):
             import uvicorn  # noqa
         except Exception:
             pytest.skip('uvicorn not installed')
+    elif factory == _granian_factory:
+        try:
+            import granian  # noqa
+        except Exception:
+            pytest.skip('granian not installed')
 
 
-@pytest.fixture(params=[_uvicorn_factory, _daphne_factory, _hypercorn_factory])
+@pytest.fixture(
+    params=[_uvicorn_factory, _daphne_factory, _granian_factory, _hypercorn_factory]
+)
 def server_base_url(request, requests):
     process_factory = request.param
     _can_run(process_factory)
