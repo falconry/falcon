@@ -6,11 +6,11 @@ class AlreadyRunningError(Exception):
     def __init__(self, taskid):
         self.taskid = taskid
 
-
-async def handle_already_running(req, resp, exception, params):
-    raise falcon.HTTPConflict(
-        title=f'Task {exception.taskid} already running!', description=str(exception)
-    )
+    @staticmethod
+    async def handle(req, resp, ex, params):
+        raise falcon.HTTPConflict(
+            title=f'Task {ex.taskid} already running!', description=str(ex)
+        )
 
 
 def serialize_error(req, resp, exception):
@@ -40,7 +40,7 @@ class Start:
 
 app = falcon.asgi.App()
 
-app.add_error_handler(AlreadyRunningError, handle_already_running)
+app.add_error_handler(AlreadyRunningError)
 app.set_error_serializer(serialize_error)
 
 app.add_route('/start/{taskid:int}', Start())
