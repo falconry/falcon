@@ -1054,32 +1054,36 @@ class App(Generic[_ReqT, _RespT]):
 
         The error reporter is intended for instrumentation purposes, such as
         logging exceptions, or submitting them to an error tracking or
-        observability service (e.g., Sentry or OpenTelemetry). It is called for
-        every exception that is passed to the app's error handling, including
-        instances of :class:`~.HTTPError` and :class:`~.HTTPStatus`,
-        regardless of whether a custom error handler has been registered for
-        the exception type in question (see also: :meth:`~.add_error_handler`).
+        observability service. It is called for every exception that is passed
+        to the app's error handling, including instances of
+        :class:`~.HTTPError` and :class:`~.HTTPStatus`, regardless of whether a
+        custom error handler has been registered for the exception type in
+        question (see also: :meth:`~.add_error_handler`).
 
         Setting a reporter does not change how exceptions are handled. The
         reporter is called in the following cases:
 
-        * An exception is raised by a middleware method, hook, or responder,
-          or while routing the request or rendering the response body (for
-          instance, while serializing :attr:`~falcon.Response.media`).
-          The exception is reported *before* the matching error handler (if
-          any) is invoked. If the handler opts to reraise the same exception
-          object, that exception is not reported again.
+        * An exception is raised while routing, processing the request, or
+          rendering the response body (for instance, while serializing
+          :attr:`~falcon.Response.media`).
+          The exception is reported *before* the matching error handler is
+          invoked. If the handler opts to reraise the same exception object,
+          that exception is not reported again.
         * An error handler raises an instance of :class:`~.HTTPError` or
           :class:`~.HTTPStatus`, which is then reported as handled.
-        * An error handler (or the error serializer) raises any other
+        * An error handler (or the error
+          :meth:`serializer <falcon.App.set_error_serializer>`) raises any other
           exception. Such an exception is reported as unhandled, and it is
           propagated to the application server.
         * The response cannot be started, for instance, due to an invalid
           status or header value. The exception is reported as unhandled, and
           it is propagated to the application server.
 
-        Exceptions raised while streaming the response body (e.g., when
-        iterating over :attr:`~falcon.Response.stream`) are not reported.
+        At the time of writing, exceptions raised while streaming the response
+        body (e.g., when iterating over :attr:`~falcon.Response.stream`) are
+        not reported. It will be possible to capture these errors in the native
+        OpenTelemetry integration, which is anticipated to land in
+        `Falcon 4.5 <https://github.com/falconry/falcon/milestone/48>`__.
 
         Only a single reporter can be set; calling this method again replaces
         the previous one. For example::
@@ -1091,19 +1095,14 @@ class App(Generic[_ReqT, _RespT]):
             logger = logging.getLogger(__name__)
 
 
-            def report_error(req, error, params, handled):
-                # NOTE: Skip HTTPStatus and client errors such as 404 Not Found.
-                if isinstance(error, falcon.HTTPStatus) or (
-                    isinstance(error, falcon.HTTPError) and error.status_code < 500
-                ):
-                    return
+            def report_error(
+                req: falcon.Request, error: Exception, params: dict, handled: bool
+            ) -> None:
+                \"""Log *all* reported errors.\"""
 
+                kind = 'Handled' if handled else 'Unhandled'
                 logger.error(
-                    'Error processing %s %s (handled=%s)',
-                    req.method,
-                    req.path,
-                    handled,
-                    exc_info=error,
+                    f'{kind} error processing {req.method} {req.path}', exc_info=error,
                 )
 
 
@@ -1119,22 +1118,15 @@ class App(Generic[_ReqT, _RespT]):
 
             The reporter itself should not raise any exceptions.
 
-        Note:
-            In the case of ASGI WebSocket connections, exceptions raised by
-            middleware and responders are reported as well. This includes
-            instances of :class:`~.WebSocketDisconnected` that are raised when
-            the client disconnects.
-
         Args:
             reporter (callable): A function or callable object taking the form
                 ``func(req, error, params, handled)``, where `req` is the
                 request object, `error` is the exception being reported,
                 `params` is a dictionary of the responder's URI template field
                 values (empty if the error was raised before routing), and
-                `handled` is a ``bool`` flag set to ``True`` if the
-                exception is going to be handled by the framework, or to
-                ``False`` if it is going to propagate to the application
-                server.
+                `handled` is a boolean flag indicating whether the exception
+                is going to be processed by an error
+                :meth:`handler <falcon.App.add_error_handler>`.
 
         .. versionadded:: 4.4
         """
