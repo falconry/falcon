@@ -730,6 +730,7 @@ class App(Generic[_ReqT, _RespT]):
         directory: str | pathlib.Path,
         downloadable: bool = False,
         fallback_filename: str | None = None,
+        allow_tilde: bool = False,
     ) -> None:
         """Add a route to a directory of static files.
 
@@ -786,6 +787,14 @@ class App(Generic[_ReqT, _RespT]):
             fallback_filename (str): Fallback filename used when the requested file
                 is not found. Can be a relative path inside the prefix folder or
                 any valid absolute path.
+            allow_tilde (bool): Set to ``True`` to allow tilde (``~``)
+                characters in the requested path. When ``False`` (default),
+                requests containing ``~`` will be rejected with 404
+                (default ``False``).
+
+                Note:
+                    The default value of `allow_tilde` will change to ``True``
+                    in Falcon 5.0.
 
         """
 
@@ -794,6 +803,7 @@ class App(Generic[_ReqT, _RespT]):
             directory,
             downloadable=downloadable,
             fallback_filename=fallback_filename,
+            allow_tilde=allow_tilde,
         )
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()

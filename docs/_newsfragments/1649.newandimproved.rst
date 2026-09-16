@@ -1,0 +1,3 @@
+A new parameter, ``allow_tilde``, was added to
+:class:`~falcon.routing.StaticRoute` and :meth:`falcon.App.add_static_route` to
+optionally allow tilde (``~``) characters in requested static file paths.

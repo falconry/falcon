@@ -112,7 +112,8 @@ def patch_open(monkeypatch):
         '/static/.\x1fssh/authorized_keys',
         '/static/.\x80ssh/authorized_keys',
         '/static/.\x9fssh/authorized_keys',
-        # Reserved characters (?, <, >, :, *, |, ', and ")
+        # Reserved characters (~, ?, <, >, :, *, |, ', and ")
+        '/static/~/.ssh/authorized_keys',
         '/static/.ssh/authorized_key?',
         '/static/.ssh/authorized_key>foo',
         '/static/.ssh/authorized_key|foo',
@@ -205,7 +206,6 @@ _MIME_ALTERNATIVE = {
             'application/octet-stream',
         ),
         ('/static', '/.test.css', '/.test.css', 'text/css'),
-        ('/static', '/~test.css', '/~test.css', 'text/css'),
         ('/some/download/', '/report.pdf', '/report.pdf', 'application/pdf'),
         (
             '/some/download/',
@@ -757,3 +757,90 @@ def test_if_none_match_precedence(client, patch_open):
     )
     assert resp2.status == falcon.HTTP_304
     assert resp2.text == ''
+
+
+@pytest.mark.parametrize('allow_tilde', [True, False])
+def test_allow_tilde(client, patch_open, allow_tilde):
+    patch_open()
+
+    client.app.add_static_route('/static', '/var/www/statics', allow_tilde=allow_tilde)
+
+    response = client.simulate_request(path='/static/~test.css')
+    if allow_tilde:
+        assert response.status == falcon.HTTP_200
+        assert response.headers['content-type'] == 'text/css'
+    else:
+        assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path='/static/default~module.js')
+    if allow_tilde:
+        assert response.status == falcon.HTTP_200
+    else:
+        assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path='/static/sub/~foo.txt')
+    if allow_tilde:
+        assert response.status == falcon.HTTP_200
+    else:
+        assert response.status == falcon.HTTP_404
+
+
+def test_allow_tilde_still_blocks_traversal_and_disallowed(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route('/static', '/var/www/statics', allow_tilde=True)
+
+    # Path traversal should still be blocked
+    response = client.simulate_request(path='/static/../test.css')
+    assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path='/static/~test/../../secret')
+    assert response.status == falcon.HTTP_404
+
+    # Other disallowed chars (<, >, :, *, |, ', and ") should still be blocked
+    response = client.simulate_request(path='/static/~test*.css')
+    assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path='/static/~test:1.css')
+    assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path='/static/~test<foo>.css')
+    assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path='/static/~test|foo.css')
+    assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path="/static/~test'foo.css")
+    assert response.status == falcon.HTTP_404
+
+    response = client.simulate_request(path='/static/~test"foo.css')
+    assert response.status == falcon.HTTP_404
+
+
+@pytest.mark.parametrize('allow_tilde', [True, False])
+def test_allow_tilde_static_route_direct(asgi, util, patch_open, allow_tilde):
+    patch_open()
+
+    sr = create_sr(asgi, '/static', '/var/www/statics', allow_tilde=allow_tilde)
+    req = util.create_req(
+        asgi, host='test.com', path='/static/~test.css', root_path='statics'
+    )
+    resp = util.create_resp(asgi)
+
+    if allow_tilde:
+        if asgi:
+
+            async def run():
+                await sr(req, resp)
+                return await resp.stream.read()
+
+            falcon.async_to_sync(run)
+        else:
+            sr(req, resp)
+        assert resp.status == falcon.HTTP_200
+    else:
+        with pytest.raises(falcon.HTTPNotFound):
+            if asgi:
+                falcon.async_to_sync(sr, req, resp)
+            else:
+                sr(req, resp)

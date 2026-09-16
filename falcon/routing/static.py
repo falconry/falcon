@@ -168,10 +168,20 @@ class StaticRoute:
                 Content-Disposition header (provided it was requested with the
                 `downloadable` parameter described above), are derived from the
                 fallback filename, as opposed to the requested filename.
+        allow_tilde (bool): Set to ``True`` to allow tilde (``~``) characters in
+            the requested path. When ``False`` (default), requests containing
+            ``~`` will be rejected with 404 (default ``False``).
+
+            Note:
+                The default value of `allow_tilde` will change to ``True`` in
+                Falcon 5.0.
     """
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
     _DISALLOWED_CHARS_PATTERN: ClassVar[Pattern[str]] = re.compile(
+        '[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]'
+    )
+    _DISALLOWED_CHARS_ALLOW_TILDE_PATTERN: ClassVar[Pattern[str]] = re.compile(
         '[\x00-\x1f\x80-\x9f\ufffd?<>:*|\'"]'
     )
 
@@ -191,6 +201,7 @@ class StaticRoute:
         directory: str | Path,
         downloadable: bool = False,
         fallback_filename: str | None = None,
+        allow_tilde: bool = False,
     ) -> None:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
@@ -216,6 +227,12 @@ class StaticRoute:
 
         self._prefix = prefix
         self._downloadable = downloadable
+        self._allow_tilde = allow_tilde
+        self._disallowed_chars_pattern = (
+            self._DISALLOWED_CHARS_ALLOW_TILDE_PATTERN
+            if allow_tilde
+            else self._DISALLOWED_CHARS_PATTERN
+        )
 
     def match(self, path: str) -> bool:
         """Check whether the given path matches this route."""
@@ -240,7 +257,7 @@ class StaticRoute:
         if (
             not (without_prefix or self._fallback_filename is not None)
             or without_prefix.strip().rstrip('.') != without_prefix
-            or self._DISALLOWED_CHARS_PATTERN.search(without_prefix)
+            or self._disallowed_chars_pattern.search(without_prefix)
             or '\\' in without_prefix
             or '//' in without_prefix
             or len(without_prefix) > self._MAX_NON_PREFIXED_LEN
