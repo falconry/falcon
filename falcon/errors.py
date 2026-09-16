@@ -303,7 +303,7 @@ class HTTPUnauthorized(HTTPError):
     SHOULD present the enclosed representation to the user, since it
     usually contains relevant diagnostic information.
 
-    (See also: RFC 7235, Section 3.1)
+    (See also: RFC 9110, Section 15.5.2)
 
     All the arguments are defined as keyword-only.
 
@@ -335,7 +335,7 @@ class HTTPUnauthorized(HTTPError):
                 The existing value of the WWW-Authenticate in headers will be
                 overridden by this value
 
-            (See also: RFC 7235, Section 2.1)
+            (See also: RFC 9110, Section 11.6.1)
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -914,7 +914,7 @@ class HTTPPreconditionFailed(HTTPError):
     and, thus, prevent the request method from being applied if the
     target resource is in an unexpected state.
 
-    (See also: RFC 7232, Section 4.2)
+    (See also: RFC 9110, Section 15.5.13)
 
     All the arguments are defined as keyword-only.
 
@@ -1195,7 +1195,7 @@ class HTTPRangeNotSatisfiable(HTTPError):
     sender SHOULD generate a Content-Range header field specifying the
     current length of the selected representation.
 
-    (See also: RFC 7233, Section 4.4)
+    (See also: RFC 9110, Section 15.5.17)
 
     `resource_length` is the only positional argument allowed,
     the other arguments are defined as keyword-only.
@@ -1783,14 +1783,14 @@ class HTTPNotImplemented(HTTPError):
 
     A 501 response is cacheable by default; i.e., unless otherwise
     indicated by the method definition or explicit cache controls
-    as described in RFC 7234, Section 4.2.2.
+    as described in RFC 9111, Section 4.2.2.
 
-    (See also: RFC 7231, Section 6.6.2)
+    (See also: RFC 9110, Section 15.6.2)
 
     All the arguments are defined as keyword-only.
 
     Keyword Args:
-        title (str): Error title (default '500 Internal Server Error').
+        title (str): Error title (default '501 Not Implemented').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -2037,18 +2037,18 @@ class HTTPVersionNotSupported(HTTPError):
     server does not support, or refuses to support, the major version of
     HTTP that was used in the request message.  The server is indicating
     that it is unable or unwilling to complete the request using the same
-    major version as the client (as described in RFC 7230, Section 2.6),
+    major version as the client (as described in RFC 9110, Section 2.5),
     other than with this error message.  The server SHOULD
     generate a representation for the 505 response that describes why
     that version is not supported and what other protocols are supported
     by that server.
 
-    (See also: RFC 7231, Section 6.6.6)
+    (See also: RFC 9110, Section 15.6.6)
 
     All the arguments are defined as keyword-only.
 
     Keyword Args:
-        title (str): Error title (default '503 Service Unavailable').
+        title (str): Error title (default '505 HTTP Version Not Supported').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
