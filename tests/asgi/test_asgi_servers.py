@@ -196,6 +196,46 @@ class TestASGIServer:
             assert resp.json().get('drops') >= 1
 
 
+class TestStaticFiles:
+    def test_get(self, server_base_url, requests):
+        expected = (_asgi_test_app.FALCON_ROOT / 'LICENSE').read_bytes()
+
+        resp = requests.get(
+            server_base_url + 'static/LICENSE', timeout=_REQUEST_TIMEOUT
+        )
+        assert resp.status_code == 200
+        assert resp.content == expected
+
+        range_resp = requests.get(
+            server_base_url + 'static/LICENSE',
+            headers={'Range': 'bytes=13-37'},
+            timeout=_REQUEST_TIMEOUT,
+        )
+        assert range_resp.status_code == 206
+        assert range_resp.content == expected[13 : 37 + 1]
+
+    def test_not_modified(self, server_base_url, requests):
+        resp1 = requests.get(
+            server_base_url + 'static/README.rst', timeout=_REQUEST_TIMEOUT
+        )
+        assert resp1.status_code == 200
+
+        etag = resp1.headers.get('ETag')
+        assert etag, 'missing ETag header'
+        assert (
+            resp1.headers.get('Content-Disposition')
+            == 'attachment; filename="README.rst"'
+        )
+        assert resp1.headers.get('Last-Modified'), 'missing Last-Modified header'
+
+        resp2 = requests.get(
+            server_base_url + 'static/README.rst',
+            headers={'If-None-Match': etag},
+            timeout=_REQUEST_TIMEOUT,
+        )
+        assert resp2.status_code == 304
+
+
 @pytest.mark.skipif(
     websockets is None, reason='websockets is required for this test class'
 )
@@ -607,39 +647,28 @@ run(config)
     )
 
 
-def _can_run(factory):
-    if _WIN32 and factory == _daphne_factory:
+@pytest.fixture(params=['daphne', 'granian', 'hypercorn', 'uvicorn'])
+def asgi_server(request):
+    if _WIN32 and request.param == 'daphne':
         pytest.skip('daphne does not support windows')
-
-    if factory == _daphne_factory:
-        try:
-            import daphne  # noqa
-        except Exception:
-            pytest.skip('daphne not installed')
-    elif factory == _hypercorn_factory:
-        try:
-            import hypercorn  # noqa
-        except Exception:
-            pytest.skip('hypercorn not installed')
-    elif factory == _uvicorn_factory:
-        try:
-            import uvicorn  # noqa
-        except Exception:
-            pytest.skip('uvicorn not installed')
-    elif factory == _granian_factory:
-        try:
-            import granian  # noqa
-        except Exception:
-            pytest.skip('granian not installed')
+    return request.param
 
 
-@pytest.fixture(
-    params=[_uvicorn_factory, _daphne_factory, _granian_factory, _hypercorn_factory]
-)
-def server_base_url(request, requests):
-    process_factory = request.param
-    _can_run(process_factory)
+@pytest.fixture()
+def process_factory(asgi_server):
+    pytest.importorskip(asgi_server)
 
+    servers = {
+        'daphne': _daphne_factory,
+        'granian': _granian_factory,
+        'hypercorn': _hypercorn_factory,
+        'uvicorn': _uvicorn_factory,
+    }
+    return servers[asgi_server]
+
+
+@pytest.fixture()
+def server_base_url(requests, process_factory):
     for i in range(3):
         server_port = testing.get_unused_port()
         base_url = f'http://{_SERVER_HOST}:{server_port}/'
