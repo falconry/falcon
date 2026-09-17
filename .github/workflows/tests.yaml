@@ -24,7 +24,7 @@ jobs:
         default-os:
           - "ubuntu-latest"
         python-version:
-          - "3.12"
+          - "3.14"
         tox:
           # Lint
           - env: pep8
@@ -52,7 +52,6 @@ jobs:
           - env: py311_cython
             python-version: "3.11"
           - env: py312
-            coverage: true
             python-version: "3.12"
           - env: py312_cython
             python-version: "3.12"
@@ -61,6 +60,7 @@ jobs:
           - env: py313_cython
             python-version: "3.13"
           - env: py314
+            coverage: true
             python-version: "3.14"
           - env: py314_cython
             python-version: "3.14"
@@ -68,10 +68,10 @@ jobs:
             python-version: "3.15.0-rc.2 - 3.15.0"
           - env: py315_cython
             python-version: "3.15.0-rc.2 - 3.15.0"
-          - env: py312_nocover
+          - env: py314_nocover
             os: macos-latest
             platform-label: ' (macos)'
-          - env: py312_nocover
+          - env: py314_nocover
             os: windows-latest
             platform-label: ' (windows)'
           # Tutorials
