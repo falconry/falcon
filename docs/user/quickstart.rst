@@ -151,3 +151,14 @@ parameters, handling errors, and working with request and response bodies.
 
             $ pip install falcon httpx uvicorn
             $ uvicorn things_advanced_asgi:app
+
+        You can also run the ASGI version with Gunicorn:
+
+        .. code:: bash
+
+            $ pip install falcon gunicorn
+            $ gunicorn -k asgi things_advanced_asgi:app
+
+        .. note::
+
+           Gunicorn's ASGI support is experimental and may not fully support all features.

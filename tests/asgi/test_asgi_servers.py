@@ -8,7 +8,6 @@ import signal
 import subprocess
 import sys
 import time
-
 import pytest
 
 from falcon import testing
@@ -646,8 +645,28 @@ run(config)
         cwd=_MODULE_DIR,
     )
 
+def _gunicorn_factory(host, port):
+    return subprocess.Popen(
+        (
+            sys.executable,
+            '-m',
+            'gunicorn',
+            '--access-logfile',
+            '-',
+            '--bind',
+            f'{host}:{port}',
+            '--graceful-timeout',
+            str(_REQUEST_TIMEOUT),
+            '--timeout',
+            str(_REQUEST_TIMEOUT),
+            '--worker-class',
+            'asgi',
+            '_asgi_test_app:application',
+        ),
+        cwd=_MODULE_DIR,
+    )
 
-@pytest.fixture(params=['daphne', 'granian', 'hypercorn', 'uvicorn'])
+@pytest.fixture(params=['daphne', 'granian', 'hypercorn', 'uvicorn', 'gunicorn'])
 def asgi_server(request):
     if _WIN32 and request.param == 'daphne':
         pytest.skip('daphne does not support windows')
@@ -663,12 +682,17 @@ def process_factory(asgi_server):
         'granian': _granian_factory,
         'hypercorn': _hypercorn_factory,
         'uvicorn': _uvicorn_factory,
+        'gunicorn': _gunicorn_factory,
     }
     return servers[asgi_server]
 
 
 @pytest.fixture()
 def server_base_url(requests, process_factory):
+
+    if process_factory.__name__ == "_gunicorn_factory" and sys.platform == "win32":
+        pytest.skip("Gunicorn not supported on Windows")
+
     for i in range(3):
         server_port = testing.get_unused_port()
         base_url = f'http://{_SERVER_HOST}:{server_port}/'
