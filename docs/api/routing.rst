@@ -250,7 +250,7 @@ but only if it has exactly eight digits::
 
     /teams/{tid:int(8)}
 
-If the value is malformed and can not be converted, Falcon will reject
+If the value is malformed and cannot be converted, Falcon will reject
 the request with a 404 response to the client.
 
 Converters are instantiated with the argument specification given in the

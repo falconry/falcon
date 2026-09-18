@@ -1112,7 +1112,7 @@ Try executing the following:
     $ http localhost:8000/images/db79e518-c8d3-4a87-93fe-38b620f9d410.png
 
 In response, you should get a ``404 Not Found``. This is the default
-response given by Falcon when it can not find a resource that matches
+response given by Falcon when it cannot find a resource that matches
 the requested URL path.
 
 Let's address this by creating a separate class to represent a single

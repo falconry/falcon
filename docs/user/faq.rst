@@ -520,7 +520,7 @@ contextual information around:
 
 How can I write a custom handler for 404 and 500 pages in falcon?
 ------------------------------------------------------------------
-When a route can not be found for an incoming request, Falcon uses a default
+When a route cannot be found for an incoming request, Falcon uses a default
 responder that simply raises an instance of :class:`~.HTTPRouteNotFound`, which
 the framework will in turn render as a 404 response. You can use
 :meth:`falcon.App.add_error_handler` to override the default handler for this
