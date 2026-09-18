@@ -1,6 +1,7 @@
 import asyncio
 from collections import Counter
 import hashlib
+import pathlib
 import platform
 import sys
 import time
@@ -9,6 +10,9 @@ import falcon
 import falcon.asgi
 import falcon.errors
 import falcon.util
+
+HERE = pathlib.Path(__file__).resolve().parent
+FALCON_ROOT = HERE.parent.parent
 
 SSE_TEST_MAX_DELAY_SEC = 1
 _WIN32 = sys.platform.startswith('win')
@@ -300,6 +304,8 @@ def create_app():
     app.add_route('/jars', TestJar())
     app.add_route('/feeds/{feed_id}', Feed())
     app.add_route('/wsoptions', WSOptions(app.ws_options))
+
+    app.add_static_route('/static', FALCON_ROOT, downloadable=True)
 
     app.add_middleware(lifespan_handler)
 
