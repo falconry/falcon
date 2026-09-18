@@ -517,9 +517,9 @@ class App(Generic[_ReqT, _RespT]):
             # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
 
             # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
-            # RFC 2616, as commented in that module's source code. The
-            # presence of the Content-Length header is not similarly
-            # enforced.
+            # RFC 2616 (superseded by RFC 9110), as commented in that module's
+            # source code. The presence of the Content-Length header is not
+            # similarly enforced.
             if resp_status in _TYPELESS_STATUS_CODES:
                 default_media_type = None
             elif (

@@ -8,7 +8,7 @@ import falcon
 import falcon.constants
 import falcon.testing as testing
 
-# RFC 7231, 5789 methods
+# RFC 9110, 5789 methods
 HTTP_METHODS = [
     'CONNECT',
     'DELETE',
