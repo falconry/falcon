@@ -816,36 +816,37 @@ class TestQueryParams:
         # There are three 'cat' keys; order is preserved.
         assert req.get_param_as_list('cat') == ['6', '5', '4']
 
-    def test_single_param(self, simulate_request, client, resource):
+    def test_allow_multiple(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         query_string = 'ant=1&bee=3&cat=6&cat=5'
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
         store = {}
-        assert req.get_param('ant', single=True) == '1'
-        assert req.get_param('bee', store=store, single=True) == '3'
+        assert req.get_param('ant', allow_multiple=True) == '1'
+        assert req.get_param('bee', store=store, allow_multiple=True) == '3'
         assert store == {'bee': '3'}
-        assert req.get_param('ant', required=True, single=True) == '1'
+        assert req.get_param('ant', required=True, allow_multiple=True) == '1'
         # A repeated key is refused instead of being guessed; see the next test.
         with pytest.raises(HTTPInvalidParam):
-            req.get_param('cat', single=True)
+            req.get_param('cat', allow_multiple=False)
 
-    def test_single_param_not_found(self, simulate_request, client, resource):
+    def test_allow_multiple_not_found(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         query_string = 'ant=1'
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
         store = {}
-        assert req.get_param('bee', single=True) is None
-        assert req.get_param('bee', store=store, single=True) is None
-        assert req.get_param('bee', default='3', single=True) == '3'
+        # NOTE(vytas): The param is absent, so allow_multiple has no effect.
+        assert req.get_param('bee', allow_multiple=False) is None
+        assert req.get_param('bee', store=store, allow_multiple=False) is None
+        assert req.get_param('bee', default='3', allow_multiple=False) == '3'
         assert not store
         with pytest.raises(HTTPMissingParam):
-            req.get_param('bee', required=True, single=True)
+            req.get_param('bee', required=True, allow_multiple=False)
 
-    def test_single_param_rejects_repeated_keys(
+    def test_allow_multiple_rejects_repeated_keys(
         self, simulate_request, client, resource
     ):
         client.app.add_route('/', resource)
@@ -858,9 +859,46 @@ class TestQueryParams:
             # which one (see .test_multiple_form_keys).
             assert req.get_param(name) in values
             with pytest.raises(HTTPInvalidParam):
-                req.get_param(name, single=True)
+                req.get_param(name, allow_multiple=False)
 
-    def test_single_param_rejects_csv_when_enabled(
+    @pytest.mark.parametrize(
+        'method_name, value, expected',
+        [
+            ('get_param', '42', '42'),
+            ('get_param_as_int', '42', 42),
+            ('get_param_as_float', '4.2', 4.2),
+            ('get_param_as_bool', 'true', True),
+            (
+                'get_param_as_uuid',
+                '64be949b-3433-4d36-a4a8-9f19d352fee8',
+                UUID('64be949b-3433-4d36-a4a8-9f19d352fee8'),
+            ),
+            (
+                'get_param_as_datetime',
+                '2015-04-20T10:10:10Z',
+                datetime(2015, 4, 20, 10, 10, 10, tzinfo=timezone.utc),
+            ),
+            ('get_param_as_date', '2015-04-20', date(2015, 4, 20)),
+            ('get_param_as_json', '[1,2]', [1, 2]),
+            ('get_param_as_media', '{"foo":"bar"}', {'foo': 'bar'}),
+        ],
+    )
+    def test_allow_multiple_other_helpers(
+        self, simulate_request, client, resource, method_name, value, expected
+    ):
+        client.app.add_route('/', resource)
+        # NOTE(vytas): Identical values still count as multiple values.
+        query_string = f'ant={value}&ant={value}'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        get_param = getattr(req, method_name)
+        # By default, one of the values is returned, but it is undefined which.
+        assert get_param('ant') == expected
+        with pytest.raises(HTTPInvalidParam):
+            get_param('ant', allow_multiple=False)
+
+    def test_allow_multiple_rejects_csv_when_enabled(
         self, simulate_request, client, resource
     ):
         client.app.add_route('/', resource)
@@ -872,12 +910,12 @@ class TestQueryParams:
         # A comma-separated value is a list of values as well in this mode.
         assert req.get_param_as_list('ant') == ['1', '2']
         with pytest.raises(HTTPInvalidParam):
-            req.get_param('ant', single=True)
+            req.get_param('ant', allow_multiple=False)
 
-    def test_single_param_error_response(self, client):
+    def test_allow_multiple_error_response(self, client):
         class Resource:
             def on_get(self, req, resp):
-                resp.text = req.get_param('ant', single=True)
+                resp.text = req.get_param('ant', allow_multiple=False)
 
         client.app.add_route('/', Resource())
 
@@ -888,6 +926,9 @@ class TestQueryParams:
         response = client.simulate_get('/', query_string='ant=1&ant=2')
         assert response.status_code == 400
         assert response.json['title'] == 'Invalid parameter'
+        assert response.json['description'] == (
+            'The "ant" parameter is invalid. It may not have more than one value.'
+        )
 
     def test_get_date_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)

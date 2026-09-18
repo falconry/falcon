@@ -1,0 +1,14 @@
+The query string parameter helpers (:meth:`~falcon.Request.get_param`,
+:meth:`~falcon.Request.get_param_as_bool`,
+:meth:`~falcon.Request.get_param_as_date`,
+:meth:`~falcon.Request.get_param_as_datetime`,
+:meth:`~falcon.Request.get_param_as_float`,
+:meth:`~falcon.Request.get_param_as_int`,
+:meth:`~falcon.Request.get_param_as_json`,
+:meth:`~falcon.Request.get_param_as_media`, and
+:meth:`~falcon.Request.get_param_as_uuid`) gained an optional `allow_multiple`
+keyword argument. When it is set to ``False`` and the parameter resolves to more
+than one value -- e.g., it was included in the query string several times, or
+:attr:`~falcon.RequestOptions.auto_parse_qs_csv` is enabled and its value is a
+comma-separated list --, an :class:`~falcon.HTTPInvalidParam` error is raised
+instead of returning an arbitrary one of those values (default ``True``).
