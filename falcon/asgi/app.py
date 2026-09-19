@@ -1413,13 +1413,10 @@ class App(falcon.app.App[_ReqT, _RespT]):
             bool: ``True`` if a handler was found and called for the
             exception, ``False`` otherwise.
         """
+        derived_ex: HTTPError | HTTPStatus | None = None
+
         try:
             err_handler = self._find_error_handler(ex)
-
-            # PERF(vytas): Only call the reporter if a third party one is
-            #   installed (instead having a default catch-all method).
-            if self._report_error is not None:
-                self._report_error(req, ex, params, err_handler is not None)
 
             if err_handler is None:
                 # NOTE(kgriffs): No error handlers are defined for ex and it is
@@ -1428,11 +1425,16 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 # NOTE(vytas): It is hard to hit this path in Falcon 3.0+
                 #   without manipulating the app's private variables, as we
                 #   always install an Exception handler.
+
+                # PERF(vytas): Here and below: only call the reporter if one is
+                #   installed (instead having a default catch-all method).
+                if self._report_error is not None:
+                    self._report_error(req, ex, params, False)
+
                 return False
 
-            if resp:
-                # NOTE(caselit): Reset body, data and media before calling the
-                #   handler.
+            if resp is not None:
+                # NOTE(caselit): Reset body, data and media before calling the handler.
                 resp.text = resp.data = resp.media = None
 
             try:
@@ -1447,31 +1449,39 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 await err_handler(req, resp, ex, params, **kwargs)
 
             except HTTPStatus as status:
-                if self._report_error is not None:
-                    self._report_error(req, status, params, True)
+                derived_ex = status
                 await self._http_status_handler(req, resp, status, params, ws=ws)
             except HTTPError as error:
-                if self._report_error is not None:
-                    self._report_error(req, error, params, True)
+                derived_ex = error
                 await self._http_error_handler(req, resp, error, params, ws=ws)
+
+            # NOTE(vytas): Exceptions are reported in the order they were
+            #   raised: first the original error, then the derived
+            #   HTTPError/HTTPStatus, if any.
+            # NOTE(vytas): Do not report ex twice if the handler opted to
+            #   reraise the same HTTPError/HTTPStatus that is being handled.
+            if self._report_error is not None:
+                self._report_error(req, ex, params, True)
+                if derived_ex is not None and derived_ex is not ex:
+                    self._report_error(req, derived_ex, params, True)
 
             return True
 
         except Exception as handler_ex:
-            if handler_ex is ex:
-                # NOTE(vytas): The handler opted to reraise the same exception;
-                #   we assume that it is preferred to handle errors outside of
-                #   the Falcon app (as Hug used to do).
-                #   (And the same ex object has already been reported.)
-                raise
-
-            # PERF(vytas): Only call the reporter if a third party one is
-            #   installed (instead having a default catch-all method).
+            # NOTE: If the handler opted to reraise the same exception, we
+            #   assume that it is preferred to handle errors outside of the
+            #   Falcon app (e.g., in a higher level framework).
+            #   Either way, no response was rendered for any of the exceptions
+            #   below, so they are all reported as unhandled.
             if self._report_error is not None:
-                self._report_error(req, handler_ex, params, False)
+                self._report_error(req, ex, params, False)
+                if derived_ex is not None:
+                    self._report_error(req, derived_ex, params, False)
+                if handler_ex is not ex:
+                    self._report_error(req, handler_ex, params, False)
 
             # NOTE(vytas): Reraise the handler/serializer exception here since
-            #   (1) the original ex has already been reported as handled=True, and
+            #   (1) the exceptions have already been reported above, and
             #   (2) it is consistent with the previous framework versions.
             raise
 
