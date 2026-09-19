@@ -1,0 +1,1 @@
+Enabled Sphinx ``nitpicky`` mode with a small, categorized ``nitpick_ignore`` for stale changelog and typing references.

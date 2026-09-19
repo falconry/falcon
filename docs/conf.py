@@ -116,6 +116,114 @@ myst_enable_checkboxes = True
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
+# NOTE(SatvikMishra08): Emit warnings for unresolved references (#1888). Keep
+#   nitpick_ignore(_regex) categorized — prefer fixing live docs over growing
+#   a catch-all. Historical changelog links to removed APIs are ignored below.
+nitpicky = True
+
+nitpick_ignore = [
+    # Type aliases noted in the autodoc_type_aliases TODO above
+    ('py:class', 'SyncMiddleware'),
+    ('py:class', 'AsyncMiddleware'),
+    ('py:class', 'PreparedMiddlewareResult'),
+    ('py:class', 'AsyncPreparedMiddlewareResult'),
+    ('py:class', 'AsyncPreparedMiddlewareWsResult'),
+    # Removed / renamed names still linked from historical changelogs (and a
+    # few live docs that still use legacy cross-ref spellings)
+    ('py:attr', 'Response.body_encoded'),
+    ('py:attr', 'Response.content_range'),
+    ('py:attr', 'Response.stream'),
+    ('py:attr', 'Request.media'),
+    ('py:attr', 'falcon.HTTPError.has_representation'),
+    ('py:attr', 'falcon.HTTPStatus.body'),
+    ('py:attr', 'falcon.HTTP_204'),
+    ('py:attr', 'falcon.HTTP_NO_CONTENT'),
+    ('py:attr', 'falcon.Response.body'),
+    ('py:attr', 'falcon.DEFAULT_MEDIA_TYPE'),
+    ('py:attr', 'falcon.MEDIA_MSGPACK'),
+    ('py:attr', 'six.PY2'),
+    ('py:attr', 'falcon.asgi.App.req_options'),
+    ('py:attr', 'falcon.asgi.App.resp_options'),
+    ('py:attr', 'falcon.asgi.App.router_options'),
+    ('py:attr', 'falcon.media.MultipartFormHandler.parse_options'),
+    ('py:class', 'API'),
+    ('py:class', 'NoRepresentation'),
+    ('py:class', 'Request'),
+    ('py:class', 'Resource'),
+    ('py:class', 'AsgiRequest'),
+    ('py:class', 'AsgiResponse'),
+    ('py:class', 'AsgiResponderCallable'),
+    ('py:class', 'ResponderCallable'),
+    ('py:class', 'ResponseStatus'),
+    ('py:class', 'RetryAfter'),
+    ('py:class', 'HeaderArg'),
+    ('py:class', 'Link'),
+    ('py:class', 'SSEvent'),
+    ('py:class', 'MethodDict'),
+    ('py:class', 'HTTPErrorKeywordArguments'),
+    ('py:class', 'MultipartFormHandler'),
+    ('py:class', 'BufferedReader'),
+    ('py:class', 'PyBufferedReader'),
+    ('py:class', '.CORSMiddleware'),
+    ('py:class', 'falcon.CaseInsensitiveDict'),
+    ('py:class', 'falcon.HTTPPayloadTooLarge'),
+    ('py:class', 'falcon.WebSocketPayloadType'),
+    ('py:class', 'falcon.constants.WebSocketPayloadType'),
+    ('py:class', 'falcon.http_error.NoRepresentation'),
+    ('py:class', 'falcon.http_error.OptionalRepresentation'),
+    ('py:class', 'falcon.testing.TestBase'),
+    ('py:class', 'falcon.routing.compiled.ConverterDict'),
+    ('py:class', 'falcon.util.sync.Result'),
+    ('py:class', 'collections.MutableMapping'),
+    ('py:class', 'testtools.TestCase'),
+    ('py:class', '_Traversable'),
+    ('py:class', 'falcon.inspect._Traversable'),
+    ('py:data', 'falcon.DEFAULT_MEDIA_TYPE'),
+    ('py:data', 'falcon.MEDIA_JSON'),
+    ('py:data', 'MultipartParseOptions.default_charset'),
+    ('py:exc', 'HttpInvalidHeader'),
+    ('py:func', 'falcon.create_task'),
+    ('py:func', 'falcon.deprecated'),
+    ('py:func', 'falcon.get_http_status'),
+    ('py:func', 'falcon.get_running_loop'),
+    ('py:func', 'falcon.routing.compile_uri_template'),
+    ('py:meth', 'Request.get_media'),
+    ('py:meth', 'Request.get_param'),
+    ('py:meth', 'process_resource'),
+    ('py:meth', 'uri.decode'),
+    ('py:meth', 'falcon.get_http_status'),
+    ('py:meth', 'falcon.media.Handlers.find_by_media_type'),
+    ('py:meth', 'falcon.routing.compile_uri_template'),
+    ('py:meth', 'falcon.routing.create_http_method_map'),
+    ('py:meth', 'falcon.routing.util.map_http_methods'),
+    ('py:meth', 'functools.partial'),
+    ('py:meth', 'functools.wraps'),
+    ('py:meth', 'inspect.getargspec'),
+    ('py:meth', 'inspect.signature'),
+    ('py:meth', 'asyncio.AbstractEventLoop.set_default_executor'),
+    ('py:mod', 'msgpack'),
+    ('py:mod', 'python-mimeparse'),
+    ('py:mod', 'six'),
+    ('py:mod', 'testtools'),
+]
+
+# Pattern-based ignores for typing noise Sphinx cannot resolve cleanly.
+nitpick_ignore_regex = [
+    (r'py:class', r'falcon\._typing\..+'),
+    (r'py:class', r'falcon\.request\._T'),
+    (r'py:class', r'falcon\.testing\.(client|helpers)\._.+'),
+    (r'py:class', r'^_(ReqT|RespT|AReqT|ARespT|R)$'),
+    (r'py:class', r'.*\[.*'),  # truncated autodoc generics
+    (
+        r'py:class',
+        r'^(callable|iterable|iterator|optional|types|instance|func|function|'
+        r'any|awaitable|datetime|io|UUID|this|_asyncio\.Task|'
+        r'asyncio\.locks\.Condition|JSON serializable|'
+        r'MessagePack serializable|Returns the "host)$',
+    ),
+]
+
+
 # NOTE(vytas): The autodoc_type_aliases mapping below doesn't really work as
 #   advertised...
 #   Sphinx is looking for the mapped types defined as classes, however, typing
@@ -130,8 +238,6 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 #
 #   See also https://github.com/sphinx-doc/sphinx/issues/10785 & related issues
 #   for discussion and potentially better workarounds.
-# TODO(vytas): If we enable the "nitpicky" mode, we will have to add exceptions
-#   for all unresolved aliases.
 autodoc_type_aliases = {
     'SyncMiddleware': 'SyncMiddleware',
     'AsyncMiddleware': 'AsyncMiddleware',
