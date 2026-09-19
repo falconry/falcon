@@ -1427,7 +1427,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 #   always install an Exception handler.
 
                 # PERF(vytas): Here and below: only call the reporter if one is
-                #   installed (instead having a default catch-all method).
+                #   installed (instead of having a default catch-all method).
                 if self._report_error is not None:
                     self._report_error(req, ex, params, False)
 
