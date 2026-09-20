@@ -1060,24 +1060,31 @@ class App(Generic[_ReqT, _RespT]):
         custom error handler has been registered for the exception type in
         question (see also: :meth:`~.add_error_handler`).
 
-        Setting a reporter does not change how exceptions are handled. The
-        reporter is called in the following cases:
+        Setting a reporter does not change how exceptions are handled.
+        The reporter is called in the following cases:
 
         * An exception is raised while routing, processing the request, or
           rendering the response body (for instance, while serializing
           :attr:`~falcon.Response.media`).
-          The exception is reported *before* the matching error handler is
-          invoked. If the handler opts to reraise the same exception object,
-          that exception is not reported again.
+          If an error handler opts to reraise the same exception object, in
+          order to handle it outside of the Falcon app, the exception is
+          reported as unhandled once.
         * An error handler raises an instance of :class:`~.HTTPError` or
-          :class:`~.HTTPStatus`, which is then reported as handled.
+          :class:`~.HTTPStatus`. Both the original exception and the raised
+          instance are reported as handled, in that order.
         * An error handler (or the error
           :meth:`serializer <falcon.App.set_error_serializer>`) raises any other
-          exception. Such an exception is reported as unhandled, and it is
-          propagated to the application server.
+          exception. The original exception, the derived :class:`~.HTTPError`
+          or :class:`~.HTTPStatus` (if any), and the new exception are all
+          reported as unhandled, and the latter is propagated to the
+          application server.
         * The response cannot be started, for instance, due to an invalid
           status or header value. The exception is reported as unhandled, and
           it is propagated to the application server.
+
+        Note:
+            Since reports are emitted per exception rather than per request,
+            a single request may yield more than one report.
 
         At the time of writing, exceptions raised while streaming the response
         body (e.g., when iterating over :attr:`~falcon.Response.stream`) are
@@ -1116,7 +1123,9 @@ class App(Generic[_ReqT, _RespT]):
             network I/O (for instance, by handing the report off to an SDK
             that submits it in the background).
 
-            The reporter itself should not raise any exceptions.
+            The reporter itself must not raise any exceptions; if it does,
+            the behavior is undefined. Any fallible logic should be guarded
+            inside the reporter.
 
         Args:
             reporter (callable): A function or callable object taking the form
@@ -1125,8 +1134,8 @@ class App(Generic[_ReqT, _RespT]):
                 `params` is a dictionary of the responder's URI template field
                 values (empty if the error was raised before routing), and
                 `handled` is a boolean flag indicating whether the exception
-                is going to be processed by an error
-                :meth:`handler <falcon.App.add_error_handler>`.
+                was rendered into an HTTP response (as opposed to being
+                propagated to the application server).
 
         .. versionadded:: 4.4
         """
@@ -1361,13 +1370,10 @@ class App(Generic[_ReqT, _RespT]):
             bool: ``True`` if a handler was found and called for the
             exception, ``False`` otherwise.
         """
+        derived_ex: HTTPError | HTTPStatus | None = None
+
         try:
             err_handler = self._find_error_handler(ex)
-
-            # PERF(vytas): Only call the reporter if a third party one is
-            #   installed (instead having a default catch-all method).
-            if self._report_error is not None:
-                self._report_error(req, ex, params, err_handler is not None)
 
             if err_handler is None:
                 # NOTE(kgriffs): No error handlers are defined for ex and it is
@@ -1376,6 +1382,12 @@ class App(Generic[_ReqT, _RespT]):
                 # NOTE(vytas): It is hard to hit this path in Falcon 3.0+
                 #   without manipulating the app's private variables, as we
                 #   always install an Exception handler.
+
+                # PERF(vytas): Here and below: only call the reporter if one is
+                #   installed (instead of having a default catch-all method).
+                if self._report_error is not None:
+                    self._report_error(req, ex, params, False)
+
                 return False
 
             # NOTE(caselit): Reset body, data and media before calling the handler.
@@ -1384,31 +1396,39 @@ class App(Generic[_ReqT, _RespT]):
             try:
                 err_handler(req, resp, ex, params)
             except HTTPStatus as status:
-                if self._report_error is not None:
-                    self._report_error(req, status, params, True)
+                derived_ex = status
                 self._compose_status_response(req, resp, status)
             except HTTPError as error:
-                if self._report_error is not None:
-                    self._report_error(req, error, params, True)
+                derived_ex = error
                 self._compose_error_response(req, resp, error)
+
+            # NOTE(vytas): Exceptions are reported in the order they were
+            #   raised: first the original error, then the derived
+            #   HTTPError/HTTPStatus, if any.
+            # NOTE(vytas): Do not report ex twice if the handler opted to
+            #   reraise the same HTTPError/HTTPStatus that is being handled.
+            if self._report_error is not None:
+                self._report_error(req, ex, params, True)
+                if derived_ex is not None and derived_ex is not ex:
+                    self._report_error(req, derived_ex, params, True)
 
             return True
 
         except Exception as handler_ex:
-            if handler_ex is ex:
-                # NOTE(vytas): The handler opted to reraise the same exception;
-                #   we assume that it is preferred to handle errors outside of
-                #   the Falcon app (as Hug used to do).
-                #   (And the same ex object has already been reported.)
-                raise
-
-            # PERF(vytas): Only call the reporter if a third party one is
-            #   installed (instead having a default catch-all method).
+            # NOTE(vytas): If the handler opted to reraise the same exception,
+            #   we assume that it is preferred to handle errors outside of the
+            #   Falcon app (e.g., in a higher level framework).
+            #   Either way, no response was rendered for any of the exceptions
+            #   below, so they are all reported as unhandled.
             if self._report_error is not None:
-                self._report_error(req, handler_ex, params, False)
+                self._report_error(req, ex, params, False)
+                if derived_ex is not None:
+                    self._report_error(req, derived_ex, params, False)
+                if handler_ex is not ex:
+                    self._report_error(req, handler_ex, params, False)
 
             # NOTE(vytas): Reraise the handler/serializer exception here since
-            #   (1) the original ex has already been reported as handled=True, and
+            #   (1) the exceptions have already been reported above, and
             #   (2) it is consistent with the previous framework versions.
             raise
 

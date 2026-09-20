@@ -68,9 +68,8 @@ def client(reporter):
 
 @pytest.fixture()
 def wsgierrors():
-    # NOTE(vytas): Falcon does not log the exceptions it leaves for the WSGI
-    #   app server to handle (and log); this stream captures whatever the
-    #   framework logs, so that we can assert it stayed empty.
+    # NOTE(vytas): Falcon does not log the exceptions it bubbles up to the app
+    #   server; this stream is used to check what the framework logged itself.
     #   (wsgierrors is unused with ASGI, but passing it is harmless.)
     return io.StringIO()
 
@@ -94,8 +93,8 @@ def test_report_http_status(client, reporter):
 
 
 def test_handler_not_found(client, reporter):
-    # NOTE(vytas): Normally, there is no way to remove the default exception
-    #   handler, so we have to operate on a private variable.
+    # NOTE(vytas): Normally, there is no straightforward way to remove the
+    #   default Exception handler, so we have to operate on a private variable.
     client.app._error_handlers.pop(Exception)
 
     with pytest.raises(ZeroDivisionError):
@@ -113,7 +112,18 @@ def test_handler_reraises(asgi, client, reporter):
     with pytest.raises(ZeroDivisionError):
         client.get('/inverse/0.0')
 
-    assert reporter.log == [(ZeroDivisionError, True)]
+    assert reporter.log == [(ZeroDivisionError, False)]
+
+
+def test_handler_reraises_http_error(asgi, client, reporter):
+    def bubble_up(req, resp, ex, params):
+        raise
+
+    client.app.add_error_handler(falcon.HTTPError, _error_handler(asgi, bubble_up))
+
+    resp = client.get('/404')
+    assert resp.status_code == 404
+    assert reporter.log == [(falcon.HTTPRouteNotFound, True)]
 
 
 def test_handler_raises_http_status(asgi, client, reporter):
@@ -169,9 +179,49 @@ def test_handler_raises_exception(asgi, util, reporter, wsgierrors, set_reporter
         falcon.testing.simulate_get(app, '/inverse', wsgierrors=wsgierrors)
 
     assert reporter.log == (
-        [(ZeroDivisionError, True), (RuntimeError, False)] if set_reporter else []
+        [(ZeroDivisionError, False), (RuntimeError, False)] if set_reporter else []
     )
     # NOTE(vytas): The RuntimeError is left for the app server to handle.
+    assert wsgierrors.getvalue() == ''
+
+
+@pytest.mark.parametrize('set_reporter', (True, False))
+def test_serializer_raises(asgi, util, reporter, wsgierrors, set_reporter):
+    class Inverse:
+        def on_get(self, req, resp):
+            1 / 0
+
+    class InverseAsync:
+        async def on_get(self, req, resp):
+            1 / 0
+
+    def handle_zero_division(req, resp, ex, params):
+        raise falcon.HTTPUnprocessableEntity(description=str(ex))
+
+    def serialize_error(req, resp, exception):
+        raise RuntimeError('serializer error')
+
+    app = util.create_app(asgi)
+    app.add_route('/inverse', InverseAsync() if asgi else Inverse())
+    app.add_error_handler(ZeroDivisionError, _error_handler(asgi, handle_zero_division))
+    app.set_error_serializer(serialize_error)
+    if set_reporter:
+        app.set_error_reporter(reporter.report)
+
+    with pytest.raises(RuntimeError):
+        falcon.testing.simulate_get(app, '/inverse', wsgierrors=wsgierrors)
+
+    # NOTE(vytas): Every exception is reported exactly once: the original
+    #   error, the derived HTTPError, and the error from the serializer itself.
+    assert reporter.log == (
+        [
+            (ZeroDivisionError, False),
+            (falcon.HTTPUnprocessableEntity, False),
+            (RuntimeError, False),
+        ]
+        if set_reporter
+        else []
+    )
     assert wsgierrors.getvalue() == ''
 
 
