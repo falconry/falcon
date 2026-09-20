@@ -1468,8 +1468,8 @@ class App(falcon.app.App[_ReqT, _RespT]):
             return True
 
         except Exception as handler_ex:
-            # NOTE: If the handler opted to reraise the same exception, we
-            #   assume that it is preferred to handle errors outside of the
+            # NOTE(vytas): If the handler opted to reraise the same exception,
+            #   we assume that it is preferred to handle errors outside of the
             #   Falcon app (e.g., in a higher level framework).
             #   Either way, no response was rendered for any of the exceptions
             #   below, so they are all reported as unhandled.
