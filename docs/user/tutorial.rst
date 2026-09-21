@@ -21,7 +21,7 @@ First Steps
 
 The first thing we'll do is :ref:`install <install>` Falcon
 inside a fresh
-`virtualenv <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
+`virtualenv <https://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 To that end, let's create a new project folder called "look", and set
 up a virtual environment within it that we can use for the tutorial:
 
@@ -74,10 +74,10 @@ in the next section of the tutorial).
 .. note::
     A WSGI application is just a callable with a well-defined signature so that
     you can host the application with any web server that understands the `WSGI
-    protocol <http://legacy.python.org/dev/peps/pep-3333/>`_.
+    protocol <https://peps.python.org/pep-3333/>`_.
 
 Next let's take a look at the :class:`falcon.App` class. Install
-`IPython <http://ipython.org/>`_ and fire it up:
+`IPython <https://ipython.org/>`_ and fire it up:
 
 .. code:: bash
 
@@ -107,10 +107,10 @@ can query using the above technique.
 
 .. tip::
 
-    In addition to `IPython <http://ipython.org/>`_, the Python
+    In addition to `IPython <https://ipython.org/>`_, the Python
     community maintains several other super-powered REPLs
     that you may wish to try, including
-    `bpython <http://bpython-interpreter.org/>`_
+    `bpython <https://bpython-interpreter.org/>`_
     and
     `ptpython <https://github.com/jonathanslenders/ptpython>`_.
 
@@ -279,7 +279,7 @@ Right now, the image resource responds to GET requests with a simple
 ``200 OK`` and a JSON body. Falcon's Internet media type defaults to
 ``application/json`` but you can set it to whatever you like.
 Noteworthy JSON alternatives include
-`YAML <http://yaml.org/>`_ and `MessagePack <http://msgpack.org/>`_.
+`YAML <https://yaml.org/>`_ and `MessagePack <https://msgpack.org/>`_.
 
 Next let's wire up this resource and see it in action. Go back to
 ``app.py`` and modify it so that it looks something like this:
@@ -372,7 +372,7 @@ list of allowable methods.
       application to application.
 
 Next, just for fun, let's modify our resource to use
-`MessagePack <http://msgpack.org/>`_ instead of JSON. Start by
+`MessagePack <https://msgpack.org/>`_ instead of JSON. Start by
 installing the relevant package:
 
 .. code:: bash
@@ -450,13 +450,13 @@ simulating HTTP requests.
 
 Tests can either be written using Python's standard :mod:`unittest`
 module, or with any of a number of third-party testing
-frameworks, such as `pytest <http://docs.pytest.org/en/latest/>`_. For
-this tutorial we'll use `pytest <http://docs.pytest.org/en/latest/>`_
+frameworks, such as `pytest <https://docs.pytest.org/>`_. For
+this tutorial we'll use `pytest <https://docs.pytest.org/>`_
 since it allows for more pythonic test code as compared to the
 JUnit-inspired :mod:`unittest` module.
 
 Let's start by installing the
-`pytest <http://docs.pytest.org/en/latest/>`_ package:
+`pytest <https://docs.pytest.org/>`_ package:
 
 .. code:: bash
 
@@ -541,7 +541,7 @@ and then code until the tests tell us that we're done.
 .. note::
     To learn more about TDD, you may wish to check out one of the many
     books on the topic, such as
-    `Test Driven Development with Python <http://www.obeythetestinggoat.com/pages/book.html>`_.
+    `Test Driven Development with Python <https://www.obeythetestinggoat.com/pages/book.html>`_.
     The examples in this particular book use the Django framework and
     even JavaScript, but the author covers a number of testing
     principles that are widely applicable.
@@ -1700,8 +1700,8 @@ work through sticky problems. See also: :ref:`Getting Help <help>`.
 
 As mentioned previously, Falcon's docstrings are quite extensive, and so you
 can learn a lot just by poking around Falcon's modules from a Python REPL,
-such as `IPython <http://ipython.org/>`_ or
-`bpython <http://bpython-interpreter.org/>`_.
+such as `IPython <https://ipython.org/>`_ or
+`bpython <https://bpython-interpreter.org/>`_.
 
 Also, don't be shy about pulling up Falcon's source code on GitHub or in your
 favorite text editor. The team has tried to make the code as straightforward

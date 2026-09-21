@@ -483,7 +483,7 @@ class Response:
                 it contains non-ASCII characters).
 
         .. _RFC 6265:
-            http://tools.ietf.org/html/rfc6265
+            https://tools.ietf.org/html/rfc6265
 
         .. _Same-Site RFC Draft:
             https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7
@@ -900,7 +900,7 @@ class Response:
                 "bookmark".
 
                 (See also:
-                http://www.iana.org/assignments/link-relations/link-relations.xhtml)
+                https://www.iana.org/assignments/link-relations/link-relations.xhtml)
 
         Keyword Args:
             title (str): Human-readable label for the destination of

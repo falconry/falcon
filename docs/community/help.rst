@@ -48,13 +48,10 @@ Pay it Forward
 We'd like to invite you to help other community members with their
 questions in `falconry/user
 <https://gitter.im/falconry/user>`_, and to help peer-review
-`pull requests <https://github.com/falconry/falcon/pulls>`_. If you use the
-Chrome browser, we recommend installing the
-`NotHub extension <http://nothub.org/>`_ to stay up to date with PRs.
+`pull requests <https://github.com/falconry/falcon/pulls>`_.
 
 If you would like to contribute a new feature or fix a bug in the
-framework, please check out our
-`Contributor's Guide <https://github.com/falconry/falcon/blob/master/CONTRIBUTING.md>`_
+framework, please check out our :ref:`Contributor's Guide <contribute>`
 for more information.
 
 We'd love to have your help!
