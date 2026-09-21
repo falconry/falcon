@@ -1,0 +1,5 @@
+A new :class:`~falcon.App` method, :meth:`~falcon.App.set_error_reporter`,
+was added for observing all exceptions raised while processing requests
+(for instance, in order to log them, or to submit them to an error tracking or
+observability service).
+Error reporters are supported by both WSGI and ASGI applications.

@@ -108,6 +108,13 @@ class AsgiErrorHandler(Protocol[_AReqT, _ARespT]):
     ) -> None: ...
 
 
+# Error reporters
+class ErrorReporter(Protocol[_ReqT]):
+    def __call__(
+        self, req: _ReqT, error: Exception, params: dict[str, Any], handled: bool
+    ) -> None: ...
+
+
 # Error serializers
 ErrorSerializer = Callable[[_ReqT, _RespT, 'HTTPError'], None]
 

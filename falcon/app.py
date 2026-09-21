@@ -44,6 +44,7 @@ from falcon._typing import _RespT
 from falcon._typing import AsgiResponderCallable
 from falcon._typing import AsgiResponderWsCallable
 from falcon._typing import ErrorHandler
+from falcon._typing import ErrorReporter
 from falcon._typing import ErrorSerializer
 from falcon._typing import FindMethod
 from falcon._typing import ProcessResponseMethod
@@ -243,6 +244,7 @@ class App(Generic[_ReqT, _RespT]):
         '_error_handlers',
         '_independent_middleware',
         '_middleware',
+        '_report_error',
         '_request_type',
         '_response_type',
         '_router_search',
@@ -261,6 +263,7 @@ class App(Generic[_ReqT, _RespT]):
     _error_handlers: dict[type[Exception], ErrorHandler[_ReqT, _RespT]]
     _independent_middleware: bool
     _middleware: helpers.PreparedMiddlewareResult
+    _report_error: ErrorReporter[_ReqT] | None
     _request_type: type[_ReqT]
     _response_type: type[_RespT]
     _router_search: FindMethod
@@ -387,6 +390,7 @@ class App(Generic[_ReqT, _RespT]):
         self._response_type = response_type or Response  # type: ignore[assignment]
 
         self._error_handlers = {}
+        self._report_error = None
         self._serialize_error = helpers.default_serialize_error
 
         self.req_options = RequestOptions()
@@ -417,6 +421,8 @@ class App(Generic[_ReqT, _RespT]):
                 status and headers on a response.
 
         """
+        # TODO(vytas): Enclose this block (until the next try) in try.. except
+        #   once we have OpenTelemetry integration in place.
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
         resource: object | None = None
@@ -495,8 +501,8 @@ class App(Generic[_ReqT, _RespT]):
 
                 req_succeeded = False
 
-        body: Iterable[bytes] = []
-        length: int | None = 0
+        body: Iterable[bytes]
+        length: int | None
 
         try:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
@@ -504,52 +510,62 @@ class App(Generic[_ReqT, _RespT]):
             if not self._handle_exception(req, resp, ex, params):
                 raise
 
+            # PERF(vytas): Initialize body & length only here, because
+            #   otherwise these are already set from self._get_body(...).
+            body = []
+            length = 0
             req_succeeded = False
 
-        resp_status: str = code_to_http_status(resp.status)
-        default_media_type: str | None = self.resp_options.default_media_type
+        try:
+            resp_status: str = code_to_http_status(resp.status)
+            default_media_type: str | None = self.resp_options.default_media_type
 
-        if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
-            body = []
+            if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
+                body = []
 
-            # PERF(vytas): move check for the less common and much faster path
-            # of resp_status being in {204, 304} here; NB: this builds on the
-            # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
+                # PERF(vytas): move check for the less common and much faster path
+                # of resp_status being in {204, 304} here; NB: this builds on the
+                # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
 
-            # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
-            # RFC 2616, as commented in that module's source code. The
-            # presence of the Content-Length header is not similarly
-            # enforced.
-            if resp_status in _TYPELESS_STATUS_CODES:
-                default_media_type = None
-            elif (
-                length is not None
-                and req.method == 'HEAD'
-                and resp_status not in _BODILESS_STATUS_CODES
-                and 'content-length' not in resp._headers
-            ):
-                # NOTE(kgriffs): We really should be returning a Content-Length
-                #   in this case according to my reading of the RFCs. By
-                #   optionally using len(data) we let a resource simulate HEAD
-                #   by turning around and calling it's own on_get().
-                resp._headers['content-length'] = str(length)
+                # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+                # RFC 2616, as commented in that module's source code. The
+                # presence of the Content-Length header is not similarly
+                # enforced.
+                if resp_status in _TYPELESS_STATUS_CODES:
+                    default_media_type = None
+                elif (
+                    length is not None
+                    and req.method == 'HEAD'
+                    and resp_status not in _BODILESS_STATUS_CODES
+                    and 'content-length' not in resp._headers
+                ):
+                    # NOTE(kgriffs): We really should be returning a Content-Length
+                    #   in this case according to my reading of the RFCs. By
+                    #   optionally using len(data) we let a resource simulate HEAD
+                    #   by turning around and calling it's own on_get().
+                    resp._headers['content-length'] = str(length)
 
-        else:
-            # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
-            #   to reduce overhead since this is a hot/critical code path.
-            # NOTE(kgriffs): We always set content-length to match the
-            #   body bytes length, even if content-length is already set. The
-            #   reason being that web servers and LBs behave unpredictably
-            #   when the header doesn't match the body (sometimes choosing to
-            #   drop the HTTP connection prematurely, for example).
-            if length is not None:
-                resp._headers['content-length'] = str(length)
+            else:
+                # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
+                #   to reduce overhead since this is a hot/critical code path.
+                # NOTE(kgriffs): We always set content-length to match the
+                #   body bytes length, even if content-length is already set. The
+                #   reason being that web servers and LBs behave unpredictably
+                #   when the header doesn't match the body (sometimes choosing to
+                #   drop the HTTP connection prematurely, for example).
+                if length is not None:
+                    resp._headers['content-length'] = str(length)
 
-        headers: list[tuple[str, str]] = resp._wsgi_headers(default_media_type)
+            headers: list[tuple[str, str]] = resp._wsgi_headers(default_media_type)
 
-        # Return the response per the WSGI spec.
-        start_response(resp_status, headers)
-        return body
+            # Return the response per the WSGI spec.
+            start_response(resp_status, headers)
+            return body
+
+        except Exception as ex:
+            if self._report_error is not None:
+                self._report_error(req, ex, params, False)
+            raise
 
     # NOTE(caselit): the return type depends on the router, hardcoded to
     # CompiledRouterOptions for convenience.
@@ -1033,6 +1049,99 @@ class App(Generic[_ReqT, _RespT]):
 
             self._error_handlers[exc] = handler
 
+    def set_error_reporter(self, reporter: ErrorReporter[_ReqT]) -> None:
+        """Set a callback to report exceptions raised while processing requests.
+
+        The error reporter is intended for instrumentation purposes, such as
+        logging exceptions, or submitting them to an error tracking or
+        observability service. It is called for every exception that is passed
+        to the app's error handling, including instances of
+        :class:`~.HTTPError` and :class:`~.HTTPStatus`, regardless of whether a
+        custom error handler has been registered for the exception type in
+        question (see also: :meth:`~.add_error_handler`).
+
+        Setting a reporter does not change how exceptions are handled.
+        The reporter is called in the following cases:
+
+        * An exception is raised while routing, processing the request, or
+          rendering the response body (for instance, while serializing
+          :attr:`~falcon.Response.media`).
+          If an error handler opts to reraise the same exception object, in
+          order to handle it outside of the Falcon app, the exception is
+          reported as unhandled once.
+        * An error handler raises an instance of :class:`~.HTTPError` or
+          :class:`~.HTTPStatus`. Both the original exception and the raised
+          instance are reported as handled, in that order.
+        * An error handler (or the error
+          :meth:`serializer <falcon.App.set_error_serializer>`) raises any other
+          exception. The original exception, the derived :class:`~.HTTPError`
+          or :class:`~.HTTPStatus` (if any), and the new exception are all
+          reported as unhandled, and the latter is propagated to the
+          application server.
+        * The response cannot be started, for instance, due to an invalid
+          status or header value. The exception is reported as unhandled, and
+          it is propagated to the application server.
+
+        Note:
+            Since reports are emitted per exception rather than per request,
+            a single request may yield more than one report.
+
+        At the time of writing, exceptions raised while streaming the response
+        body (e.g., when iterating over :attr:`~falcon.Response.stream`) are
+        not reported. It will be possible to capture these errors in the native
+        OpenTelemetry integration, which is anticipated to land in
+        `Falcon 4.5 <https://github.com/falconry/falcon/milestone/48>`__.
+
+        Only a single reporter can be set; calling this method again replaces
+        the previous one. For example::
+
+            import logging
+
+            import falcon
+
+            logger = logging.getLogger(__name__)
+
+
+            def report_error(
+                req: falcon.Request, error: Exception, params: dict, handled: bool
+            ) -> None:
+                \"""Log *all* reported errors.\"""
+
+                kind = 'Handled' if handled else 'Unhandled'
+                logger.error(
+                    f'{kind} error processing {req.method} {req.path}', exc_info=error,
+                )
+
+
+            app = falcon.App()
+            app.set_error_reporter(report_error)
+
+        Note:
+            The error reporter is a regular synchronous callable for both WSGI
+            and ASGI applications. In the case of ASGI, it is invoked directly
+            on the event loop, so it should return quickly without blocking on
+            network I/O (for instance, by handing the report off to an SDK
+            that submits it in the background).
+
+            The reporter itself must not raise any exceptions; if it does,
+            the behavior is undefined. Any fallible logic should be guarded
+            inside the reporter.
+
+        Args:
+            reporter (callable): A function or callable object taking the form
+                ``func(req, error, params, handled)``, where `req` is the
+                request object, `error` is the exception being reported,
+                `params` is a dictionary of the responder's URI template field
+                values (empty if the error was raised before routing), and
+                `handled` is a boolean flag indicating whether the exception
+                was rendered into an HTTP response (as opposed to being
+                propagated to the application server).
+
+        .. versionadded:: 4.4
+        """
+
+        self._report_error = reporter
+
     def set_error_serializer(self, serializer: ErrorSerializer[_ReqT, _RespT]) -> None:
         """Override the default serializer for instances of :class:`~.HTTPError`.
 
@@ -1261,25 +1370,72 @@ class App(Generic[_ReqT, _RespT]):
             bool: ``True`` if a handler was found and called for the
             exception, ``False`` otherwise.
         """
-        err_handler = self._find_error_handler(ex)
+        derived_ex: HTTPError | HTTPStatus | None = None
 
-        # NOTE(caselit): Reset body, data and media before calling the handler
-        resp.text = resp.data = resp.media = None
-        if err_handler is not None:
+        try:
+            err_handler = self._find_error_handler(ex)
+
+            if err_handler is None:
+                # NOTE(kgriffs): No error handlers are defined for ex and it is
+                #   not one of (HTTPStatus, HTTPError), since it would have
+                #   matched one of the corresponding default handlers.
+                # NOTE(vytas): It is hard to hit this path in Falcon 3.0+
+                #   without manipulating the app's private variables, as we
+                #   always install an Exception handler.
+
+                # PERF(vytas): Here and below: only call the reporter if one is
+                #   installed (instead of having a default catch-all method).
+                if self._report_error is not None:
+                    self._report_error(req, ex, params, False)
+
+                return False
+
+            # NOTE(caselit): Reset body, data and media before calling the handler.
+            resp.text = resp.data = resp.media = None
+
             try:
                 err_handler(req, resp, ex, params)
             except HTTPStatus as status:
+                derived_ex = status
                 self._compose_status_response(req, resp, status)
             except HTTPError as error:
+                derived_ex = error
                 self._compose_error_response(req, resp, error)
+
+            # NOTE(vytas): Exceptions are reported in the order they were
+            #   raised: first the original error, then the derived
+            #   HTTPError/HTTPStatus, if any.
+            # NOTE(vytas): Do not report ex twice if the handler opted to
+            #   reraise the same HTTPError/HTTPStatus that is being handled.
+            if self._report_error is not None:
+                self._report_error(req, ex, params, True)
+                if derived_ex is not None and derived_ex is not ex:
+                    self._report_error(req, derived_ex, params, True)
 
             return True
 
-        # NOTE(kgriffs): No error handlers are defined for ex
-        # and it is not one of (HTTPStatus, HTTPError), since it
-        # would have matched one of the corresponding default
-        # handlers.
-        return False
+        except Exception as handler_ex:
+            # NOTE(vytas): If the handler opted to reraise the same exception,
+            #   we assume that it is preferred to handle errors outside of the
+            #   Falcon app (e.g., in a higher level framework).
+            #   Either way, no response was rendered for any of the exceptions
+            #   below, so they are all reported as unhandled.
+            if self._report_error is not None:
+                self._report_error(req, ex, params, False)
+                if derived_ex is not None and derived_ex is not ex:
+                    self._report_error(req, derived_ex, params, False)
+                if handler_ex is not ex:
+                    self._report_error(req, handler_ex, params, False)
+
+            # NOTE(vytas): Reraise the handler/serializer exception here since
+            #   (1) the exceptions have already been reported above, and
+            #   (2) it is consistent with the previous framework versions.
+            raise
+
+        # TODO(vytas): The below line is currently unreachable, hence the pragma.
+        #   But it will be reachable in the future if/when we add default 500
+        #   response for edge cases. We also want to keep it to avoid surprises.
+        return False  # pragma: nocover
 
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
     # to call using self, and this function is called for most

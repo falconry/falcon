@@ -908,7 +908,7 @@ production, etc.
 
 Another thing to choose is a testing framework. Just as in the
 :ref:`WSGI tutorial <testing_tutorial>`, let's use
-`pytest <http://docs.pytest.org/en/latest/>`_.
+`pytest <https://docs.pytest.org/>`_.
 This is a matter of taste; if you prefer xUnit/JUnit-style layout, you'll feel
 at home with the stdlib's :mod:`unittest`.
 
