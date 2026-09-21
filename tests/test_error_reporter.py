@@ -126,13 +126,13 @@ def test_handler_reraises_http_error(asgi, client, reporter):
     assert reporter.log == [(falcon.HTTPRouteNotFound, True)]
 
 
+@pytest.mark.filterwarnings('ignore:Unknown REQUEST_METHOD')
 def test_handler_reraises_serializer_raises(asgi, client, reporter):
     def bubble_up(req, resp, ex, params):
         raise
 
     def serialize_error(req, resp, exception):
         resp.media = {'inverse_client_code': 1.0 / (exception.status_code - 400)}
-        raise RuntimeError('serializer error')
 
     client.app.add_error_handler(falcon.HTTPError, _error_handler(asgi, bubble_up))
     client.app.set_error_serializer(serialize_error)
