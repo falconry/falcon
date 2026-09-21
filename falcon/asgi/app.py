@@ -1475,7 +1475,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
             #   below, so they are all reported as unhandled.
             if self._report_error is not None:
                 self._report_error(req, ex, params, False)
-                if derived_ex is not None:
+                if derived_ex is not None and derived_ex is not ex:
                     self._report_error(req, derived_ex, params, False)
                 if handler_ex is not ex:
                     self._report_error(req, handler_ex, params, False)

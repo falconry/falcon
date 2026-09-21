@@ -126,6 +126,23 @@ def test_handler_reraises_http_error(asgi, client, reporter):
     assert reporter.log == [(falcon.HTTPRouteNotFound, True)]
 
 
+@pytest.mark.filterwarnings('ignore:Unknown REQUEST_METHOD')
+def test_handler_reraises_serializer_raises(asgi, client, reporter):
+    def bubble_up(req, resp, ex, params):
+        raise
+
+    def serialize_error(req, resp, exception):
+        resp.media = {'inverse_client_code': 1.0 / (exception.status_code - 400)}
+
+    client.app.add_error_handler(falcon.HTTPError, _error_handler(asgi, bubble_up))
+    client.app.set_error_serializer(serialize_error)
+
+    with pytest.raises(ZeroDivisionError):
+        client.request(method='WEBSOCKET')
+
+    assert reporter.log == [(falcon.HTTPBadRequest, False), (ZeroDivisionError, False)]
+
+
 def test_handler_raises_http_status(asgi, client, reporter):
     def handle_zero_division(req, resp, ex, params):
         raise falcon.HTTPStatus(falcon.HTTP_OK, text='{"result": null}')
