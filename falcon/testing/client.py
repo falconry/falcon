@@ -51,10 +51,7 @@ from falcon._typing import HeaderMapping
 from falcon.asgi_spec import AsgiEvent
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
-from falcon.constants import MEDIA_JSON
-from falcon.constants import MEDIA_MSGPACK
 from falcon.errors import CompatibilityError
-from falcon.media import MessagePackHandler
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.typing import Headers
@@ -63,7 +60,6 @@ from falcon.util import CaseInsensitiveDict
 from falcon.util import code_to_http_status
 from falcon.util import http_cookies
 from falcon.util import http_date_to_dt
-from falcon.util import to_query_str
 
 if TYPE_CHECKING:
     import falcon
@@ -637,7 +633,7 @@ def simulate_request(
             msgpack=msgpack,
         )
 
-    path, query_string, headers, body, extras = _prepare_sim_args(
+    path, query_string, headers, body, extras = helpers._prepare_sim_args(
         path,
         query_string,
         params,
@@ -654,7 +650,7 @@ def simulate_request(
         method=method,
         scheme=protocol,
         path=path,
-        query_string=(query_string or ''),
+        query_string=query_string,
         headers=headers,
         body=body or b'',
         file_wrapper=file_wrapper,
@@ -879,7 +875,7 @@ async def _simulate_request_asgi(
         :class:`~.Result`: The result of the request
     """
 
-    path, query_string, headers, body, extras = _prepare_sim_args(
+    path, query_string, headers, body, extras = helpers._prepare_sim_args(
         path,
         query_string,
         params,
@@ -2294,58 +2290,6 @@ class _AsyncContextManager:
         assert self._obj is not None
         await self._obj.finalize()
         self._obj = None
-
-
-def _prepare_sim_args(
-    path: str,
-    query_string: str | None,
-    params: Mapping[str, Any] | None,
-    params_csv: bool,
-    content_type: str | None,
-    headers: HeaderArg | None,
-    body: str | bytes | None,
-    json: Any | None,
-    extras: Mapping[str, Any] | None,
-    msgpack: Any | None,
-) -> tuple[str, str, HeaderArg | None, str | bytes | None, Mapping[str, Any]]:
-    if not path.startswith('/'):
-        raise ValueError("path must start with '/'")
-
-    if '?' in path:
-        if query_string or params:
-            raise ValueError(
-                'path may not contain a query string in combination with '
-                'the query_string or params parameters. Please use only one '
-                'way of specifying the query string.'
-            )
-        path, query_string = path.split('?', 1)
-    elif query_string and query_string.startswith('?'):
-        raise ValueError("query_string should not start with '?'")
-
-    extras = extras or {}
-
-    if query_string is None:
-        query_string = to_query_str(
-            params,
-            comma_delimited_lists=params_csv,
-            prefix=False,
-        )
-
-    if content_type is not None:
-        headers = dict(headers or {})
-        headers['Content-Type'] = content_type
-
-    if json is not None:
-        body = json_module.dumps(json, ensure_ascii=False)
-        headers = dict(headers or {})
-        headers['Content-Type'] = MEDIA_JSON
-
-    if msgpack is not None:
-        body = MessagePackHandler().serialize(content_type=None, media=msgpack)
-        headers = dict(headers or {})
-        headers['Content-Type'] = MEDIA_MSGPACK
-
-    return path, query_string, headers, body, extras
 
 
 def _is_asgi_app(app: Callable[..., Any]) -> bool:
