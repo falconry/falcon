@@ -1165,7 +1165,11 @@ class ASGIConductor:
             assert self._lifespan_task is not None
             await _cancel_and_drain(self._lifespan_task)
 
-            return False
+            # NOTE(vytas): Due to some old tracing bug, code coverage is not
+            #   registered for the following return statement on CPython 3.11.
+            #   I have manually verified it is covered by replacing False
+            #   with 0/0, it was hit at least twice in the lifespan tests.
+            return False  # pragma: no py311 cover
 
         # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
         #   to proceed.
