@@ -8,8 +8,10 @@ write a malicious Python file to your source directory through an upload
 endpoint you might define; when your application restarts, the malicious file is
 loaded and proceeds to cause any number of Bad Things™ to happen.
 
-.. literalinclude:: snippets/useradd.sh
-  :language: sh
+.. code:: sh
+
+  $ useradd myproject --create-home
+  $ useradd myproject-runner --no-create-home
 
 It is helpful to switch to the project user (myproject) and use the home
 directory as the application environment.
@@ -17,8 +19,9 @@ directory as the application environment.
 If you are working on a remote server, switch to the myproject user and pull
 down the source code for your application.
 
-.. literalinclude:: snippets/git-clone.sh
-  :language: sh
+.. code:: sh
+
+  $ git clone git@github.com:myorg/myproject.git /home/myproject/src
 
 
 .. note::
@@ -29,5 +32,6 @@ down the source code for your application.
 Next, create a virtual environment which can be used to install your
 dependencies.
 
-.. literalinclude:: snippets/create-venv.sh
-  :language: sh
+.. code:: sh
+
+  $ python3 -m venv /home/myproject/venv
