@@ -41,3 +41,6 @@ sed -i s/test_uheader_multiline/skip_test_uheader_multiline/ \
 #   https://gitlab.com/mailman/mailman/-/issues/1203
 sed -i "s/>>>/TODO: restore doctest  #/g" \
     src/mailman/commands/docs/digests.rst
+
+# TODO(vytas): Remove when upstream pins or resolves the incompatibility.
+sed -i "s/sqlalchemy>=1.4.0/sqlalchemy<2.1/" pyproject.toml

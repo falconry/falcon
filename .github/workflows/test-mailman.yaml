@@ -8,6 +8,11 @@ on:
     branches:
       - master
 
+  # TODO: Demo, remove.
+  pull_request:
+    branches:
+      - master
+
 jobs:
   run_tox:
     name: tox -e falcon-nocov
