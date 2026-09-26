@@ -806,6 +806,7 @@ class Request(request.Request):
         required: Literal[True],
         store: StoreArg = ...,
         default: str | None = ...,
+        single: bool = ...,
     ) -> str: ...
 
     @overload
@@ -816,6 +817,7 @@ class Request(request.Request):
         store: StoreArg = ...,
         *,
         default: str,
+        single: bool = ...,
     ) -> str: ...
 
     @overload
@@ -825,6 +827,7 @@ class Request(request.Request):
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        single: bool = ...,
     ) -> str | None: ...
 
     def get_param(
@@ -833,6 +836,7 @@ class Request(request.Request):
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        single: bool = False,
     ) -> str | None:
         """Return the raw value of a query string parameter as a string.
 
@@ -851,12 +855,13 @@ class Request(request.Request):
             one. This caveat also applies when
             :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is enabled and the
             given parameter is assigned to a comma-separated list of values
-            (e.g., ``foo=a,b,c``).
+            (e.g., ``foo=a,b,c``). To refuse the request instead of guessing,
+            pass ``single=True``: the method then raises ``HTTPInvalidParam``
+            when the parameter has more than one value.
 
             When multiple values are expected for a parameter,
             :meth:`~.get_param_as_list` can be used to retrieve all of
             them at once.
-
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
 
@@ -868,6 +873,9 @@ class Request(request.Request):
                 the value of the param, but only if the param is present.
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            single (bool): Set to ``True`` to raise ``HTTPInvalidParam`` when
+                the param has more than one value, instead of returning an
+                arbitrary one of those values (default ``False``).
 
         Returns:
             str: The value of the param as a string, or ``None`` if param is
@@ -875,12 +883,16 @@ class Request(request.Request):
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: ``single`` is ``True`` and the param has more
+                than one value.
         """
 
         # TODO(kgriffs): It seems silly to have to do this, simply to provide
         #   the ASGI-specific docstring above. Is there a better way?
 
-        return super().get_param(name, required=required, store=store, default=default)
+        return super().get_param(
+            name, required=required, store=store, default=default, single=single
+        )
 
     @property
     def env(self) -> NoReturn:  # type:ignore[override]

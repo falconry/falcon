@@ -816,6 +816,79 @@ class TestQueryParams:
         # There are three 'cat' keys; order is preserved.
         assert req.get_param_as_list('cat') == ['6', '5', '4']
 
+    def test_single_param(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'ant=1&bee=3&cat=6&cat=5'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        store = {}
+        assert req.get_param('ant', single=True) == '1'
+        assert req.get_param('bee', store=store, single=True) == '3'
+        assert store == {'bee': '3'}
+        assert req.get_param('ant', required=True, single=True) == '1'
+        # A repeated key is refused instead of being guessed; see the next test.
+        with pytest.raises(HTTPInvalidParam):
+            req.get_param('cat', single=True)
+
+    def test_single_param_not_found(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'ant=1'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        store = {}
+        assert req.get_param('bee', single=True) is None
+        assert req.get_param('bee', store=store, single=True) is None
+        assert req.get_param('bee', default='3', single=True) == '3'
+        assert not store
+        with pytest.raises(HTTPMissingParam):
+            req.get_param('bee', required=True, single=True)
+
+    def test_single_param_rejects_repeated_keys(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        query_string = 'ant=1&ant=2&bee=3&bee=4'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        for name, values in (('ant', ('1', '2')), ('bee', ('3', '4'))):
+            # Without the keyword, one of the values is returned, undefined
+            # which one (see .test_multiple_form_keys).
+            assert req.get_param(name) in values
+            with pytest.raises(HTTPInvalidParam):
+                req.get_param(name, single=True)
+
+    def test_single_param_rejects_csv_when_enabled(
+        self, simulate_request, client, resource
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
+        query_string = 'ant=1,2'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        # A comma-separated value is a list of values as well in this mode.
+        assert req.get_param_as_list('ant') == ['1', '2']
+        with pytest.raises(HTTPInvalidParam):
+            req.get_param('ant', single=True)
+
+    def test_single_param_error_response(self, client):
+        class Resource:
+            def on_get(self, req, resp):
+                resp.text = req.get_param('ant', single=True)
+
+        client.app.add_route('/', Resource())
+
+        response = client.simulate_get('/', query_string='ant=1')
+        assert response.status_code == 200
+        assert response.text == '1'
+
+        response = client.simulate_get('/', query_string='ant=1&ant=2')
+        assert response.status_code == 400
+        assert response.json['title'] == 'Invalid parameter'
+
     def test_get_date_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '2015-04-20'

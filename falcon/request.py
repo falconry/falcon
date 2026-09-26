@@ -1492,6 +1492,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: str | None = ...,
+        single: bool = ...,
     ) -> str: ...
 
     @overload
@@ -1502,6 +1503,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: str,
+        single: bool = ...,
     ) -> str: ...
 
     @overload
@@ -1511,6 +1513,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        single: bool = ...,
     ) -> str | None: ...
 
     def get_param(
@@ -1519,6 +1522,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        single: bool = False,
     ) -> str | None:
         """Return the raw value of a query string parameter as a string.
 
@@ -1546,7 +1550,9 @@ class Request:
             one. This caveat also applies when
             :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is enabled and the
             given parameter is assigned to a comma-separated list of values
-            (e.g., ``foo=a,b,c``).
+            (e.g., ``foo=a,b,c``). To refuse the request instead of guessing,
+            pass ``single=True``: the method then raises ``HTTPInvalidParam``
+            when the parameter has more than one value.
 
             When multiple values are expected for a parameter,
             :meth:`~.get_param_as_list` can be used to retrieve all of
@@ -1563,6 +1569,9 @@ class Request:
                 the value of the param, but only if the param is present.
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            single (bool): Set to ``True`` to raise ``HTTPInvalidParam`` when
+                the param has more than one value, instead of returning an
+                arbitrary one of those values (default ``False``).
 
         Returns:
             str: The value of the param as a string, or ``None`` if param is
@@ -1570,6 +1579,8 @@ class Request:
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: ``single`` is ``True`` and the param has more
+                than one value.
 
         """
 
@@ -1581,8 +1592,14 @@ class Request:
             # NOTE(warsaw): If the key appeared multiple times, it will be
             # stored internally as a list.  We do not define which one
             # actually gets returned, but let's pick the last one for grins.
+            # NOTE (jap): Unless the caller opted out of guessing with
+            # single=True, in which case a multi-value param is refused below.
             param = params[name]
             if isinstance(param, list):
+                if single:
+                    msg = 'It may not have more than one value.'
+                    raise errors.HTTPInvalidParam(msg, name)
+
                 param = param[-1]
 
             if store is not None:
