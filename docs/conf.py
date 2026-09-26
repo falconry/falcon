@@ -102,7 +102,7 @@ extensions = [
 ]
 
 templates_path = ['_templates']
-exclude_patterns = ['_build', '_newsfragments']
+exclude_patterns = ['_build', '_newsfragments', 'deploy/_includes', 'deploy/snippets']
 
 # The name of the Pygments (syntax highlighting) style to use.
 # NOTE(vytas): The PyData theme uses separate Pygments style settings for HTML,
