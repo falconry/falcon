@@ -199,8 +199,7 @@ class Response:
             if resp.status_code >= 400:
                 log.warning(f'returning error response: {resp.status_code}')
         """
-        # TODO(0xMattB): Modify decorator to return proper type (see gh #2629).
-        return http_status_to_code(self.status)  # type: ignore[no-any-return]
+        return http_status_to_code(self.status)
 
     @status_code.setter
     def status_code(self, value: int) -> None:
