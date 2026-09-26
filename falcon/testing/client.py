@@ -992,21 +992,26 @@ async def _simulate_request_asgi(
             app(lifespan_scope, lifespan_event_emitter, lifespan_event_collector)
         )
 
-        await _wait_for_startup(lifespan_event_collector.events)
+        try:
+            await _wait_for_startup(lifespan_event_collector.events)
 
-        task_req = asyncio.create_task(
-            app(http_scope, req_event_emitter, resp_event_collector)
-        )
-        req_event_emitter.disconnect()
-        await task_req
+            task_req = asyncio.create_task(
+                app(http_scope, req_event_emitter, resp_event_collector)
+            )
+            req_event_emitter.disconnect()
+            await task_req
 
-        # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
-        #   to proceed.
-        async with shutting_down:
-            shutting_down.notify()
+            # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
+            #   to proceed.
+            async with shutting_down:
+                shutting_down.notify()
 
-        await _wait_for_shutdown(lifespan_event_collector.events)
-        await task_lifespan
+            await _wait_for_shutdown(lifespan_event_collector.events)
+            await task_lifespan
+        finally:
+            # NOTE(vytas): If the request task failed, the lifespan task
+            #   still awaits shutdown.
+            await _cancel_and_drain(task_lifespan)
 
     await conductor()
 
@@ -1155,7 +1160,16 @@ class ASGIConductor:
 
     async def __aexit__(self, ex_type: Any, ex: Any, tb: Any) -> bool:
         if ex_type:
-            return False
+            # NOTE(vytas): Shutdown is intentionally skipped on error;
+            #   cancel the lifespan task rather than leave it pending.
+            assert self._lifespan_task is not None
+            await _cancel_and_drain(self._lifespan_task)
+
+            # NOTE(vytas): Due to some old tracing bug, code coverage is not
+            #   registered for the following return statement on CPython 3.11.
+            #   I have manually verified it is covered by replacing False
+            #   with 0/0, it was hit at least twice in the lifespan tests.
+            return False  # pragma: no py311 cover
 
         # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
         #   to proceed.
@@ -2361,6 +2375,20 @@ def _is_asgi_app(app: Callable[..., Any]) -> bool:
     is_asgi = num_app_args == 3
 
     return is_asgi
+
+
+async def _cancel_and_drain(task: asyncio.Task[Any]) -> None:
+    """Cancel the task, and retrieve its exception.
+
+    A pending task is otherwise only reaped by the GC, which emits a stray
+    ``Task was destroyed but it is pending!`` warning.
+    """
+    if not task.done():
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 
 async def _wait_for_startup(events: Iterable[AsgiEvent]) -> None:

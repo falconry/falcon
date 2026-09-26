@@ -234,3 +234,20 @@ def test_asgi_conductor_raised_error_skips_shutdown():
     falcon.async_to_sync(t)
     assert foo.called_startup
     assert not foo.called_shutdown
+
+
+def test_asgi_conductor_raised_error_cancels_lifespan_task():
+    class SomeException(Exception):
+        pass
+
+    conductor = testing.ASGIConductor(App())
+
+    async def t():
+        with pytest.raises(SomeException):
+            async with conductor:
+                raise SomeException()
+
+    falcon.async_to_sync(t)
+
+    # NOTE(vytas): Private attr; the cancellation is not observable otherwise.
+    assert conductor._lifespan_task.cancelled()
