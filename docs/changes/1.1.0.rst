@@ -103,7 +103,7 @@ Fixed
 - URI template fields are now validated up front, when the route is
   added, to ensure they are valid Python identifiers. This prevents
   cryptic errors from being raised later on when requests are routed.
-- When running under Python 3, :meth:`inspect.signature()` is used
-  instead of :meth:`inspect.getargspec()` to provide compatibility with
+- When running under Python 3, :func:`inspect.signature` is used
+  instead of ``inspect.getargspec()`` to provide compatibility with
   annotated functions.
 

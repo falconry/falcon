@@ -150,7 +150,7 @@ Version 3 of Falcon updated how the handling of exceptions raised by handlers be
    error will be rendered as a ``400 Bad Request`` response to the client.
 
 If any exception was raised by the handler while parsing the body, all subsequent invocations
-of :meth:`Request.get_media` or :attr:`Request.media` will result in a re-raise of the same
+of :meth:`~falcon.Request.get_media` or :attr:`~falcon.Request.media` will result in a re-raise of the same
 exception, unless the exception was a :class:`falcon.MediaNotFoundError` and a default value
 is passed to the ``default_when_empty`` attribute of the current invocation.
 
@@ -242,7 +242,7 @@ Supported Handler Types
     :no-members:
 
 .. autoclass:: falcon.media.MultipartFormHandler
-    :no-members:
+    :members: parse_options
 
 .. autoclass:: falcon.media.URLEncodedFormHandler
     :no-members:

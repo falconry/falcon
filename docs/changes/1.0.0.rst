@@ -107,7 +107,7 @@ New & Improved
   the new framework (the remainder to be ported in a
   subsequent release.) The new testing framework performs wsgiref
   validation on all requests.
-- The performance of setting :attr:`Response.content_range` was
+- The performance of setting :attr:`falcon.Response.content_range` was
   improved by ~50%.
 - A new param, `obs_date`, was added to
   :meth:`falcon.Request.get_header_as_datetime`, and defaults to
@@ -129,7 +129,7 @@ Fixed
 - The user agent is now instructed to expire the cookie when it is
   cleared via :meth:`~falcon.Response.unset_cookie`.
 - Support was added for hooks that have been defined via
-  :meth:`functools.partial`.
+  :func:`functools.partial`.
 - Tunneled UTF-8 characters in the request path are now properly
   decoded, and a placeholder character is substituted for any invalid
   code points.

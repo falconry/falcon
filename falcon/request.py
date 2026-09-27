@@ -2762,7 +2762,7 @@ class RequestOptions:
     """Defines a set of configurable request options.
 
     An instance of this class is exposed via :attr:`falcon.App.req_options` and
-    :attr:`falcon.asgi.App.req_options` for configuring certain
+    :attr:`falcon.asgi.App.req_options <falcon.App.req_options>` for configuring certain
     :class:`~.Request` and :class:`falcon.asgi.Request` behaviors,
     respectively.
     """

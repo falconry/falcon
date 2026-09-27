@@ -59,7 +59,7 @@ class AsyncReadableIO(Protocol):
     def __aiter__(self) -> AsyncIterator[bytes]: ...
 
 
-SSEEmitter = AsyncIterator[Optional['SSEvent']]
+SSEEmitter = AsyncIterator[Optional['falcon.asgi.SSEvent']]
 """Async generator or iterator over Server-Sent Events
 (instances of :class:`falcon.asgi.SSEvent`).
 

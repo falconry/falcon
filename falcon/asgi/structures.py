@@ -33,7 +33,7 @@ class SSEvent:
             a periodic "ping" message to keep the connection alive. Since this
             is a common use case, a default "ping" comment will be included
             in any event that would otherwise be blank (i.e., one that does
-            not specify any fields when initializing the `SSEvent` instance.)
+            not specify any fields when initializing the :class:`~falcon.asgi.SSEvent` instance.)
 
     .. _Server-Sent Events:
         https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
@@ -79,7 +79,7 @@ class SSEvent:
     "ping" message to keep the connection alive. Since this is a common use case, a
     default "ping" comment will be included in any event that would otherwise be blank
     (i.e., one that does not specify any of the fields when initializing the
-    :class:`SSEvent` instance.)
+    :class:`~falcon.asgi.SSEvent` instance.)
     """
 
     def __init__(

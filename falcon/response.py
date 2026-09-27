@@ -1407,7 +1407,7 @@ class ResponseOptions:
     """Defines a set of configurable response options.
 
     An instance of this class is exposed via :attr:`falcon.App.resp_options`
-    and :attr:`falcon.asgi.App.resp_options` for configuring certain
+    and :attr:`falcon.asgi.App.resp_options <falcon.App.resp_options>` for configuring certain
     :class:`~.Response` behaviors.
     """
 

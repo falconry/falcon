@@ -181,7 +181,7 @@ Breaking Changes
     dpr = req.get_param_as_int('dpr', min_value=0, max_value=3)
 
 - The :meth:`falcon.media.validators.jsonschema.validate` decorator now uses
-  :meth:`functools.wraps` to make the decorated method look like the original.
+  :func:`functools.wraps` to make the decorated method look like the original.
 - Previously, :class:`~.HTTPError` instances for which the `has_representation`
   property evaluated to ``False`` were not passed to custom error serializers
   (such as in the case of types that subclass
@@ -373,7 +373,7 @@ Fixed
   :class:`collections.MutableMapping`.
 - The ``\ufffd`` character is now disallowed in requested static file paths.
 - The :meth:`falcon.media.validators.jsonschema.validate` decorator now uses
-  :meth:`functools.wraps` to make the decorated method look like the original.
+  :func:`functools.wraps` to make the decorated method look like the original.
 - The ``falcon-print-routes`` CLI tool no longer raises an unhandled error
   when Falcon is cythonized.
 - The plus character (``'+'``) is no longer unquoted in the request path, but

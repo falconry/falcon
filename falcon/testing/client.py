@@ -602,7 +602,7 @@ def simulate_request(
         msgpack (MessagePack serializable): A MessagePack document to
             serialize as the body of the request (default: ``None``). If
             specified, overrides `body` and sets the Content-Type header
-            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            to ``falcon.MEDIA_MSGPACK``, overriding any value
             specified by either the `content_type` or `headers`
             arguments. If both `msgpack` and `json` are specified,
             `msgpack` takes precedence.
@@ -870,7 +870,7 @@ async def _simulate_request_asgi(
         msgpack (MessagePack serializable): A MessagePack document to
             serialize as the body of the request (default: ``None``). If
             specified, overrides `body` and sets the Content-Type header
-            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            to ``falcon.MEDIA_MSGPACK``, overriding any value
             specified by either the `content_type` or `headers`
             arguments. If both `msgpack` and `json` are specified,
             `msgpack` takes precedence.
@@ -1647,7 +1647,7 @@ def simulate_post(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
         msgpack (MessagePack serializable): A MessagePack document to
             serialize as the body of the request (default: ``None``). If
             specified, overrides `body` and sets the Content-Type header
-            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            to ``falcon.MEDIA_MSGPACK``, overriding any value
             specified by either the `content_type` or `headers`
             arguments. If both `msgpack` and `json` are specified,
             `msgpack` takes precedence.
@@ -1765,7 +1765,7 @@ def simulate_put(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
         msgpack (MessagePack serializable): A MessagePack document to
             serialize as the body of the request (default: ``None``). If
             specified, overrides `body` and sets the Content-Type header
-            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            to ``falcon.MEDIA_MSGPACK``, overriding any value
             specified by either the `content_type` or `headers`
             arguments. If both `msgpack` and `json` are specified,
             `msgpack` takes precedence.
@@ -1967,7 +1967,7 @@ def simulate_patch(app: Callable[..., Any], path: str, **kwargs: Any) -> Result:
         msgpack (MessagePack serializable): A MessagePack document to
             serialize as the body of the request (default: ``None``). If
             specified, overrides `body` and sets the Content-Type header
-            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            to ``falcon.MEDIA_MSGPACK``, overriding any value
             specified by either the `content_type` or `headers`
             arguments. If both `msgpack` and `json` are specified,
             `msgpack` takes precedence.
@@ -2080,7 +2080,7 @@ def simulate_delete(app: Callable[..., Any], path: str, **kwargs: Any) -> Result
         msgpack (MessagePack serializable): A MessagePack document to
             serialize as the body of the request (default: ``None``). If
             specified, overrides `body` and sets the Content-Type header
-            to :attr:`~falcon.MEDIA_MSGPACK`, overriding any value
+            to ``falcon.MEDIA_MSGPACK``, overriding any value
             specified by either the `content_type` or `headers`
             arguments. If both `msgpack` and `json` are specified,
             `msgpack` takes precedence.

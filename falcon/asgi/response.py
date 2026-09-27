@@ -294,7 +294,7 @@ class Response(response.Response):
         The callback is assumed to be a synchronous (non-coroutine) function.
         It will be scheduled on the event loop's default
         :class:`~concurrent.futures.Executor` (which can be overridden via
-        :meth:`asyncio.AbstractEventLoop.set_default_executor`).
+        :meth:`asyncio.loop.set_default_executor`).
 
         The callback will be invoked without arguments. Use
         :any:`functools.partial` to pass arguments to the callback
@@ -312,7 +312,7 @@ class Response(response.Response):
             Synchronous callables run on the event loop's default
             :class:`~concurrent.futures.Executor`, which uses an instance of
             :class:`~concurrent.futures.ThreadPoolExecutor` unless
-            :meth:`asyncio.AbstractEventLoop.set_default_executor` is used to
+            :meth:`asyncio.loop.set_default_executor` is used to
             change it to something else. Due to the GIL, CPU-bound jobs will
             block request processing for the current process unless the default
             :class:`~concurrent.futures.Executor` is changed to one that is

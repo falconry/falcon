@@ -930,7 +930,7 @@ class CompiledRouterOptions:
     """Defines a set of configurable router options.
 
     An instance of this class is exposed via :attr:`falcon.App.router_options`
-    and :attr:`falcon.asgi.App.router_options` for configuring certain
+    and :attr:`falcon.asgi.App.router_options <falcon.App.router_options>` for configuring certain
     :class:`~.CompiledRouter` behaviors.
     """
 

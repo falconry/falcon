@@ -138,7 +138,7 @@ When running your application in a development environment, you can
 disable this default behavior by setting
 :attr:`~falcon.ResponseOptions.secure_cookies_by_default` to ``False``
 via :attr:`falcon.App.resp_options` or
-:attr:`falcon.asgi.App.resp_options`. This lets you test your app
+:attr:`falcon.asgi.App.resp_options <falcon.App.resp_options>`. This lets you test your app
 locally without having to set up TLS. You can make this option configurable to
 easily switch between development and production environments.
 

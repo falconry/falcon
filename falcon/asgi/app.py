@@ -320,7 +320,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests. An instance of :class:`..CORSMiddleware` can instead be
+            requests. An instance of :class:`~falcon.CORSMiddleware` can instead be
             passed to the middleware argument to customize its behaviour.
             (default ``False``).
             (See also: :ref:`CORS <cors>`)

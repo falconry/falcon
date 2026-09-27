@@ -59,7 +59,7 @@ Fixed
   handled properly in complex URI template path segments that are
   comprised of both literal text and field definitions.
 - When the WSGI server does not provide a `wsgi.file_wrapper` object,
-  Falcon wraps :attr:`Response.stream` in a simple iterator
+  Falcon wraps :attr:`falcon.Response.stream` in a simple iterator
   object that does not implement `close()`. The iterator should be
   modified to implement a `close()` method that calls the underlying
   stream's `close()` to free system resources.
