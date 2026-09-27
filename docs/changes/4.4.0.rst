@@ -16,7 +16,58 @@ Changes to Supported Platforms
   (`#2593 <https://github.com/falconry/falcon/issues/2593>`__)
 
 
-.. towncrier release notes start
+
+New & Improved
+--------------
+
+- A new :ref:`built-in field converter <routing_builtin_converters>`,
+  :class:`~falcon.routing.RegexConverter`, has been added to support regex-based
+  path variable matching. (`#857 <https://github.com/falconry/falcon/issues/857>`__)
+- A new :class:`~falcon.App` method, :meth:`~falcon.App.set_error_reporter`,
+  was added for observing all exceptions raised while processing requests
+  (for instance, in order to log them, or to submit them to an error tracking or
+  observability service).
+  Error reporters are supported by both WSGI and ASGI applications. (`#1942 <https://github.com/falconry/falcon/issues/1942>`__)
+- Previously, it was not possible to cleanly test the case where a
+  :ref:`WebSocket <ws>` responder would keep running without sending or receiving
+  any messages --
+  :meth:`ASGIConductor.simulate_ws <falcon.testing.ASGIConductor.simulate_ws>`
+  would hang forever upon exiting the context.
+
+  To afford this scenario, a new optional `timeout` keyword argument was added to
+  :meth:`~falcon.testing.ASGIConductor.simulate_ws` that limits how long the test
+  harness waits, both for the handshake (accept or deny), and for the app's task
+  to complete after the connection is closed; when the deadline passes, an
+  instance of :class:`TimeoutError` is raised. (`#2585 <https://github.com/falconry/falcon/issues/2585>`__)
+
+
+Fixed
+-----
+
+- As prescribed by PEP 3333, WSGI servers tunnel non-ASCII characters in the
+  request path via ISO-8859-1, and Falcon has long decoded ``PATH_INFO`` back
+  to UTF-8. The ``SCRIPT_NAME`` variable was, however, used verbatim when
+  populating :attr:`req.root_path <falcon.Request.root_path>`.
+  This has been fixed, and the tunneled ``SCRIPT_NAME`` is now decoded in the
+  same way as the request path. (`#2667 <https://github.com/falconry/falcon/issues/2667>`__)
+- When decoding with ``unquote_plus=False``, the cythonized variant of
+  :func:`falcon.uri.decode` mistook a literal plus sign followed by two
+  hexadecimal digits for a percent-encoded byte.
+  This has been fixed, and a literal plus is now preserved
+  just like in the pure-Python case. (`#2670 <https://github.com/falconry/falcon/issues/2670>`__)
+- When a route was only served by a catch-all ``on_request()`` responder, with
+  no HTTP methods explicitly mapped via ``on_get()``, ``on_post()``, etc., the
+  default OPTIONS responder rendered an empty Allow header, misleadingly
+  indicating that the resource allows no methods at all.
+  The Allow header is now omitted when the list of allowed methods is empty. (`#2671 <https://github.com/falconry/falcon/issues/2671>`__)
+- When a :func:`simulated <falcon.testing.simulate_request>` ASGI request bubbled
+  up an unhandled exception, the :class:`test client <falcon.testing.TestClient>`'s
+  lifespan task was left pending, emitting a stray ``"Task was destroyed but it is pending!"``
+  warning upon garbage collection. Such orphaned lifespan tasks are now cancelled cleanly. (`#2745 <https://github.com/falconry/falcon/issues/2745>`__)
+
+
+
+
 
 Contributors to this Release
 ----------------------------
@@ -34,4 +85,5 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `maxtaran2010 <https://github.com/maxtaran2010>`__
 - `MeGaurav4 <https://github.com/MeGaurav4>`__
 - `mvanhorn <https://github.com/mvanhorn>`__
+- `pattyolowry <https://github.com/pattyolowry>`__
 - `vytas7 <https://github.com/vytas7>`__
