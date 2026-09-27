@@ -4,9 +4,18 @@ Changelog for Falcon 4.4.0
 Summary
 -------
 
-Falcon 4.4 is in development. The progress is tracked via the
-`Version 4.4 milestone <https://github.com/falconry/falcon/milestone/46>`__
-on GitHub.
+This is the first release candidate of Falcon 4.4.
+
+As Falcon 4.4 is now feature-complete, we would really be thankful if you could
+take it for a spin with your apps, and
+:ref:`let us know if you run into any issues <chat>`!
+
+As always, you can grab this pre-release
+`from PyPI <https://pypi.org/project/falcon/4.4.0rc1/>`__::
+
+    pip install falcon==4.4.0rc1
+
+Thank You!
 
 
 Changes to Supported Platforms
@@ -82,6 +91,7 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `chbndrhnns <https://github.com/chbndrhnns>`__
 - `infraredCoding <https://github.com/infraredCoding>`__
 - `KetanHegde <https://github.com/KetanHegde>`__
+- `kgriffs <https://github.com/kgriffs>`__
 - `maxtaran2010 <https://github.com/maxtaran2010>`__
 - `MeGaurav4 <https://github.com/MeGaurav4>`__
 - `mvanhorn <https://github.com/mvanhorn>`__
