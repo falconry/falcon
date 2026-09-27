@@ -1583,8 +1583,8 @@ class Request:
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
@@ -1704,8 +1704,8 @@ class Request:
                 param's value falls outside the given interval, i.e., the
                 value must be in the interval: min_value <= value <=
                 max_value to avoid triggering an error.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
@@ -1832,8 +1832,8 @@ class Request:
                 param's value falls outside the given interval, i.e., the
                 value must be in the interval: min_value <= value <=
                 max_value to avoid triggering an error.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
@@ -1957,8 +1957,8 @@ class Request:
             HTTPBadRequest: The param was not found in the request, even
                 though it was required to be there, or it was found but
                 could not be converted to a ``UUID``.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
@@ -2081,8 +2081,8 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 can not be converted to a ``bool``.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
@@ -2408,8 +2408,8 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be converted to a ``datetime``.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionchanged:: 4.0
             The default value of `format_string` was changed from
@@ -2515,8 +2515,8 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be converted to a ``date``.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
@@ -2579,8 +2579,8 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed as JSON.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
@@ -2649,8 +2649,8 @@ class Request:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed by the selected media handler.
             ValueError: No media handler is configured for `media_type`.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. _content:
             https://spec.openapis.org/oas/latest.html#fixed-fields-for-use-with-content

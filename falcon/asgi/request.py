@@ -888,8 +888,8 @@ class Request(request.Request):
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: ``allow_multiple`` is ``False`` and the param
-                resolved to more than one value.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionadded:: 4.4
             The `allow_multiple` keyword argument.
