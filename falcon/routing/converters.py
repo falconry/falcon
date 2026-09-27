@@ -297,11 +297,14 @@ class RegexConverter(BaseConverter):
         pattern (str): A regex pattern that the value must match.
             The entire value must match (anchored). The pattern must be a
             :class:`str` (not :class:`bytes`).
-        group(str | None): An optional named group to return as the converted
-            field value. Note that if the group is optional (e.g.,
+        group(str | None): A named group to return as the converted field
+            value. Note that if the group is optional in the regex (e.g.,
             ``r'product(?P<id>\\d+)?')``, and it was omitted in the matched URL
             segment, it would be treated as a failure to convert the value
-            (resulting in :class:`~falcon.HTTPRouteNotFound`).
+            (resulting in :class:`~falcon.HTTPRouteNotFound` unless a
+            :meth:`sink <falcon.App.add_sink>` matches).
+
+    .. versionadded:: 4.4
     """
 
     _pattern: re.Pattern[str]

@@ -6,7 +6,7 @@ Installation
 PyPy
 ----
 
-`PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
+`PyPy <https://pypy.org/>`__ is the fastest way to run your Falcon app.
 PyPy3.9+ is supported as of PyPy v7.3.10.
 
 .. code:: bash

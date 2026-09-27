@@ -4,7 +4,9 @@ Status Codes
 ============
 
 Falcon provides a list of constants for common
-`HTTP response status codes <http://httpstatus.es>`_.
+`HTTP response status codes <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_.
+(A comprehensive list of status codes and their meanings is also available
+on `Wikipedia <https://en.wikipedia.org/wiki/List_of_HTTP_status_codes>`_.)
 
 For example:
 

@@ -127,7 +127,7 @@ serve it via an :ref:`ASGI application server <install_asgi_server>` such as
 Uvicorn.
 
 Alternatively, IO-bound WSGI applications can be scaled using the battle-tested
-`gevent <http://www.gevent.org/>`_ library via Gunicorn or uWSGI.
+`gevent <https://www.gevent.org/>`_ library via Gunicorn or uWSGI.
 `meinheld <https://pypi.org/project/meinheld/>`_ has also been used
 successfully by the community to power high-throughput, low-latency WSGI
 services.
@@ -145,7 +145,7 @@ The async flavor of Falcon supports the
 See also: :ref:`ws`.
 
 WSGI applications might try leveraging
-`uWSGI's native WebSocket support <http://uwsgi.readthedocs.io/en/latest/WebSockets.html>`_
+`uWSGI's native WebSocket support <https://uwsgi.readthedocs.io/en/latest/WebSockets.html>`_
 or `gevent-websocket's <https://pypi.org/project/gevent-websocket>`_
 ``GeventWebSocketWorker`` for Gunicorn.
 
@@ -1275,9 +1275,9 @@ How do I test my Falcon app? Can I use pytest?
 
 Falcon's testing framework supports both ``unittest`` and ``pytest``. In fact,
 the tutorial in the docs provides an excellent introduction to
-`testing Falcon apps with pytest <http://falcon.readthedocs.io/en/stable/user/tutorial.html#testing-your-application>`_.
+`testing Falcon apps with pytest <testing_tutorial>`_.
 
-(See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
+(See also: :ref:`testing`)
 
 Can I shut my server down cleanly from the app?
 -----------------------------------------------

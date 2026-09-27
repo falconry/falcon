@@ -1,0 +1,4 @@
+When a :func:`simulated <falcon.testing.simulate_request>` ASGI request bubbled
+up an unhandled exception, the :class:`test client <falcon.testing.TestClient>`'s
+lifespan task was left pending, emitting a stray ``"Task was destroyed but it is pending!"``
+warning upon garbage collection. Such orphaned lifespan tasks are now cancelled cleanly.
