@@ -806,6 +806,7 @@ class Request(request.Request):
         required: Literal[True],
         store: StoreArg = ...,
         default: str | None = ...,
+        allow_multiple: bool = ...,
     ) -> str: ...
 
     @overload
@@ -816,6 +817,7 @@ class Request(request.Request):
         store: StoreArg = ...,
         *,
         default: str,
+        allow_multiple: bool = ...,
     ) -> str: ...
 
     @overload
@@ -825,6 +827,7 @@ class Request(request.Request):
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        allow_multiple: bool = True,
     ) -> str | None: ...
 
     def get_param(
@@ -833,6 +836,7 @@ class Request(request.Request):
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        allow_multiple: bool = True,
     ) -> str | None:
         """Return the raw value of a query string parameter as a string.
 
@@ -855,7 +859,8 @@ class Request(request.Request):
 
             When multiple values are expected for a parameter,
             :meth:`~.get_param_as_list` can be used to retrieve all of
-            them at once.
+            them at once. Otherwise, pass ``allow_multiple=False`` to refuse
+            the request instead of guessing which value to return.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
@@ -868,6 +873,14 @@ class Request(request.Request):
                 the value of the param, but only if the param is present.
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                ``HTTPInvalidParam`` instead of returning an arbitrary one of
+                the values, when the param resolves to more than one value
+                (default ``True``). Identical values still count as multiple
+                values, and a single occurrence of a param also resolves to
+                multiple values when
+                :attr:`~.RequestOptions.auto_parse_qs_csv` is enabled and the
+                value is a comma-separated list (e.g., ``foo=a,b,c``).
 
         Returns:
             str: The value of the param as a string, or ``None`` if param is
@@ -875,12 +888,23 @@ class Request(request.Request):
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
+
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
         # TODO(kgriffs): It seems silly to have to do this, simply to provide
         #   the ASGI-specific docstring above. Is there a better way?
 
-        return super().get_param(name, required=required, store=store, default=default)
+        return super().get_param(
+            name,
+            required=required,
+            store=store,
+            default=default,
+            allow_multiple=allow_multiple,
+        )
 
     @property
     def env(self) -> NoReturn:  # type:ignore[override]
