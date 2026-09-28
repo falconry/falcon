@@ -1234,6 +1234,33 @@ class TestGetParamAsDict:
             'id': '007',
         }
 
+    def test_deep_object_allow_multiple(self, asgi, util):
+        req = util.create_req(
+            asgi, query_string='user[name]=Bond&user[name]=Blofeld&user[id]=007'
+        )
+        assert req.get_param_as_dict('user', deep_object=True) == {
+            'name': 'Bond',
+            'id': '007',
+        }
+        with pytest.raises(HTTPInvalidParam) as ex:
+            req.get_param_as_dict('user', deep_object=True, allow_multiple=False)
+        assert ex.value.title == 'Invalid parameter'
+        assert ex.value.description == (
+            'The "user" parameter is invalid. '
+            'The "user[name]" key may not have multiple values.'
+        )
+
+    def test_deep_object_allow_multiple_rejects_csv_when_enabled(self, asgi, util):
+        options = falcon.RequestOptions()
+        options.auto_parse_qs_csv = True
+        req = util.create_req(
+            asgi, options=options, query_string='user[name]=Bond,Blofeld'
+        )
+        # A comma-separated value is a list of values as well in this mode.
+        assert req.get_param_as_dict('user', deep_object=True) == {'name': 'Bond'}
+        with pytest.raises(HTTPInvalidParam):
+            req.get_param_as_dict('user', deep_object=True, allow_multiple=False)
+
     def test_deep_object_skips_non_matching(self, asgi, util):
         req = util.create_req(
             asgi, query_string='user[name]=Ash&weird%5D=looking&user_agent=test'
@@ -1269,6 +1296,13 @@ class TestGetParamAsDict:
     def test_pairs(self, asgi, util):
         req = util.create_req(asgi, query_string='pair=a&pair=1&pair=b&pair=2')
         assert req.get_param_as_dict('pair') == {'a': '1', 'b': '2'}
+
+    def test_pairs_allow_multiple_ignored(self, asgi, util):
+        req = util.create_req(asgi, query_string='pair=a&pair=1&pair=b&pair=2')
+        assert req.get_param_as_dict('pair', allow_multiple=False) == {
+            'a': '1',
+            'b': '2',
+        }
 
     def test_pairs_odd_length(self, asgi, util):
         req = util.create_req(asgi, query_string='pair=a&pair=b&pair=c')
