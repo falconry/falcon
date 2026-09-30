@@ -6,7 +6,9 @@ from uuid import UUID
 
 import falcon
 import falcon.asgi
+import falcon.media
 import falcon.testing
+import falcon.util.misc
 
 
 @dataclass
@@ -220,3 +222,32 @@ def _exercise_app(app: falcon.App[Any, Any]) -> None:
         'fancy': True,
         'title': '404 Not Found',
     }
+
+
+def test_lru_cache_typing() -> None:
+    @falcon.util.misc._lru_cache_for_simple_logic(maxsize=16)
+    def add(a: int, b: int) -> int:
+        return a + b
+
+    @falcon.util.misc._lru_cache_nop(maxsize=16)
+    def concat(a: str, b: str) -> str:
+        return a + b
+
+    res_add: int = add(1, 2)
+    assert res_add == 3
+    add.cache_clear()
+
+    res_concat: str = concat('x', 'y')
+    assert res_concat == 'xy'
+    concat.cache_clear()
+
+    code: int = falcon.http_status_to_code(falcon.HTTP_200)
+    assert code == 200
+    falcon.http_status_to_code.cache_clear()
+
+    status: str = falcon.code_to_http_status(200)
+    assert status == falcon.HTTP_200
+    falcon.code_to_http_status.cache_clear()
+
+    handlers = falcon.media.Handlers()
+    handlers._resolve.cache_clear()
