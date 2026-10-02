@@ -1,3 +1,15 @@
+# --------------------------------------------------------------------
+#
+# NOTE(kgriffs,vytas): CPython 3.10-3.15 is required when checking
+# combined coverage. To check coverage:
+#
+#   $ tox
+#
+# You can then drill down into coverage details by opening the HTML
+# report at ".coverage_html/index.html".
+#
+# --------------------------------------------------------------------
+
 requires = ["tox>=4.19"]
 env_list = [
   "cleanup",
@@ -15,237 +27,446 @@ env_list = [
 [env_run_base]
 set_env = { PIP_CONFIG_FILE = "pip.conf", PYTHONASYNCIODEBUG = "1", FALCON_DISABLE_CYTHON = "Y" }
 deps = ["-r requirements/tests"]
-commands = [["python", "tools/clean.py", "falcon"], { replace = "posargs", default = ["pytest", "tests"] }]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    { replace = "posargs", default = ["pytest", "tests"] },
+]
+
+# --------------------------------------------------------------------
+# Miscellaneous tasks
+# --------------------------------------------------------------------
 
 [env.cleanup]
 deps = ["-r requirements/tests"]
-commands = [["python", "tools/clean.py", "falcon"], ["coverage", "erase"]]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["coverage", "erase"],
+]
+
+# --------------------------------------------------------------------
+# Coverage
+# --------------------------------------------------------------------
 
 [env.coverage]
 deps = ["-r requirements/tests"]
-commands = [["coverage", "combine"], ["coverage", "html", "-d", ".coverage_html"], ["coverage", "report", "--fail-under", "100"]]
+commands = [
+    ["coverage", "combine"],
+    ["coverage", "html", "-d", ".coverage_html"],
+    ["coverage", "report", "--fail-under", "100"],
+]
+
+# Commands and dependencies for the minimal test suite.
 
 [env.mintest]
 set_env = { PIP_CONFIG_FILE = "pip.conf", PYTHONASYNCIODEBUG = "0", FALCON_DISABLE_CYTHON = "Y" }
 deps = ["-r requirements/mintest"]
-commands = [["coverage", "run", "-m", "pytest", "tests", "-k", "not slow", { replace = "posargs", extend = true }]]
+commands = [
+    ["coverage", "run", "-m", "pytest", "tests", "-k", "not slow", { replace = "posargs", extend = true }],
+]
 
 [env.pytest]
 deps = ["-r requirements/tests", "pytest-randomly", "jsonschema", "testtools"]
-commands = [["coverage", "run", "-m", "pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["coverage", "run", "-m", "pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py314]
 base_python = "python3.14"
 deps = ["-r requirements/tests", "pytest-randomly", "jsonschema", "testtools"]
-commands = [["python", "tools/clean.py", "falcon"], ["coverage", "run", "-m", "pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["coverage", "run", "-m", "pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py314_nocover]
 base_python = "python3.14"
 deps = ["-r requirements/tests", "pytest-randomly", "jsonschema"]
-commands = [["python", "tools/clean.py", "falcon"], ["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
+
+# --------------------------------------------------------------------
+# Additional test suite environments
+# --------------------------------------------------------------------
 
 [env.pypy3]
 base_python = "pypy3"
+
+# --------------------------------------------------------------------
+# Debugging
+# --------------------------------------------------------------------
 
 [env.py3_debug]
 base_python = "python3.14"
 deps = ["-r requirements/tests", "pdbpp", "uvicorn", "jsonschema"]
 
+# --------------------------------------------------------------------
+# Typing
+# --------------------------------------------------------------------
+
 [env.mypy]
 skip_install = true
 skip_sdist = true
 deps = ["mypy", "types-jsonschema"]
-commands = [["python", "tools/clean.py", "falcon"], ["mypy", "--strict", "falcon"]]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["mypy", "--strict", "falcon"],
+]
 
 [env.mypy_tests]
-deps = ["-r requirements/tests", "mypy", "cheroot", "types-requests", "types-PyYAML", "types-ujson", "types-waitress", "types-aiofiles", "types-jsonschema"]
-commands = [["python", "tools/clean.py", "falcon"], ["mypy", "--strict", "e2e-tests/server"], ["mypy", "--strict", "tests/test_typing.py"], ["mypy", "tests", "--allow-untyped-calls", "--allow-untyped-defs", "--no-check-untyped-defs"]]
+deps = [
+    "-r requirements/tests",
+    "mypy",
+    "cheroot",
+    "types-requests",
+    "types-PyYAML",
+    "types-ujson",
+    "types-waitress",
+    "types-aiofiles",
+    "types-jsonschema",
+]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["mypy", "--strict", "e2e-tests/server"],
+    ["mypy", "--strict", "tests/test_typing.py"],
+    ["mypy", "tests", "--allow-untyped-calls", "--allow-untyped-defs", "--no-check-untyped-defs"],
+]
 
 [env.pyright_tests]
 deps = ["pyright"]
-commands = [["python", "tools/clean.py", "falcon"], ["pyright", "e2e-tests/server"], ["pyright", "tests/test_typing.py"]]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["pyright", "e2e-tests/server"],
+    ["pyright", "tests/test_typing.py"],
+]
+
+# --------------------------------------------------------------------
+# Cython
+# --------------------------------------------------------------------
 
 [env.py39_cython]
 base_python = "python3.9"
+# NOTE(vytas): Specify Cython dep for tests/test_cython.py as PEP 517 build
+#   does not require it (although Tox seems to inject it in the current impl).
 deps = ["-r requirements/tests", "Cython"]
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py310_cython]
 base_python = "python3.10"
 deps = ["-r requirements/tests", "Cython"]
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py311_cython]
 base_python = "python3.11"
 deps = ["-r requirements/tests", "Cython"]
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py312_cython]
 base_python = "python3.12"
-deps = ["-r requirements/tests", "Cython", "setuptools"]
+# NOTE(vytas): pyximport relies on distutils.extension
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py313_cython]
 base_python = "python3.13"
-deps = ["-r requirements/tests", "Cython", "setuptools"]
+# NOTE(vytas): pyximport relies on distutils.extension
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py314_cython]
 base_python = "python3.14"
-deps = ["-r requirements/tests", "Cython", "setuptools"]
+# NOTE(vytas): pyximport relies on distutils.extension
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
 
 [env.py315_cython]
 base_python = "python3.15"
-deps = ["-r requirements/tests", "Cython", "setuptools"]
+# NOTE(vytas): pyximport relies on distutils.extension
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["pytest", "tests", { replace = "posargs", extend = true }]]
+commands = [
+    ["pytest", "tests", { replace = "posargs", extend = true }],
+]
+
+# --------------------------------------------------------------------
+# WSGI servers (Cythonized Falcon)
+# --------------------------------------------------------------------
 
 [env.wsgi_servers]
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-deps = ["-r requirements/tests", "Cython", "cheroot", "granian", "gunicorn", "pyuwsgi", "waitress"]
-commands = [["pytest", "-v", "tests/test_wsgi_servers.py"]]
+# NOTE(vytas): Uvicorn is also included (via default deps) and tested.
+commands = [
+    ["pytest", "-v", "tests/test_wsgi_servers.py"],
+]
 
 [env.wsgi_meinheld]
-base_python = "python3.9"
+# NOTE(caselit): meinheld requires greenlet<0.5 that is not compatible with py3.10
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
 deps = ["-r requirements/tests", "Cython", "gunicorn", "meinheld"]
-commands = [["pytest", "-v", "tests/test_wsgi_servers.py"]]
+commands = [
+    ["pytest", "-v", "tests/test_wsgi_servers.py"],
+]
+
+# --------------------------------------------------------------------
+# ASGI servers
+# --------------------------------------------------------------------
 
 [env.daphne]
 deps = ["-r requirements/asgiservers", "daphne"]
-commands = [["pytest", "-v", "tests/asgi/test_asgi_servers.py"]]
+commands = [
+    ["pytest", "-v", "tests/asgi/test_asgi_servers.py"],
+]
 
 [env.granian]
 deps = ["-r requirements/asgiservers", "granian"]
-commands = [["pytest", "-v", "tests/asgi/test_asgi_servers.py"]]
+commands = [
+    ["pytest", "-v", "tests/asgi/test_asgi_servers.py"],
+]
 
 [env.hypercorn]
 deps = ["-r requirements/asgiservers", "hypercorn"]
-commands = [["pytest", "-v", "tests/asgi/test_asgi_servers.py"]]
+commands = [
+    ["pytest", "-v", "tests/asgi/test_asgi_servers.py"],
+]
+
+# --------------------------------------------------------------------
+# Smoke testing with a sample app
+# --------------------------------------------------------------------
 
 [env.py310_smoke]
-base_python = "python3.10"
+# NOTE(vytas): vmprof supports only up to Python 3.11 at the time of writing.
+#   (https://github.com/vmprof/vmprof-python/issues/261)
 deps = ["-r requirements/bench"]
-commands = [["python", "-c", "import falcon.asgi; falcon.asgi.App()"], ["falcon-bench", "-t", "1", "-b", "falcon-ext"]]
+commands = [
+    ["python", "-c", "import falcon.asgi; falcon.asgi.App()"],
+    ["falcon-bench", "-t", "1", "-b", "falcon-ext"],
+]
 
 [env.py310_smoke_cython]
-base_python = "python3.10"
+# NOTE(vytas): vmprof supports only up to Python 3.11 at the time of writing.
+#   (https://github.com/vmprof/vmprof-python/issues/261)
 deps = ["-r requirements/bench", "cython"]
 set_env = { PIP_CONFIG_FILE = "pip.conf", FALCON_DISABLE_CYTHON = "", FALCON_ASGI_WRAP_NON_COROUTINES = "Y", FALCON_TESTING_SESSION = "Y", PYTHONASYNCIODEBUG = "1" }
-commands = [["python", "-c", "import falcon.asgi; falcon.asgi.App()"], ["falcon-bench", "-t", "1", "-b", "falcon-ext"]]
+commands = [
+    ["python", "-c", "import falcon.asgi; falcon.asgi.App()"],
+    ["falcon-bench", "-t", "1", "-b", "falcon-ext"],
+]
+
+# --------------------------------------------------------------------
+# Lint
+# --------------------------------------------------------------------
 
 [env.pep8]
 deps = ["ruff>=0.16.7"]
 skip_install = true
-commands = [["ruff", "check", { replace = "posargs", extend = true }]]
+commands = [
+    ["ruff", "check", { replace = "posargs", extend = true }],
+]
 
 [env.pep8-docstrings]
 deps = ["ruff>=0.16.7"]
 skip_install = true
-commands = [["ruff", "check", "--exclude=.ecosystem,.eggs,.git,.tox,.venv,build,dist,docs,examples,tests,falcon/bench/nuts", "--select=D205,D212,D400,D401,D403,D404", { replace = "posargs", extend = true }]]
+commands = [
+    ["ruff", "check", "--exclude=.ecosystem,.eggs,.git,.tox,.venv,build,dist,docs,examples,tests,falcon/bench/nuts", "--select=D205,D212,D400,D401,D403,D404", { replace = "posargs", extend = true }],
+]
 
 [env.ruff]
 deps = ["ruff>=0.16.7"]
 skip_install = true
-commands = [["ruff", "format", "--check", ".", { replace = "posargs", extend = true }]]
+commands = [
+    ["ruff", "format", "--check", ".", { replace = "posargs", extend = true }],
+]
 
 [env.reformat]
 deps = ["ruff>=0.16.7"]
 skip_install = true
-commands = [["ruff", "format", ".", { replace = "posargs", extend = true }], ["ruff", "check", "--fix"]]
+commands = [
+    ["ruff", "format", ".", { replace = "posargs", extend = true }],
+    ["ruff", "check", "--fix"],
+]
+
+# --------------------------------------------------------------------
+# For viewing environ dicts generated by various WSGI servers
+# --------------------------------------------------------------------
 
 [env.dump_gunicorn]
 deps = ["gunicorn"]
-commands = [["gunicorn", "-b", "localhost:8000", "tests.dump_wsgi"]]
+commands = [
+    ["gunicorn", "-b", "localhost:8000", "tests.dump_wsgi"],
+]
 
 [env.dump_waitress]
 deps = ["waitress"]
-commands = [["waitress-serve", "--listen=localhost:8000", "tests.dump_wsgi:application"]]
+commands = [
+    ["waitress-serve", "--listen=localhost:8000", "tests.dump_wsgi:application"],
+]
 
 [env.dump_wsgiref]
-commands = [["python", "tests/dump_wsgi.py"]]
+commands = [
+    ["python", "tests/dump_wsgi.py"],
+]
+
+# --------------------------------------------------------------------
+# Benchmarking
+# --------------------------------------------------------------------
 
 [env.py310_bench]
 base_python = "python3.10"
 deps = ["-r requirements/bench"]
-commands = [["falcon-bench", { replace = "posargs", extend = true }]]
+commands = [
+    ["falcon-bench", { replace = "posargs", extend = true }],
+]
 
 [env.py310_bench_cython]
 base_python = "python3.10"
 deps = ["-r requirements/bench", "cython"]
-commands = [["falcon-bench", { replace = "posargs", extend = true }]]
+commands = [
+    ["falcon-bench", { replace = "posargs", extend = true }],
+]
 
 [env.pypy_bench]
 base_python = "pypy"
 deps = ["-r requirements/bench"]
-commands = [["falcon-bench", { replace = "posargs", extend = true }]]
+commands = [
+    ["falcon-bench", { replace = "posargs", extend = true }],
+]
 
 [env.pypy3_bench]
 base_python = "pypy3"
 deps = ["-r requirements/bench"]
-commands = [["falcon-bench", { replace = "posargs", extend = true }]]
+commands = [
+    ["falcon-bench", { replace = "posargs", extend = true }],
+]
+
+# --------------------------------------------------------------------
+# Package sanity check with twine
+# --------------------------------------------------------------------
 
 [env.twine_check]
 skip_sdist = true
 deps = ["build", "twine"]
-commands = [["python", "-m", "build"], ["twine", "check", "dist/*"]]
+commands = [
+    ["python", "-m", "build"],
+    ["twine", "check", "dist/*"],
+]
+
+# --------------------------------------------------------------------
+# Security auditing
+# --------------------------------------------------------------------
 
 [env.zizmor]
 skip_sdist = true
 deps = ["zizmor"]
-commands = [["zizmor", ".github/workflows/"]]
+commands = [
+    ["zizmor", ".github/workflows/"],
+]
 
 [env.zizmor_github]
 skip_sdist = true
 deps = ["zizmor"]
-commands = [["zizmor", "--format", "github", ".github/workflows/"]]
+commands = [
+    ["zizmor", "--format", "github", ".github/workflows/"],
+]
+
+# --------------------------------------------------------------------
+# Documentation
+# --------------------------------------------------------------------
 
 [env.docs]
-pass_env = ["SOURCE_DATE_EPOCH"]
+# NOTE(vytas): For easy testing of reproducible documentation builds.
+#   (See also: https://reproducible-builds.org/docs/source-date-epoch/)
 deps = ["-r requirements/docs"]
-commands = [["sphinx-build", "-j", "auto", "-W", "-E", "-b", "html", "docs", "docs/_build/html", { replace = "posargs", extend = true }]]
+commands = [
+    ["sphinx-build", "-j", "auto", "-W", "-E", "-b", "html", "docs", "docs/_build/html", { replace = "posargs", extend = true }],
+]
 
 [env.changelog_release]
 deps = ["-r requirements/docs", "toml"]
-commands = [["python", "tools/add_contributors.py"], ["python", "tools/towncrier_draft.py"]]
+commands = [
+    ["python", "tools/add_contributors.py"],
+    ["python", "tools/towncrier_draft.py"],
+]
 
 [env.changelog_draft]
-deps = ["-r requirements/docs", "toml"]
-commands = [["python", "tools/add_contributors.py", "--dry-run"], ["python", "tools/towncrier_draft.py", "--dry-run"]]
+# NOTE(kgriffs): Renders the changelog to HTML so that the final result
+#   can be previewed, but then restores the changelog RST document.
+commands = [
+    ["python", "tools/add_contributors.py", "--dry-run"],
+    ["python", "tools/towncrier_draft.py", "--dry-run"],
+]
 
 [env.dash]
 base_python = "python3.10"
 set_env = { DASHBUILD = "True" }
 deps = ["-r requirements/docs"]
-commands = [["sphinx-build", "-j", "4", "-W", "-E", "-b", "html", "docs", "docs/_build/html", { replace = "posargs", extend = true }], ["tools/generate_dash.sh"]]
+commands = [
+    ["sphinx-build", "-j", "4", "-W", "-E", "-b", "html", "docs", "docs/_build/html", { replace = "posargs", extend = true }],
+    ["tools/generate_dash.sh"],
+]
+
+# --------------------------------------------------------------------
+# Tutorial tests
+#
+#   - Tutorial ("look") tests
+#   - ASGI tutorial ("asgilook") tests
+#   - WebSockets tutorial ("ws_tutorial") tests
+# --------------------------------------------------------------------
 
 [env.look]
 deps = ["-r examples/look/requirements/test"]
-commands = [["pytest", "examples/look/tests"]]
+commands = [
+    ["pytest", "examples/look/tests"],
+]
 
 [env.asgilook]
 base_python = "python3.14"
-deps = ["-r examples/asgilook/requirements/asgilook", "-r examples/asgilook/requirements/test"]
-commands = [["pytest", "--cov", "asgilook", "--cov-config", "examples/asgilook/.coveragerc", "--cov-fail-under", "100", "--cov-report", "term-missing", "examples/asgilook/tests/"]]
+deps = [
+    "-r examples/asgilook/requirements/asgilook",
+    "-r examples/asgilook/requirements/test",
+]
+commands = [
+    ["pytest", "--cov", "asgilook", "--cov-config", "examples/asgilook/.coveragerc", "--cov-fail-under", "100", "--cov-report", "term-missing", "examples/asgilook/tests/"],
+]
 
 [env.ws_tutorial]
 base_python = "python3.14"
-deps = ["-r examples/ws_tutorial/requirements/app", "-r examples/ws_tutorial/requirements/test"]
-commands = [["pytest", "--cov", "ws_tutorial", "--cov-config", "examples/ws_tutorial/.coveragerc", "--cov-fail-under", "100", "--cov-report", "term-missing", "examples/ws_tutorial/tests/"]]
+deps = [
+    "-r examples/ws_tutorial/requirements/app",
+    "-r examples/ws_tutorial/requirements/test",
+]
+commands = [
+    ["pytest", "--cov", "ws_tutorial", "--cov-config", "examples/ws_tutorial/.coveragerc", "--cov-fail-under", "100", "--cov-report", "term-missing", "examples/ws_tutorial/tests/"],
+]
+
+# --------------------------------------------------------------------
+# E2E tests
+# --------------------------------------------------------------------
 
 [env.e2e_chrome]
 base_python = "python3.14"
 deps = ["-r requirements/e2e"]
-commands = [["pytest", "e2e-tests/", "--browser=chrome"]]
+commands = [
+    ["pytest", "e2e-tests/", "--browser=chrome"],
+]
 
 [env.e2e_firefox]
 base_python = "python3.14"
 deps = ["-r requirements/e2e"]
-commands = [["pytest", "e2e-tests/", "--browser=firefox"]]
+commands = [
+    ["pytest", "e2e-tests/", "--browser=firefox"],
+]
