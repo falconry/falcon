@@ -6,3 +6,4 @@ Deployment Guide
 
    intro
    nginx-uwsgi
+   uvicorn-nginx

@@ -178,6 +178,8 @@ Conversely, in order to run an ``async``
 `Uvicorn <https://uvicorn.dev/>`__ is a popular choice, owing to its fast
 implementation. What is more, Uvicorn is supported on Windows, and on PyPy
 (however, both at a performance loss compared to CPython on Unix-like systems).
+For a production-oriented walkthrough with NGINX, see
+:ref:`deploy-uvicorn-nginx`.
 
 `Granian <https://github.com/emmett-framework/granian>`__ is another very
 performant and stable option (often outperforming Uvicorn on both throughput

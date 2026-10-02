@@ -86,6 +86,8 @@ Let's pick the popular ``uvicorn`` for now::
   $ pip install uvicorn[standard]
 
 See also: :ref:`ASGI Server Installation <install_asgi_server>`.
+When you are ready to host an ASGI app in production (for example behind
+NGINX), see :ref:`deploy-uvicorn-nginx`.
 
 While we're at it, let's install the handy
 `HTTPie <https://github.com/jakubroztocil/httpie>`_ HTTP client to help us
