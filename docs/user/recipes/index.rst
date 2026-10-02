@@ -12,3 +12,4 @@ Recipes
    pretty-json
    raw-url-path
    request-id
+   custom-error
