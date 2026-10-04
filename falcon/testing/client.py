@@ -992,21 +992,26 @@ async def _simulate_request_asgi(
             app(lifespan_scope, lifespan_event_emitter, lifespan_event_collector)
         )
 
-        await _wait_for_startup(lifespan_event_collector.events)
+        try:
+            await _wait_for_startup(lifespan_event_collector.events)
 
-        task_req = asyncio.create_task(
-            app(http_scope, req_event_emitter, resp_event_collector)
-        )
-        req_event_emitter.disconnect()
-        await task_req
+            task_req = asyncio.create_task(
+                app(http_scope, req_event_emitter, resp_event_collector)
+            )
+            req_event_emitter.disconnect()
+            await task_req
 
-        # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
-        #   to proceed.
-        async with shutting_down:
-            shutting_down.notify()
+            # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
+            #   to proceed.
+            async with shutting_down:
+                shutting_down.notify()
 
-        await _wait_for_shutdown(lifespan_event_collector.events)
-        await task_lifespan
+            await _wait_for_shutdown(lifespan_event_collector.events)
+            await task_lifespan
+        finally:
+            # NOTE(vytas): If the request task failed, the lifespan task
+            #   still awaits shutdown.
+            await _cancel_and_drain(task_lifespan)
 
     await conductor()
 
@@ -1155,7 +1160,16 @@ class ASGIConductor:
 
     async def __aexit__(self, ex_type: Any, ex: Any, tb: Any) -> bool:
         if ex_type:
-            return False
+            # NOTE(vytas): Shutdown is intentionally skipped on error;
+            #   cancel the lifespan task rather than leave it pending.
+            assert self._lifespan_task is not None
+            await _cancel_and_drain(self._lifespan_task)
+
+            # NOTE(vytas): Due to some old tracing bug, code coverage is not
+            #   registered for the following return statement on CPython 3.11.
+            #   I have manually verified it is covered by replacing False
+            #   with 0/0, it was hit at least twice in the lifespan tests.
+            return False  # pragma: no py311 cover
 
         # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
         #   to proceed.
@@ -1211,10 +1225,12 @@ class ASGIConductor:
 
         return _AsyncContextManager(self.simulate_request('GET', path, **kwargs))
 
-    def simulate_ws(self, path: str = '/', **kwargs: Any) -> _WSContextManager:
+    def simulate_ws(
+        self, path: str = '/', timeout: float | None = None, **kwargs: Any
+    ) -> helpers._WSContextManager:
         """Simulate a WebSocket connection to an ASGI application.
 
-        All keyword arguments are passed through to
+        All keyword arguments (except `timeout`) are passed through to
         :meth:`falcon.testing.create_scope_ws`.
 
         This method returns an async context manager that can be used to obtain
@@ -1230,14 +1246,25 @@ class ASGIConductor:
                 while some_condition:
                     message = await ws.receive_text()
 
+        Keyword Args:
+            timeout (float): Number of seconds to wait before giving up and
+                raising :class:`TimeoutError`.
+
+                This applies both when waiting for the app to accept or deny
+                the connection (default: 5 seconds), and when waiting for
+                the app's task to complete after the context is exited and
+                the connection is closed (default: 30 seconds).
+
+                .. versionadded:: 4.4
+                    The `timeout` keyword argument.
         """
 
         scope = helpers.create_scope_ws(path=path, **kwargs)
-        ws = helpers.ASGIWebSocketSimulator()
+        ws = helpers.ASGIWebSocketSimulator(timeout)
 
         task_req = asyncio.create_task(self.app(scope, ws._emit, ws._collect))
 
-        return _WSContextManager(ws, task_req)
+        return helpers._WSContextManager(ws, task_req, timeout)
 
     async def simulate_head(self, path: str = '/', **kwargs: Any) -> Result:
         """Simulate a HEAD request to an ASGI application.
@@ -2283,43 +2310,6 @@ class _AsyncContextManager:
         self._obj = None
 
 
-class _WSContextManager:
-    def __init__(
-        self, ws: helpers.ASGIWebSocketSimulator, task_req: asyncio.Task[Any]
-    ) -> None:
-        self._ws = ws
-        self._task_req = task_req
-
-    async def __aenter__(self) -> helpers.ASGIWebSocketSimulator:
-        ready_waiter = asyncio.create_task(self._ws.wait_ready())
-
-        # NOTE(kgriffs): Wait on both so that in the case that the request
-        #   task raises an error, we don't just end up masking it with an
-        #   asyncio.TimeoutError.
-        await asyncio.wait(
-            [ready_waiter, self._task_req],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-        if ready_waiter.done():
-            await ready_waiter
-        else:
-            # NOTE(kgriffs): Retrieve the exception, if any
-            await self._task_req
-
-            # NOTE(kgriffs): This should complete gracefully (without a
-            #   timeout). It may raise WebSocketDisconnected, but that
-            #   is expected and desired for "normal" reasons that the
-            #   request task finished without accepting the connection.
-            await ready_waiter
-
-        return self._ws
-
-    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
-        await self._ws.close()
-        await self._task_req
-
-
 def _prepare_sim_args(
     path: str,
     query_string: str | None,
@@ -2385,6 +2375,20 @@ def _is_asgi_app(app: Callable[..., Any]) -> bool:
     is_asgi = num_app_args == 3
 
     return is_asgi
+
+
+async def _cancel_and_drain(task: asyncio.Task[Any]) -> None:
+    """Cancel the task, and retrieve its exception.
+
+    A pending task is otherwise only reaped by the GC, which emits a stray
+    ``Task was destroyed but it is pending!`` warning.
+    """
+    if not task.done():
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 
 async def _wait_for_startup(events: Iterable[AsgiEvent]) -> None:

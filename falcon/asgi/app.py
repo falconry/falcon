@@ -652,56 +652,103 @@ class App(falcon.app.App[_ReqT, _RespT]):
 
             req_succeeded = False
 
-        resp_status: int = resp.status_code
-        default_media_type: str | None = self.resp_options.default_media_type
+        try:
+            resp_status: int = resp.status_code
+            default_media_type: str | None = self.resp_options.default_media_type
 
-        if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
-            #
-            # PERF(vytas): move check for the less common and much faster path
-            # of resp_status being in {204, 304} here; NB: this builds on the
-            # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
-            #
-            # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
-            # RFC 2616, as commented in that module's source code. The
-            # presence of the Content-Length header is not similarly
-            # enforced.
-            #
-            # NOTE(kgriffs): Assuming the same for ASGI until proven otherwise.
-            #
-            if resp_status in _TYPELESS_STATUS_CODES:
-                default_media_type = None
-            elif (
-                # NOTE(kgriffs): If they are going to stream using an
-                #   async generator, we can't know in advance what the
-                #   content length will be.
-                (data is not None or not resp.stream)
-                and req.method == 'HEAD'
-                and resp_status not in _BODILESS_STATUS_CODES
-                and 'content-length' not in resp._headers
-            ):
-                # NOTE(kgriffs): We really should be returning a Content-Length
-                #   in this case according to my reading of the RFCs. By
-                #   optionally using len(data) we let a resource simulate HEAD
-                #   by turning around and calling it's own on_get().
-                resp._headers['content-length'] = str(len(data)) if data else '0'
+            if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
+                #
+                # PERF(vytas): move check for the less common and much faster path
+                # of resp_status being in {204, 304} here; NB: this builds on the
+                # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
+                #
+                # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+                # RFC 2616, as commented in that module's source code. The
+                # presence of the Content-Length header is not similarly
+                # enforced.
+                #
+                # NOTE(kgriffs): Assuming the same for ASGI until proven otherwise.
+                #
+                if resp_status in _TYPELESS_STATUS_CODES:
+                    default_media_type = None
+                elif (
+                    # NOTE(kgriffs): If they are going to stream using an
+                    #   async generator, we can't know in advance what the
+                    #   content length will be.
+                    (data is not None or not resp.stream)
+                    and req.method == 'HEAD'
+                    and resp_status not in _BODILESS_STATUS_CODES
+                    and 'content-length' not in resp._headers
+                ):
+                    # NOTE(kgriffs): We really should be returning a
+                    #   Content-Length in this case according to my reading of
+                    #   the RFCs. By optionally using len(data) we let a
+                    #   resource simulate HEAD by turning around and calling
+                    #   it's own on_get().
+                    resp._headers['content-length'] = str(len(data)) if data else '0'
 
-            await send(
-                {
-                    # PERF(vytas): Inline the value of
-                    #   EventType.HTTP_RESPONSE_START in this critical code path.
-                    'type': 'http.response.start',
-                    'status': resp_status,
-                    'headers': resp._asgi_headers(default_media_type),
-                }
-            )
+                await send(
+                    {
+                        # PERF(vytas): Inline the value of
+                        #   EventType.HTTP_RESPONSE_START in this critical code path.
+                        'type': 'http.response.start',
+                        'status': resp_status,
+                        'headers': resp._asgi_headers(default_media_type),
+                    }
+                )
 
-            await send(_EVT_RESP_EOF)
+                await send(_EVT_RESP_EOF)
 
-            # PERF(vytas): Check resp._registered_callbacks directly to shave
-            #   off a function call since this is a hot/critical code path.
-            if resp._registered_callbacks:
-                self._schedule_callbacks(resp)
-            return
+                # PERF(vytas): Check resp._registered_callbacks directly to shave
+                #   off a function call since this is a hot/critical code path.
+                if resp._registered_callbacks:
+                    self._schedule_callbacks(resp)
+                return
+
+            # NOTE(vytas): Server-sent events take precedence over data (if any),
+            #   and they are rendered outside of this try block (along with
+            #   streams) below.
+            # PERF(vytas): Operate directly on the resp private interface to
+            #   reduce overhead since this is a hot/critical code path.
+            if data is not None and not resp._sse:
+                # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
+                #   to reduce overhead since this is a hot/critical code path.
+                # NOTE(kgriffs): We always set content-length to match the
+                #   body bytes length, even if content-length is already set. The
+                #   reason being that web servers and LBs behave unpredictably
+                #   when the header doesn't match the body (sometimes choosing to
+                #   drop the HTTP connection prematurely, for example).
+                resp._headers['content-length'] = str(len(data))
+
+                await send(
+                    {
+                        # PERF(vytas): Inline the value of
+                        #   EventType.HTTP_RESPONSE_START in this critical code path.
+                        'type': 'http.response.start',
+                        'status': resp_status,
+                        'headers': resp._asgi_headers(default_media_type),
+                    }
+                )
+
+                await send(
+                    {
+                        # PERF(vytas): Inline the value of
+                        #   EventType.HTTP_RESPONSE_BODY in this critical code path.
+                        'type': 'http.response.body',
+                        'body': data,
+                    }
+                )
+
+                # PERF(vytas): Check resp._registered_callbacks directly to shave
+                #   off a function call since this is a hot/critical code path.
+                if resp._registered_callbacks:
+                    self._schedule_callbacks(resp)
+                return
+
+        except Exception as ex:
+            if self._report_error is not None:
+                self._report_error(req, ex, params, False)
+            raise
 
         # PERF(vytas): Operate directly on the resp private interface to reduce
         #   overhead since this is a hot/critical code path.
@@ -773,41 +820,6 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 pass
 
             await send({'type': EventType.HTTP_RESPONSE_BODY})
-            return
-
-        if data is not None:
-            # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
-            #   to reduce overhead since this is a hot/critical code path.
-            # NOTE(kgriffs): We always set content-length to match the
-            #   body bytes length, even if content-length is already set. The
-            #   reason being that web servers and LBs behave unpredictably
-            #   when the header doesn't match the body (sometimes choosing to
-            #   drop the HTTP connection prematurely, for example).
-            resp._headers['content-length'] = str(len(data))
-
-            await send(
-                {
-                    # PERF(vytas): Inline the value of
-                    #   EventType.HTTP_RESPONSE_START in this critical code path.
-                    'type': 'http.response.start',
-                    'status': resp_status,
-                    'headers': resp._asgi_headers(default_media_type),
-                }
-            )
-
-            await send(
-                {
-                    # PERF(vytas): Inline the value of
-                    #   EventType.HTTP_RESPONSE_BODY in this critical code path.
-                    'type': 'http.response.body',
-                    'body': data,
-                }
-            )
-
-            # PERF(vytas): Check resp._registered_callbacks directly to shave
-            #   off a function call since this is a hot/critical code path.
-            if resp._registered_callbacks:
-                self._schedule_callbacks(resp)
             return
 
         stream = resp.stream
@@ -1401,13 +1413,30 @@ class App(falcon.app.App[_ReqT, _RespT]):
             bool: ``True`` if a handler was found and called for the
             exception, ``False`` otherwise.
         """
-        err_handler = self._find_error_handler(ex)
+        derived_ex: HTTPError | HTTPStatus | None = None
 
-        if resp:
-            # NOTE(caselit): Reset body, data and media before calling the handler
-            resp.text = resp.data = resp.media = None
+        try:
+            err_handler = self._find_error_handler(ex)
 
-        if err_handler is not None:
+            if err_handler is None:
+                # NOTE(kgriffs): No error handlers are defined for ex and it is
+                #   not one of (HTTPStatus, HTTPError), since it would have
+                #   matched one of the corresponding default handlers.
+                # NOTE(vytas): It is hard to hit this path in Falcon 3.0+
+                #   without manipulating the app's private variables, as we
+                #   always install an Exception handler.
+
+                # PERF(vytas): Here and below: only call the reporter if one is
+                #   installed (instead of having a default catch-all method).
+                if self._report_error is not None:
+                    self._report_error(req, ex, params, False)
+
+                return False
+
+            if resp is not None:
+                # NOTE(caselit): Reset body, data and media before calling the handler.
+                resp.text = resp.data = resp.media = None
+
             try:
                 kwargs = {}
 
@@ -1420,17 +1449,46 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 await err_handler(req, resp, ex, params, **kwargs)
 
             except HTTPStatus as status:
+                derived_ex = status
                 await self._http_status_handler(req, resp, status, params, ws=ws)
             except HTTPError as error:
+                derived_ex = error
                 await self._http_error_handler(req, resp, error, params, ws=ws)
+
+            # NOTE(vytas): Exceptions are reported in the order they were
+            #   raised: first the original error, then the derived
+            #   HTTPError/HTTPStatus, if any.
+            # NOTE(vytas): Do not report ex twice if the handler opted to
+            #   reraise the same HTTPError/HTTPStatus that is being handled.
+            if self._report_error is not None:
+                self._report_error(req, ex, params, True)
+                if derived_ex is not None and derived_ex is not ex:
+                    self._report_error(req, derived_ex, params, True)
 
             return True
 
-        # NOTE(kgriffs): No error handlers are defined for ex
-        # and it is not one of (HTTPStatus, HTTPError), since it
-        # would have matched one of the corresponding default
-        # handlers.
-        return False
+        except Exception as handler_ex:
+            # NOTE(vytas): If the handler opted to reraise the same exception,
+            #   we assume that it is preferred to handle errors outside of the
+            #   Falcon app (e.g., in a higher level framework).
+            #   Either way, no response was rendered for any of the exceptions
+            #   below, so they are all reported as unhandled.
+            if self._report_error is not None:
+                self._report_error(req, ex, params, False)
+                if derived_ex is not None and derived_ex is not ex:
+                    self._report_error(req, derived_ex, params, False)
+                if handler_ex is not ex:
+                    self._report_error(req, handler_ex, params, False)
+
+            # NOTE(vytas): Reraise the handler/serializer exception here since
+            #   (1) the exceptions have already been reported above, and
+            #   (2) it is consistent with the previous framework versions.
+            raise
+
+        # TODO(vytas): The below line is currently unreachable, hence the pragma.
+        #   But it will be reachable in the future if/when we add default 500
+        #   response for edge cases. We also want to keep it to avoid surprises.
+        return False  # pragma: nocover
 
     async def _ws_cleanup_on_error(self, ws: WebSocket) -> None:
         # NOTE(kgriffs): Attempt to close cleanly on our end

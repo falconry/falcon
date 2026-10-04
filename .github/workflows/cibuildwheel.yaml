@@ -27,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Build sdist and pure-Python wheel
         env:
@@ -79,7 +79,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Download artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -165,6 +165,7 @@ jobs:
           - cp312
           - cp313
           - cp314
+          - cp315
         include:
           - platform:
               name: manylinux_x86_64
@@ -182,6 +183,22 @@ jobs:
               name: musllinux_aarch64
               os: ubuntu-24.04-arm
             python: cp314t
+          - platform:
+              name: manylinux_x86_64
+              os: ubuntu-latest
+            python: cp315t
+          - platform:
+              name: musllinux_x86_64
+              os: ubuntu-latest
+            python: cp315t
+          - platform:
+              name: manylinux_aarch64
+              os: ubuntu-24.04-arm
+            python: cp315t
+          - platform:
+              name: musllinux_aarch64
+              os: ubuntu-24.04-arm
+            python: cp315t
 
     defaults:
       run:
@@ -201,7 +218,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@f03ac7617d6cff873ccf24cc0d567ef5ba5a9e6d # v4.0.0
+        uses: pypa/cibuildwheel@e090b81e30c4d855ea63bf4b6e59204c09a101ae # v4.2.1
         env:
           # NOTE(vytas): Uncomment to test against alpha/beta CPython
           #   (usually May-July until rc1).
@@ -234,7 +251,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Download artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1

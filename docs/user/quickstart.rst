@@ -128,11 +128,8 @@ parameters, handling errors, and working with request and response bodies.
             • Middleware (Middleware are independent):
                 → AuthMiddleware.process_request
                   → RequireJSON.process_request
-                    → JSONTranslator.process_request
 
-                        ├── Process route responder
-
-                    ↢ JSONTranslator.process_response
+                      ├── Process route responder
             • Sinks:
                 ⇥ /search/(?P<engine>ddg|y)\Z SinkAdapter
             • Error handlers:

@@ -41,6 +41,8 @@ class HTTPMovedPermanently(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -70,6 +72,8 @@ class HTTPFound(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -104,6 +108,8 @@ class HTTPSeeOther(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -133,6 +139,8 @@ class HTTPTemporaryRedirect(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:
@@ -159,6 +167,8 @@ class HTTPPermanentRedirect(HTTPStatus):
     Args:
         location (str): URI to provide as the Location header in the
             response.
+        headers (dict): Extra headers to add to the response. These
+            headers are merged with any existing response headers.
     """
 
     def __init__(self, location: str, headers: Headers | None = None) -> None:

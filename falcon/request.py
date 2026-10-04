@@ -646,8 +646,10 @@ class Request:
         # empty string, uwsgi, gunicorn, waitress, and wsgiref all
         # include it even in that case.
         try:
-            # TODO(0xMattB): Implement advanced typing to type as 'str' (see PR #2599)
-            return self.env['SCRIPT_NAME']  # type: ignore[no-any-return]
+            root_path: str = self.env['SCRIPT_NAME']
+            if not root_path.isascii():
+                root_path = root_path.encode('iso-8859-1').decode('utf-8', 'replace')
+            return root_path
         except KeyError:
             return ''
 
@@ -1490,6 +1492,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: str | None = ...,
+        allow_multiple: bool = ...,
     ) -> str: ...
 
     @overload
@@ -1500,6 +1503,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: str,
+        allow_multiple: bool = ...,
     ) -> str: ...
 
     @overload
@@ -1509,6 +1513,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        allow_multiple: bool = True,
     ) -> str | None: ...
 
     def get_param(
@@ -1517,6 +1522,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: str | None = None,
+        allow_multiple: bool = True,
     ) -> str | None:
         """Return the raw value of a query string parameter as a string.
 
@@ -1548,7 +1554,8 @@ class Request:
 
             When multiple values are expected for a parameter,
             :meth:`~.get_param_as_list` can be used to retrieve all of
-            them at once.
+            them at once. Otherwise, pass ``allow_multiple=False`` to refuse
+            the request instead of guessing which value to return.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
@@ -1561,6 +1568,14 @@ class Request:
                 the value of the param, but only if the param is present.
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
+                Identical values still count as multiple values, and a single
+                occurrence of a param also resolves to multiple values when
+                :attr:`~.RequestOptions.auto_parse_qs_csv` is enabled and the
+                value is a comma-separated list (e.g., ``foo=a,b,c``).
 
         Returns:
             str: The value of the param as a string, or ``None`` if param is
@@ -1568,7 +1583,11 @@ class Request:
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
         params = self._params
@@ -1579,8 +1598,15 @@ class Request:
             # NOTE(warsaw): If the key appeared multiple times, it will be
             # stored internally as a list.  We do not define which one
             # actually gets returned, but let's pick the last one for grins.
+            # NOTE(jap): Unless the caller opted out of guessing with
+            # allow_multiple=False, in which case a multi-value param is
+            # refused below.
             param = params[name]
             if isinstance(param, list):
+                if not allow_multiple:
+                    msg = 'It may not have more than one value.'
+                    raise errors.HTTPInvalidParam(msg, name)
+
                 param = param[-1]
 
             if store is not None:
@@ -1602,6 +1628,7 @@ class Request:
         max_value: int | None = ...,
         store: StoreArg = ...,
         default: int | None = ...,
+        allow_multiple: bool = ...,
     ) -> int: ...
 
     @overload
@@ -1614,6 +1641,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: int,
+        allow_multiple: bool = ...,
     ) -> int: ...
 
     @overload
@@ -1625,6 +1653,7 @@ class Request:
         max_value: int | None = ...,
         store: StoreArg = ...,
         default: int | None = ...,
+        allow_multiple: bool = ...,
     ) -> int | None: ...
 
     def get_param_as_int(
@@ -1635,6 +1664,7 @@ class Request:
         max_value: int | None = None,
         store: StoreArg = None,
         default: int | None = None,
+        allow_multiple: bool = True,
     ) -> int | None:
         """Return the value of a query string parameter as an int.
 
@@ -1657,6 +1687,10 @@ class Request:
                 (default ``None``).
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
 
         Returns:
             int: The value of the param if it is found and can be converted to
@@ -1670,7 +1704,11 @@ class Request:
                 param's value falls outside the given interval, i.e., the
                 value must be in the interval: min_value <= value <=
                 max_value to avoid triggering an error.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
         params = self._params
@@ -1680,6 +1718,10 @@ class Request:
         if name in params:
             val_str = params[name]
             if isinstance(val_str, list):
+                if not allow_multiple:
+                    msg = 'It may not have more than one value.'
+                    raise errors.HTTPInvalidParam(msg, name)
+
                 val_str = val_str[-1]
 
             try:
@@ -1715,6 +1757,7 @@ class Request:
         max_value: float | None = ...,
         store: StoreArg = ...,
         default: float | None = ...,
+        allow_multiple: bool = ...,
     ) -> float: ...
 
     @overload
@@ -1727,6 +1770,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: float,
+        allow_multiple: bool = ...,
     ) -> float: ...
 
     @overload
@@ -1738,6 +1782,7 @@ class Request:
         max_value: float | None = ...,
         store: StoreArg = ...,
         default: float | None = ...,
+        allow_multiple: bool = ...,
     ) -> float | None: ...
 
     def get_param_as_float(
@@ -1748,6 +1793,7 @@ class Request:
         max_value: float | None = None,
         store: StoreArg = None,
         default: float | None = None,
+        allow_multiple: bool = True,
     ) -> float | None:
         """Return the value of a query string parameter as an float.
 
@@ -1769,6 +1815,10 @@ class Request:
                 (default ``None``).
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
 
         Returns:
             float: The value of the param if it is found and can be converted to
@@ -1782,7 +1832,11 @@ class Request:
                 param's value falls outside the given interval, i.e., the
                 value must be in the interval: min_value <= value <=
                 max_value to avoid triggering an error.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
         params = self._params
@@ -1792,6 +1846,10 @@ class Request:
         if name in params:
             val_str = params[name]
             if isinstance(val_str, list):
+                if not allow_multiple:
+                    msg = 'It may not have more than one value.'
+                    raise errors.HTTPInvalidParam(msg, name)
+
                 val_str = val_str[-1]
 
             try:
@@ -1825,6 +1883,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: UUID | None = ...,
+        allow_multiple: bool = ...,
     ) -> UUID: ...
 
     @overload
@@ -1835,6 +1894,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: UUID,
+        allow_multiple: bool = ...,
     ) -> UUID: ...
 
     @overload
@@ -1844,6 +1904,7 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         default: UUID | None = ...,
+        allow_multiple: bool = ...,
     ) -> UUID | None: ...
 
     def get_param_as_uuid(
@@ -1852,6 +1913,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: UUID | None = None,
+        allow_multiple: bool = True,
     ) -> UUID | None:
         """Return the value of a query string parameter as an UUID.
 
@@ -1881,6 +1943,10 @@ class Request:
                 (default ``None``).
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
 
         Returns:
             UUID: The value of the param if it is found and can be converted to
@@ -1891,6 +1957,11 @@ class Request:
             HTTPBadRequest: The param was not found in the request, even
                 though it was required to be there, or it was found but
                 could not be converted to a ``UUID``.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
+
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
         params = self._params
@@ -1900,6 +1971,10 @@ class Request:
         if name in params:
             val_str = params[name]
             if isinstance(val_str, list):
+                if not allow_multiple:
+                    msg = 'It may not have more than one value.'
+                    raise errors.HTTPInvalidParam(msg, name)
+
                 val_str = val_str[-1]
 
             try:
@@ -1926,6 +2001,7 @@ class Request:
         store: StoreArg = ...,
         blank_as_true: bool = ...,
         default: bool | None = ...,
+        allow_multiple: bool = ...,
     ) -> bool: ...
 
     @overload
@@ -1937,6 +2013,7 @@ class Request:
         blank_as_true: bool = ...,
         *,
         default: bool,
+        allow_multiple: bool = ...,
     ) -> bool: ...
 
     @overload
@@ -1947,6 +2024,7 @@ class Request:
         store: StoreArg = ...,
         blank_as_true: bool = ...,
         default: bool | None = ...,
+        allow_multiple: bool = ...,
     ) -> bool | None: ...
 
     def get_param_as_bool(
@@ -1956,6 +2034,7 @@ class Request:
         store: StoreArg = None,
         blank_as_true: bool = True,
         default: bool | None = None,
+        allow_multiple: bool = True,
     ) -> bool | None:
         """Return the value of a query string parameter as a boolean.
 
@@ -1989,6 +2068,10 @@ class Request:
                 when a value is not specified in the query string.
             default (any): If the param is not found, return this
                 value instead of ``None``.
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
 
         Returns:
             bool: The value of the param if it is found and can be converted
@@ -1998,7 +2081,11 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 can not be converted to a ``bool``.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
         params = self._params
@@ -2008,6 +2095,10 @@ class Request:
         if name in params:
             val_str = params[name]
             if isinstance(val_str, list):
+                if not allow_multiple:
+                    msg = 'It may not have more than one value.'
+                    raise errors.HTTPInvalidParam(msg, name)
+
                 val_str = val_str[-1]
 
             if val_str in TRUE_STRINGS:
@@ -2252,6 +2343,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: datetime | None = ...,
+        allow_multiple: bool = ...,
     ) -> datetime: ...
 
     @overload
@@ -2263,6 +2355,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: datetime,
+        allow_multiple: bool = ...,
     ) -> datetime: ...
 
     @overload
@@ -2273,6 +2366,7 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         default: datetime | None = ...,
+        allow_multiple: bool = ...,
     ) -> datetime | None: ...
 
     def get_param_as_datetime(
@@ -2282,6 +2376,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: datetime | None = None,
+        allow_multiple: bool = True,
     ) -> datetime | None:
         """Return the value of a query string parameter as a datetime.
 
@@ -2300,6 +2395,10 @@ class Request:
                 ``None``).
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
         Returns:
             datetime.datetime: The value of the param if it is found and can be
             converted to a ``datetime`` according to the supplied format
@@ -2309,6 +2408,8 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be converted to a ``datetime``.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. versionchanged:: 4.0
             The default value of `format_string` was changed from
@@ -2317,9 +2418,14 @@ class Request:
             The new format is a superset of the old one parsing-wise, however,
             the converted :class:`~datetime.datetime` object is now
             timezone-aware.
+
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
-        param_value = self.get_param(name, required=required)
+        param_value = self.get_param(
+            name, required=required, allow_multiple=allow_multiple
+        )
 
         if param_value is None:
             return default
@@ -2344,6 +2450,7 @@ class Request:
         required: Literal[True],
         store: StoreArg = ...,
         default: py_date | None = ...,
+        allow_multiple: bool = ...,
     ) -> py_date: ...
 
     @overload
@@ -2355,6 +2462,7 @@ class Request:
         store: StoreArg = ...,
         *,
         default: py_date,
+        allow_multiple: bool = ...,
     ) -> py_date: ...
 
     @overload
@@ -2365,6 +2473,7 @@ class Request:
         required: bool = ...,
         store: StoreArg = ...,
         default: py_date | None = ...,
+        allow_multiple: bool = ...,
     ) -> py_date | None: ...
 
     def get_param_as_date(
@@ -2374,6 +2483,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: py_date | None = None,
+        allow_multiple: bool = True,
     ) -> py_date | None:
         """Return the value of a query string parameter as a date.
 
@@ -2392,6 +2502,10 @@ class Request:
                 ``None``).
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
         Returns:
             datetime.date: The value of the param if it is found and can be
             converted to a ``date`` according to the supplied format
@@ -2401,9 +2515,16 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be converted to a ``date``.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
+
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
-        date_time = self.get_param_as_datetime(name, format_string, required)
+        date_time = self.get_param_as_datetime(
+            name, format_string, required, allow_multiple=allow_multiple
+        )
         if date_time:
             date = date_time.date()
         else:
@@ -2420,6 +2541,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: Any | None = None,
+        allow_multiple: bool = True,
     ) -> Any:
         """Return the decoded JSON value of a query string parameter.
 
@@ -2445,6 +2567,10 @@ class Request:
                 (default ``None``).
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
 
         Returns:
             dict: The value of the param if it is found. Otherwise, returns
@@ -2453,9 +2579,16 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed as JSON.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
+
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
-        param_value = self.get_param(name, required=required)
+        param_value = self.get_param(
+            name, required=required, allow_multiple=allow_multiple
+        )
         if param_value is None:
             return default
 
@@ -2479,6 +2612,7 @@ class Request:
         required: bool = False,
         store: StoreArg = None,
         default: Any | None = None,
+        allow_multiple: bool = True,
     ) -> Any:
         """Return a query string parameter's value deserialized by a media handler.
 
@@ -2502,6 +2636,10 @@ class Request:
                 (default ``None``).
             default (any): If the param is not found returns the
                 given value instead of ``None``
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` instead of returning an
+                arbitrary one of the values, when the param resolves to more
+                than one value (default ``True``).
 
         Returns:
             The deserialized value for the parameter, or ``default`` if the
@@ -2511,12 +2649,19 @@ class Request:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed by the selected media handler.
             ValueError: No media handler is configured for `media_type`.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and the param
+                resolves to more than one value.
 
         .. _content:
             https://spec.openapis.org/oas/latest.html#fixed-fields-for-use-with-content
+
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
-        param_value = self.get_param(name, required=required)
+        param_value = self.get_param(
+            name, required=required, allow_multiple=allow_multiple
+        )
         if param_value is None:
             return default
 
@@ -2569,6 +2714,7 @@ class Request:
         delimiter: str | None = None,
         store: StoreArg = None,
         default: dict[str, str] | None = None,
+        allow_multiple: bool = True,
     ) -> dict[str, str] | None:
         """Return the value of a query string parameter as a dictionary.
 
@@ -2595,6 +2741,10 @@ class Request:
           >>> req.get_param_as_dict('color', deep_object=True)
           {'R': '100', 'G': '200'}
 
+          (If the same key is repeated, as in
+          ``param[k1]=v1&param[k1]=v2``, one of its values is picked
+          arbitrarily unless `allow_multiple` is ``False``.)
+
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
 
@@ -2613,6 +2763,11 @@ class Request:
                 (default ``None``).
             default (any): If the param is not found, returns the
                 given value instead of ``None``.
+            allow_multiple (bool): Set to ``False`` to raise
+                :class:`~falcon.HTTPInvalidParam` when a key of the object
+                resolves to more than one value (default ``True``).
+                Has no effect unless `deep_object` is ``True`` (the alternating
+                key/value form is inherently multi-valued).
 
         Returns:
             dict: The value of the param if it is found. Otherwise, returns
@@ -2621,8 +2776,13 @@ class Request:
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
                 the value could not be parsed from the parameter.
+            HTTPInvalidParam: `allow_multiple` is ``False``, and a key of the
+                object resolved to more than one value.
 
         .. versionadded:: 4.3
+
+        .. versionadded:: 4.4
+            The `allow_multiple` keyword argument.
         """
 
         output: dict[str, str] | None
@@ -2637,6 +2797,10 @@ class Request:
                 inner = key[prefix_len:-1]
 
                 if isinstance(value, list):
+                    if not allow_multiple and len(value) > 1:
+                        msg = f'The "{key}" key may not have multiple values.'
+                        raise errors.HTTPInvalidParam(msg, name)
+
                     # NOTE(StepanUFL): An empty list is not expected to occur
                     #   in practice here, but keep the check defensively so
                     #   the return type is consistently str.

@@ -24,7 +24,7 @@ jobs:
         default-os:
           - "ubuntu-latest"
         python-version:
-          - "3.12"
+          - "3.14"
         tox:
           # Lint
           - env: pep8
@@ -32,7 +32,6 @@ jobs:
           - env: ruff
           # Documentation
           - env: docs
-          - env: towncrier
           # Typing
           - env: mypy
           - env: mypy_tests
@@ -53,7 +52,6 @@ jobs:
           - env: py311_cython
             python-version: "3.11"
           - env: py312
-            coverage: true
             python-version: "3.12"
           - env: py312_cython
             python-version: "3.12"
@@ -62,15 +60,18 @@ jobs:
           - env: py313_cython
             python-version: "3.13"
           - env: py314
+            coverage: true
             python-version: "3.14"
           - env: py314_cython
             python-version: "3.14"
           - env: py315
-            python-version: "3.15.0-alpha.3 - 3.15.0"
-          - env: py312_nocover
+            python-version: "3.15.0-rc.2 - 3.15.0"
+          - env: py315_cython
+            python-version: "3.15.0-rc.2 - 3.15.0"
+          - env: py314_nocover
             os: macos-latest
             platform-label: ' (macos)'
-          - env: py312_nocover
+          - env: py314_nocover
             os: windows-latest
             platform-label: ' (windows)'
           # Tutorials
@@ -82,6 +83,7 @@ jobs:
           - env: "zizmor_github"
           # ASGI & WSGI servers
           - env: "daphne"
+          - env: "granian"
           - env: "hypercorn"
           - env: "wsgi_servers"
           # E2E tests
@@ -125,12 +127,9 @@ jobs:
           coverage combine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ matrix.tox.coverage }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
-          # APPSEC(vytas): This is not optimal, but verifying seems to cause
-          #   intermittent bugs when pinning directly to a hash.
-          skip_validation: true

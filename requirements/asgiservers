@@ -1,0 +1,7 @@
+# NOTE(vytas): These are the requirements to run ASGI server integration tests,
+#   but not the servers themselves. Tox environments specify them instead.
+
+pytest >= 7.0
+httpx
+requests
+websockets >= 13.1
