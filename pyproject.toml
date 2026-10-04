@@ -133,7 +133,7 @@ ignore_missing_imports = true
 [tool.towncrier]
 package = "falcon"
 package_dir = ""
-filename = "docs/changes/4.4.0.rst"
+filename = "docs/changes/4.5.0.rst"
 directory = "docs/_newsfragments"
 issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
