@@ -117,9 +117,10 @@ can query using the above technique.
 Hosting Your App
 ----------------
 
-Now that you have a simple Falcon app, you can take it for a spin with
-a WSGI server. Python includes a reference server for self-hosting, but
-let's use something more robust that you might use in production.
+Falcon does not include a development server so that server selection remains
+independent of the framework. You can run a Falcon app with any compatible WSGI
+server. Python includes a reference server for self-hosting, but let's use
+something more robust that you might use in production.
 
 Open a new terminal and run the following:
 

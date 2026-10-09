@@ -72,6 +72,10 @@ let's not forget to mark ``asgilook`` as a Python package:
 Hosting Our App
 ---------------
 
+Falcon does not include a development server. This keeps server selection
+independent of the framework, so you can use a compatible ASGI server that
+meets your needs.
+
 For running our async application, we'll need an
 `ASGI <https://asgi.readthedocs.io/>`_ application server. Popular choices
 include:

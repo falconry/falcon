@@ -13,10 +13,16 @@ customization or performance tuning. The framework's minimalist design
 frees the developer to select the best strategies and 3rd-party
 packages for the task at hand.
 
-The Python ecosystem offers a number of great packages that you can
-use from within your responders, hooks, and middleware components. As
-a starting point, the community maintains a list of `Falcon add-ons
-and complementary packages <https://github.com/falconry/falcon/wiki>`_.
+Falcon omits a development server so that server choice remains independent of
+the framework. A Falcon app can run with a compatible WSGI or ASGI server you
+select for development or deployment; see the :ref:`WSGI tutorial <tutorial>`
+and :ref:`ASGI tutorial <tutorial-asgi>`.
+
+Rather than bundling implementations for every need, Falcon provides
+integration points such as responders, hooks, and middleware. They let you use
+independent Python libraries that also serve applications outside Falcon. As a
+starting point, the community maintains a list of `Falcon add-ons and
+complementary packages <https://github.com/falconry/falcon/wiki>`_.
 
 Why doesn't Falcon create a new Resource instance for every request?
 --------------------------------------------------------------------
