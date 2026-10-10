@@ -51,6 +51,12 @@ raise an instance of this class from any hook, middleware, or a responder to
 stop handling the request and skip to the response handling. It takes status,
 additional headers and body as input arguments.
 
+.. note::
+    Raising :class:`~.HTTPStatus` (like :class:`~.HTTPError`) clears
+    ``resp`` body fields before the status is applied, while previously set
+    headers and cookies persist unless overwritten. See
+    :ref:`error_effect_on_resp`.
+
 HTTPStatus
 ----------
 

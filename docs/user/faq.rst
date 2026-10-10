@@ -1021,6 +1021,20 @@ Similar to WSGI, the `ASGI HTTP connection scope
 specification states that responses without Content-Length "may be chunked as
 the server sees fit".
 
+.. _faq_resp_on_httperror:
+
+What happens to ``resp`` when I raise ``HTTPError`` or ``HTTPStatus``?
+----------------------------------------------------------------------
+
+Falcon clears :attr:`~falcon.Response.text`, :attr:`~falcon.Response.data`, and
+:attr:`~falcon.Response.media` before running the default error/status handler,
+then writes the exception body (if any). Headers and cookies already set on
+``resp`` are kept, and may be overwritten by the exception's ``headers``
+argument. ``Set-Cookie`` cannot be passed through that argument (use
+:meth:`~falcon.Response.set_cookie` instead).
+
+See :ref:`error_effect_on_resp` for details and an example.
+
 Why is an empty response body returned when I raise an instance of HTTPError?
 -----------------------------------------------------------------------------
 

@@ -94,6 +94,61 @@ feature.
     By default, any uncaught exceptions will return an HTTP 500 response and
     log details of the exception to ``wsgi.errors``.
 
+.. _error_effect_on_resp:
+
+How raising ``HTTPError`` / ``HTTPStatus`` affects ``resp``
+-----------------------------------------------------------
+
+When a responder, hook, or middleware component raises
+:class:`~falcon.HTTPError` or :class:`~falcon.HTTPStatus`, Falcon's default
+handlers compose the outgoing response from the exception **and** from any
+headers or cookies already present on ``resp``. The body fields are treated
+differently from headers:
+
+**Body.** Immediately before the matching error handler runs, Falcon resets
+:attr:`~falcon.Response.text`, :attr:`~falcon.Response.data`, and
+:attr:`~falcon.Response.media` to ``None``. The default
+:class:`~falcon.HTTPError` serializer then writes a new body (typically via
+``resp.data`` or ``resp.media``). For :class:`~falcon.HTTPStatus`, the
+handler assigns :attr:`~falcon.HTTPStatus.text` to ``resp.text`` (which may
+be ``None`` when you only need a status line and headers, such as a
+redirect).
+
+**Headers and cookies.** Existing response headers and cookies are **not**
+cleared. Any mapping passed as the exception's ``headers`` argument is applied
+with :meth:`~falcon.Response.set_headers`, so matching header names overwrite
+prior values while unrelated headers (and cookies set via
+:meth:`~falcon.Response.set_cookie`) remain. This is useful when middleware
+has already attached tracing headers or session cookies that should still be
+sent with an error or redirect.
+
+.. warning::
+    Do not put ``Set-Cookie`` in the exception ``headers`` mapping.
+    :meth:`~falcon.Response.set_headers` raises
+    :class:`~falcon.errors.HeaderNotSupported` for that name. Set cookies on
+    ``resp`` with :meth:`~falcon.Response.set_cookie` (or
+    :meth:`~falcon.Response.append_header`) before raising, or from a custom
+    error handler.
+
+Example — cookies and custom headers survive an error response::
+
+    class OrderResource:
+        def on_get(self, req, resp, order_id):
+            resp.set_header('X-Request-Id', req.context.request_id)
+            resp.set_cookie('sid', req.context.session_id)
+            resp.media = {'order_id': order_id}  # discarded if we raise below
+
+            order = self._store.get(order_id)
+            if order is None:
+                raise falcon.HTTPNotFound(
+                    title='Order not found',
+                    headers={'X-Error-Code': 'order_missing'},
+                )
+
+            resp.media = order.to_dict()
+
+See also :ref:`faq_resp_on_httperror` and :class:`~falcon.HTTPStatus`.
+
 Base Class
 ----------
 
