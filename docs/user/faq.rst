@@ -1021,6 +1021,39 @@ Similar to WSGI, the `ASGI HTTP connection scope
 specification states that responses without Content-Length "may be chunked as
 the server sees fit".
 
+.. _faq_early_return_responder:
+
+Can I return early from a responder?
+------------------------------------
+
+Yes. Responders are ordinary Python methods, so you can ``return`` at any point
+after preparing the response. This is often clearer than deeply nested
+``if``/``else`` blocks when validating input or handling multiple failure
+paths:
+
+.. code:: python
+
+    class OrderResource:
+        def on_get(self, req, resp, order_id):
+            order = self._store.get(order_id)
+            if order is None:
+                resp.status = falcon.HTTP_404
+                resp.media = {'title': 'Not Found'}
+                return
+
+            if not req.context.user.can_view(order):
+                resp.status = falcon.HTTP_403
+                resp.media = {'title': 'Forbidden'}
+                return
+
+            resp.media = order.to_dict()
+
+The same pattern works for ``async`` responders in ASGI apps. Raising an
+instance of :class:`~falcon.HTTPError` (see :ref:`errors`) remains a good
+choice when you want Falcon's default error serialization; early ``return`` is
+handy when you prefer to set :class:`~falcon.Response` fields yourself and exit
+the responder immediately.
+
 Why is an empty response body returned when I raise an instance of HTTPError?
 -----------------------------------------------------------------------------
 

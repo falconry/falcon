@@ -384,6 +384,12 @@ target resource class simply implements a corresponding Python method with a
 name that starts with ``on_`` and ends in the lowercased HTTP method name (e.g.,
 ``on_get()``, ``on_patch()``, ``on_delete()``, etc.)
 
+.. tip::
+   ASGI responders are ordinary ``async`` methods, so you can ``return`` early
+   after setting ``resp`` (for example after a failed lookup or authorization
+   check) instead of nesting the rest of the handler. See also:
+   :ref:`faq_early_return_responder`.
+
 .. note::
   If a Python method is omitted for a given HTTP verb, the framework will
   automatically respond with ``405 Method Not Allowed``. Falcon also provides

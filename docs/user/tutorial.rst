@@ -275,6 +275,12 @@ the HTTP response to that request. By convention, these are called
 ``req`` and ``resp``, respectively. Route templates and hooks can inject extra
 params, as we shall see later on.
 
+.. tip::
+    Responders are regular Python methods, so you can ``return`` early after
+    setting ``resp`` fields whenever nested validation or authorization logic
+    would otherwise get hard to follow. See also:
+    :ref:`faq_early_return_responder`.
+
 Right now, the image resource responds to GET requests with a simple
 ``200 OK`` and a JSON body. Falcon's Internet media type defaults to
 ``application/json`` but you can set it to whatever you like.
@@ -1637,7 +1643,23 @@ that in mind, writing a high-quality API based on Falcon requires that:
 
 When it comes to error handling, you can always directly set the error
 status, appropriate response headers, and error body using the ``resp``
-object. However, Falcon tries to make things a little easier by
+object, then ``return`` from the responder:
+
+.. code:: python
+
+    def on_get(self, req, resp, name):
+        try:
+            stream, content_length = self._image_store.open(name)
+        except OSError:
+            resp.status = falcon.HTTP_404
+            resp.media = {'title': 'Image not found'}
+            return
+
+        resp.content_type = mimetypes.guess_type(name)[0]
+        resp.stream = stream
+        resp.content_length = content_length
+
+However, Falcon tries to make things a little easier by
 providing a :ref:`set of error classes <predefined_errors>` you can
 raise when something goes wrong. Falcon will convert any instance or
 subclass of :class:`falcon.HTTPError` raised by a responder, hook, or
