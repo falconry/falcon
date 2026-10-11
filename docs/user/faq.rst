@@ -619,6 +619,57 @@ To work around this, RFC 3986 specifies ``+`` as a reserved character,
 and recommends percent-encoding any such characters when their literal value is
 desired (``%2B`` in the case of ``+``).
 
+.. _faq_send_json_vs_urlencoded:
+
+How do I send JSON vs URL-encoded form data to my Falcon app?
+-------------------------------------------------------------
+
+Clients must set a ``Content-Type`` that matches the body they send. A common
+pitfall with the ``requests`` library is using ``data=...`` when the server
+expects JSON: ``data={'image_data': 'message'}`` encodes
+``application/x-www-form-urlencoded``, so
+``json.loads(req.bounded_stream.read())`` (or a JSON media handler) fails with
+``JSONDecodeError`` because the body is not JSON.
+
+**Send JSON** (sets ``Content-Type: application/json``)::
+
+    import requests
+
+    requests.post(
+        'http://example.com/translate',
+        json={'image_data': 'message'},
+    )
+
+On the Falcon side, prefer the default JSON media handler via
+:meth:`~falcon.Request.get_media` (WSGI shown; use ``await req.get_media()`` for
+ASGI)::
+
+    class TranslateResource:
+        def on_post(self, req, resp):
+            payload = req.get_media()  # dict from application/json
+            # ...
+
+**Send a URL-encoded form** (HTML forms and ``requests`` ``data=dict``)::
+
+    import requests
+
+    requests.post(
+        'http://example.com/translate',
+        data={'image_data': 'message'},
+    )
+
+Read it with the same :meth:`~falcon.Request.get_media` API; Falcon selects the
+handler from ``Content-Type`` (see :ref:`access_urlencoded_form`).
+
+.. tip::
+   If you must parse the body yourself, check ``req.content_type`` before
+   calling ``json.loads``, and prefer :attr:`~falcon.Request.bounded_stream`
+   over a bare ``req.stream.read()`` (see also
+   `Why does req.stream.read() hang for certain requests?`_).
+
+See also: :ref:`media`, :ref:`access_urlencoded_form`, and
+:ref:`access_multipart_files`.
+
 .. _access_urlencoded_form:
 
 How can I access POSTed form params?
