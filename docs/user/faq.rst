@@ -558,6 +558,46 @@ being fully defined by the WSGI spec (PEP-3333). This is discussed in the
 reference documentation for :attr:`~falcon.Request.stream`, and a workaround
 is provided in the form of :attr:`~falcon.Request.bounded_stream`.
 
+.. _faq_app_hang_timeout:
+
+Why does my application hang or time out?
+-----------------------------------------
+
+Hangs and worker timeouts are usually caused by the application server running
+out of free workers (or by reading the WSGI input stream incorrectly), not by
+Falcon itself. Common causes:
+
+* **Reading ``req.stream`` under ``wsgiref`` (and some other servers).**
+  An unbounded ``req.stream.read()`` can block forever waiting for EOF.
+  Prefer :attr:`~falcon.Request.bounded_stream` (or pass
+  ``req.content_length``). See also:
+  `Why does req.stream.read() hang for certain requests?`_.
+
+* **All synchronous workers are busy.** With a single sync worker (or too few
+  workers for the concurrency you need), every in-flight request occupies a
+  worker until it finishes. Additional requests then wait until the server's
+  timeout fires. Typical triggers:
+
+  * The app calls itself over HTTP (handler A waits on handler B on the same
+    process/worker pool). Prefer an in-process call, a message queue, or
+    enough workers that a nested request can be served.
+  * The client (or browser DevTools) opens more parallel connections than you
+    have free workers, so later requests stall behind earlier ones.
+
+  Mitigations include raising the worker count, switching to a gevent/eventlet
+  (or other async-capable) worker class for I/O-bound work, offloading slow
+  work, and avoiding self-requests through the public HTTP stack.
+
+* **ASGI applications.** An ``await`` on a never-completing coroutine, a sync
+  call that blocks the event loop, or exhausting a small worker/process pool
+  behind an ASGI server can produce the same symptoms. Keep CPU-bound or
+  blocking I/O off the event loop (for example with
+  :meth:`asyncio.loop.run_in_executor`) and ensure upstream timeouts are
+  configured on the ASGI server.
+
+If you still see unexplained hangs after checking the above, gather a stack
+dump or server timeout log and :ref:`ask for help <help>`.
+
 .. _trailing_slash_in_path:
 
 How does Falcon handle a trailing slash in the request path?
