@@ -273,13 +273,18 @@ def test_report_fatal_error_starting_resp(
 def test_report_fatal_error_rendering_asgi_headers(util, status, set_reporter):
     # NOTE(vytas): Unlike WSGI, where headers are passed to the app server as
     #   native strings, ASGI headers are encoded by the framework itself.
-    resource = falcon.testing.SimpleTestResourceAsync(
-        status=status, body='Hello', headers={'X-Falcon': '🦅'}
-    )
+    #   Header setters now reject values that cannot be encoded as Latin-1,
+    #   so store the header directly to exercise the rendering failure path.
+    class Resource:
+        async def on_get(self, req, resp):
+            resp.status = status
+            resp.text = 'Hello'
+            resp._headers['x-falcon'] = '🦅'
+
     reporter = ErrorReporter(None)
 
     app = util.create_app(True)
-    app.add_route('/', resource)
+    app.add_route('/', Resource())
     if set_reporter:
         app.set_error_reporter(reporter.report)
 
