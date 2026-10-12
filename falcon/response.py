@@ -63,6 +63,51 @@ _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
 
 
+def _prepare_header(name: str, value: str) -> tuple[str, str]:
+    """Normalize a response header name and coerced value.
+
+    The name must be US-ASCII before it is lowercased. ``value`` is coerced
+    with ``str()`` and must be encodable as Latin-1 (ISO-8859-1). ASCII
+    values skip the Latin-1 probe.
+
+    Args:
+        name (str): Header name to validate and lowercase.
+        value (str): Header value to coerce and validate.
+
+    Returns:
+        tuple[str, str]: Lowercased name and coerced value.
+
+    Raises:
+        ValueError: `name` is not US-ASCII, or the coerced value is not
+            Latin-1 encodable.
+    """
+
+    # Characters such as U+212A KELVIN SIGN lowercase to ASCII, so the name
+    # is checked before case folding.
+    if name.isascii():
+        name = name.lower()
+    else:
+        raise ValueError(
+            'Header name must contain only US-ASCII characters: {!r}'.format(name)
+        )
+
+    # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+    #   is not a str, so do the conversion here. It's actually
+    #   faster to not do an isinstance check.
+    value = str(value)
+    if not value.isascii():
+        try:
+            value.encode('latin1')
+        except UnicodeEncodeError:
+            raise ValueError(
+                'Header value must be encodable as Latin-1 (ISO-8859-1): {!r}'.format(
+                    value
+                )
+            )
+
+    return name, value
+
+
 class Response:
     """Represents an HTTP response to a client request.
 
@@ -720,22 +765,23 @@ class Response:
 
         Args:
             name (str): Header name (case-insensitive). The name may contain
-                only US-ASCII characters.
-            value (str): Value for the header. As with the header's name, the
-                value may contain only US-ASCII characters.
+                only US-ASCII characters. This restriction is checked before
+                the name is lowercased.
+            value (str): Value for the header. The value is coerced with
+                ``str()`` and must be encodable as Latin-1 (ISO-8859-1).
+
+                Note:
+                    This method validates character encoding only. It does not
+                    enforce HTTP token syntax, and it does not reject ASCII
+                    control characters. Applications must supply valid header
+                    content. Further checks, if any, depend on the server.
 
         Raises:
-            ValueError: `name` cannot be ``'Set-Cookie'``.
+            ValueError: `name` is not US-ASCII, `value` is not Latin-1
+                encodable, or `name` is ``'Set-Cookie'``.
         """
 
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
-
-        # NOTE(kgriffs): normalize name by lowercasing it
-        name = name.lower()
+        name, value = _prepare_header(name, value)
 
         if name == 'set-cookie':
             raise HeaderNotSupported('This method cannot be used to set cookies')
@@ -791,19 +837,23 @@ class Response:
 
         Args:
             name (str): Header name (case-insensitive). The name may contain
-                only US-ASCII characters.
-            value (str): Value for the header. As with the header's name, the
-                value may contain only US-ASCII characters.
+                only US-ASCII characters. This restriction is checked before
+                the name is lowercased.
+            value (str): Value for the header. The value is coerced with
+                ``str()`` and must be encodable as Latin-1 (ISO-8859-1).
+
+                Note:
+                    This method validates character encoding only. It does not
+                    enforce HTTP token syntax, and it does not reject ASCII
+                    control characters. Applications must supply valid header
+                    content. Further checks, if any, depend on the server.
+
+        Raises:
+            ValueError: `name` is not US-ASCII, or `value` is not Latin-1
+                encodable.
         """
 
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
-
-        # NOTE(kgriffs): normalize name by lowercasing it
-        name = name.lower()
+        name, value = _prepare_header(name, value)
 
         if name == 'set-cookie':
             if not self._extra_headers:
@@ -836,18 +886,29 @@ class Response:
             :meth:`~.append_header` or :meth:`~.set_cookie`.
 
         Args:
-            headers (Iterable[[str, str]]): An iterable of ``[name, value]`` two-member
-                iterables, or a dict-like object that implements an ``items()`` method.
-                Both *name* and *value* must be of type ``str`` and
-                contain only US-ASCII characters.
+            headers (Iterable[[str, str]]): An iterable of ``[name, value]``
+                two-member iterables, or a dict-like object that implements
+                an ``items()`` method. Each name may contain only US-ASCII
+                characters, which is checked before the name is lowercased.
+                Each value is coerced with ``str()`` and must be encodable as
+                Latin-1 (ISO-8859-1).
 
                 Note:
                     Falcon can process an iterable of tuples slightly faster
                     than a dict.
 
+                Note:
+                    This method validates character encoding only. It does not
+                    enforce HTTP token syntax, and it does not reject ASCII
+                    control characters. Applications must supply valid header
+                    content. Further checks, if any, depend on the server.
+
+                    Headers from items that have already been applied stay
+                    set when a later item is rejected.
+
         Raises:
-            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple``
-                         or ``Iterable[[str, str]]``.
+            ValueError: A header name is not US-ASCII, a header value is not
+                Latin-1 encodable, or a name is ``'Set-Cookie'``.
         """
 
         header_items = getattr(headers, 'items', None)
@@ -860,13 +921,7 @@ class Response:
         _headers = self._headers
 
         for name, value in headers:  # type: ignore[str-unpack]
-            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-            # is not a str, so do the conversion here. It's actually
-            # faster to not do an isinstance check. str() will encode
-            # to US-ASCII.
-            value = str(value)
-
-            name = name.lower()
+            name, value = _prepare_header(name, value)
             if name == 'set-cookie':
                 raise HeaderNotSupported('This method cannot be used to set cookies')
 

@@ -365,16 +365,16 @@ class Response(response.Response):
             #   CPython's C API functions such as PyUnicode_EncodeLatin1.
             items = _encode_items_to_latin1(headers)
         except UnicodeEncodeError as ex:
-            # TODO(vytas): In 3.1.0, update this error message to highlight the
-            #   fact that we decided to allow ISO-8859-1?
             raise ValueError(
-                'The modern series of HTTP standards require that header '
-                f'names and values use only ASCII characters: {ex}'
-            )
+                'Header names and values must be encodable as Latin-1 '
+                f'(ISO-8859-1): {ex}'
+            ) from ex
 
         if self._extra_headers:
+            # Names stay US-ASCII. Values use Latin-1, matching normal headers
+            # and the historical WSGI string encoding.
             items += [
-                (n.encode('ascii'), v.encode('ascii')) for n, v in self._extra_headers
+                (n.encode('ascii'), v.encode('latin1')) for n, v in self._extra_headers
             ]
 
         # NOTE(kgriffs): It is important to append these after self._extra_headers

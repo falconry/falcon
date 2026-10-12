@@ -165,6 +165,25 @@ class UnicodeHeaderResource:
         )
 
 
+class StringableHeaderValue:
+    def __str__(self):
+        return 'stringified'
+
+
+class NonAsciiHeaderNameResource:
+    def on_get(self, req, resp):
+        # Bypass the header setters. The integrated server validator still
+        # rejects a non-ASCII name; that check is server-dependent.
+        resp._headers['x-symb\u00f6l'] = 'thing'
+
+
+class Latin1ResponseHeaderResource:
+    def on_get(self, req, resp):
+        resp.set_header('X-Size', 'groß')
+        resp.append_header('X-Note', 'Förmånsrätt')
+        resp.append_header('X-Note', '\u00ff')
+
+
 class VaryHeaderResource:
     def __init__(self, vary):
         self.vary = vary
@@ -697,42 +716,207 @@ class TestHeaders:
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
 
-    @pytest.mark.parametrize('method', ['CONNECT', 'PATCH', 'POST', 'PUT'])
-    def test_unicode_headers_contain_non_ascii(self, method, client):
+    @pytest.mark.parametrize('method', ['CONNECT', 'POST'])
+    def test_invalid_header_encoding_in_responder_is_http_500(self, method, client):
+        client.app.add_route('/', UnicodeHeaderResource())
+
+        # NOTE(vytas): Names that are not US-ASCII, and values that are not
+        #   Latin-1, are rejected by the header setters. The responder's
+        #   ValueError is handled on Falcon's normal application error path.
+        result = client.simulate_request(method, '/')
+        assert result.status_code == 500
+
+    def test_unicode_headers_contain_latin1(self, client):
+        client.app.add_route('/', UnicodeHeaderResource())
+
+        result = client.simulate_request('PUT', '/')
+        assert result.status_code == 200
+        assert result.headers['X-Thing'] == '\u00ff'
+
+    def test_control_character_headers_rejected_by_validator(self, client):
         app = client.app
         app.add_route('/', UnicodeHeaderResource())
 
-        if method == 'CONNECT':
-            # NOTE(vytas): Response headers cannot be encoded to Latin-1.
-            if not app._ASGI:
-                pytest.skip('wsgiref.validate sees no evil here')
-
-            # NOTE(vytas): Shouldn't this result in an HTTP 500 instead of
-            #   bubbling up a ValueError to the app server?
-            with pytest.raises(ValueError):
-                client.simulate_request(method, '/')
-        elif method == 'PUT':
-            # NOTE(vytas): Latin-1 header values are allowed.
-            resp = client.simulate_request(method, '/')
-            assert resp.headers
+        # NOTE(kgriffs): Encoding validation does not reject ASCII controls.
+        #   The integrated server validator still does, and that check is
+        #   server-dependent: wsgiref raises AssertionError, while the ASGI
+        #   test collector raises ValueError.
+        if app._ASGI:
+            error_type = ValueError
         else:
-            if app._ASGI:
-                # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
-                #   app to encode header names and values to a byte string. This
-                #   gives Falcon the opportunity to verify the character set
-                #   in the process and raise an error as appropriate.
-                error_type = ValueError
+            error_type = AssertionError
+
+        with pytest.raises(error_type, match='Bad header value'):
+            client.simulate_request('PATCH', '/')
+
+    def test_non_ascii_header_name_rejected_by_validator(self, client):
+        app = client.app
+        app.add_route('/', NonAsciiHeaderNameResource())
+
+        # NOTE(kgriffs): A Latin-1 name can be encoded at emission time.
+        #   The integrated server validator still rejects it. wsgiref raises
+        #   AssertionError, while the ASGI test collector raises ValueError.
+        if app._ASGI:
+            error_type = ValueError
+        else:
+            error_type = AssertionError
+
+        with pytest.raises(error_type, match='Bad header name'):
+            client.simulate_get()
+
+    @pytest.mark.parametrize('setter', ('set_header', 'append_header', 'set_headers'))
+    def test_header_setters_accept_ascii_and_latin1(self, asgi, util, setter):
+        resp = util.create_resp(asgi)
+
+        def apply(name, value):
+            if setter == 'set_headers':
+                resp.set_headers([(name, value)])
             else:
-                # NOTE(kgriffs): The wsgiref validator that is integrated into
-                #   Falcon's testing framework will catch this. However, Falcon
-                #   itself does not do the check to avoid potential overhead
-                #   in a production deployment.
-                error_type = AssertionError
+                getattr(resp, setter)(name, value)
 
-            pattern = 'Bad header name' if method == 'POST' else 'Bad header value'
+        apply('X-Mixed', 'ascii')
+        assert resp.get_header('x-mixed') == 'ascii'
 
-            with pytest.raises(error_type, match=pattern):
-                client.simulate_request(method, '/')
+        apply('X-Empty', '')
+        assert resp.get_header('X-Empty') == ''
+
+        latin1 = 'Förmånsrätt' + chr(0x80) + chr(0xFF)
+        apply('X-Latin1', latin1)
+        assert resp.get_header('X-Latin1') == latin1
+
+        apply('X-Int', 7)
+        assert resp.get_header('X-Int') == '7'
+
+        apply('X-Obj', StringableHeaderValue())
+        assert resp.get_header('X-Obj') == 'stringified'
+
+    @pytest.mark.parametrize('setter', ('set_header', 'append_header', 'set_headers'))
+    def test_header_setters_reject_non_latin1_encoding(self, asgi, util, setter):
+        resp = util.create_resp(asgi)
+        resp.set_header('X-Keep', 'original')
+
+        def apply(name, value):
+            if setter == 'set_headers':
+                resp.set_headers([(name, value)])
+            else:
+                getattr(resp, setter)(name, value)
+
+        class LoneSurrogate:
+            def __str__(self):
+                return '\ud800'
+
+        # NOTE: U+212A KELVIN SIGN lowercases to ASCII "k". The name must be
+        #   rejected before that normalization.
+        with pytest.raises(ValueError, match='US-ASCII'):
+            apply('\u212a', 'kelvin')
+        with pytest.raises(ValueError, match='US-ASCII'):
+            apply('X-\u212aey', 'nope')
+
+        for value in ('\u0100', '\ud800', LoneSurrogate()):
+            with pytest.raises(ValueError, match='Latin-1'):
+                apply('X-Keep', value)
+
+        assert resp.get_header('X-Keep') == 'original'
+        assert resp.get_header('k') is None
+        assert resp.get_header('x-key') is None
+        assert resp._extra_headers is None
+
+    def test_header_encoding_preserves_partial_set_headers(self, asgi, util):
+        resp = util.create_resp(asgi)
+        resp.set_header('X-Keep', 'original')
+
+        with pytest.raises(ValueError, match='Latin-1'):
+            resp.set_headers(
+                [
+                    ('X-One', 'first'),
+                    ('X-Bad', '\u0100'),
+                    ('X-Two', 'second'),
+                ]
+            )
+
+        assert resp.get_header('X-One') == 'first'
+        assert resp.get_header('X-Two') is None
+        assert resp.get_header('X-Keep') == 'original'
+
+    def test_append_header_rejects_bad_cookie_without_appending(self, asgi, util):
+        resp = util.create_resp(asgi)
+        resp.append_header('Set-Cookie', 'a=1')
+
+        with pytest.raises(ValueError, match='Latin-1'):
+            resp.append_header('Set-Cookie', 'b=\u0100')
+        with pytest.raises(ValueError, match='US-ASCII'):
+            resp.append_header('\u212a', 'c=1')
+
+        assert resp._extra_headers == [('set-cookie', 'a=1')]
+
+    def test_set_headers_shapes_and_last_write_wins(self, asgi, util):
+        resp = util.create_resp(asgi)
+
+        resp.set_headers({'X-Map': 'groß'})
+        resp.set_headers(
+            [
+                ('X-List', 'one'),
+                ('x-list', 'Förmånsrätt'),
+            ]
+        )
+
+        class CallableItems:
+            def items(self):
+                return [('X-Call', '\u00ff')]
+
+        resp.set_headers(CallableItems())
+
+        class NotCallableItems:
+            def __init__(self):
+                self.items = {'X-Nope': 'hidden'}
+
+        with pytest.raises(TypeError):
+            resp.set_headers(NotCallableItems())
+
+        assert resp.get_header('X-Map') == 'groß'
+        assert resp.get_header('X-List') == 'Förmånsrätt'
+        assert resp.get_header('X-Call') == '\u00ff'
+        assert resp.get_header('X-Nope') is None
+
+    @pytest.mark.parametrize('value', ('\x00', '\r', '\n'))
+    def test_header_encoding_allows_ascii_controls(self, asgi, util, value):
+        # NOTE: This is an encoding check, not header-injection protection.
+        #   Do not send these values through a network server.
+        resp = util.create_resp(asgi)
+        resp.set_header('X-Ctl', value)
+        assert resp.get_header('X-Ctl') == value
+
+    def test_response_header_emission_latin1_parity(self, asgi, util):
+        resp = util.create_resp(asgi)
+        resp.set_header('X-Size', 'groß')
+        resp.append_header('Set-Cookie', 'snack=groß')
+
+        if asgi:
+            rendered = [
+                (name.decode('latin1'), value.decode('latin1'))
+                for name, value in resp._asgi_headers()
+            ]
+        else:
+            rendered = resp._wsgi_headers()
+
+        assert ('x-size', 'groß') in rendered
+        assert ('set-cookie', 'snack=groß') in rendered
+
+    def test_asgi_header_property_encoding_error(self, util):
+        resp = util.create_resp(True)
+        # NOTE: content_type bypasses set_header/append_header/set_headers.
+        resp.content_type = 'text/\u0100'
+
+        with pytest.raises(ValueError, match='Latin-1'):
+            resp._asgi_headers()
+
+    def test_latin1_response_headers_end_to_end(self, client):
+        client.app.add_route('/', Latin1ResponseHeaderResource())
+
+        result = client.simulate_get()
+        assert result.status_code == 200
+        assert result.headers['X-Size'] == 'groß'
+        assert result.headers['X-Note'] == 'Förmånsrätt, \u00ff'
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()

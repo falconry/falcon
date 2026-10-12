@@ -1,0 +1,8 @@
+:meth:`Response.set_header`, :meth:`Response.append_header`, and
+:meth:`Response.set_headers` now reject header names that are not US-ASCII
+and header values that cannot be encoded as Latin-1 (ISO-8859-1).
+Values are still coerced with ``str()``, and historical Latin-1 header
+values, including raw ``Set-Cookie`` headers emitted on ASGI, remain
+supported. The check validates encoding only; it does not reject ASCII
+control characters or otherwise certify that header content is a valid
+HTTP field.
