@@ -17,43 +17,7 @@ However, with a bit of effort you should be able to adapt this configuration to
 other operating systems, such as OpenBSD.
 
 
-Running your Application as a Different User
-''''''''''''''''''''''''''''''''''''''''''''
-
-It is best to execute the application as a different OS user than the one who
-owns the source code for your application. The application user should *NOT*
-have write access to your source. This mitigates the chance that someone could
-write a malicious Python file to your source directory through an upload
-endpoint you might define; when your application restarts, the malicious file is
-loaded and proceeds to cause any number of Bad Things™ to happen.
-
-.. code:: sh
-
-  $ useradd myproject --create-home
-  $ useradd myproject-runner --no-create-home
-
-It is helpful to switch to the project user (myproject) and use the home
-directory as the application environment.
-
-If you are working on a remote server, switch to the myproject user and pull
-down the source code for your application.
-
-.. code:: sh
-
-  $ git clone git@github.com/myorg/myproject.git /home/myproject/src
-
-
-.. note::
-
-  You could use a tarball, zip file, scp or any other means to get your source
-  onto a server.
-
-Next, create a virtual environment which can be used to install your
-dependencies.
-
-.. code:: sh
-
-  $ python3 -m venv /home/myproject/venv
+.. include:: _includes/run-as-different-user.rst
 
 Then install your dependencies.
 
@@ -64,13 +28,7 @@ Then install your dependencies.
   $ /home/myproject/venv/bin/pip install uwsgi
 
 
-.. note::
-
-  The exact commands for creating a virtual environment might differ based on
-  the Python version you are using and your operating system. At the end of the
-  day the application needs a virtualenv in /home/myproject/venv with the
-  project dependencies installed. Use the ``pip`` binary within the virtual
-  environment by ``source venv/bin/activate`` or using the full path.
+.. include:: _includes/venv-note.rst
 
 
 Preparing your Application for Service
@@ -240,23 +198,9 @@ Then, create an NGINX conf file that looks something like this:
     }
   }
 
-.. note::
+.. include:: _includes/tls-note.rst
 
-  The above configuration includes HTTPS with a redirect from HTTP, using
-  certificate paths typical of `Let's Encrypt`_. For a plain HTTP-only
-  configuration (e.g., during development), you can simplify to a single
-  ``server`` block listening on port 80 without the ``ssl_*`` directives.
-
-  For production deployments, use the `Mozilla SSL Configuration Generator`_
-  to generate a configuration tuned to your requirements.
-
-.. _`Mozilla SSL Configuration Generator`: https://ssl-config.mozilla.org/#server=nginx
-
-Finally, start (or restart) NGINX:
-
-.. code-block:: sh
-
-  $ sudo service start nginx
+.. include:: _includes/start-nginx.rst
 
 You should now have a working application. Check your uWSGI and NGINX logs for
 errors if the application does not start.
@@ -265,16 +209,9 @@ errors if the application does not start.
 Further Considerations
 ''''''''''''''''''''''
 
-The NGINX configuration above includes TLS (HTTPS) using `Let's Encrypt`_, which
-offers free, short-term certificates with auto-renewal. Visit the `Let's Encrypt site`_
-to learn how to set up certificates for your domain.
+.. include:: _includes/letsencrypt-further.rst
 
-In addition to setting up NGINX and uWSGI to run your application, you will of
-course need to deploy a database server or any other services required by your
-application. Due to the wide variety of options and considerations in this
-space, we have chosen not to include ancillary services in this guide. However,
-the Falcon community is always happy to help with deployment questions, so
-`please don't hesitate to ask <https://falcon.readthedocs.io/en/stable/community/help.html#chat>`_.
+.. include:: _includes/ancillary-services.rst
 
 
 .. _`Let's Encrypt`: https://letsencrypt.org/
