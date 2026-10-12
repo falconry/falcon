@@ -73,6 +73,8 @@ class ResolverMethod(Protocol):
         self, media_type: str | None, default: str, raise_not_found: bool = True
     ) -> tuple[None, None, None] | _ResolverMethodReturnTuple: ...
 
+    def cache_clear(self) -> None: ...
+
 
 class Handlers(UserDict[str, BaseHandler]):
     """A :class:`dict`-like object that manages Internet media type handlers."""
@@ -98,14 +100,14 @@ class Handlers(UserDict[str, BaseHandler]):
         # NOTE(kgriffs): When the mapping changes, we do not want to use a
         #   cached handler from the previous mapping, in case it was
         #   replaced.
-        self._resolve.cache_clear()  # type: ignore[attr-defined]
+        self._resolve.cache_clear()
 
     def __delitem__(self, key: str) -> None:
         super().__delitem__(key)
 
         # NOTE(kgriffs): Similar to __setitem__(), we need to avoid resolving
         #   to a cached handler that was removed.
-        self._resolve.cache_clear()  # type: ignore[attr-defined]
+        self._resolve.cache_clear()
 
     def _create_resolver(self) -> ResolverMethod:
         # PERF(kgriffs): Under PyPy the LRU is relatively expensive as compared

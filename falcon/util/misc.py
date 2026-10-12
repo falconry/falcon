@@ -33,10 +33,13 @@ import inspect
 import os
 import os.path
 import re
-from typing import Any, Callable
+from typing import Any, Callable, cast, TYPE_CHECKING
 import unicodedata
 
 from falcon import status_codes
+from falcon._typing import _LruCacheWrapper
+from falcon._typing import _P
+from falcon._typing import _R_co
 from falcon.constants import PYPY
 from falcon.uri import encode_value
 
@@ -102,21 +105,26 @@ utcnow: Callable[[], datetime.datetime] = deprecated(
 #   to have to install PyPy to check coverage on their workstations, so we use
 #   the nocover pragma here.
 def _lru_cache_nop(
-    maxsize: int,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:  # pragma: nocover
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    maxsize: int | None = 128, typed: bool = False
+) -> Callable[[Callable[_P, _R_co]], _LruCacheWrapper[_P, _R_co]]:  # pragma: nocover
+    def decorator(func: Callable[_P, _R_co]) -> _LruCacheWrapper[_P, _R_co]:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
-        func.cache_clear = lambda: None  # type: ignore
+        func.cache_clear = lambda: None  # type: ignore[attr-defined]
 
-        return func
+        return cast(_LruCacheWrapper[_P, _R_co], func)
+
+    if callable(maxsize):
+        return decorator(maxsize)
 
     return decorator
 
 
 # PERF(kgriffs): Using lru_cache is slower on PyPy when the wrapped
 #   function is just doing a few non-IO operations.
-if PYPY:
+if TYPE_CHECKING:
+    _lru_cache_for_simple_logic = _lru_cache_nop
+elif PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
     _lru_cache_for_simple_logic = functools.lru_cache
