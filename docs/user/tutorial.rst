@@ -60,11 +60,8 @@ The file hierarchy should now look like this:
 
 Now, open ``app.py`` in your favorite text editor and add the following lines:
 
-.. code:: python
-
-    import falcon
-
-    app = application = falcon.App()
+.. literalinclude:: ../../examples/look/versions/01_app.py
+    :language: python
 
 This code creates your WSGI application and aliases it as ``app``. You can use any
 variable names you like, but we'll use ``application`` since that is what
@@ -227,31 +224,8 @@ Since we are building an image-sharing API, let's start by creating an
 "images" resource. Create a new module, ``images.py`` next to ``app.py``,
 and add the following code to it:
 
-.. code:: python
-
-    import json
-
-    import falcon
-
-
-    class Resource:
-
-        def on_get(self, req, resp):
-            doc = {
-                'images': [
-                    {
-                        'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-                    }
-                ]
-            }
-
-            # Create a JSON representation of the resource
-            resp.text = json.dumps(doc, ensure_ascii=False)
-
-            # The following line can be omitted because 200 is the default
-            # status returned by the framework, but it is included here to
-            # illustrate how this may be overridden as needed.
-            resp.status = falcon.HTTP_200
+.. literalinclude:: ../../examples/look/versions/02_images.py
+    :language: python
 
 As you can see, ``Resource`` is just a regular class. You can name the
 class anything you like. Falcon uses duck-typing, so you don't need to
@@ -284,17 +258,8 @@ Noteworthy JSON alternatives include
 Next let's wire up this resource and see it in action. Go back to
 ``app.py`` and modify it so that it looks something like this:
 
-.. code:: python
-
-    import falcon
-
-    from .images import Resource
-
-
-    app = application = falcon.App()
-
-    images = Resource()
-    app.add_route('/images', images)
+.. literalinclude:: ../../examples/look/versions/03_app.py
+    :language: python
 
 Now, when a request comes in for ``/images``, Falcon will call the
 responder on the images resource that corresponds to the requested
@@ -381,26 +346,8 @@ installing the relevant package:
 
 Then, update the responder to use the new media type:
 
-.. code:: python
-
-    import msgpack
-
-    import falcon
-
-    class Resource:
-
-        def on_get(self, req, resp):
-            doc = {
-                'images': [
-                    {
-                        'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-                    }
-                ]
-            }
-
-            resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = falcon.MEDIA_MSGPACK
-            resp.status = falcon.HTTP_200
+.. literalinclude:: ../../examples/look/versions/04_images.py
+    :language: python
 
 Note the use of ``resp.data`` in lieu of ``resp.text``. If you assign a
 bytestring to the latter, Falcon will figure it out, but you can
@@ -464,38 +411,8 @@ Let's start by installing the
 
 Next, edit ``test_app.py`` to look like this:
 
-.. code:: python
-
-    import msgpack
-    import pytest
-
-    import falcon
-    from falcon import testing
-
-    from look.app import app
-
-
-    @pytest.fixture
-    def client():
-        return testing.TestClient(app)
-
-
-    # pytest will inject the object returned by the "client" function
-    # as an additional parameter.
-    def test_list_images(client):
-        doc = {
-            'images': [
-                {
-                    'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-                }
-            ]
-        }
-
-        response = client.simulate_get('/images')
-        result_doc = msgpack.unpackb(response.content, raw=False)
-
-        assert result_doc == doc
-        assert response.status == falcon.HTTP_OK
+.. literalinclude:: ../../examples/look/versions/05_test_app.py
+    :language: python
 
 From the main project directory, exercise your new test by running
 pytest against the ``tests`` directory:
@@ -594,55 +511,8 @@ To make the new test pass, we need to add a new method for handling
 POSTs. Open ``images.py`` and add a POST responder to the
 ``Resource`` class as follows:
 
-.. code:: python
-
-    import io
-    import os
-    import uuid
-    import mimetypes
-
-    import msgpack
-
-    import falcon
-
-
-    class Resource:
-
-        _CHUNK_SIZE_BYTES = 4096
-
-        # The resource object must now be initialized with a path used during POST
-        def __init__(self, storage_path):
-            self._storage_path = storage_path
-
-        # This is the method we implemented before
-        def on_get(self, req, resp):
-            doc = {
-                'images': [
-                    {
-                        'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-                    }
-                ]
-            }
-
-            resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = falcon.MEDIA_MSGPACK
-            resp.status = falcon.HTTP_200
-
-        def on_post(self, req, resp):
-            ext = mimetypes.guess_extension(req.content_type)
-            name = '{uuid}{ext}'.format(uuid=uuid.uuid4(), ext=ext)
-            image_path = os.path.join(self._storage_path, name)
-
-            with io.open(image_path, 'wb') as image_file:
-                while True:
-                    chunk = req.stream.read(self._CHUNK_SIZE_BYTES)
-                    if not chunk:
-                        break
-
-                    image_file.write(chunk)
-
-            resp.status = falcon.HTTP_201
-            resp.location = '/images/' + name
+.. literalinclude:: ../../examples/look/versions/06_images.py
+    :language: python
 
 As you can see, we generate a unique name for the image, and then write
 it out by reading from ``req.stream``. It's called ``stream`` instead
@@ -717,67 +587,8 @@ POST responder in ``images.py`` so that it can be tested independently.
 In this case, the resource's "business logic" is simply the image-saving
 operation:
 
-.. code:: python
-
-    import io
-    import mimetypes
-    import os
-    import uuid
-
-    import msgpack
-
-    import falcon
-
-
-    class Resource:
-
-        def __init__(self, image_store):
-            self._image_store = image_store
-
-        def on_get(self, req, resp):
-            doc = {
-                'images': [
-                    {
-                        'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-                    }
-                ]
-            }
-
-            resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = falcon.MEDIA_MSGPACK
-            resp.status = falcon.HTTP_200
-
-        def on_post(self, req, resp):
-            name = self._image_store.save(req.stream, req.content_type)
-            resp.status = falcon.HTTP_201
-            resp.location = '/images/' + name
-
-
-    class ImageStore:
-
-        _CHUNK_SIZE_BYTES = 4096
-
-        # Note the use of dependency injection for standard library
-        # methods. We'll use these later to avoid monkey-patching.
-        def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
-            self._storage_path = storage_path
-            self._uuidgen = uuidgen
-            self._fopen = fopen
-
-        def save(self, image_stream, image_content_type):
-            ext = mimetypes.guess_extension(image_content_type)
-            name = '{uuid}{ext}'.format(uuid=self._uuidgen(), ext=ext)
-            image_path = os.path.join(self._storage_path, name)
-
-            with self._fopen(image_path, 'wb') as image_file:
-                while True:
-                    chunk = image_stream.read(self._CHUNK_SIZE_BYTES)
-                    if not chunk:
-                        break
-
-                    image_file.write(chunk)
-
-            return name
+.. literalinclude:: ../../examples/look/versions/07_images.py
+    :language: python
 
 Let's check to see if we broke anything with the changes above:
 
@@ -787,19 +598,8 @@ Let's check to see if we broke anything with the changes above:
 
 Hmm, it looks like we forgot to update ``app.py``. Let's do that now:
 
-.. code:: python
-
-    import falcon
-
-    from .images import ImageStore
-    from .images import Resource
-
-
-    app = application = falcon.App()
-
-    image_store = ImageStore('.')
-    images = Resource(image_store)
-    app.add_route('/images', images)
+.. literalinclude:: ../../examples/look/versions/08_app.py
+    :language: python
 
 Let's try again:
 
@@ -812,24 +612,8 @@ To fix this, we need to switch our strategy from monkey-patching to
 dependency injection. Return to ``app.py`` and modify it to look
 similar to the following:
 
-.. code:: python
-
-    import falcon
-
-    from .images import ImageStore
-    from .images import Resource
-
-
-    def create_app(image_store):
-        image_resource = Resource(image_store)
-        app = falcon.App()
-        app.add_route('/images', image_resource)
-        return app
-
-
-    def get_app():
-        image_store = ImageStore('.')
-        return create_app(image_store)
+.. literalinclude:: ../../examples/look/versions/09_app.py
+    :language: python
 
 As you can see, the bulk of the setup logic has been moved to
 ``create_app()``, which can be used to obtain an App object either
@@ -846,73 +630,8 @@ The command to run the application is now:
 Finally, we need to update the test code. Modify ``test_app.py`` to
 look similar to this:
 
-.. code:: python
-
-    import io
-    from wsgiref.validate import InputWrapper
-
-    from unittest.mock import call, MagicMock, mock_open
-
-    import msgpack
-    import pytest
-
-    import falcon
-    from falcon import testing
-
-    import look.app
-    import look.images
-
-
-    @pytest.fixture
-    def mock_store():
-        return MagicMock()
-
-
-    @pytest.fixture
-    def client(mock_store):
-        app = look.app.create_app(mock_store)
-        return testing.TestClient(app)
-
-
-    def test_list_images(client):
-        doc = {
-            'images': [
-                {
-                    'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-                }
-            ]
-        }
-
-        response = client.simulate_get('/images')
-        result_doc = msgpack.unpackb(response.content, raw=False)
-
-        assert result_doc == doc
-        assert response.status == falcon.HTTP_OK
-
-
-    # With clever composition of fixtures, we can observe what happens with
-    # the mock injected into the image resource.
-    def test_post_image(client, mock_store):
-        file_name = 'fake-image-name.xyz'
-
-        # We need to know what ImageStore method will be used
-        mock_store.save.return_value = file_name
-        image_content_type = 'image/xyz'
-
-        response = client.simulate_post(
-            '/images',
-            body=b'some-fake-bytes',
-            headers={'content-type': image_content_type}
-        )
-
-        assert response.status == falcon.HTTP_CREATED
-        assert response.headers['location'] == '/images/{}'.format(file_name)
-        saver_call = mock_store.save.call_args
-
-        # saver_call is a unittest.mock.call tuple. It's first element is a
-        # tuple of positional arguments supplied when calling the mock.
-        assert isinstance(saver_call[0][0], InputWrapper)
-        assert saver_call[0][1] == image_content_type
+.. literalinclude:: ../../examples/look/versions/10_test_app.py
+    :language: python
 
 As you can see, we've redone the POST. While there are fewer mocks, the assertions
 have gotten more elaborate to properly check interactions at the interface boundaries.
@@ -993,34 +712,8 @@ process through HTTP, behaving like a normal client.
 Let's see this in action. Create a new test module,
 ``tests/test_integration.py`` with the following contents:
 
-.. code:: python
-
-    import os
-
-    import requests
-
-
-    def test_posted_image_gets_saved():
-        file_save_prefix = '/tmp/'
-        location_prefix = '/images/'
-        fake_image_bytes = b'fake-image-bytes'
-
-        response = requests.post(
-            'http://localhost:8000/images',
-            data=fake_image_bytes,
-            headers={'content-type': 'image/png'}
-        )
-
-        assert response.status_code == 201
-        location = response.headers['location']
-        assert location.startswith(location_prefix)
-        image_name = location.replace(location_prefix, '')
-
-        file_path = file_save_prefix + image_name
-        with open(file_path, 'rb') as image_file:
-            assert image_file.read() == fake_image_bytes
-
-        os.remove(file_path)
+.. literalinclude:: ../../examples/look/versions/11_test_integration.py
+    :language: python
 
 Next, install the ``requests`` package (as required by the new test)
 and make sure Gunicorn is up and running:
@@ -1040,27 +733,8 @@ The test will fail since it expects the image file to reside under
 ``/tmp``. To fix this, modify ``app.py`` to add the ability to configure
 the image storage directory with an environment variable:
 
-.. code:: python
-
-    import os
-
-    import falcon
-
-    from .images import ImageStore
-    from .images import Resource
-
-
-    def create_app(image_store):
-        image_resource = Resource(image_store)
-        app = falcon.App()
-        app.add_route('/images', image_resource)
-        return app
-
-
-    def get_app():
-        storage_path = os.environ.get('LOOK_STORAGE_PATH', '.')
-        image_store = ImageStore(storage_path)
-        return create_app(image_store)
+.. literalinclude:: ../../examples/look/versions/12_app.py
+    :language: python
 
 Now you can re-run the app against the desired storage directory:
 
@@ -1121,92 +795,8 @@ the path above.
 
 Go ahead and edit your ``images.py`` file to look something like this:
 
-.. code:: python
-
-    import io
-    import os
-    import re
-    import uuid
-    import mimetypes
-
-    import msgpack
-
-    import falcon
-
-
-    class Collection:
-
-        def __init__(self, image_store):
-            self._image_store = image_store
-
-        def on_get(self, req, resp):
-            # TODO: Modify this to return a list of href's based on
-            # what images are actually available.
-            doc = {
-                'images': [
-                    {
-                        'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-                    }
-                ]
-            }
-
-            resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = falcon.MEDIA_MSGPACK
-            resp.status = falcon.HTTP_200
-
-        def on_post(self, req, resp):
-            name = self._image_store.save(req.stream, req.content_type)
-            resp.status = falcon.HTTP_201
-            resp.location = '/images/' + name
-
-
-    class Item:
-
-        def __init__(self, image_store):
-            self._image_store = image_store
-
-        def on_get(self, req, resp, name):
-            resp.content_type = mimetypes.guess_type(name)[0]
-            resp.stream, resp.content_length = self._image_store.open(name)
-
-
-    class ImageStore:
-
-        _CHUNK_SIZE_BYTES = 4096
-        _IMAGE_NAME_PATTERN = re.compile(
-            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
-        )
-
-        def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
-            self._storage_path = storage_path
-            self._uuidgen = uuidgen
-            self._fopen = fopen
-
-        def save(self, image_stream, image_content_type):
-            ext = mimetypes.guess_extension(image_content_type)
-            name = '{uuid}{ext}'.format(uuid=self._uuidgen(), ext=ext)
-            image_path = os.path.join(self._storage_path, name)
-
-            with self._fopen(image_path, 'wb') as image_file:
-                while True:
-                    chunk = image_stream.read(self._CHUNK_SIZE_BYTES)
-                    if not chunk:
-                        break
-
-                    image_file.write(chunk)
-
-            return name
-
-        def open(self, name):
-            # Always validate untrusted input!
-            if not self._IMAGE_NAME_PATTERN.match(name):
-                raise OSError('File not found')
-
-            image_path = os.path.join(self._storage_path, name)
-            stream = self._fopen(image_path, 'rb')
-            content_length = os.path.getsize(image_path)
-
-            return stream, content_length
+.. literalinclude:: ../../examples/look/versions/13_images.py
+    :language: python
 
 As you can see, we renamed ``Resource`` to ``Collection`` and added a new ``Item``
 class to represent a single image resource. Alternatively, these two classes could
@@ -1235,29 +825,8 @@ exactly what we want ``on_get()`` to do.
 Now let's wire everything up and give it a try. Edit ``app.py`` to look
 similar to the following:
 
-.. code:: python
-
-    import os
-
-    import falcon
-
-    from .images import Collection
-    from .images import ImageStore
-    from .images import Item
-
-
-    def create_app(image_store):
-        app = falcon.App()
-        app.add_route('/images', Collection(image_store))
-        app.add_route('/images/{name}', Item(image_store))
-        return app
-
-
-    def get_app():
-        storage_path = os.environ.get('LOOK_STORAGE_PATH', '.')
-        image_store = ImageStore(storage_path)
-        return create_app(image_store)
-
+.. literalinclude:: ../../examples/look/look/app.py
+    :language: python
 
 As you can see, we specified a new route, ``/images/{name}``. This causes
 Falcon to expect all associated responders to accept a ``name``
@@ -1347,7 +916,6 @@ terminal-friendly output. The top of file ``images.py`` should look like this:
         resp.status = falcon.HTTP_201
         resp.location = '/images/' + name
 
-
 Now try the following:
 
 .. code:: bash
@@ -1372,99 +940,8 @@ smaller than the specified value. We will use method ``get_param_as_int`` to
 set a default value of ``-1`` in case no ``maxsize`` query string was provided
 and also to enable a minimum value validation.
 
-.. code:: python
-
-    import io
-    import os
-    import re
-    import uuid
-    import mimetypes
-
-    import falcon
-    import json
-
-
-    class Collection:
-
-        def __init__(self, image_store):
-            self._image_store = image_store
-
-        def on_get(self, req, resp):
-            max_size = req.get_param_as_int("maxsize", min_value=1, default=-1)
-            images = self._image_store.list(max_size)
-            doc = {
-                'images': [
-                    {'href': '/images/' + image} for image in images
-                ]
-            }
-
-            resp.text = json.dumps(doc, ensure_ascii=False)
-            resp.status = falcon.HTTP_200
-
-        def on_post(self, req, resp):
-            name = self._image_store.save(req.stream, req.content_type)
-            resp.status = falcon.HTTP_201
-            resp.location = '/images/' + name
-
-
-    class Item:
-
-        def __init__(self, image_store):
-            self._image_store = image_store
-
-        def on_get(self, req, resp, name):
-            resp.content_type = mimetypes.guess_type(name)[0]
-            resp.stream, resp.content_length = self._image_store.open(name)
-
-
-    class ImageStore:
-
-        _CHUNK_SIZE_BYTES = 4096
-        _IMAGE_NAME_PATTERN = re.compile(
-            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]{2,4}$'
-        )
-
-        def __init__(self, storage_path, uuidgen=uuid.uuid4, fopen=io.open):
-            self._storage_path = storage_path
-            self._uuidgen = uuidgen
-            self._fopen = fopen
-
-        def save(self, image_stream, image_content_type):
-            ext = mimetypes.guess_extension(image_content_type)
-            name = '{uuid}{ext}'.format(uuid=self._uuidgen(), ext=ext)
-            image_path = os.path.join(self._storage_path, name)
-
-            with self._fopen(image_path, 'wb') as image_file:
-                while True:
-                    chunk = image_stream.read(self._CHUNK_SIZE_BYTES)
-                    if not chunk:
-                        break
-
-                    image_file.write(chunk)
-
-            return name
-
-        def open(self, name):
-            # Always validate untrusted input!
-            if not self._IMAGE_NAME_PATTERN.match(name):
-                raise OSError('File not found')
-
-            image_path = os.path.join(self._storage_path, name)
-            stream = self._fopen(image_path, 'rb')
-            content_length = os.path.getsize(image_path)
-
-            return stream, content_length
-
-        def list(self, max_size):
-            images = [
-                image for image in os.listdir(self._storage_path)
-                if self._IMAGE_NAME_PATTERN.match(image)
-                and (
-                    max_size == -1
-                    or os.path.getsize(os.path.join(self._storage_path, image)) <= max_size
-                )
-            ]
-            return images
+.. literalinclude:: ../../examples/look/versions/14_images.py
+    :language: python
 
 As you can see the method ``list`` has been added to ``ImageStore`` in order
 to return list of available images smaller than ``max_size`` unless it is not
