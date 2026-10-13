@@ -4,6 +4,7 @@ Recipes
 .. toctree::
    :maxdepth: 2
 
+   custom-error-handling
    header-name-case
    msgspec-integration
    multipart-mixed
