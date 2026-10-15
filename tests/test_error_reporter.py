@@ -283,10 +283,13 @@ def test_report_fatal_error_rendering_asgi_headers(util, status, set_reporter):
     if set_reporter:
         app.set_error_reporter(reporter.report)
 
-    with pytest.raises(ValueError):
-        falcon.testing.simulate_get(app, '/')
+    # NOTE: Falcon now validates header ASCII/Latin-1 at set_header/set_headers
+    # time, catching the error early and converting it to a 500 response.
+    resp = falcon.testing.simulate_get(app, '/')
+    assert resp.status == falcon.HTTP_500
 
-    assert reporter.log == ([(ValueError, False)] if set_reporter else [])
+    # NOTE: The error is now handled (converted to 500) rather than unhandled.
+    assert reporter.log == ([(ValueError, True)] if set_reporter else [])
 
 
 async def test_report_websocket(util):

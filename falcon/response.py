@@ -63,6 +63,51 @@ _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
 
 
+def _prepare_header(name: str, value: Any) -> tuple[str, str]:
+    """Prepare a header name and value for setting on a response.
+
+    Validates that the header name contains only ASCII characters, and that
+    the header value is either ASCII or can be encoded as Latin-1. The value
+    is also coerced to str() for backwards compatibility with integer and
+    other non-string values.
+
+    Args:
+        name (str): Header name to validate.
+        value: Header value to validate and coerce.
+
+    Returns:
+        tuple[str, str]: A tuple of (lowercased_name, coerced_value).
+
+    Raises:
+        ValueError: If the name contains non-ASCII characters, or if the
+            value contains characters that cannot be encoded as Latin-1.
+    """
+    # NOTE(kgriffs): Validate that the header name is ASCII.
+    if not name.isascii():
+        raise ValueError('Header name must contain only ASCII characters.')
+
+    # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+    # is not a str, so do the conversion here. It's actually
+    # faster to not do an isinstance check. str() will encode
+    # to US-ASCII.
+    value = str(value)
+
+    # NOTE(kgriffs): Validate that the header value is either ASCII or
+    # Latin-1 encodable. This is required for both WSGI and ASGI
+    # compatibility, and allows legacy applications that use Latin-1
+    # in header values to continue working.
+    if not value.isascii():
+        try:
+            value.encode('latin-1')
+        except UnicodeEncodeError:
+            raise ValueError(
+                'Header value must contain only ASCII or Latin-1 '
+                'characters.'
+            )
+
+    return (name.lower(), value)
+
+
 class Response:
     """Represents an HTTP response to a client request.
 
@@ -728,14 +773,7 @@ class Response:
             ValueError: `name` cannot be ``'Set-Cookie'``.
         """
 
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
-
-        # NOTE(kgriffs): normalize name by lowercasing it
-        name = name.lower()
+        name, value = _prepare_header(name, value)
 
         if name == 'set-cookie':
             raise HeaderNotSupported('This method cannot be used to set cookies')
@@ -796,14 +834,7 @@ class Response:
                 value may contain only US-ASCII characters.
         """
 
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
-
-        # NOTE(kgriffs): normalize name by lowercasing it
-        name = name.lower()
+        name, value = _prepare_header(name, value)
 
         if name == 'set-cookie':
             if not self._extra_headers:
@@ -860,13 +891,8 @@ class Response:
         _headers = self._headers
 
         for name, value in headers:  # type: ignore[str-unpack]
-            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-            # is not a str, so do the conversion here. It's actually
-            # faster to not do an isinstance check. str() will encode
-            # to US-ASCII.
-            value = str(value)
+            name, value = _prepare_header(name, value)
 
-            name = name.lower()
             if name == 'set-cookie':
                 raise HeaderNotSupported('This method cannot be used to set cookies')
 

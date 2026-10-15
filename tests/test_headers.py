@@ -704,35 +704,26 @@ class TestHeaders:
 
         if method == 'CONNECT':
             # NOTE(vytas): Response headers cannot be encoded to Latin-1.
-            if not app._ASGI:
-                pytest.skip('wsgiref.validate sees no evil here')
-
-            # NOTE(vytas): Shouldn't this result in an HTTP 500 instead of
-            #   bubbling up a ValueError to the app server?
-            with pytest.raises(ValueError):
-                client.simulate_request(method, '/')
+            # Falcon now validates this at set_header time and converts to 500.
+            resp = client.simulate_request(method, '/')
+            assert resp.status == falcon.HTTP_500
         elif method == 'PUT':
             # NOTE(vytas): Latin-1 header values are allowed.
             resp = client.simulate_request(method, '/')
             assert resp.headers
-        else:
+        elif method == 'PATCH':
+            # NOTE: \x01\x02\xff is Latin-1 encodable (passes Falcon validation),
+            # but control chars are rejected by the ASGI/WSGI framework.
             if app._ASGI:
-                # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
-                #   app to encode header names and values to a byte string. This
-                #   gives Falcon the opportunity to verify the character set
-                #   in the process and raise an error as appropriate.
-                error_type = ValueError
+                with pytest.raises(ValueError, match='Bad header value'):
+                    client.simulate_request(method, '/')
             else:
-                # NOTE(kgriffs): The wsgiref validator that is integrated into
-                #   Falcon's testing framework will catch this. However, Falcon
-                #   itself does not do the check to avoid potential overhead
-                #   in a production deployment.
-                error_type = AssertionError
-
-            pattern = 'Bad header name' if method == 'POST' else 'Bad header value'
-
-            with pytest.raises(error_type, match=pattern):
-                client.simulate_request(method, '/')
+                with pytest.raises(AssertionError, match='Bad header value'):
+                    client.simulate_request(method, '/')
+        else:
+            # POST has non-ASCII header name; Falcon now validates at set_headers time.
+            resp = client.simulate_request(method, '/')
+            assert resp.status == falcon.HTTP_500
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()
@@ -1058,3 +1049,101 @@ class TestHeaders:
 
         result = client.simulate_get()
         assert result.headers[header] == expected_value
+
+
+class TestHeaderASCIIValidation:
+    """Test that response header methods enforce ASCII requirements."""
+
+    def test_set_header_non_ascii_name_raises(self):
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header name must contain only ASCII'):
+            resp.set_header('X-Üser', 'value')
+
+    def test_set_header_non_ascii_value_raises(self):
+        resp = falcon.Response()
+        # 'café' contains 'é' (U+00E9) which IS Latin-1 encodable, so it's allowed
+        # Use a truly non-Latin-1 character like emoji or CJK
+        with pytest.raises(ValueError, match='Header value must contain only ASCII'):
+            resp.set_header('X-Header', 'caf\u00e9\U0001f37d')  # emoji not Latin-1
+
+    def test_set_header_latin1_value_allowed(self):
+        resp = falcon.Response()
+        # Latin-1 characters like 'ö' should be allowed
+        resp.set_header('X-Header', 'Förmånsrätt')
+        assert resp.get_header('x-header') == 'Förmånsrätt'
+
+    def test_set_header_ascii_value_allowed(self):
+        resp = falcon.Response()
+        resp.set_header('X-Header', 'simple-value')
+        assert resp.get_header('x-header') == 'simple-value'
+
+    def test_set_header_integer_value_allowed(self):
+        """Test backwards compatibility: integer values should still work."""
+        resp = falcon.Response()
+        resp.set_header('X-Count', 42)
+        assert resp.get_header('x-count') == '42'
+
+    def test_append_header_non_ascii_name_raises(self):
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header name must contain only ASCII'):
+            resp.append_header('X-Üser', 'value')
+
+    def test_append_header_non_ascii_value_raises(self):
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header value must contain only ASCII'):
+            resp.append_header('X-Header', 'caf\u00e9\U0001f37d')  # emoji not Latin-1
+
+    def test_append_header_latin1_value_allowed(self):
+        resp = falcon.Response()
+        resp.append_header('X-Header', 'Förmånsrätt')
+        assert resp.get_header('x-header') == 'Förmånsrätt'
+
+    def test_set_headers_non_ascii_name_raises(self):
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header name must contain only ASCII'):
+            resp.set_headers([('X-Üser', 'value')])
+
+    def test_set_headers_non_ascii_value_raises(self):
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header value must contain only ASCII'):
+            resp.set_headers([('X-Header', 'caf\u00e9\U0001f37d')])  # emoji not Latin-1
+
+    def test_set_headers_latin1_value_allowed(self):
+        resp = falcon.Response()
+        resp.set_headers([('X-Header', 'Förmånsrätt')])
+        assert resp.get_header('x-header') == 'Förmånsrätt'
+
+    def test_set_headers_multiple_headers_one_invalid(self):
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header name must contain only ASCII'):
+            resp.set_headers([('X-First', 'value1'), ('X-Üser', 'value2')])
+
+    def test_set_header_non_latin1_value_raises(self):
+        """Test that non-Latin-1 values (CJK, emoji, etc.) are rejected."""
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header value must contain only ASCII'):
+            resp.set_header('X-Header', '中文')  # CJK characters not Latin-1
+
+    def test_append_header_non_latin1_value_raises(self):
+        """Test that non-Latin-1 values (CJK, emoji, etc.) are rejected."""
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header value must contain only ASCII'):
+            resp.append_header('X-Header', '中文')  # CJK characters not Latin-1
+
+    def test_set_headers_non_latin1_value_raises(self):
+        """Test that non-Latin-1 values (CJK, emoji, etc.) are rejected."""
+        resp = falcon.Response()
+        with pytest.raises(ValueError, match='Header value must contain only ASCII'):
+            resp.set_headers([('X-Header', '中文')])  # CJK characters not Latin-1
+
+    def test_set_header_latin1_value_allowed_via_set_headers(self):
+        """Test that Latin-1 values work through set_headers."""
+        resp = falcon.Response()
+        resp.set_headers([('X-Header', 'Förmånsrätt')])
+        assert resp.get_header('x-header') == 'Förmånsrätt'
+
+    def test_set_header_latin1_value_allowed_via_append(self):
+        """Test that Latin-1 values work through append_header."""
+        resp = falcon.Response()
+        resp.append_header('X-Header', 'Förmånsrätt')
+        assert resp.get_header('x-header') == 'Förmånsrätt'
