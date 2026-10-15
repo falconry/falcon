@@ -1,0 +1,4 @@
+The ASGI connection scope is now described by a typed dictionary, so attributes such as
+:attr:`req.root_path <falcon.asgi.Request.root_path>` and
+:attr:`req.scheme <falcon.asgi.Request.scheme>` are now inferred as ``str`` without the
+need for ``# type: ignore`` comments.
