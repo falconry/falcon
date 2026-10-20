@@ -1692,6 +1692,36 @@ Now let's try that request again:
 Additional information about error handling is available in the
 :ref:`error handling reference <errors>`.
 
+.. _tutorial-returning-early:
+
+Returning Early
+---------------
+
+A responder does not have to run all the way to the end. Once you have set
+the response, you can return immediately. This is useful for handling a
+special case before doing more expensive work, and it can help keep deeply
+nested logic easier to read.
+
+For example, a collection endpoint might support a lightweight summary
+representation:
+
+.. code:: python
+
+    class Things:
+        def __init__(self, store):
+            self._store = store
+
+        def on_get(self, req, resp):
+            if req.get_param_as_bool('summary', default=False):
+                resp.media = {'count': self._store.count()}
+                return
+
+            resp.media = {'things': self._store.list()}
+
+Falcon ignores the value returned by a responder; the response is always
+constructed from the ``resp`` object. Returning early simply stops executing
+the rest of the method.
+
 What Now?
 ---------
 

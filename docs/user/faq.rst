@@ -961,6 +961,32 @@ until the stream is exhausted.
 See also the :ref:`outputting_csv_recipe` recipe for an example of using
 :attr:`resp.stream <falcon.Response.stream>` with a generator.
 
+Can I return from a responder before the end of the method?
+-----------------------------------------------------------
+
+Yes. Once the response is ready, a responder can return immediately. Falcon
+ignores whatever the responder returns; the response is always constructed
+from the ``resp`` object. This is useful for validation and for special cases
+that only need a small response.
+
+.. code:: python
+
+    class Thing:
+        def __init__(self, store):
+            self._store = store
+
+        def on_get(self, req, resp, thing_id):
+            thing = self._store.get(thing_id)
+            if thing is None:
+                resp.status = falcon.HTTP_404
+                return
+
+            resp.media = thing
+
+The same pattern applies to ASGI responders; simply declare the method as
+``async`` and return at the same point. See
+:ref:`tutorial-returning-early` for another example.
+
 How can I use resp.media with types like datetime?
 --------------------------------------------------
 
