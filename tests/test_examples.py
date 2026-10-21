@@ -1,16 +1,4 @@
-import pytest
-
 import falcon.testing as testing
-
-
-@pytest.fixture(scope='session')
-def httpx():
-    return pytest.importorskip('httpx')
-
-
-@pytest.fixture(scope='session')
-def requests():
-    return pytest.importorskip('requests')
 
 
 def test_quote(util):

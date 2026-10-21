@@ -6,12 +6,6 @@ import falcon
 from falcon import testing
 from falcon.media import validators
 
-
-@pytest.fixture(scope='session')
-def jsonschema():
-    return pytest.importorskip('jsonschema')
-
-
 _VALID_MEDIA = {'message': 'something'}
 _INVALID_MEDIA = {}  # type: typing.Dict[str, str]
 
