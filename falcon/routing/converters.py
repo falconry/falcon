@@ -14,7 +14,6 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Iterable
 from datetime import datetime
 from math import isfinite
 import re
@@ -46,6 +45,14 @@ class BaseConverter(metaclass=abc.ABCMeta):
     ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the end of the URL template
     effectively meaning that it will consume all of the remaining URL path
     segments.
+
+    .. deprecated:: 4.5
+        Setting this flag directly on a converter that does not derive from
+        :class:`BaseMultiSegmentConverter` is deprecated, since
+        :meth:`convert` then receives the matched path segments as a
+        ``list[str]``, which is at odds with its signature. Subclass
+        :class:`BaseMultiSegmentConverter` instead; the segments will then be
+        joined with ``/``, and passed as a single ``str``.
     """
 
     @abc.abstractmethod
@@ -53,15 +60,20 @@ class BaseConverter(metaclass=abc.ABCMeta):
         """Convert a URI template field value to another format or type.
 
         Args:
-            value (str or list[str]): Original string to convert.
-                If ``CONSUME_MULTIPLE_SEGMENTS=True`` this value is a
-                list of strings containing the path segments matched by
-                the converter.
+            value (str): Original string to convert.
+
+                Note:
+                    For legacy converters that set
+                    ``CONSUME_MULTIPLE_SEGMENTS=True`` without deriving from
+                    :class:`BaseMultiSegmentConverter`, this value is
+                    instead a ``list[str]`` of the matched path segments.
+                    This behavior is deprecated.
 
         Returns:
             object: Converted field value, or ``None`` if the field
             can not be converted.
         """
+
 
 class BaseMultiSegmentConverter(BaseConverter):
     """Abstract base class for converters consuming multiple path segments.
@@ -78,13 +90,14 @@ class BaseMultiSegmentConverter(BaseConverter):
 
     CONSUME_MULTIPLE_SEGMENTS: ClassVar[bool] = True
 
+
 def _consumes_multiple_segments(converter: object) -> bool:
     return getattr(converter, 'CONSUME_MULTIPLE_SEGMENTS', False)
 
+
 def _receives_joined_segments(converter: object) -> bool:
-    if isinstance(converter, type):
-        return issubclass(converter, BaseMultiSegmentConverter)
     return isinstance(converter, BaseMultiSegmentConverter)
+
 
 class IntConverter(BaseConverter):
     """Converts a field value to an int.
@@ -243,7 +256,7 @@ class UUIDConverter(BaseConverter):
             return None
 
 
-class PathConverter(BaseConverter):
+class PathConverter(BaseMultiSegmentConverter):
     """Field converted used to match the rest of the path.
 
     Identifier: ``path``
@@ -264,12 +277,19 @@ class PathConverter(BaseConverter):
     (See also: :ref:`trailing_slash_in_path`)
 
     .. versionadded:: 4.0
+
+    .. versionchanged:: 4.5
+        This converter now derives from :class:`BaseMultiSegmentConverter`,
+        and therefore receives the remaining path segments already joined
+        with ``/`` as a single ``str``.
     """
 
-    CONSUME_MULTIPLE_SEGMENTS = True
-
-    def convert(self, value: Iterable[str]) -> str:
-        return '/'.join(value)
+    def convert(self, value: str) -> str:
+        # Also accept an iterable of path segments in order to retain
+        # compatibility with code calling this method directly.
+        if not isinstance(value, str):
+            return '/'.join(value)
+        return value
 
 
 class RegexConverter(BaseConverter):
@@ -279,16 +299,12 @@ class RegexConverter(BaseConverter):
 
     In the current iteration, this field converter only captures a single URL
     segment (unlike :class:`PathConverter`). However, if needed, you can easily
-    :ref:`customize <routing_custom_converters>` it by subclassing and enabling
-    ``CONSUME_MULTIPLE_SEGMENTS``::
+    :ref:`customize <routing_custom_converters>` it by also deriving from
+    :class:`BaseMultiSegmentConverter`; the router will then pass the remaining
+    path segments joined with ``/`` as a single ``str``::
 
-        class RePathConverter(RegexConverter):
-            CONSUME_MULTIPLE_SEGMENTS = True
-
-            def convert(self, value: str | list[str]) -> str:
-                if not isinstance(value, str):
-                    value = '/'.join(value)
-                return super().convert(value)
+        class RePathConverter(RegexConverter, BaseMultiSegmentConverter):
+            pass
 
         # <...>
 
