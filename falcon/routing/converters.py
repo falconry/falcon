@@ -23,6 +23,7 @@ import uuid
 
 __all__ = (
     'BaseConverter',
+    'BaseMultiSegmentConverter',
     'DateTimeConverter',
     'FloatConverter',
     'IntConverter',
@@ -62,10 +63,28 @@ class BaseConverter(metaclass=abc.ABCMeta):
             can not be converted.
         """
 
+class BaseMultiSegmentConverter(BaseConverter):
+    """Abstract base class for converters consuming multiple path segments.
+
+    A converter derived from this class must be placed at the end of the URI
+    template, and it will consume all of the remaining URL path segments.
+    The router joins these segments with ``/`` before calling
+    :meth:`~BaseConverter.convert`, so that `value` is always a ``str``.
+
+    .. versionadded:: 4.5
+    """
+
+    __slots__ = ()
+
+    CONSUME_MULTIPLE_SEGMENTS: ClassVar[bool] = True
 
 def _consumes_multiple_segments(converter: object) -> bool:
     return getattr(converter, 'CONSUME_MULTIPLE_SEGMENTS', False)
 
+def _receives_joined_segments(converter: object) -> bool:
+    if isinstance(converter, type):
+        return issubclass(converter, BaseMultiSegmentConverter)
+    return isinstance(converter, BaseMultiSegmentConverter)
 
 class IntConverter(BaseConverter):
     """Converts a field value to an int.

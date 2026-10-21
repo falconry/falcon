@@ -544,7 +544,14 @@ class CompiledRouter:
                         self._converters.append(converter_obj)
                         if converters._consumes_multiple_segments(converter_obj):
                             consume_multiple_segments = True
-                            parent.append_child(_CxSetFragmentFromRemainingPaths(level))
+                            parent.append_child(
+                                _CxSetFragmentFromRemainingPaths(
+                                    level,
+                                    join=converters._receives_joined_segments(
+                                        converter_obj
+                                    ),
+                                )
+                            )
                         else:
                             parent.append_child(_CxSetFragmentFromPath(level))
 
@@ -1164,11 +1171,17 @@ class _CxSetFragmentFromPath(_CxChild):
 
 
 class _CxSetFragmentFromRemainingPaths(_CxChild):
-    def __init__(self, segment_idx: int) -> None:
+    def __init__(self, segment_idx: int, join: bool = False) -> None:
         self._segment_idx = segment_idx
+        self._join = join
 
     def src(self, indentation: int) -> str:
-        return '{0}fragment = path[{1}:]'.format(
+        template = (
+            "{0}fragment = '/'.join(path[{1}:])"
+            if self._join
+            else '{0}fragment = path[{1}:]'
+        )
+        return template.format(
             _TAB_STR * indentation,
             self._segment_idx,
         )
