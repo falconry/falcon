@@ -1697,10 +1697,10 @@ Additional information about error handling is available in the
 Returning Early
 ---------------
 
-A responder does not have to run all the way to the end. Once you have set
-the response, you can return immediately. This is useful for handling a
-special case before doing more expensive work, and it can help keep deeply
-nested logic easier to read.
+A responder does not have to run all the way to the end. Once the response is
+ready, you can simply ``return`` instead of nesting the rest of your logic
+inside conditionals. This is useful for handling a special case before doing
+more expensive work.
 
 For example, a collection endpoint might support a lightweight summary
 representation:
@@ -1716,11 +1716,16 @@ representation:
                 resp.media = {'count': self._store.count()}
                 return
 
-            resp.media = {'things': self._store.list()}
+            resp.media = {'things': self._store.all()}
 
 Falcon ignores the value returned by a responder; the response is always
 constructed from the ``resp`` object. Returning early simply stops executing
 the rest of the method.
+
+When the response should be a standard error, you will usually prefer to
+raise one of Falcon's :ref:`predefined error classes <predefined_errors>`
+rather than setting the status yourself; see also
+:ref:`faq-returning-early` for a comparison of the two approaches.
 
 What Now?
 ---------

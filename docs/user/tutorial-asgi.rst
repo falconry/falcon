@@ -385,15 +385,15 @@ name that starts with ``on_`` and ends in the lowercased HTTP method name (e.g.,
 ``on_get()``, ``on_patch()``, ``on_delete()``, etc.)
 
 .. note::
-  As in the WSGI tutorial, an ASGI responder may return as soon as the response
-  is ready. Falcon ignores the return value; see
-  :ref:`tutorial-returning-early` for an example.
-
-.. note::
   If a Python method is omitted for a given HTTP verb, the framework will
   automatically respond with ``405 Method Not Allowed``. Falcon also provides
   a default responder for OPTIONS requests that takes into account which
   methods are implemented for the target resource.
+
+.. note::
+  As in the :ref:`WSGI tutorial<tutorial>`, an ASGI responder may return as
+  soon as the response is ready. Falcon ignores the value returned by the
+  responder; see :ref:`tutorial-returning-early` for a longer example.
 
 Here we opted to implement support for both a single image (which supports
 ``GET`` for downloading the image) and a collection of images (which supports
