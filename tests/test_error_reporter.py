@@ -283,10 +283,11 @@ def test_report_fatal_error_rendering_asgi_headers(util, status, set_reporter):
     if set_reporter:
         app.set_error_reporter(reporter.report)
 
-    with pytest.raises(ValueError):
-        falcon.testing.simulate_get(app, '/')
+    # NOTE: Falcon now catches invalid headers and returns 500
+    resp = falcon.testing.simulate_get(app, '/')
+    assert resp.status_code == 500
 
-    assert reporter.log == ([(ValueError, False)] if set_reporter else [])
+    assert reporter.log == ([(ValueError, True)] if set_reporter else [])
 
 
 async def test_report_websocket(util):

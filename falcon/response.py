@@ -1385,17 +1385,17 @@ class Response:
             items += [('set-cookie', c.OutputString()) for c in self._cookies.values()]
         return items
 
-    def _normalize_header(name: str, value: str) -> tuple[str, str]:
+    def _normalize_header(self, name: str, value: str) -> tuple[str, str]:
         """Normalize response header names and values into required formats.
-        
+
         Args:
             name (str): Header name (case-insensitive). The name may contain
                 only US-ASCII characters.
             value (str): Value for the header. As with the header's name, the
                 value may contain only Latin-1 characters.
-        
+
         Raises:
-            KeyError:   `name` must be ASCII encodable
+            ValueError:   `name` must be ASCII encodable
             ValueError: `value` must be Latin-1 encodable
         """
 
@@ -1408,9 +1408,9 @@ class Response:
         name = name.lower()
 
         if not _is_ascii_encodable(name):
-            raise KeyError('name is not ASCII encodable')
+            raise ValueError('Bad header name: name is not ASCII encodable')
         if not _is_latin1_encodable(value):
-            raise ValueError('value is not Latin-1 encodable')
+            raise ValueError('Bad header value: value is not Latin-1 encodable')
 
         return name, value
 
