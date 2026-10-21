@@ -3,7 +3,9 @@ import falcon.uri
 
 
 class RawPathComponent:
-    async def process_request(self, req, resp):
+    async def process_request(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response
+    ) -> None:
         raw_path = req.scope.get('raw_path')
 
         # NOTE: Decode the raw path from the raw_path bytestring, disallowing
@@ -13,13 +15,17 @@ class RawPathComponent:
 
 
 class URLResource:
-    async def on_get(self, req, resp, url):
+    async def on_get(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response, url: str
+    ) -> None:
         # NOTE: url here is potentially percent-encoded.
         url = falcon.uri.decode(url)
 
         resp.media = {'url': url}
 
-    async def on_get_status(self, req, resp, url):
+    async def on_get_status(
+        self, req: falcon.asgi.Request, resp: falcon.asgi.Response, url: str
+    ) -> None:
         # NOTE: url here is potentially percent-encoded.
         url = falcon.uri.decode(url)
 
