@@ -722,8 +722,8 @@ class Response:
         Args:
             name (str): Header name (case-insensitive). The name may contain
                 only US-ASCII characters.
-            value (str): Value for the header. As with the header's name, the
-                value may contain only Latin-1 characters.
+            value (str): Value for the header. The value may only contain
+                Latin-1 (ISO-8859-1) characters.
 
         Raises:
             ValueError: `name` cannot be ``'Set-Cookie'``.
@@ -786,8 +786,8 @@ class Response:
         Args:
             name (str): Header name (case-insensitive). The name may contain
                 only US-ASCII characters.
-            value (str): Value for the header. As with the header's name, the
-                value may contain only Latin-1 characters.
+            value (str): Value for the header. The value may only contain
+                Latin-1 (ISO-8859-1) characters.
         """
 
         name, value = self._normalize_header(name, value)
@@ -827,7 +827,7 @@ class Response:
                 iterables, or a dict-like object that implements an ``items()`` method.
                 Both *name* and *value* must be of type ``str``.
                 *name* must contain only US-ASCII characters.
-                *value* must contain only Latin-1 characters.
+                *value* must contain only Latin-1 (ISO-8859-1) characters.
 
                 Note:
                     Falcon can process an iterable of tuples slightly faster

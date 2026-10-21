@@ -140,6 +140,7 @@ class UnicodeHeaderResource:
                 ('X-auTH-toKEN', 'toomanysecrets'),
                 ('Content-TYpE', 'application/json'),
                 ('X-symbOl', '@'),
+                ('X-number', 4)
             ]
         )
 
@@ -696,6 +697,7 @@ class TestHeaders:
         assert result.headers['Content-Type'] == 'application/json'
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
+        assert result.headers['X-Number'] == '4'
 
     @pytest.mark.parametrize('method', ['CONNECT', 'PATCH', 'POST', 'PUT'])
     def test_unicode_headers_contain_non_ascii(self, method, client):
