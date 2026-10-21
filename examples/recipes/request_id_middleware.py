@@ -1,9 +1,9 @@
 from uuid import uuid4
 
-import falcon
-
 # Import the above context.py
 from my_app.context import ctx
+
+import falcon
 
 
 class RequestIDMiddleware:
