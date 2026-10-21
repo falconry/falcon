@@ -961,13 +961,17 @@ until the stream is exhausted.
 See also the :ref:`outputting_csv_recipe` recipe for an example of using
 :attr:`resp.stream <falcon.Response.stream>` with a generator.
 
+.. _faq-returning-early:
+
 Can I return from a responder before the end of the method?
 -----------------------------------------------------------
 
 Yes. Once the response is ready, a responder can return immediately. Falcon
-ignores whatever the responder returns; the response is always constructed
-from the ``resp`` object. This is useful for validation and for special cases
-that only need a small response.
+ignores the value returned by a responder; the response is always constructed
+from the ``resp`` object.
+
+Returning early is handy when a responder needs to handle a special case
+before doing the rest of its work:
 
 .. code:: python
 
@@ -979,9 +983,15 @@ that only need a small response.
             thing = self._store.get(thing_id)
             if thing is None:
                 resp.status = falcon.HTTP_404
+                resp.media = {'error': 'thing not found'}
                 return
 
             resp.media = thing
+
+Raising one of Falcon's :ref:`predefined error classes <predefined_errors>`
+is usually more concise for a standard error response. Returning early is
+the better choice when the response is not an error, or when you want to
+render the error body yourself, as in the example above.
 
 The same pattern applies to ASGI responders; simply declare the method as
 ``async`` and return at the same point. See
