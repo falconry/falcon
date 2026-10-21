@@ -1395,7 +1395,7 @@ class Response:
                 value may contain only Latin-1 characters.
 
         Raises:
-            ValueError:   `name` must be ASCII encodable
+            ValueError: `name` must be ASCII encodable
             ValueError: `value` must be Latin-1 encodable
         """
 

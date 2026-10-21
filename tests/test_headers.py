@@ -763,7 +763,7 @@ class TestHeaders:
 
         # _asgi_headers has a fallback check as well
         if response_type is falcon.asgi.Response:
-            resp._headers['x-falcon'] = '🦅'
+            resp._headers[name] = header_value
 
             with pytest.raises(ValueError):
                 resp._asgi_headers()
