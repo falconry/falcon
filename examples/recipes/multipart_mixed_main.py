@@ -3,7 +3,7 @@ import falcon.media
 
 
 class Forms:
-    def on_post(self, req, resp):
+    def on_post(self, req: falcon.Request, resp: falcon.Response) -> None:
         example = {}
         for part in req.media:
             if part.content_type.startswith('multipart/mixed'):
