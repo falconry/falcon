@@ -1,0 +1,5 @@
+Response header setters now enforce the documented ASCII restriction
+for header names and Latin-1 restriction for header values, raising
+``ValueError`` for invalid input. When raised within a responder,
+these errors now produce a 500 response under Falcon's default error
+handling.

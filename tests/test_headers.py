@@ -140,7 +140,7 @@ class UnicodeHeaderResource:
                 ('X-auTH-toKEN', 'toomanysecrets'),
                 ('Content-TYpE', 'application/json'),
                 ('X-symbOl', '@'),
-                ('X-number', 4)
+                ('X-number', 4),
             ]
         )
 
