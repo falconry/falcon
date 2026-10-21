@@ -146,3 +146,16 @@ def _is_ascii_encodable(s: str) -> bool:
         # NOTE(tbug): s is probably not a string type
         return False
     return True
+
+def _is_latin1_encodable(s: str) -> bool:
+    """Check if argument encodes to latin-1 without error."""
+    try:
+        s.encode('latin-1')
+    except UnicodeEncodeError:
+        # NOTE(tbug): Py3 will raise this if string contained
+        # chars that could not be latin1 encoded
+        return False
+    except AttributeError:
+        # NOTE(tbug): s is probably not a string type
+        return False
+    return True
