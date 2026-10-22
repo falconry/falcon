@@ -709,7 +709,7 @@ class TestHeaders:
             resp = client.simulate_request(method, '/')
             assert resp.headers
         elif method == 'PATCH':
-            #   tests control chars \x01\x02\xff
+            #   NOTE(pattyolowry): This tests control chars \x01\x02\xff
             #   NOTE(kgriffs): The validators that are integrated into
             #   Falcon's testing framework will catch this. However, Falcon
             #   itself does not do the check to avoid potential overhead
