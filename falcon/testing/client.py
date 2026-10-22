@@ -925,9 +925,9 @@ async def _simulate_request_asgi(
             'Please use the method parameter.'
         )
 
-    # NOTE: extras is an open-ended mapping of caller-supplied scope keys (ASGI
-    #   servers are free to add their own), so it cannot be expressed by the
-    #   AsgiRequestScope TypedDict.
+    # NOTE(ogormans-deptstack): extras is an open-ended mapping of caller-
+    #   supplied scope keys (ASGI servers are free to add their own), so it
+    #   cannot be expressed by the AsgiRequestScope TypedDict.
     http_scope.update(extras)  # type: ignore[typeddict-item]
     # ---------------------------------------------------------------------
 
