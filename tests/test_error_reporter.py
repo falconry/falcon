@@ -283,7 +283,7 @@ def test_report_fatal_error_rendering_asgi_headers(util, status, set_reporter):
     if set_reporter:
         app.set_error_reporter(reporter.report)
 
-    # NOTE: Falcon now catches invalid headers and returns 500
+    # NOTE(pattyolowry): Falcon now catches invalid headers and returns 500
     resp = falcon.testing.simulate_get(app, '/')
     assert resp.status_code == 500
 
