@@ -5,7 +5,7 @@ requests
 
 # ASGI Specific (Daphne & Hypercorn are installed in their own tox env)
 aiofiles
-httpx
+httpx2
 uvicorn >= 0.17.0
 websockets >= 13.1
 

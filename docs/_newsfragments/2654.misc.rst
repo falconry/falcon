@@ -1,0 +1,2 @@
+The ASGI quickstart example and server integration tests now use
+`httpx2 <https://pypi.org/project/httpx2/>`__ in place of ``httpx``.

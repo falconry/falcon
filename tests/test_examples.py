@@ -4,8 +4,8 @@ import falcon.testing as testing
 
 
 @pytest.fixture(scope='session')
-def httpx():
-    return pytest.importorskip('httpx')
+def httpx2():
+    return pytest.importorskip('httpx2')
 
 
 @pytest.fixture(scope='session')
@@ -38,7 +38,7 @@ def test_things(asgi, util):
     )
 
 
-def test_things_advanced(asgi, util, httpx, requests):
+def test_things_advanced(asgi, util, httpx2, requests):
     suffix = '_asgi' if asgi else ''
     advanced = util.load_module(f'examples/things_advanced{suffix}.py')
 
@@ -73,3 +73,43 @@ def test_things_advanced(asgi, util, httpx, requests):
         body='',
     )
     assert resp4.status_code == 400
+
+
+@pytest.mark.parametrize('engine', ['ddg', 'y'])
+@pytest.mark.parametrize('status_code', [200, 302, 503])
+def test_things_advanced_asgi_sink(util, httpx2, monkeypatch, engine, status_code):
+    advanced = util.load_module('examples/things_advanced_asgi.py')
+    query = 'Falcon ASGI + café'
+    body = '<html>Search results: café</html>'
+    content_type = 'text/html; charset=utf-8'
+    upstream_requests = []
+
+    def upstream(request):
+        upstream_requests.append(request)
+        assert request.url.copy_with(query=None) == httpx2.URL(
+            advanced.sink.engines[engine]
+        )
+        assert request.method == 'GET'
+        assert dict(request.url.params) == {'q': query}
+        return httpx2.Response(
+            status_code, text=body, headers={'Content-Type': content_type}
+        )
+
+    client_type = httpx2.AsyncClient
+
+    def create_client():
+        return client_type(transport=httpx2.MockTransport(upstream))
+
+    monkeypatch.setattr(httpx2, 'AsyncClient', create_client)
+
+    resp = testing.simulate_get(
+        advanced.app,
+        f'/search/{engine}',
+        params={'q': query},
+        headers={'Authorization': 'custom-token'},
+    )
+
+    assert len(upstream_requests) == 1
+    assert resp.status_code == status_code
+    assert resp.content_type == content_type
+    assert resp.text == body

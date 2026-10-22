@@ -17,8 +17,8 @@ from . import _asgi_test_app
 
 
 @pytest.fixture(scope='session')
-def httpx():
-    return pytest.importorskip('httpx')
+def httpx2():
+    return pytest.importorskip('httpx2')
 
 
 @pytest.fixture(scope='session')
@@ -179,14 +179,14 @@ class TestASGIServer:
                 timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
 
-    async def test_stream_chunked_request(self, server_base_url, httpx):
+    async def test_stream_chunked_request(self, server_base_url, httpx2):
         """Regression test for https://github.com/falconry/falcon/issues/2024"""
 
         async def emitter():
             for _ in range(64):
                 yield b'123456789ABCDEF\n'
 
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             resp = await client.put(
                 server_base_url + 'bucket/drops',
                 content=emitter(),
@@ -194,6 +194,10 @@ class TestASGIServer:
             )
             resp.raise_for_status()
             assert resp.json().get('drops') >= 1
+            assert (
+                resp.json().get('sha1')
+                == hashlib.sha1(b'123456789ABCDEF\n' * 64).hexdigest()
+            )
 
 
 class TestStaticFiles:

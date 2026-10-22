@@ -2,6 +2,6 @@
 #   but not the servers themselves. Tox environments specify them instead.
 
 pytest >= 7.0
-httpx
+httpx2
 requests
 websockets >= 13.1

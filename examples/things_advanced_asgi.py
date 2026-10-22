@@ -3,7 +3,7 @@
 import logging
 import uuid
 
-import httpx
+import httpx2
 
 import falcon
 import falcon.asgi
@@ -35,7 +35,7 @@ class SinkAdapter:
         url = self.engines[engine]
         params = {'q': req.get_param('q', True)}
 
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             result = await client.get(url, params=params)
 
         resp.status = result.status_code

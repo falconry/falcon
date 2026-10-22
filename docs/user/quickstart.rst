@@ -139,7 +139,7 @@ parameters, handling errors, and working with request and response bodies.
         :sync: asgi
 
         Note that this example requires the
-        `httpx <https://pypi.org/project/httpx/>`_ package in lieu of
+        `httpx2 <https://pypi.org/project/httpx2/>`_ package in lieu of
         `requests <https://pypi.org/project/requests/>`_.
 
         .. literalinclude:: ../../examples/things_advanced_asgi.py
@@ -149,5 +149,5 @@ parameters, handling errors, and working with request and response bodies.
 
         .. code:: bash
 
-            $ pip install falcon httpx uvicorn
+            $ pip install falcon httpx2 uvicorn
             $ uvicorn things_advanced_asgi:app

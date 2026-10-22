@@ -650,7 +650,7 @@ A More Complex Example (ASGI)
 -----------------------------
 
 Here's the ASGI version of the app from above. Note that it uses the
-`httpx <https://pypi.org/project/httpx/>`_ package in lieu of
+`httpx2 <https://pypi.org/project/httpx2/>`_ package in lieu of
 `requests <https://pypi.org/project/requests/>`_.
 
 .. code:: python
@@ -662,7 +662,7 @@ Here's the ASGI version of the app from above. Note that it uses the
 
     import falcon
     import falcon.asgi
-    import httpx
+    import httpx2
 
 
     class StorageEngine:
@@ -694,7 +694,7 @@ Here's the ASGI version of the app from above. Note that it uses the
             url = self.engines[engine]
             params = {'q': req.get_param('q', True)}
 
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 result = await client.get(url, params=params)
 
             resp.status = result.status_code
@@ -830,7 +830,7 @@ You can run the ASGI version with any ASGI server, such as uvicorn:
 
 .. code:: bash
 
-    $ pip install falcon httpx uvicorn
+    $ pip install falcon httpx2 uvicorn
     $ uvicorn things_advanced_asgi:app
 
 Contributing
