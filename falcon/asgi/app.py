@@ -52,6 +52,7 @@ from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
 from falcon.app_helpers import prepare_middleware
 from falcon.app_helpers import prepare_middleware_ws
+from falcon.asgi_spec import AsgiRequestScope
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
@@ -456,7 +457,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
     @_wrap_asgi_coroutine_func
     async def __call__(  # type: ignore[override] # noqa: C901
         self,
-        scope: dict[str, Any],
+        scope: AsgiRequestScope,
         receive: AsgiReceive,
         send: AsgiSend,
     ) -> None:
@@ -1130,7 +1131,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 loop.run_in_executor(None, cb)
 
     async def _call_lifespan_handlers(
-        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: AsgiRequestScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         while True:
             event = await receive()
@@ -1200,7 +1201,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 return
 
     async def _handle_websocket(
-        self, ver: str, scope: dict[str, Any], receive: AsgiReceive, send: AsgiSend
+        self, ver: str, scope: AsgiRequestScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         first_event = await receive()
         if first_event['type'] != EventType.WS_CONNECT:
