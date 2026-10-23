@@ -1,0 +1,2 @@
+Migrated the project's tox configuration from ``tox.ini`` to native
+``tox.toml`` format, requiring tox 4.21.1 or newer.

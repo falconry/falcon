@@ -293,9 +293,9 @@ Or, to run the default set of tests:
 
 .. code:: bash
 
-    $ pip install tox && tox
+    $ pip install "tox>=4.21.1" && tox
 
-See also the `tox.ini <https://github.com/falconry/falcon/blob/master/tox.ini>`_
+See also the `tox.toml <https://github.com/falconry/falcon/blob/master/tox.toml>`_
 file for a full list of available environments.
 
 Read the Docs
@@ -311,7 +311,7 @@ You can build the same docs locally as follows:
 
 .. code:: bash
 
-    $ pip install tox && tox -e docs
+    $ pip install "tox>=4.21.1" && tox -e docs
 
 Once the docs have been built, you can view them by opening the following
 index page in your browser. On OS X it's as simple as::
