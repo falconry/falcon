@@ -16,6 +16,7 @@ from falcon._typing import AsgiReceive
 from falcon._typing import AsgiSend
 from falcon._typing import HeaderArg
 from falcon.asgi_spec import AsgiEvent
+from falcon.asgi_spec import AsgiRequestScope
 from falcon.asgi_spec import AsgiSendMsg
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
@@ -65,7 +66,7 @@ class WebSocket:
     def __init__(
         self,
         ver: str,
-        scope: dict[str, Any],
+        scope: AsgiRequestScope,
         receive: AsgiReceive,
         send: AsgiSend,
         media_handlers: Mapping[
