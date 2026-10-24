@@ -5,7 +5,7 @@ import falcon
 
 
 class Report:
-    def on_get(self, req, resp):
+    def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerow(('fruit', 'quantity'))
