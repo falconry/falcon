@@ -1,0 +1,1 @@
+Added type annotations to the recipe snippets covering ``request_id_*`` middleware/context examples and the ``plain_text_main`` / ``pretty_json_main`` custom media handler examples (see :ref:`recipes`).
