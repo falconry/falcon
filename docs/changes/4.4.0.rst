@@ -1,21 +1,27 @@
 Changelog for Falcon 4.4.0
 ==========================
 
+.. falcon-release: 2026-09-30
+
 Summary
 -------
 
-This is the first release candidate of Falcon 4.4.
+This release contains a handful of long-requested features -- a
+:class:`~falcon.routing.RegexConverter` field converter, an application-wide
+:meth:`error reporter <falcon.App.set_error_reporter>`, and a new
+``allow_multiple`` keyword argument for the query string parameter helpers,
+along with a number of bug fixes.
+As usual, the newest CPython runtime, 3.15, is fully supported (including
+:ref:`binary wheels <binary_wheels>`).
 
-As Falcon 4.4 is now feature-complete, we would really be thankful if you could
-take it for a spin with your apps, and
-:ref:`let us know if you run into any issues <chat>`!
+The error reporter also serves as groundwork for the native OpenTelemetry
+integration that has been on our roadmap for a while.
+We are hoping to ship that integration as part of
+`Falcon 4.5 <https://github.com/falconry/falcon/milestone/48>`__.
 
-As always, you can grab this pre-release
-`from PyPI <https://pypi.org/project/falcon/4.4.0rc1/>`__::
-
-    pip install falcon==4.4.0rc1
-
-Thank You!
+This release would not have been possible without the prototypes, fixes, and
+feature pull requests submitted by our community.
+Sincere thanks to our supporters and contributors!
 
 
 Changes to Supported Platforms
