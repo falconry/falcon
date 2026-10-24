@@ -295,7 +295,7 @@ Or, to run the default set of tests:
 
     $ pip install tox && tox
 
-See also the `tox.ini <https://github.com/falconry/falcon/blob/master/tox.ini>`_
+See also the `tox.toml <https://github.com/falconry/falcon/blob/master/tox.toml>`_
 file for a full list of available environments.
 
 Read the Docs
