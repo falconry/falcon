@@ -67,14 +67,7 @@ commands = [
 [with-coverage]
 commands = [
     ["python", "tools/clean.py", "falcon"],
-    [
-        "coverage",
-        "run",
-        "-m",
-        "pytest",
-        "tests",
-        { replace = "posargs", default = [], extend = true },
-    ],
+    ["coverage", "run", "-m", "pytest", "tests", { replace = "posargs", default = [], extend = true }],
 ]
 
 [env.mintest]
@@ -83,16 +76,7 @@ set_env.PYTHONASYNCIODEBUG = "0"
 set_env.FALCON_DISABLE_CYTHON = "Y"
 deps = ["-r requirements/mintest"]
 commands = [
-    [
-        "coverage",
-        "run",
-        "-m",
-        "pytest",
-        "tests",
-        "-k",
-        "not slow",
-        { replace = "posargs", default = [], extend = true },
-    ],
+    ["coverage", "run", "-m", "pytest", "tests", "-k", "not slow", { replace = "posargs", default = [], extend = true }],
 ]
 
 [env.pytest]
@@ -103,14 +87,7 @@ deps = [
     "testtools",
 ]
 commands = [
-    [
-        "coverage",
-        "run",
-        "-m",
-        "pytest",
-        "tests",
-        { replace = "posargs", default = [], extend = true },
-    ],
+    ["coverage", "run", "-m", "pytest", "tests", { replace = "posargs", default = [], extend = true }],
 ]
 
 [env.py314]
@@ -192,13 +169,7 @@ commands = [
     ["python", "tools/clean.py", "falcon"],
     ["mypy", "--strict", "e2e-tests/server"],
     ["mypy", "--strict", "tests/test_typing.py"],
-    [
-        "mypy",
-        "tests",
-        "--allow-untyped-calls",
-        "--allow-untyped-defs",
-        "--no-check-untyped-defs",
-    ],
+    ["mypy", "tests", "--allow-untyped-calls", "--allow-untyped-defs", "--no-check-untyped-defs"],
 ]
 
 [env.pyright_tests]
@@ -418,8 +389,7 @@ deps = ["ruff>=0.16.7"]
 skip_install = true
 commands = [
     [
-        "ruff",
-        "check",
+        "ruff", "check",
         "--exclude=.ecosystem,.eggs,.git,.tox,.venv,build,dist,docs,examples,tests,falcon/bench/nuts",
         "--select=D205,D212,D400,D401,D403,D404",
         { replace = "posargs", default = [], extend = true },
@@ -430,13 +400,7 @@ commands = [
 deps = ["ruff>=0.16.7"]
 skip_install = true
 commands = [
-    [
-        "ruff",
-        "format",
-        "--check",
-        ".",
-        { replace = "posargs", default = [], extend = true },
-    ],
+    ["ruff", "format", "--check", ".", { replace = "posargs", default = [], extend = true }],
 ]
 
 [env.reformat]
@@ -543,18 +507,7 @@ commands = [
 pass_env = ["SOURCE_DATE_EPOCH"]
 deps = ["-r requirements/docs"]
 commands = [
-    [
-        "sphinx-build",
-        "-j",
-        "auto",
-        "-W",
-        "-E",
-        "-b",
-        "html",
-        "docs",
-        "docs/_build/html",
-        { replace = "posargs", default = [], extend = true },
-    ],
+    ["sphinx-build", "-j", "auto", "-W", "-E", "-b", "html", "docs", "docs/_build/html", { replace = "posargs", default = [], extend = true }],
 ]
 
 [env.changelog_release]
@@ -584,18 +537,7 @@ base_python = ["python3.10"]
 set_env.DASHBUILD = "True"
 deps = ["-r requirements/docs"]
 commands = [
-    [
-        "sphinx-build",
-        "-j",
-        "4",
-        "-W",
-        "-E",
-        "-b",
-        "html",
-        "docs",
-        "docs/_build/html",
-        { replace = "posargs", default = [], extend = true },
-    ],
+    ["sphinx-build", "-j", "4", "-W", "-E", "-b", "html", "docs", "docs/_build/html", { replace = "posargs", default = [], extend = true }],
     ["tools/generate_dash.sh"],
 ]
 
@@ -622,14 +564,10 @@ deps = [
 commands = [
     [
         "pytest",
-        "--cov",
-        "asgilook",
-        "--cov-config",
-        "examples/asgilook/.coveragerc",
-        "--cov-fail-under",
-        "100",
-        "--cov-report",
-        "term-missing",
+        "--cov", "asgilook",
+        "--cov-config", "examples/asgilook/.coveragerc",
+        "--cov-fail-under", "100",
+        "--cov-report", "term-missing",
         "examples/asgilook/tests/",
     ],
 ]
@@ -643,14 +581,10 @@ deps = [
 commands = [
     [
         "pytest",
-        "--cov",
-        "ws_tutorial",
-        "--cov-config",
-        "examples/ws_tutorial/.coveragerc",
-        "--cov-fail-under",
-        "100",
-        "--cov-report",
-        "term-missing",
+        "--cov", "ws_tutorial",
+        "--cov-config", "examples/ws_tutorial/.coveragerc",
+        "--cov-fail-under", "100",
+        "--cov-report", "term-missing",
         "examples/ws_tutorial/tests/",
     ],
 ]

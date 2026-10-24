@@ -264,7 +264,7 @@ Or, to run the default set of tests:
 
 .. code:: bash
 
-    $ pip install "tox>=4.21.1" && tox
+    $ pip install tox && tox
 
 .. tip::
 
@@ -275,7 +275,7 @@ Finally, to build Falcon's docs from source, simply run:
 
 .. code:: bash
 
-    $ pip install "tox>=4.21.1" && tox -e docs
+    $ pip install tox && tox -e docs
 
 Once the docs have been built, you can view them by opening the following
 index page in your browser. On OS X it's as simple as::
