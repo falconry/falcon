@@ -274,7 +274,7 @@ small subset of the basic optional test dependencies, see the
 Furthermore, when running our full test suite in the CI, we exercise
 integration with a larger number of optional libraries and applications servers
 (see the ``requirements/tests`` file, as well as various ASGI/WSGI server
-integration test definitions in ``tox.ini``).
+integration test definitions in ``tox.toml``).
 
 Ideally, if your distribution also provides packages for any of the above
 optional test dependencies, it may be a good idea to install them into your

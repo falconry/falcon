@@ -1,0 +1,3 @@
+The project's tox configuration was migrated from ``tox.ini`` to the native
+``tox.toml`` format. As a result, running Falcon's tox environments now
+requires tox 4.21.1 or newer.
