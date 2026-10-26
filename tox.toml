@@ -75,7 +75,10 @@ set_env.PIP_CONFIG_FILE = "pip.conf"
 set_env.PYTHONASYNCIODEBUG = "0"
 set_env.FALCON_DISABLE_CYTHON = "Y"
 deps = ["-r requirements/mintest"]
+# NOTE: Fail early if anything beyond requirements/mintest (and their own
+#   dependencies) has sneaked into the virtualenv.
 commands = [
+    ["python", "tools/check_no_third_party_deps.py", "falcon", "coverage", "pytest"],
     ["coverage", "run", "-m", "pytest", "tests", "-k", "not slow", { replace = "posargs", default = [], extend = true }],
 ]
 
