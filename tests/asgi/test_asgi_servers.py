@@ -15,17 +15,6 @@ from falcon import testing
 
 from . import _asgi_test_app
 
-
-@pytest.fixture(scope='session')
-def httpx():
-    return pytest.importorskip('httpx')
-
-
-@pytest.fixture(scope='session')
-def requests():
-    return pytest.importorskip('requests')
-
-
 try:
     import websockets
     import websockets.asyncio.client

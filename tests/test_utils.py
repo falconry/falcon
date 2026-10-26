@@ -28,11 +28,6 @@ from falcon.util import uri
 from falcon.util.time import TimezoneGMT
 
 
-@pytest.fixture(scope='session')
-def msgpack():
-    return pytest.importorskip('msgpack')
-
-
 @pytest.fixture
 def app(asgi, util):
     return util.create_app(asgi)
