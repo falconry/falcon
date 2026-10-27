@@ -29,11 +29,13 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+import warnings
 
 from falcon._typing import MethodDict
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods
 from falcon.routing.util import set_default_responders
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
@@ -440,12 +442,27 @@ class CompiledRouter:
                     msg = 'Unknown converter: "{0}"'.format(name)
                     raise UnacceptableRouteError(msg)
                 try:
-                    self._instantiate_converter(
+                    converter_obj = self._instantiate_converter(
                         self._converter_map[name], field.group('argstr')
                     )
                 except Exception as e:
                     msg = 'Cannot instantiate converter "{}"'.format(name)
                     raise UnacceptableRouteError(msg) from e
+
+                if converters._consumes_multiple_segments(
+                    converter_obj
+                ) and not converters._receives_joined_segments(converter_obj):
+                    warnings.warn(
+                        'Converter "{0}" sets CONSUME_MULTIPLE_SEGMENTS=True '
+                        'without deriving from BaseMultiSegmentConverter, so '
+                        'its convert() method receives a list of path '
+                        'segments. This is deprecated; derive from '
+                        'falcon.routing.BaseMultiSegmentConverter in order to '
+                        'receive the segments joined as a single str '
+                        'instead.'.format(name),
+                        DeprecatedWarning,
+                        stacklevel=4,
+                    )
 
     def _generate_ast(  # noqa: C901
         self,
@@ -544,7 +561,14 @@ class CompiledRouter:
                         self._converters.append(converter_obj)
                         if converters._consumes_multiple_segments(converter_obj):
                             consume_multiple_segments = True
-                            parent.append_child(_CxSetFragmentFromRemainingPaths(level))
+                            parent.append_child(
+                                _CxSetFragmentFromRemainingPaths(
+                                    level,
+                                    join=converters._receives_joined_segments(
+                                        converter_obj
+                                    ),
+                                )
+                            )
                         else:
                             parent.append_child(_CxSetFragmentFromPath(level))
 
@@ -1164,11 +1188,17 @@ class _CxSetFragmentFromPath(_CxChild):
 
 
 class _CxSetFragmentFromRemainingPaths(_CxChild):
-    def __init__(self, segment_idx: int) -> None:
+    def __init__(self, segment_idx: int, join: bool = False) -> None:
         self._segment_idx = segment_idx
+        self._join = join
 
     def src(self, indentation: int) -> str:
-        return '{0}fragment = path[{1}:]'.format(
+        template = (
+            "{0}fragment = '/'.join(path[{1}:])"
+            if self._join
+            else '{0}fragment = path[{1}:]'
+        )
+        return template.format(
             _TAB_STR * indentation,
             self._segment_idx,
         )
