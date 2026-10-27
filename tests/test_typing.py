@@ -1,12 +1,59 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from uuid import UUID
 
 import falcon
 import falcon.asgi
 import falcon.testing
+from falcon.util import misc
+
+if TYPE_CHECKING:
+    from typing import assert_type
+
+
+def test_lru_cache_typing() -> None:
+    def format_value(value: int, /, *, prefix: str = '') -> str:
+        return prefix + str(value)
+
+    for cached in (
+        misc._lru_cache_nop(maxsize=2)(format_value),
+        misc._lru_cache_for_simple_logic(maxsize=2)(format_value),
+    ):
+        assert cached(42) == '42'
+        result = cached(42, prefix='value=')
+
+        if TYPE_CHECKING:
+            assert_type(result, str)
+            assert_type(cached.cache_clear(), None)
+            # Mypy reports unused ignores if these invalid calls stop being rejected.
+            cached('invalid')  # type: ignore[arg-type]
+            cached(42, prefix=1)  # type: ignore[arg-type]
+            cached(42, unknown='value=')  # type: ignore[call-arg]
+            cached(value=42)  # type: ignore[call-arg]
+
+        assert result == 'value=42'
+        cached.cache_clear()
+
+    if TYPE_CHECKING:
+        assert_type(falcon.http_status_to_code('200 OK'), int)
+        assert_type(falcon.code_to_http_status(200), str)
+
+
+def test_lru_cache_nop() -> None:
+    calls: list[int] = []
+
+    def count_calls(value: int) -> int:
+        calls.append(value)
+        return len(calls)
+
+    cached = misc._lru_cache_nop(maxsize=1)(count_calls)
+    assert cached is count_calls
+    assert cached(42) == 1
+    assert cached(42) == 2
+    cached.cache_clear()
+    assert cached(42) == 3
 
 
 @dataclass
