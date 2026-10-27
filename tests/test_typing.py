@@ -27,7 +27,8 @@ def test_lru_cache_typing() -> None:
         if TYPE_CHECKING:
             assert_type(result, str)
             assert_type(cached.cache_clear(), None)
-            # Mypy reports unused ignores if these invalid calls stop being rejected.
+            # NOTE(Lbragaa): Mypy reports unused ignores if these invalid calls
+            #   stop being rejected.
             cached('invalid')  # type: ignore[arg-type]
             cached(42, prefix=1)  # type: ignore[arg-type]
             cached(42, unknown='value=')  # type: ignore[call-arg]
