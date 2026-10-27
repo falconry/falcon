@@ -69,6 +69,7 @@ from falcon.util import to_query_str
 if TYPE_CHECKING:
     import falcon
     from falcon import asgi
+    from falcon._typing import ResponseStatus
 
 warnings.filterwarnings(
     'error',
@@ -968,7 +969,7 @@ async def _simulate_request_asgi(
         await task_req
         return Result(
             resp_event_collector.body_chunks,
-            code_to_http_status(resp_event_collector.status),
+            code_to_http_status(cast('ResponseStatus', resp_event_collector.status)),
             resp_event_collector.headers,
         )
 
