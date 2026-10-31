@@ -55,7 +55,7 @@ TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
 FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 """Similar to :attr:`TRUE_STRINGS`, the values corresponding to boolean ``False``."""
 
-# RFC 7231, 5789 methods
+# RFC 9110, 5789 methods
 HTTP_METHODS = [
     'CONNECT',
     'DELETE',
