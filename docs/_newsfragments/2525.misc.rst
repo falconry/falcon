@@ -1,0 +1,3 @@
+References to obsolete HTTP specifications (RFC 7231 and RFC 7238) were
+updated to the current official standard (RFC 9110) in 3xx redirection
+classes and HTTP method lists.
