@@ -14,6 +14,16 @@ large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
 remaining highly effective.
 
+.. image:: /_static/img/diagrams/falcon-overview.svg
+    :alt: A Falcon app, falcon.App for WSGI or falcon.asgi.App for ASGI, sits
+        between the server and your code. A web server such as Gunicorn, uWSGI
+        or Uvicorn calls it for every request, and the falcon.testing client
+        simulates requests in tests. The app routes each request by its URI
+        template to one of your resource classes and calls a responder such as
+        on_get(req, resp). Your middleware, with methods such as
+        process_request, runs around each request, and error handlers added with
+        add_error_handler turn exceptions into HTTP responses.
+
 Falcon apps work with any WSGI server, and run like a champ under
 CPython 3.9+ and PyPy 3.9+.
 
