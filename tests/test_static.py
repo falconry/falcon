@@ -52,6 +52,8 @@ def create_sr(asgi, prefix, directory, **kwargs):
 
 @pytest.fixture
 def patch_open(monkeypatch):
+    real_fstat = os.fstat
+
     def patch(content=None, validate=None, mtime=1736617934):
         def open(path, mode):
             class FakeFD(int):
@@ -75,7 +77,13 @@ def patch_open(monkeypatch):
             return fake_file
 
         monkeypatch.setattr(io, 'open', open)
-        monkeypatch.setattr(os, 'fstat', lambda fileno: fileno._stat)
+
+        def fstat(fileno):
+            if hasattr(fileno, '_stat'):
+                return fileno._stat
+            return real_fstat(fileno)
+
+        monkeypatch.setattr(os, 'fstat', fstat)
 
     patch.current_file = None
     return patch
