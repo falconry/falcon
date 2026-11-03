@@ -56,6 +56,7 @@ from falcon._typing import SyncMiddleware
 from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
+from falcon.errors import HTTPContentTooLarge
 from falcon.errors import HTTPInternalServerError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
@@ -436,6 +437,17 @@ class App(Generic[_ReqT, _RespT]):
         try:
             if req.method in self._META_METHODS:
                 raise HTTPBadRequest()
+
+            max_content_length = self.req_options.max_content_length
+            if max_content_length is not None:
+                content_length = req.content_length
+                if content_length is not None and content_length > max_content_length:
+                    raise HTTPContentTooLarge(
+                        description=(
+                            'The request body must not exceed '
+                            f'{max_content_length} bytes.'
+                        )
+                    )
 
             # NOTE(ealogar): The execution of request middleware
             # should be before routing. This will allow request mw
