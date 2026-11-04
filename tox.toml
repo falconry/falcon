@@ -2,7 +2,7 @@ requires = ["tox>=4.21.1"]
 
 # --------------------------------------------------------------------
 #
-# NOTE(kgriffs,vytas): CPython 3.10-3.15 is required when checking
+# NOTE(kgriffs,vytas): CPython 3.11-3.15 is required when checking
 # combined coverage. To check coverage:
 #
 #   $ tox
@@ -210,16 +210,6 @@ commands = [
     { replace = "ref", of = ["with-cython", "commands"], extend = true },
 ]
 
-[env.py310_cython]
-base_python = ["python3.10"]
-deps = [
-    { replace = "ref", of = ["with-cython", "deps"], extend = true },
-]
-set_env = [{ replace = "ref", of = ["with-cython", "set_env"] }]
-commands = [
-    { replace = "ref", of = ["with-cython", "commands"], extend = true },
-]
-
 [env.py311_cython]
 base_python = ["python3.11"]
 deps = [
@@ -351,28 +341,6 @@ commands = [
     ["falcon-bench", "-t", "1", "-b", "falcon-ext"],
 ]
 
-[env.py310_smoke]
-# NOTE(vytas): vmprof supports only up to Python 3.11 at the time of writing.
-#   (https://github.com/vmprof/vmprof-python/issues/261)
-base_python = ["python3.10"]
-deps = ["-r requirements/bench"]
-commands = [
-    { replace = "ref", of = ["smoke-test", "commands"], extend = true },
-]
-
-[env.py310_smoke_cython]
-# NOTE(vytas): vmprof supports only up to Python 3.11 at the time of writing.
-#   (https://github.com/vmprof/vmprof-python/issues/261)
-base_python = ["python3.10"]
-deps = [
-    "-r requirements/bench",
-    "cython",
-]
-set_env = [{ replace = "ref", of = ["with-cython", "set_env"] }]
-commands = [
-    { replace = "ref", of = ["smoke-test", "commands"], extend = true },
-]
-
 # --------------------------------------------------------------------
 # Lint
 # --------------------------------------------------------------------
@@ -436,19 +404,9 @@ commands = [
 # Benchmarking
 # --------------------------------------------------------------------
 
-[env.py310_bench]
-base_python = ["python3.10"]
+[env.py312_bench]
+base_python = ["python3.12"]
 deps = ["-r requirements/bench"]
-commands = [
-    ["falcon-bench", { replace = "posargs", default = [], extend = true }],
-]
-
-[env.py310_bench_cython]
-base_python = ["python3.10"]
-deps = [
-    "-r requirements/bench",
-    "cython",
-]
 commands = [
     ["falcon-bench", { replace = "posargs", default = [], extend = true }],
 ]
@@ -533,7 +491,7 @@ commands = [
 ]
 
 [env.dash]
-base_python = ["python3.10"]
+base_python = ["python3.12"]
 set_env.DASHBUILD = "True"
 deps = ["-r requirements/docs"]
 commands = [

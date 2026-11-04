@@ -47,7 +47,7 @@ $ tox -e reformat
 
 You can check all this by running ``tox`` (version 4.21.1 or newer) from within
 the Falcon project directory.
-Your environment must be based on CPython 3.10, 3.11, 3.12, 3.13, 3.14, or 3.15:
+Your environment must be based on CPython 3.11, 3.12, 3.13, 3.14, or 3.15:
 
 ```bash
 $ pip install -U tox
@@ -109,14 +109,14 @@ If you wish, you can customize Falcon's `tox.toml` to install alternative debugg
 A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.toml`` file). For example:
 
 ```bash
-$ tox -e py310_bench
+$ tox -e py312_bench
 ```
 
 Note that you may pass additional arguments via tox to the falcon-bench command:
 
 ```bash
-$ tox -e py310_bench -- -h
-$ tox -e py310_bench -- -b falcon -i 20000
+$ tox -e py312_bench -- -h
+$ tox -e py312_bench -- -b falcon -i 20000
 ```
 
 Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use pyenv with pyenv-virtualenv from within a falcon source directory:
@@ -130,6 +130,20 @@ $ falcon-bench
 ```
 
 Note that benchmark results for the same code will vary between runs based on a number of factors, including overall system load and CPU scheduling. These factors may be somewhat mitigated by running the benchmarks on a Linux server dedicated to this purpose, and pinning the benchmark process to a specific CPU core.
+
+## Python 3.10 Support
+
+As of Falcon 4.5, Python 3.10 is no longer built as a binary wheel and is no longer tested in CI, type checked, or used to build the documentation. Pure Python wheels are still published, so Python 3.10 installs work without any special flag:
+
+```bash
+pip install falcon
+```
+
+Because Python 3.10 is not tested in CI, regressions specific to it may go unnoticed. Type checking requires Python 3.11+.
+
+## Historical CI Environments (Falcon < 4.5)
+
+Older branches define tox environments such as `py310_cython`, `py310_smoke`, `py310_bench`, `py310_smoke_cython`, and `py310_bench_cython`. These were removed in Falcon 4.5. On the main branch, use a current environment such as `py312_bench` instead.
 
 ## Documentation
 

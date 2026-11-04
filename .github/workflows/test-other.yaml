@@ -16,10 +16,6 @@ jobs:
       fail-fast: false
       matrix:
         tox:
-          - env: "py310_smoke"
-            python-version: "3.10"
-          - env: "py310_smoke_cython"
-            python-version: "3.10"
           - env: "wsgi_meinheld"
             python-version: "3.9"
 

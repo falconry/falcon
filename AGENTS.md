@@ -37,7 +37,7 @@ all generated changes.
   `[project].dependencies` is currently empty.
 - Treat request and response hot paths as performance-sensitive. Reuse existing
   helpers. When throughput or allocation behavior could change, benchmark with
-  `tox -e py310_bench -- <falcon-bench args>`.
+  `tox -e py312_bench -- <falcon-bench args>`.
 - Do not bulk-modernize `%` formatting in `falcon/`. `pyproject.toml`
   deliberately ignores Ruff's `UP030`, `UP031`, and `UP032` there pending
   inspection and benchmarks.

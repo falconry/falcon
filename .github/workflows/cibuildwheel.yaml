@@ -160,7 +160,6 @@ jobs:
           - name: win_amd64
             os: windows-latest
         python:
-          - cp310
           - cp311
           - cp312
           - cp313

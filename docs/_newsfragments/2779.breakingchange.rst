@@ -1,0 +1,9 @@
+Falcon 4.5 no longer builds binary wheels for Python 3.10, and Python 3.10 is no longer tested in CI, type checked, or used to build the documentation. Python 3.10 reached end-of-life in October 2026.
+
+Python 3.10 installs continue to receive the pure Python wheel automatically, with no special flag required:
+
+.. code-block:: bash
+
+   pip install falcon
+
+Installations on Python 3.10 use the pure Python wheel and may run slower than binary builds. Upgrading to Python 3.11 or later is recommended for the best performance.
