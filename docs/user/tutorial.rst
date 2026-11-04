@@ -7,6 +7,17 @@ In this tutorial we'll walk through building an API for a simple image sharing
 service. Along the way, we'll discuss Falcon's major features and introduce
 the terminology used by the framework.
 
+.. image:: /_static/img/diagrams/falcon-tutorial-app.svg
+    :alt: The Look app the tutorial builds. Gunicorn serves look.app:get_app(),
+        and the pytest tests drive the same app through the falcon.testing
+        client. create_app() builds a falcon.App with two routes: /images goes
+        to the Collection resource, which lists images with on_get and saves
+        uploads with on_post after the validate_image_type before hook checks
+        the content type, and /images/{name} goes to the Item resource, which
+        streams one image with on_get and raises HTTPNotFound when it is
+        missing. Both resources share one ImageStore, which saves, opens and
+        lists image files under LOOK_STORAGE_PATH.
+
 .. note::
    This tutorial covers the "traditional", synchronous flavor of Falcon using
    the `WSGI <https://www.python.org/dev/peps/pep-3333/>`__ protocol.
@@ -1712,3 +1723,5 @@ A number of Falcon add-ons, templates, and complementary packages are
 available for use in your projects. We've listed several of these on the
 `Falcon wiki <https://github.com/falconry/falcon/wiki>`_ as a starting
 point, but you may also wish to search PyPI for additional resources.
+
+Diagram made with `svgdiagram.ai <https://svgdiagram.ai>`__.

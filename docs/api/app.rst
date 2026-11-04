@@ -8,6 +8,16 @@ ASGI (:class:`falcon.asgi.App`) protocols. This is done
 by instantiating the respective ``App`` class to create a
 callable WSGI or ASGI "application".
 
+.. image:: /_static/img/diagrams/falcon-app-parts.svg
+    :alt: The falcon.App builds req and resp for each request and calls every part
+        in turn. Built into Falcon: the router, which matches the path to a URI
+        template and picks your resource; media handlers, which parse req.media
+        and render resp.media; and error handlers, which turn exceptions into
+        HTTP error responses. Written by you: middleware, whose process_request
+        and process_response run for every request; hooks, @falcon.before and
+        @falcon.after, which wrap one resource or responder; and responders such
+        as on_get(req, resp) on your resource class.
+
 Because Falcon's ``App`` classes are built on
 `WSGI <https://www.python.org/dev/peps/pep-3333/>`_ and
 `ASGI <https://asgi.readthedocs.io/en/latest/>`_,
