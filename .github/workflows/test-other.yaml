@@ -11,16 +11,19 @@ jobs:
     name: tox -e ${{ matrix.tox.env }}
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.tox.os }}
     strategy:
       fail-fast: false
       matrix:
         tox:
           - env: "py310_smoke"
+            os: ubuntu-latest
             python-version: "3.10"
           - env: "py310_smoke_cython"
+            os: ubuntu-latest
             python-version: "3.10"
           - env: "wsgi_meinheld"
+            os: ubuntu-24.04
             python-version: "3.9"
 
     steps:
