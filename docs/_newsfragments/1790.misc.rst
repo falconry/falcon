@@ -1,0 +1,5 @@
+Added ``tests/test_smoke.py`` and two new tox environments (``smoke_nodeps``
+and ``smoke_nodeps_cython``) that verify basic WSGI and ASGI functionality
+using only the Python standard library's :mod:`unittest` runner -- no
+third-party packages required.
+

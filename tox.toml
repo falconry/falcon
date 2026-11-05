@@ -373,6 +373,24 @@ commands = [
     { replace = "ref", of = ["smoke-test", "commands"], extend = true },
 ]
 
+# Smoke tests with no third-party dependencies at all; uses only
+# the Python standard library's unittest runner and falcon.testing.
+[env.smoke_nodeps]
+deps = []
+set_env.FALCON_DISABLE_CYTHON = "Y"
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["python", "-m", "unittest", "tests.test_smoke", "-v"],
+]
+
+[env.smoke_nodeps_cython]
+deps = ["Cython"]
+set_env = [{ replace = "ref", of = ["with-cython", "set_env"] }]
+commands = [
+    ["python", "tools/clean.py", "falcon"],
+    ["python", "-m", "unittest", "tests.test_smoke", "-v"],
+]
+
 # --------------------------------------------------------------------
 # Lint
 # --------------------------------------------------------------------

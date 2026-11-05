@@ -36,6 +36,8 @@ jobs:
           - env: mypy
           - env: mypy_tests
           - env: pyright_tests
+          # Smoke tests (zero 3rd party deps)
+          - env: smoke_nodeps
           # Python tests
           - env: mintest
             coverage: true
