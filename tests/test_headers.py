@@ -140,6 +140,7 @@ class UnicodeHeaderResource:
                 ('X-auTH-toKEN', 'toomanysecrets'),
                 ('Content-TYpE', 'application/json'),
                 ('X-symbOl', '@'),
+                ('X-number', 4),
             ]
         )
 
@@ -696,43 +697,93 @@ class TestHeaders:
         assert result.headers['Content-Type'] == 'application/json'
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
+        assert result.headers['X-Number'] == '4'
 
     @pytest.mark.parametrize('method', ['CONNECT', 'PATCH', 'POST', 'PUT'])
     def test_unicode_headers_contain_non_ascii(self, method, client):
         app = client.app
         app.add_route('/', UnicodeHeaderResource())
 
-        if method == 'CONNECT':
-            # NOTE(vytas): Response headers cannot be encoded to Latin-1.
-            if not app._ASGI:
-                pytest.skip('wsgiref.validate sees no evil here')
-
-            # NOTE(vytas): Shouldn't this result in an HTTP 500 instead of
-            #   bubbling up a ValueError to the app server?
-            with pytest.raises(ValueError):
-                client.simulate_request(method, '/')
-        elif method == 'PUT':
+        if method == 'PUT':
             # NOTE(vytas): Latin-1 header values are allowed.
             resp = client.simulate_request(method, '/')
             assert resp.headers
-        else:
+        elif method == 'PATCH':
+            #   NOTE(pattyolowry): This tests control chars \x01\x02\xff
+            #   NOTE(kgriffs): The validators that are integrated into
+            #   Falcon's testing framework will catch this. However, Falcon
+            #   itself does not do the check to avoid potential overhead
+            #   in a production deployment.
+            pattern = 'Bad header value'
             if app._ASGI:
-                # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
-                #   app to encode header names and values to a byte string. This
-                #   gives Falcon the opportunity to verify the character set
-                #   in the process and raise an error as appropriate.
-                error_type = ValueError
+                with pytest.raises(ValueError, match=pattern):
+                    client.simulate_request(method, '/')
             else:
-                # NOTE(kgriffs): The wsgiref validator that is integrated into
-                #   Falcon's testing framework will catch this. However, Falcon
-                #   itself does not do the check to avoid potential overhead
-                #   in a production deployment.
-                error_type = AssertionError
+                with pytest.raises(AssertionError, match=pattern):
+                    client.simulate_request(method, '/')
+        else:
+            resp = client.simulate_request(method, '/')
+            assert resp.status_code == 500
 
-            pattern = 'Bad header name' if method == 'POST' else 'Bad header value'
+    @pytest.mark.parametrize('response_type', [falcon.Response, falcon.asgi.Response])
+    @pytest.mark.parametrize('header_name', ['X-symböl', 'X-🦅', 'X-\u0100'])
+    def test_invalid_response_header_names(self, response_type, header_name):
+        resp = response_type()
+        pattern = 'Bad header name'
+        value = 'value'
 
-            with pytest.raises(error_type, match=pattern):
-                client.simulate_request(method, '/')
+        with pytest.raises(ValueError, match=pattern):
+            resp.set_header(header_name, value)
+
+        with pytest.raises(ValueError, match=pattern):
+            resp.append_header(header_name, value)
+
+        with pytest.raises(ValueError, match=pattern):
+            resp.set_headers([(header_name, value)])
+
+        with pytest.raises(ValueError, match=pattern):
+            resp.set_headers({header_name: value})
+
+    @pytest.mark.parametrize('response_type', [falcon.Response, falcon.asgi.Response])
+    @pytest.mark.parametrize('header_value', ['🦅', '\u0100', 'hello 世界'])
+    def test_invalid_response_header_values(self, response_type, header_value):
+        resp = response_type()
+        pattern = 'Bad header value'
+        name = 'X-Test'
+
+        with pytest.raises(ValueError, match=pattern):
+            resp.set_header(name, header_value)
+
+        with pytest.raises(ValueError, match=pattern):
+            resp.append_header(name, header_value)
+
+        with pytest.raises(ValueError, match=pattern):
+            resp.set_headers([(name, header_value)])
+
+        with pytest.raises(ValueError, match=pattern):
+            resp.set_headers({name: header_value})
+
+        # _asgi_headers has a fallback check as well
+        if response_type is falcon.asgi.Response:
+            resp._headers[name] = header_value
+
+            with pytest.raises(ValueError):
+                resp._asgi_headers()
+
+    @pytest.mark.parametrize('response_type', [falcon.Response, falcon.asgi.Response])
+    @pytest.mark.parametrize('setter', ['set_header', 'append_header', 'set_headers'])
+    def test_normalize_response_header_names(self, response_type, setter):
+        resp = response_type()
+        name = 'X-tEst-HeAder'
+        value = 'value'
+
+        if setter == 'set_headers':
+            resp.set_headers([(name, value)])
+        else:
+            getattr(resp, setter)(name, value)
+
+        assert resp._headers['x-test-header'] == value
+        assert name not in resp._headers
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()
