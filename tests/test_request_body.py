@@ -1,4 +1,5 @@
 import io
+import json
 from wsgiref.validate import InputWrapper
 
 import pytest
@@ -166,3 +167,71 @@ class TestRequestBody:
         req = falcon.Request(environ)
         _repr = f'<{req.__class__.__name__}: {req.method} {req.url!r}>'
         assert req.__repr__() == _repr
+
+
+class BodyLengthResource:
+    def on_post(self, req, resp):
+        resp.media = {'length': len(req.bounded_stream.read())}
+
+
+class BodyLengthResourceAsync:
+    async def on_post(self, req, resp):
+        resp.media = {'length': len(await req.stream.read())}
+
+
+class TestMaxContentLength:
+    @pytest.fixture
+    def app(self, asgi, util):
+        app = util.create_app(asgi)
+        resource = BodyLengthResourceAsync() if asgi else BodyLengthResource()
+        app.add_route('/', resource)
+        return app
+
+    def test_disabled_by_default(self, app):
+        assert app.req_options.max_content_length is None
+
+        resp = testing.simulate_post(app, '/', body=b'x' * SIZE_1_KB)
+        assert resp.status_code == 200
+        assert resp.json == {'length': SIZE_1_KB}
+
+    @pytest.mark.parametrize(
+        'max_content_length,body_length',
+        [(0, 0), (10, 0), (10, 1), (10, 9), (10, 10)],
+    )
+    def test_within_limit(self, app, max_content_length, body_length):
+        app.req_options.max_content_length = max_content_length
+
+        resp = testing.simulate_post(app, '/', body=b'x' * body_length)
+        assert resp.status_code == 200
+        assert resp.json == {'length': body_length}
+
+    @pytest.mark.parametrize(
+        'max_content_length,body_length',
+        [(0, 1), (10, 11), (10, SIZE_1_KB)],
+    )
+    def test_exceeded(self, app, max_content_length, body_length):
+        app.req_options.max_content_length = max_content_length
+
+        resp = testing.simulate_post(app, '/', body=b'x' * body_length)
+        assert resp.status_code == 413
+        assert resp.json == {
+            'title': '413 Content Too Large',
+            'description': (
+                f'The request body must not exceed {max_content_length} bytes.'
+            ),
+        }
+
+    def test_wsgi_without_content_length(self, util):
+        app = util.create_app(False)
+        app.req_options.max_content_length = 10
+        app.add_route('/', BodyLengthResource())
+
+        env = testing.create_environ(method='POST', body=b'x' * 30)
+        del env['CONTENT_LENGTH']
+        start_response = testing.StartResponseMock()
+        body = b''.join(app(env, start_response))
+
+        # NOTE(ericareg): WSGI apps treat a body without Content-Length as
+        #   empty, so there is nothing to enforce.
+        assert start_response.status == falcon.HTTP_200
+        assert json.loads(body) == {'length': 0}

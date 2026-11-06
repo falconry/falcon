@@ -326,6 +326,7 @@ class Request(request.Request):
                 self._receive,
                 first_event=self._first_event,
                 content_length=self.content_length,
+                max_length=self.options.max_content_length,
             )
 
         return self._stream
