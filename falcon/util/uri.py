@@ -479,6 +479,27 @@ def parse_host(
 ) -> tuple[str, int | None]: ...
 
 
+def _parse_port(port: str, default_port: int | None) -> int | None:
+    """Parse an RFC 3986 port subcomponent.
+
+    Args:
+        port (str): Port subcomponent to parse.
+        default_port (int): Port number to return when `port` is empty.
+
+    Returns:
+        int: The parsed port, or `default_port` when `port` is empty.
+    """
+    if not port:
+        return default_port
+
+    if not port.isascii() or not port.isdigit():
+        raise ValueError(
+            '{!r} is not a valid port (only ASCII digits are allowed)'.format(port)
+        )
+
+    return int(port)
+
+
 def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | None]:
     """Parse a canonical 'host:port' string into parts.
 
@@ -486,6 +507,9 @@ def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | N
     parts, taking into account that the string may contain
     either a domain name or an IP address. In the latter case,
     both IPv4 and IPv6 addresses are supported.
+
+    When present, the port must consist of ASCII digits only. An empty port
+    is treated as if no port was given.
 
     Args:
         host (str): Host string to parse, optionally containing a
@@ -501,6 +525,13 @@ def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | N
         If the host string does not specify a port, `default_port` is
         used instead.
 
+    Raises:
+        ValueError: The port is malformed.
+
+    .. versionchanged:: 4.5
+        Empty ports are now treated as absent, and malformed ports raise a
+        descriptive ``ValueError``.
+
     """
 
     # NOTE(kgriff): The value from the Host header may
@@ -514,7 +545,7 @@ def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | N
         # IPv6 address with a port
         pos = host.rfind(']:')
         if pos != -1:
-            return (host[1:pos], int(host[pos + 2 :]))
+            return (host[1:pos], _parse_port(host[pos + 2 :], default_port))
         else:
             return (host[1:-1], default_port)
 
@@ -527,7 +558,7 @@ def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | N
     # only a single colon, so we should have an IPv4 address
     # or a domain name plus a port
     name, _, port = host.partition(':')
-    return (name, int(port))
+    return (name, _parse_port(port, default_port))
 
 
 def unquote_string(quoted: str) -> str:
