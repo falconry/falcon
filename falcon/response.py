@@ -44,6 +44,7 @@ from falcon.response_helpers import _format_header_value_list
 from falcon.response_helpers import _format_range
 from falcon.response_helpers import _header_property
 from falcon.response_helpers import _is_ascii_encodable
+from falcon.response_helpers import _is_latin1_encodable
 from falcon.typing import Headers
 from falcon.typing import ReadableIO
 from falcon.util import dt_to_http
@@ -721,21 +722,14 @@ class Response:
         Args:
             name (str): Header name (case-insensitive). The name may contain
                 only US-ASCII characters.
-            value (str): Value for the header. As with the header's name, the
-                value may contain only US-ASCII characters.
+            value (str): Value for the header. The value may only contain
+                Latin-1 (ISO-8859-1) characters.
 
         Raises:
             ValueError: `name` cannot be ``'Set-Cookie'``.
         """
 
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
-
-        # NOTE(kgriffs): normalize name by lowercasing it
-        name = name.lower()
+        name, value = self._normalize_header(name, value)
 
         if name == 'set-cookie':
             raise HeaderNotSupported('This method cannot be used to set cookies')
@@ -792,18 +786,11 @@ class Response:
         Args:
             name (str): Header name (case-insensitive). The name may contain
                 only US-ASCII characters.
-            value (str): Value for the header. As with the header's name, the
-                value may contain only US-ASCII characters.
+            value (str): Value for the header. The value may only contain
+                Latin-1 (ISO-8859-1) characters.
         """
 
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
-
-        # NOTE(kgriffs): normalize name by lowercasing it
-        name = name.lower()
+        name, value = self._normalize_header(name, value)
 
         if name == 'set-cookie':
             if not self._extra_headers:
@@ -838,8 +825,9 @@ class Response:
         Args:
             headers (Iterable[[str, str]]): An iterable of ``[name, value]`` two-member
                 iterables, or a dict-like object that implements an ``items()`` method.
-                Both *name* and *value* must be of type ``str`` and
-                contain only US-ASCII characters.
+                Both *name* and *value* must be of type ``str``.
+                *name* must contain only US-ASCII characters.
+                *value* must contain only Latin-1 (ISO-8859-1) characters.
 
                 Note:
                     Falcon can process an iterable of tuples slightly faster
@@ -860,13 +848,8 @@ class Response:
         _headers = self._headers
 
         for name, value in headers:  # type: ignore[str-unpack]
-            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-            # is not a str, so do the conversion here. It's actually
-            # faster to not do an isinstance check. str() will encode
-            # to US-ASCII.
-            value = str(value)
+            name, value = self._normalize_header(name, value)
 
-            name = name.lower()
             if name == 'set-cookie':
                 raise HeaderNotSupported('This method cannot be used to set cookies')
 
@@ -1401,6 +1384,35 @@ class Response:
             # is still ~17% faster, so don't use .output()
             items += [('set-cookie', c.OutputString()) for c in self._cookies.values()]
         return items
+
+    def _normalize_header(self, name: str, value: str) -> tuple[str, str]:
+        """Normalize response header names and values into required formats.
+
+        Args:
+            name (str): Header name (case-insensitive). The name may contain
+                only US-ASCII characters.
+            value (str): Value for the header. As with the header's name, the
+                value may contain only Latin-1 characters.
+
+        Raises:
+            ValueError: `name` must be ASCII encodable
+            ValueError: `value` must be Latin-1 encodable
+        """
+
+        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+        # is not a str, so do the conversion here. It's actually
+        # faster to not do an isinstance check.
+        value = str(value)
+
+        # NOTE(kgriffs): normalize name by lowercasing it
+        name = name.lower()
+
+        if not _is_ascii_encodable(name):
+            raise ValueError('Bad header name: name is not ASCII encodable')
+        if not _is_latin1_encodable(value):
+            raise ValueError('Bad header value: value is not Latin-1 encodable')
+
+        return name, value
 
 
 class ResponseOptions:
