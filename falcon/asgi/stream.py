@@ -105,6 +105,9 @@ class BoundedStream:
             (default ``None``, meaning no limit). If more data is received,
             an instance of :class:`~falcon.HTTPContentTooLarge` is raised,
             and the stream is left at EOF.
+
+            .. versionadded:: 4.5
+                The `max_length` keyword argument.
     """
 
     __slots__ = (

@@ -3050,6 +3050,8 @@ class RequestOptions:
         This option is meant as a convenient safeguard at the application
         level. Limiting request body size is often better handled by the web
         server or reverse proxy in front of the app.
+
+    .. versionadded:: 4.5
     """
 
     __slots__ = (
