@@ -34,7 +34,7 @@ FALCON_ROOT = HERE.parent
 _FALCON_TEST_ENV = (
     ('FALCON_ASGI_WRAP_NON_COROUTINES', 'Y'),
     ('FALCON_TESTING_SESSION', 'Y'),
-    # NOTE: PYTHONASYNCIODEBUG is optional (set in tox.ini).
+    # NOTE: PYTHONASYNCIODEBUG is optional (set in tox.toml).
     # ('PYTHONASYNCIODEBUG', '1'),
 )
 

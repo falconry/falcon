@@ -4,7 +4,7 @@ recursive-include examples *.py *.yaml
 recursive-include falcon *.pyx
 recursive-include tests *.py *.pyx
 include .coveragerc
-include tox.ini
+include tox.toml
 include CODEOFCONDUCT.md
 include CONTRIBUTING.md
 include README.rst

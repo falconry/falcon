@@ -45,7 +45,8 @@ $ pip install -U tox
 $ tox -e reformat
 ```
 
-You can check all this by running ``tox`` from within the Falcon project directory.
+You can check all this by running ``tox`` (version 4.21.1 or newer) from within
+the Falcon project directory.
 Your environment must be based on CPython 3.10, 3.11, 3.12, 3.13, 3.14, or 3.15:
 
 ```bash
@@ -101,11 +102,11 @@ coverage checking to speed up the test run, making it ideal for quick sanity che
 $ tox -e py3_debug
 ```
 
-If you wish, you can customize Falcon's `tox.ini` to install alternative debuggers, such as ipdb or pudb.
+If you wish, you can customize Falcon's `tox.toml` to install alternative debuggers, such as ipdb or pudb.
 
 ## Benchmarking
 
-A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.ini`` file). For example:
+A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.toml`` file). For example:
 
 ```bash
 $ tox -e py310_bench
