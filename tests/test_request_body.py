@@ -180,15 +180,19 @@ class BodyLengthResourceAsync:
 
 
 class TestMaxContentLength:
-    @pytest.fixture
-    def app(self, asgi, util):
-        app = util.create_app(asgi)
+    @staticmethod
+    def _create_app(asgi, util, **app_kwargs):
+        app = util.create_app(asgi, **app_kwargs)
         resource = BodyLengthResourceAsync() if asgi else BodyLengthResource()
         app.add_route('/', resource)
         return app
 
-    def test_disabled_by_default(self, app):
-        assert app.req_options.max_content_length is None
+    def test_disabled_by_default(self, asgi, util):
+        app = self._create_app(asgi, util)
+        assert not any(
+            isinstance(mw, falcon.MaxContentLengthMiddleware)
+            for mw in app._unprepared_middleware
+        )
 
         resp = testing.simulate_post(app, '/', body=b'x' * SIZE_1_KB)
         assert resp.status_code == 200
@@ -198,8 +202,8 @@ class TestMaxContentLength:
         'max_content_length,body_length',
         [(0, 0), (10, 0), (10, 1), (10, 9), (10, 10)],
     )
-    def test_within_limit(self, app, max_content_length, body_length):
-        app.req_options.max_content_length = max_content_length
+    def test_within_limit(self, asgi, util, max_content_length, body_length):
+        app = self._create_app(asgi, util, max_content_length=max_content_length)
 
         resp = testing.simulate_post(app, '/', body=b'x' * body_length)
         assert resp.status_code == 200
@@ -209,8 +213,8 @@ class TestMaxContentLength:
         'max_content_length,body_length',
         [(0, 1), (10, 11), (10, SIZE_1_KB)],
     )
-    def test_exceeded(self, app, max_content_length, body_length):
-        app.req_options.max_content_length = max_content_length
+    def test_exceeded(self, asgi, util, max_content_length, body_length):
+        app = self._create_app(asgi, util, max_content_length=max_content_length)
 
         resp = testing.simulate_post(app, '/', body=b'x' * body_length)
         assert resp.status_code == 413
@@ -221,10 +225,41 @@ class TestMaxContentLength:
             ),
         }
 
+    @pytest.mark.parametrize('body_length,expected_status', [(10, 200), (11, 413)])
+    def test_middleware_added_directly(self, asgi, util, body_length, expected_status):
+        app = self._create_app(
+            asgi, util, middleware=[falcon.MaxContentLengthMiddleware(10)]
+        )
+
+        resp = testing.simulate_post(app, '/', body=b'x' * body_length)
+        assert resp.status_code == expected_status
+
+    def test_placed_first_in_stack(self, asgi, util):
+        class OtherMiddleware:
+            def process_request(self, req, resp):
+                pass
+
+            async def process_request_async(self, req, resp):
+                pass
+
+        other = OtherMiddleware()
+        app = self._create_app(
+            asgi, util, middleware=[other], cors_enable=True, max_content_length=10
+        )
+
+        first, *rest = app._unprepared_middleware
+        assert isinstance(first, falcon.MaxContentLengthMiddleware)
+        assert rest[0] is other
+        assert isinstance(rest[1], falcon.CORSMiddleware)
+
+    def test_negative_limit(self, asgi, util):
+        with pytest.raises(ValueError, match='non-negative'):
+            falcon.MaxContentLengthMiddleware(-1)
+        with pytest.raises(ValueError, match='non-negative'):
+            util.create_app(asgi, max_content_length=-1)
+
     def test_wsgi_without_content_length(self, util):
-        app = util.create_app(False)
-        app.req_options.max_content_length = 10
-        app.add_route('/', BodyLengthResource())
+        app = self._create_app(False, util, max_content_length=10)
 
         env = testing.create_environ(method='POST', body=b'x' * 30)
         del env['CONTENT_LENGTH']

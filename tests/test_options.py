@@ -12,7 +12,6 @@ class TestRequestOptions:
         assert not options.auto_parse_form_urlencoded
         assert not options.auto_parse_qs_csv
         assert not options.strip_url_path_trailing_slash
-        assert options.max_content_length is None
 
     @pytest.mark.parametrize(
         'option_name',

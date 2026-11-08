@@ -3030,29 +3030,6 @@ class RequestOptions:
     By default, handlers are provided for the ``application/json``,
     ``application/x-www-form-urlencoded`` and ``multipart/form-data`` media types.
     """
-    max_content_length: int | None
-    """Maximum size of the request body in bytes (default ``None``).
-
-    When set to an integer, requests declaring a Content-Length larger than
-    this value are rejected with :class:`~falcon.HTTPContentTooLarge` before
-    any request middleware or responder is invoked.
-
-    In the case of ASGI apps, the limit is also enforced while reading a
-    request body of unknown length (that is, when the Content-Length header is
-    missing): an instance of :class:`~falcon.HTTPContentTooLarge` is raised from
-    the request stream as soon as more than `max_content_length` bytes have been
-    received. (WSGI apps treat a request body without Content-Length as empty,
-    so no further check is needed.)
-
-    The default value of ``None`` disables the check.
-
-    Note:
-        This option is meant as a convenient safeguard at the application
-        level. Limiting request body size is often better handled by the web
-        server or reverse proxy in front of the app.
-
-    .. versionadded:: 4.5
-    """
 
     __slots__ = (
         'keep_blank_qs_values',
@@ -3061,7 +3038,6 @@ class RequestOptions:
         'strip_url_path_trailing_slash',
         'default_media_type',
         'media_handlers',
-        'max_content_length',
     )
 
     def __init__(self) -> None:
@@ -3071,4 +3047,3 @@ class RequestOptions:
         self.strip_url_path_trailing_slash = False
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
-        self.max_content_length = None

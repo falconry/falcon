@@ -1,7 +1,10 @@
-A new :attr:`~falcon.RequestOptions.max_content_length` request option was
-added to provide an easy way to limit the size of request bodies. When it is
-set, requests declaring a Content-Length larger than the limit are rejected with
-:class:`~falcon.HTTPContentTooLarge` before any request middleware or responder
-is invoked. In ASGI apps, the limit is also enforced while reading a request
-body of unknown length, in which case the error is raised from the request
-stream as soon as the limit is exceeded. The option is disabled by default.
+A new `max_content_length` keyword argument was added to :class:`falcon.App`
+and :class:`falcon.asgi.App` to provide an easy way to limit the size of
+request bodies. When it is set, an instance of the new
+:class:`~falcon.MaxContentLengthMiddleware` is placed first in the middleware
+stack, and requests declaring a Content-Length larger than the limit are
+rejected with :class:`~falcon.HTTPContentTooLarge` before any other request
+middleware or responder is invoked. In ASGI apps, the limit is also enforced
+while reading a request body of unknown length, in which case the error is
+raised from the request stream as soon as the limit is exceeded. The limit is
+disabled by default.

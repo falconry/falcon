@@ -56,11 +56,11 @@ from falcon._typing import SyncMiddleware
 from falcon._typing import WSGIEnvironment
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
-from falcon.errors import HTTPContentTooLarge
 from falcon.errors import HTTPInternalServerError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middleware import CORSMiddleware
+from falcon.middleware import MaxContentLengthMiddleware
 from falcon.request import Request
 from falcon.request import RequestOptions
 from falcon.response import Response
@@ -218,6 +218,15 @@ class App(Generic[_ReqT, _RespT]):
         sink_before_static_route (bool): Indicates if the sinks should be processed
             before (when ``True``) or after (when ``False``) the static routes.
             This has an effect only if no route was matched. (default ``True``)
+
+        max_content_length (int): Maximum size of the request body in bytes
+            (default ``None``, meaning no limit). When set, an instance of
+            :class:`~falcon.MaxContentLengthMiddleware` is placed first in
+            the middleware stack, so that requests with a body exceeding the
+            limit are rejected with :class:`~falcon.HTTPContentTooLarge`
+            before any other request middleware is invoked.
+
+            .. versionadded:: 4.5
     '''
 
     _META_METHODS: ClassVar[frozenset[str]] = frozenset(constants._META_METHODS)
@@ -312,6 +321,7 @@ class App(Generic[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     @overload
@@ -327,6 +337,7 @@ class App(Generic[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     @overload
@@ -342,6 +353,7 @@ class App(Generic[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     @overload
@@ -357,6 +369,7 @@ class App(Generic[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     def __init__(
@@ -371,6 +384,7 @@ class App(Generic[_ReqT, _RespT]):
         independent_middleware: bool = True,
         cors_enable: bool = False,
         sink_before_static_route: bool = True,
+        max_content_length: int | None = None,
     ) -> None:
         self._cors_enable = cors_enable
         self._sink_before_static_route = sink_before_static_route
@@ -380,6 +394,11 @@ class App(Generic[_ReqT, _RespT]):
 
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
+        if max_content_length is not None:
+            # NOTE(ericareg): Add this middleware first, so that requests that
+            #   are too large are rejected before any other request middleware
+            #   is invoked.
+            self.add_middleware([MaxContentLengthMiddleware(max_content_length)])
         self.add_middleware(middleware or [])
         if cors_enable:
             self.add_middleware([CORSMiddleware()])
@@ -437,17 +456,6 @@ class App(Generic[_ReqT, _RespT]):
         try:
             if req.method in self._META_METHODS:
                 raise HTTPBadRequest()
-
-            max_content_length = self.req_options.max_content_length
-            if max_content_length is not None:
-                content_length = req.content_length
-                if content_length is not None and content_length > max_content_length:
-                    raise HTTPContentTooLarge(
-                        description=(
-                            'The request body must not exceed '
-                            f'{max_content_length} bytes.'
-                        )
-                    )
 
             # NOTE(ealogar): The execution of request middleware
             # should be before routing. This will allow request mw

@@ -5,7 +5,9 @@ from typing import Literal, TYPE_CHECKING
 
 from ._typing import _AReqT
 from ._typing import _ARespT
+from ._typing import UniversalMiddlewareWithProcessRequest
 from ._typing import UniversalMiddlewareWithProcessResponse
+from .errors import HTTPContentTooLarge
 
 if TYPE_CHECKING:
     from .asgi.request import Request as AsgiRequest
@@ -175,3 +177,87 @@ class CORSMiddleware(UniversalMiddlewareWithProcessResponse[_AReqT, _ARespT]):
         req_succeeded: bool,
     ) -> None:
         self.process_response(req, resp, resource, req_succeeded)
+
+
+class MaxContentLengthMiddleware(
+    UniversalMiddlewareWithProcessRequest[_AReqT, _ARespT]
+):
+    """Middleware that limits the size of request bodies.
+
+    Requests declaring a Content-Length larger than `max_length` are rejected
+    with :class:`~falcon.HTTPContentTooLarge`.
+
+    In the case of ASGI apps, the limit is also enforced while reading a
+    request body of unknown length (that is, when the Content-Length header is
+    missing): an instance of :class:`~falcon.HTTPContentTooLarge` is raised from
+    the request stream as soon as more than `max_length` bytes have been
+    received. (WSGI apps treat a request body without Content-Length as empty,
+    so no further check is needed.)
+
+    Rather than adding this middleware manually, it is usually more convenient
+    to pass the `max_content_length` argument to :class:`~falcon.App` or
+    :class:`falcon.asgi.App`, which places an instance of this middleware
+    first in the stack, that is, before any other request middleware is
+    invoked. When adding it manually, make sure that no middleware
+    component preceding it reads the request body.
+
+    Note:
+        This middleware is meant as a convenient safeguard at the application
+        level. Limiting request body size is often better handled by the web
+        server or reverse proxy in front of the app.
+
+    Args:
+        max_length (int): Maximum size of the request body in bytes.
+
+    .. versionadded:: 4.5
+    """
+
+    def __init__(self, max_length: int) -> None:
+        if max_length < 0:
+            raise ValueError('max_length must be a non-negative integer.')
+
+        self._max_length = max_length
+        self._description = f'The request body must not exceed {max_length} bytes.'
+
+    def process_request(self, req: Request, resp: Response) -> None:
+        """Reject the request if its declared Content-Length exceeds the limit."""
+        content_length = req.content_length
+        if content_length is not None and content_length > self._max_length:
+            raise HTTPContentTooLarge(description=self._description)
+
+    async def process_request_async(self, req: AsgiRequest, resp: AsgiResponse) -> None:
+        """Enforce the limit on the request body (ASGI version).
+
+        In addition to checking the declared Content-Length, the limit is also
+        enforced while reading a request body of unknown length.
+        """
+        content_length = req.content_length
+        if content_length is not None:
+            if content_length > self._max_length:
+                raise HTTPContentTooLarge(description=self._description)
+            return
+
+        first_event = req._first_event
+        if first_event is not None:
+            if len(first_event.get('body', b'')) > self._max_length:
+                raise HTTPContentTooLarge(description=self._description)
+
+            # NOTE(ericareg): The whole body was already received in the
+            #   first event, so there is nothing left to limit.
+            if not first_event.get('more_body', False):
+                return
+
+        # NOTE(ericareg): Import here to avoid a circular import, since the
+        #   falcon.asgi package imports falcon.app, which imports this module.
+        from .asgi.stream import BoundedStream
+
+        # NOTE(ericareg): Set the internal _stream attribute directly, since
+        #   Request.stream is a read-only property that lazily creates the
+        #   stream without any limit. Request does not offer a public way to
+        #   pass max_length to BoundedStream, and adding one (such as a
+        #   request option) would cost every request, even when the limit
+        #   is disabled. This middleware is placed first in the stack, so
+        #   no other component has read the body yet.
+        req._stream = BoundedStream(
+            req._receive, first_event=first_event, max_length=self._max_length
+        )

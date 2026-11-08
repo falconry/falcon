@@ -135,8 +135,7 @@ async def _simulate_chunked_post(app, body, content_type=falcon.MEDIA_TEXT):
 class TestMaxContentLength:
     @pytest.fixture
     def app(self):
-        app = falcon.asgi.App()
-        app.req_options.max_content_length = 10
+        app = falcon.asgi.App(max_content_length=10)
         app.add_route('/', BodyLengthResource())
         app.add_route('/media', MediaResource())
         return app
@@ -185,8 +184,7 @@ class TestMaxContentLength:
                     self.data_after_error = await req.stream.read()
 
         resource = ChunkedReaderResource()
-        app = falcon.asgi.App()
-        app.req_options.max_content_length = 20
+        app = falcon.asgi.App(max_content_length=20)
         app.add_route('/', resource)
 
         # NOTE(ericareg): No Content-Length, so the body size is unknown.
@@ -202,3 +200,68 @@ class TestMaxContentLength:
         assert resource.chunks == [b'x' * 8]
         assert resource.eof is True
         assert resource.data_after_error == b''
+
+    @pytest.mark.parametrize('more_body', [True, False])
+    async def test_first_event_exceeded(self, more_body):
+        class RecordingResource:
+            called = False
+
+            async def on_post(self, req, resp):
+                self.called = True
+
+        resource = RecordingResource()
+        app = falcon.asgi.App(max_content_length=10)
+        app.add_route('/', resource)
+
+        events = [{'type': 'http.request', 'body': b'x' * 11, 'more_body': more_body}]
+
+        async def receive():
+            return events.pop(0)
+
+        # NOTE(ericareg): No Content-Length, so the body size is unknown.
+        scope = testing.create_scope(method='POST')
+        resp_event_collector = testing.ASGIResponseEventCollector()
+
+        await app(scope, receive, resp_event_collector)
+
+        assert resp_event_collector.status == 413
+        assert resource.called is False
+
+    async def test_first_event_complete_keeps_default_stream(self):
+        class StreamResource:
+            async def on_post(self, req, resp):
+                self.stream = req.stream
+                resp.media = {'length': len(await req.stream.read())}
+
+        resource = StreamResource()
+        app = falcon.asgi.App(max_content_length=10)
+        app.add_route('/', resource)
+
+        events = [{'type': 'http.request', 'body': b'x' * 5, 'more_body': False}]
+
+        async def receive():
+            return events.pop(0)
+
+        scope = testing.create_scope(method='POST')
+        resp_event_collector = testing.ASGIResponseEventCollector()
+
+        await app(scope, receive, resp_event_collector)
+
+        assert resp_event_collector.status == 200
+        assert json.loads(b''.join(resp_event_collector.body_chunks)) == {'length': 5}
+
+        # NOTE(ericareg): The whole body was received in the first event, so
+        #   the middleware does not need to install a limited stream.
+        assert resource.stream._receive is receive
+
+    async def test_middleware_without_first_event(self):
+        mw = falcon.MaxContentLengthMiddleware(10)
+
+        # NOTE(ericareg): create_asgi_req() does not preload the first event.
+        req = testing.create_asgi_req(method='POST', body=b'x' * 30)
+        assert req.content_length is None
+
+        await mw.process_request_async(req, None)
+
+        with pytest.raises(falcon.HTTPContentTooLarge):
+            await req.stream.read()

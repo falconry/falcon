@@ -1061,9 +1061,11 @@ def test_max_content_length_skips_request_middleware(
 ):
     mw = MethodRecordingMiddleware()
     app = util.create_app(
-        asgi, middleware=[mw], independent_middleware=independent_middleware
+        asgi,
+        middleware=[mw],
+        independent_middleware=independent_middleware,
+        max_content_length=4,
     )
-    app.req_options.max_content_length = 4
     app.add_route(TEST_ROUTE, MiddlewareClassResource())
 
     resp = testing.simulate_post(app, TEST_ROUTE, body=b'12345')
@@ -1080,3 +1082,26 @@ def test_max_content_length_skips_request_middleware(
     else:
         assert mw.called == []
         assert 'X-Processed' not in resp.headers
+
+
+@pytest.mark.parametrize('independent_middleware', [True, False])
+def test_max_content_length_with_cors(independent_middleware, asgi, util):
+    app = util.create_app(
+        asgi,
+        cors_enable=True,
+        independent_middleware=independent_middleware,
+        max_content_length=4,
+    )
+    app.add_route(TEST_ROUTE, MiddlewareClassResource())
+
+    resp = testing.simulate_post(
+        app, TEST_ROUTE, body=b'12345', headers={'Origin': 'localhost'}
+    )
+    assert resp.status_code == 413
+
+    # NOTE(ericareg): Since MaxContentLengthMiddleware is placed first in the
+    #   stack, the CORS headers are only added in the independent mode.
+    if independent_middleware:
+        assert resp.headers.get('Access-Control-Allow-Origin') == '*'
+    else:
+        assert 'Access-Control-Allow-Origin' not in resp.headers
