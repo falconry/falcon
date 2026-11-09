@@ -1,20 +1,19 @@
-from __future__ import annotations
-
 import contextvars
+from typing import Optional
 
 
 class _Context:
     def __init__(self) -> None:
-        self._request_id_var: contextvars.ContextVar[str | None] = (
+        self._request_id_var: contextvars.ContextVar[Optional[str]] = (
             contextvars.ContextVar('request_id', default=None)
         )
 
     @property
-    def request_id(self) -> str | None:
+    def request_id(self) -> Optional[str]:
         return self._request_id_var.get()
 
     @request_id.setter
-    def request_id(self, value: str | None) -> None:
+    def request_id(self, value: Optional[str]) -> None:
         self._request_id_var.set(value)
 
 

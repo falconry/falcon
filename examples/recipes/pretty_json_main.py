@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import json
+from typing import Optional
 
 import falcon
 from falcon.typing import ReadableIO
@@ -12,8 +11,8 @@ class CustomJSONHandler(falcon.media.BaseHandler):
     def deserialize(
         self,
         stream: ReadableIO,
-        content_type: str | None,
-        content_length: int | None,
+        content_type: Optional[str],
+        content_length: Optional[int],
     ) -> object:
         data = stream.read()
         return json.loads(data.decode())
@@ -21,7 +20,7 @@ class CustomJSONHandler(falcon.media.BaseHandler):
     def serialize(self, media: object, content_type: str) -> bytes:
         _, params = falcon.parse_header(content_type)
         indent_param = params.get('indent')
-        indent: int | None = None
+        indent: Optional[int] = None
         if indent_param is not None:
             try:
                 indent = int(indent_param)

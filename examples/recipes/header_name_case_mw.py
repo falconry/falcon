@@ -1,36 +1,27 @@
-from __future__ import annotations
-
 from collections.abc import Callable
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
-
-    from _typeshed import OptExcInfo
+from typing import Any, Optional
 
 
 class CustomHeadersMiddleware:
     def __init__(
         self,
-        app: WSGIApplication,
+        app: Callable[..., Iterable[bytes]],
         title_case: bool = True,
-        custom_capitalization: dict[str, str] | None = None,
+        custom_capitalization: Optional[dict[str, str]] = None,
     ) -> None:
         self._app = app
         self._title_case = title_case
         self._capitalization = custom_capitalization or {}
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: dict[str, Any], start_response: Callable[..., Any]
     ) -> Iterable[bytes]:
         def start_response_wrapper(
             status: str,
             response_headers: list[tuple[str, str]],
-            exc_info: OptExcInfo | None = None,
-        ) -> Callable[[bytes], object]:
+            exc_info: Optional[tuple[Any, Any, Any]] = None,
+        ) -> Any:
             if self._title_case:
                 headers = [
                     (self._capitalization.get(name, name.title()), value)
