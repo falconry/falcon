@@ -50,6 +50,7 @@ from falcon._typing import SinkPrefix
 import falcon.app
 from falcon.app_helpers import AsyncPreparedMiddlewareResult
 from falcon.app_helpers import AsyncPreparedMiddlewareWsResult
+from falcon.app_helpers import exclude_middleware_methods
 from falcon.app_helpers import prepare_middleware
 from falcon.app_helpers import prepare_middleware_ws
 from falcon.asgi_spec import AsgiRequestScope
@@ -567,6 +568,19 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 raise
 
         else:
+            # PERF: Only look for per-route middleware exclusions (see also:
+            #   add_route()) if any have been configured at all.
+            if (
+                self._route_excluded_middleware
+                and req.uri_template in self._route_excluded_middleware
+            ):
+                excluded = self._route_excluded_middleware[req.uri_template]
+                mw_rsrc_stack = exclude_middleware_methods(mw_rsrc_stack, excluded)
+                mw_resp_stack = exclude_middleware_methods(mw_resp_stack, excluded)
+                dependent_mw_resp_stack = list(
+                    exclude_middleware_methods(dependent_mw_resp_stack, excluded)
+                )
+
             try:
                 # NOTE(kgriffs): If the request did not match any
                 # route, a default responder is returned and the

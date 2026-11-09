@@ -1,0 +1,5 @@
+:meth:`~falcon.App.add_route` now accepts an optional ``exclude_middleware``
+keyword argument that lists middleware components whose ``process_resource()``
+and ``process_response()`` methods should be skipped for that route
+(for instance, in order to exempt a health check endpoint from authentication).
+Per-route middleware exclusion is supported by both WSGI and ASGI applications.

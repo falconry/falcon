@@ -1035,3 +1035,106 @@ def test_async_postfix_method_must_be_coroutine(util):
     for mw in (FaultyComponentA, FaultyComponentB, FaultyComponentC):
         with pytest.raises(falcon.errors.CompatibilityError):
             util.create_app(True, middleware=[mw()])
+
+
+class RecordingMiddleware:
+    def __init__(self, name, calls):
+        self.name = name
+        self.calls = calls
+
+    def process_request(self, req, resp):
+        self.calls.append((self.name, 'request'))
+
+    def process_resource(self, req, resp, resource, params):
+        self.calls.append((self.name, 'resource'))
+
+    def process_response(self, req, resp, resource, req_succeeded):
+        self.calls.append((self.name, 'response'))
+
+
+class RecordingMiddlewareAsync(RecordingMiddleware):
+    async def process_request_async(self, req, resp):
+        self.process_request(req, resp)
+
+    async def process_resource_async(self, req, resp, resource, params):
+        self.process_resource(req, resp, resource, params)
+
+    async def process_response_async(self, req, resp, resource, req_succeeded):
+        self.process_response(req, resp, resource, req_succeeded)
+
+
+class TestRouteExcludedMiddleware:
+    @pytest.fixture(params=[RecordingMiddleware, RecordingMiddlewareAsync])
+    def mw_type(self, request):
+        return request.param
+
+    @pytest.mark.parametrize('independent_middleware', [True, False])
+    def test_excluded_on_route(self, asgi, util, mw_type, independent_middleware):
+        calls = []
+        auth = mw_type('auth', calls)
+        trace = mw_type('trace', calls)
+        app = util.create_app(
+            asgi,
+            middleware=[auth, trace],
+            independent_middleware=independent_middleware,
+        )
+        app.add_route('/health', MiddlewareClassResource(), exclude_middleware=[auth])
+        app.add_route('/items', MiddlewareClassResource())
+        client = testing.TestClient(app)
+
+        assert client.simulate_get('/health').status_code == 200
+        assert calls == [
+            # NOTE: process_request() runs before routing, so it can't be skipped.
+            ('auth', 'request'),
+            ('trace', 'request'),
+            ('trace', 'resource'),
+            ('trace', 'response'),
+        ]
+
+        calls.clear()
+        assert client.simulate_get('/items').status_code == 200
+        assert calls == [
+            ('auth', 'request'),
+            ('trace', 'request'),
+            ('auth', 'resource'),
+            ('trace', 'resource'),
+            ('trace', 'response'),
+            ('auth', 'response'),
+        ]
+
+    def test_route_not_found(self, asgi, util):
+        calls = []
+        auth = RecordingMiddleware('auth', calls)
+        app = util.create_app(asgi, middleware=[auth])
+        app.add_route('/health', MiddlewareClassResource(), exclude_middleware=[auth])
+        client = testing.TestClient(app)
+
+        assert client.simulate_get('/missing').status_code == 404
+        assert calls == [('auth', 'request'), ('auth', 'response')]
+
+    def test_readding_route_resets_exclusions(self, asgi, util):
+        calls = []
+        auth = RecordingMiddleware('auth', calls)
+        app = util.create_app(asgi, middleware=[auth])
+        resource = MiddlewareClassResource()
+        app.add_route('/health', resource, exclude_middleware=[auth])
+        app.add_route('/health', resource)
+        client = testing.TestClient(app)
+
+        assert client.simulate_get('/health').status_code == 200
+        assert calls == [
+            ('auth', 'request'),
+            ('auth', 'resource'),
+            ('auth', 'response'),
+        ]
+
+    def test_middleware_added_later(self, asgi, util):
+        calls = []
+        auth = RecordingMiddleware('auth', calls)
+        app = util.create_app(asgi)
+        app.add_route('/health', MiddlewareClassResource(), exclude_middleware=[auth])
+        app.add_middleware(auth)
+        client = testing.TestClient(app)
+
+        assert client.simulate_get('/health').status_code == 200
+        assert calls == [('auth', 'request')]

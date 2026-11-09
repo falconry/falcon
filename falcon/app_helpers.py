@@ -18,7 +18,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from inspect import iscoroutinefunction
-from typing import IO, Literal, Optional, overload, Union
+from inspect import unwrap
+from typing import IO, Literal, Optional, overload, TypeVar, Union
 
 from falcon import util
 from falcon._typing import _AReqT
@@ -221,6 +222,31 @@ def prepare_middleware(
             resource_mw.append(process_resource)  # type: ignore[arg-type]
 
     return tuple(request_mw), tuple(resource_mw), tuple(response_mw)  # type: ignore[return-value]
+
+
+_MethodT = TypeVar('_MethodT')
+
+
+def exclude_middleware_methods(
+    methods: Iterable[_MethodT], excluded: frozenset[int]
+) -> tuple[_MethodT, ...]:
+    """Filter out prepared middleware methods belonging to excluded components.
+
+    Args:
+        methods: Prepared middleware methods, as returned by
+            :func:`prepare_middleware`.
+        excluded: The ``id()`` values of the middleware components to skip.
+
+    Returns:
+        tuple: The methods whose component is not excluded.
+    """
+    # NOTE: Methods may be wrapped (e.g., sync methods in ASGI test mode), so
+    #   unwrap them first in order to find the component they are bound to.
+    return tuple(
+        method
+        for method in methods
+        if id(getattr(unwrap(method), '__self__', None)) not in excluded  # type: ignore[arg-type]
+    )
 
 
 AsyncPreparedMiddlewareWsResult = tuple[

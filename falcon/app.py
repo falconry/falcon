@@ -247,6 +247,7 @@ class App(Generic[_ReqT, _RespT]):
         '_report_error',
         '_request_type',
         '_response_type',
+        '_route_excluded_middleware',
         '_router_search',
         '_router',
         '_serialize_error',
@@ -266,6 +267,7 @@ class App(Generic[_ReqT, _RespT]):
     _report_error: ErrorReporter[_ReqT] | None
     _request_type: type[_ReqT]
     _response_type: type[_RespT]
+    _route_excluded_middleware: dict[str, frozenset[int]]
     _router_search: FindMethod
     # NOTE(caselit): this should actually be a protocol of the methods required
     # by a router, hardcoded to CompiledRouter for convenience for now.
@@ -376,6 +378,7 @@ class App(Generic[_ReqT, _RespT]):
         self._sinks = []
         self._static_routes = []
         self._sink_and_static_routes = ()
+        self._route_excluded_middleware = {}
 
         self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
@@ -469,6 +472,25 @@ class App(Generic[_ReqT, _RespT]):
             if not self._handle_exception(req, resp, ex, params):
                 raise
         else:
+            # PERF: Only look for per-route middleware exclusions (see also:
+            #   add_route()) if any have been configured at all.
+            if (
+                self._route_excluded_middleware
+                and req.uri_template in self._route_excluded_middleware
+            ):
+                excluded = self._route_excluded_middleware[req.uri_template]
+                mw_rsrc_stack = helpers.exclude_middleware_methods(
+                    mw_rsrc_stack, excluded
+                )
+                mw_resp_stack = helpers.exclude_middleware_methods(
+                    mw_resp_stack, excluded
+                )
+                dependent_mw_resp_stack = list(
+                    helpers.exclude_middleware_methods(
+                        dependent_mw_resp_stack, excluded
+                    )
+                )
+
             try:
                 # NOTE(kgriffs): If the request did not match any
                 # route, a default responder is returned and the
@@ -716,6 +738,26 @@ class App(Generic[_ReqT, _RespT]):
                 :class:`.CompiledRouter` to compile the routing logic on this call,
                 since it will otherwise delay compilation until the first request
                 is routed. See :meth:`.CompiledRouter.add_route` for further details.
+            exclude_middleware (Iterable[object]): Optional middleware
+                components (as passed to the :class:`~.App` initializer or
+                :meth:`~.App.add_middleware`) that should be skipped for this
+                route. The ``process_resource()`` and ``process_response()``
+                methods of the excluded components are not called for requests
+                matching this route. For example::
+
+                    auth = AuthMiddleware()
+                    app = falcon.App(middleware=[auth, TraceIdMiddleware()])
+                    app.add_route(
+                        '/health', HealthResource(), exclude_middleware=[auth]
+                    )
+
+                Note:
+                    Since ``process_request()`` is executed before routing, it
+                    is still called for excluded components. Middleware that
+                    should be skippable on a per-route basis needs to implement
+                    its logic in ``process_resource()`` instead.
+
+                .. versionadded:: 4.5
 
         Note:
             Any additional keyword arguments not defined above are passed
@@ -738,7 +780,16 @@ class App(Generic[_ReqT, _RespT]):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
+        exclude_middleware = kwargs.pop('exclude_middleware', None)
+
         self._router.add_route(uri_template, resource, **kwargs)
+
+        if exclude_middleware:
+            self._route_excluded_middleware[uri_template] = frozenset(
+                id(component) for component in exclude_middleware
+            )
+        else:
+            self._route_excluded_middleware.pop(uri_template, None)
 
     def add_static_route(
         self,
