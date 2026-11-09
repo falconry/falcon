@@ -1,0 +1,4 @@
+Fixed :meth:`falcon.asgi.BoundedStream.tell` counting the first preloaded
+chunk twice, so it reported a nonzero position before anything was read and
+more bytes than the body length after the stream was consumed. The position
+now starts at zero and only advances as data is actually read.

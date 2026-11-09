@@ -313,6 +313,52 @@ def test_iteration_already_started():
     falcon.async_to_sync(t)
 
 
+async def test_tell_with_preloaded_first_event():
+    events = iter(({'type': 'http.request', 'body': b'defg', 'more_body': False},))
+
+    async def receive():
+        return next(events)
+
+    first = {'type': 'http.request', 'body': b'abc', 'more_body': True}
+    s = asgi.BoundedStream(receive, first_event=first, content_length=7)
+
+    assert s.tell() == 0
+    assert await s.readall() == b'abcdefg'
+    assert s.tell() == 7
+
+
+async def test_tell_with_preloaded_first_event_partial_reads():
+    events = iter(({'type': 'http.request', 'body': b'defg', 'more_body': False},))
+
+    async def receive():
+        return next(events)
+
+    first = {'type': 'http.request', 'body': b'abc', 'more_body': True}
+    s = asgi.BoundedStream(receive, first_event=first, content_length=7)
+
+    assert s.tell() == 0
+    assert await s.read(2) == b'ab'
+    assert s.tell() == 2
+    assert await s.read(2) == b'cd'
+    assert s.tell() == 4
+    assert await s.read() == b'efg'
+    assert s.tell() == 7
+
+
+async def test_tell_with_preloaded_first_event_unknown_length():
+    events = iter(({'type': 'http.request', 'body': b'defg', 'more_body': False},))
+
+    async def receive():
+        return next(events)
+
+    first = {'type': 'http.request', 'body': b'abc', 'more_body': True}
+    s = asgi.BoundedStream(receive, first_event=first)
+
+    assert s.tell() == 0
+    assert b''.join([chunk async for chunk in s]) == b'abcdefg'
+    assert s.tell() == 7
+
+
 def _stream(body, content_length=None):
     emitter = testing.ASGIRequestEventEmitter(body)
     return asgi.BoundedStream(emitter, content_length=content_length)
