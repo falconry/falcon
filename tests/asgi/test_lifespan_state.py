@@ -35,8 +35,6 @@ class StateResource:
         self.states.append(req.state)
 
         await ws.accept()
-        await ws.send_media(req.state)
-        await ws.close()
 
 
 @pytest.fixture
@@ -144,10 +142,10 @@ async def test_test_client_context(app, resource, middleware):
 
 async def test_websocket(app, resource, middleware):
     async with testing.ASGIConductor(app) as conductor:
-        async with conductor.simulate_ws('/') as ws:
-            state = await ws.receive_json()
+        async with conductor.simulate_ws('/'):
+            pass
 
-    assert state == {'message': 'Hello, lifespan state!', 'shared': []}
+    assert resource.states == [{'message': 'Hello, lifespan state!', 'shared': []}]
     assert resource.states[0] == middleware.lifespan_state
     assert resource.states[0] is not middleware.lifespan_state
 
@@ -155,10 +153,9 @@ async def test_websocket(app, resource, middleware):
 async def test_websocket_without_lifespan(app, resource):
     conductor = testing.ASGIConductor(app)
 
-    async with conductor.simulate_ws('/') as ws:
-        state = await ws.receive_json()
+    async with conductor.simulate_ws('/'):
+        pass
 
-    assert state is None
     assert resource.states == [None]
 
 
