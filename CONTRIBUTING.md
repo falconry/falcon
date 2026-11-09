@@ -61,19 +61,6 @@ If you prefer, you can also use [`uvx`](https://docs.astral.sh/uv/) to run
 $ uvx tox -e reformat  # also applies to other examples, e.g., uvx tox --recreate
 ```
 
-### Pyright checks
-
-Run the Pyright checks locally with:
-
-```bash
-$ tox -e pyright_tests
-```
-
-This environment checks the end-to-end test server, typing regression tests,
-and selected WSGI, ASGI, and WebSocket sample applications. It also runs in
-GitHub Actions, but is not included in the default local `tox` run. These
-checks do not yet cover the entire library.
-
 ### Reviews
 
 Falcon is used in a number of mission-critical applications and is known for its stability and reliability. Therefore, we invest a lot of time in carefully reviewing PRs and working with contributors to ensure that every patch merged into the master branch is correct, complete, performant, well-documented, and appropriate.
