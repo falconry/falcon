@@ -196,6 +196,31 @@ class TestASGIServer:
             assert resp.json().get('drops') >= 1
 
 
+class TestLifespanState:
+    def test_state(self, asgi_server, server_base_url, requests):
+        url = server_base_url + 'state'
+
+        resp = requests.get(url, timeout=_REQUEST_TIMEOUT)
+        assert resp.status_code == 200
+        if resp.json()['state'] is None:
+            pytest.skip(f'{asgi_server} does not support lifespan state')
+
+        assert resp.json()['state'] == {'message': 'Hello, lifespan state!'}
+
+        resp = requests.post(url, timeout=_REQUEST_TIMEOUT)
+        assert resp.status_code == 200
+        assert resp.json()['state'] == {
+            'added': 'request-specific',
+            'message': 'Hello, lifespan state!',
+        }
+
+        # The server is expected to pass a shallow copy of the lifespan
+        #   state to each request, so the added key must not persist.
+        resp = requests.get(url, timeout=_REQUEST_TIMEOUT)
+        assert resp.status_code == 200
+        assert resp.json()['state'] == {'message': 'Hello, lifespan state!'}
+
+
 class TestStaticFiles:
     def test_get(self, server_base_url, requests):
         expected = (_asgi_test_app.FALCON_ROOT / 'LICENSE').read_bytes()
