@@ -237,14 +237,20 @@ def async_to_sync(
     """Invoke a coroutine function from a synchronous caller.
 
     This method can be used to invoke an asynchronous task from a synchronous
-    context. The coroutine will be scheduled to run on the current event
-    loop for the current OS thread. If an event loop is not already running,
-    one will be created.
+    context, such as a synchronous test function or script. The coroutine is
+    run to completion on an event loop that is created if needed.
 
     Warning:
         Executing async code in this manner is inefficient since it involves
         synchronization via threading primitives, and is intended primarily for
         testing, prototyping or compatibility purposes.
+
+    Note:
+        This function cannot be called while an event loop is already running
+        in the current thread (e.g., from a coroutine function, or from the
+        ``asyncio`` REPL), since a running ``asyncio`` loop cannot be
+        reentered. A :class:`RuntimeError` is raised in that case; simply
+        ``await`` the coroutine function instead.
 
     Note:
         On Python 3.11+, this function leverages a module-wide
@@ -256,7 +262,27 @@ def async_to_sync(
 
     Keyword Args:
         **kwargs: Additional args are passed through to the coroutine function.
+
+    .. versionchanged:: 4.5
+        An informative :class:`RuntimeError` is now raised when this function
+        is called from a running event loop, before invoking the coroutine
+        function. Previously, a generic error was raised by ``asyncio``, and
+        the created coroutine object was never awaited.
     """
+    # NOTE(MakroMB): Check for a running loop upfront, so that the coroutine
+    #   object is not created (and then never awaited) in vain.
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError(
+            'async_to_sync() cannot be called from a running event loop '
+            '(e.g., from a coroutine function, or from the asyncio REPL), '
+            'since a running asyncio loop cannot be reentered. '
+            'Please await the coroutine function directly instead.'
+        )
+
     return _active_runner().run(coroutine(*args, **kwargs))
 
 
@@ -271,8 +297,9 @@ def runs_sync(coroutine: Callable[..., Awaitable[Result]]) -> Callable[..., Resu
         asynchronous test functions for use with synchronous test runners such
         as ``pytest`` or the ``unittest`` module.
 
-        It will create an event loop for the current thread if one is not
-        already running.
+        It will create an event loop if needed. However, just like
+        :meth:`async_to_sync`, the decorated function cannot be invoked while
+        an event loop is already running in the current thread.
 
     Args:
         coroutine: A coroutine function to masquerade as a synchronous one.

@@ -127,3 +127,40 @@ async def test_sync_asyncio_aliases():
         falcon.util.get_running_loop()
 
     await task
+
+
+async def _double(value):
+    return value * 2
+
+
+def test_async_to_sync():
+    assert falcon.util.async_to_sync(_double, 21) == 42
+    assert falcon.util.runs_sync(_double)(value=4) == 8
+
+
+@pytest.mark.parametrize('use_decorator', [False, True])
+async def test_async_to_sync_running_loop(use_decorator):
+    invocations = []
+
+    def coroutine_function(*args, **kwargs):
+        invocations.append((args, kwargs))
+        return _double(*args, **kwargs)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        if use_decorator:
+            falcon.util.runs_sync(coroutine_function)(21)
+        else:
+            falcon.util.async_to_sync(coroutine_function, 21)
+
+    assert str(exc_info.value) == (
+        'async_to_sync() cannot be called from a running event loop '
+        '(e.g., from a coroutine function, or from the asyncio REPL), '
+        'since a running asyncio loop cannot be reentered. '
+        'Please await the coroutine function directly instead.'
+    )
+
+    # NOTE(MakroMB): The coroutine function must not have been invoked, since
+    #   the resulting coroutine object would never be awaited.
+    assert invocations == []
+
+    assert await coroutine_function(21) == 42

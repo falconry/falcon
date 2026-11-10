@@ -1,0 +1,9 @@
+:func:`falcon.async_to_sync` (and, by extension, :func:`falcon.runs_sync`)
+now raises a more informative :class:`RuntimeError` when invoked while an event
+loop is already running in the current thread (for instance, from a coroutine
+function, or from the ``asyncio`` REPL), explaining that the running loop
+cannot be reentered, and that the coroutine function should be awaited
+directly instead.
+Furthermore, the coroutine function is no longer invoked in this case,
+thus avoiding a ``RuntimeWarning`` about the created coroutine object never
+being awaited.
