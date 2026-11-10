@@ -18,10 +18,10 @@ TESTS = FALCON_ROOT / 'tests'
 EXPECTED_SCRIPTS = set({'falcon-bench', 'falcon-inspect-app', 'falcon-print-routes'})
 EXPECTED_PACKAGES = set({'falcon'})
 
-# NOTE: These are installed explicitly before the package under test, so that
+# NOTE(danielvjs): These are installed explicitly before the package under test, so that
 #   we can verify that Falcon itself does not pull in any other distribution.
 CHECK_REQUIREMENTS = ('packaging', 'pytest')
-# NOTE: pip is bootstrapped by venv itself.
+# NOTE(danielvjs): pip is bootstrapped by venv itself.
 VENV_TOOLING = frozenset({'pip'})
 
 
@@ -115,7 +115,7 @@ def main():
     parser.add_argument(
         'package', metavar='PACKAGE', nargs='*', help='sdist/wheel(s) to test'
     )
-    # NOTE: Used internally by test_package() to run the check inside the
+    # NOTE(danielvjs): Used internally by test_package() to run the check inside the
     #   temporary venv, where packaging is available.
     parser.add_argument(
         '--check-installed', metavar='DIST', nargs='+', help=argparse.SUPPRESS
