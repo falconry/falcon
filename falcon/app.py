@@ -474,13 +474,13 @@ class App(Generic[_ReqT, _RespT]):
             if not self._handle_exception(req, resp, ex, params):
                 raise
         else:
-            # PERF: Only look up per-route middleware (see also: add_route())
+            # PERF(danielvjs): Only look up per-route middleware (see also: add_route())
             #   if any route excludes middleware at all.
             if self._route_middleware and req.uri_template in self._route_middleware:
                 mw_rsrc_stack, mw_resp_stack, excluded = self._route_middleware[
                     req.uri_template
                 ]
-                # NOTE: Unless middleware is independent, process_response()
+                # NOTE(danielvjs): Unless middleware is independent, process_response()
                 #   methods are queued along with process_request().
                 if dependent_mw_resp_stack:
                     dependent_mw_resp_stack = list(
@@ -788,7 +788,7 @@ class App(Generic[_ReqT, _RespT]):
 
         self._router.add_route(uri_template, resource, **kwargs)
 
-        # NOTE: Keep references to the components themselves (and not just
+        # NOTE(danielvjs): Keep references to the components themselves (and not just
         #   their id() values) so that the ids cannot be reused.
         excluded = tuple(exclude_middleware or ())
         if excluded:
@@ -1264,7 +1264,7 @@ class App(Generic[_ReqT, _RespT]):
         )
 
     def _prepare_route_middleware(self) -> None:
-        # PERF: Filter out the excluded components (see also: add_route()) in
+        # PERF(danielvjs): Filter out the excluded components (see also: add_route()) in
         #   advance, so that only a dict lookup is needed per request.
         _, mw_rsrc_stack, mw_resp_stack = self._middleware
 

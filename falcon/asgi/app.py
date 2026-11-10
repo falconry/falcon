@@ -570,13 +570,13 @@ class App(falcon.app.App[_ReqT, _RespT]):
                 raise
 
         else:
-            # PERF: Only look up per-route middleware (see also: add_route())
+            # PERF(danielvjs): Only look up per-route middleware (see also: add_route())
             #   if any route excludes middleware at all.
             if self._route_middleware and req.uri_template in self._route_middleware:
                 mw_rsrc_stack, mw_resp_stack, excluded = self._route_middleware[
                     req.uri_template
                 ]
-                # NOTE: Unless middleware is independent, process_response()
+                # NOTE(danielvjs): Unless middleware is independent, process_response()
                 #   methods are queued along with process_request().
                 if dependent_mw_resp_stack:
                     dependent_mw_resp_stack = list(

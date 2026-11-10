@@ -246,7 +246,7 @@ def exclude_middleware_methods(
     Returns:
         tuple: The methods whose component is not excluded.
     """
-    # NOTE: Methods may be wrapped (e.g., sync methods in ASGI test mode), so
+    # NOTE(danielvjs): Methods may be wrapped (e.g., sync methods in ASGI test mode), so
     #   unwrap them first in order to find the component they are bound to.
     return tuple(
         method

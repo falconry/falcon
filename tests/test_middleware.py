@@ -1084,7 +1084,8 @@ class TestRouteExcludedMiddleware:
 
         assert client.simulate_get('/health').status_code == 200
         assert calls == [
-            # NOTE: process_request() runs before routing, so it can't be skipped.
+            # NOTE(danielvjs): process_request() runs before routing, so it
+            #   cannot be skipped.
             ('auth', 'request'),
             ('trace', 'request'),
             ('trace', 'resource'),
