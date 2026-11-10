@@ -66,6 +66,12 @@ AsyncPreparedMiddlewareResult = tuple[
     tuple[APResource, ...],
     tuple[APResponse, ...],
 ]
+PreparedRouteMiddleware = tuple[
+    tuple[PResource, ...], tuple[PResponse, ...], frozenset[int]
+]
+AsyncPreparedRouteMiddleware = tuple[
+    tuple[APResource, ...], tuple[APResponse, ...], frozenset[int]
+]
 
 
 @overload

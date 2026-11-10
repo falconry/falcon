@@ -298,6 +298,13 @@ the following example:
     :meth:`sink <falcon.App.add_sink>` may be used instead.
 
 .. Tip::
+    In order to skip a component's *process_resource* and *process_response*
+    methods for a specific route (for instance, to exempt a health check
+    endpoint from authentication), pass the component to
+    :meth:`~falcon.App.add_route` via the ``exclude_middleware`` keyword
+    argument.
+
+.. Tip::
     In order to pass data from a middleware function to a resource function
     use the ``req.context`` and ``resp.context`` objects. These context objects
     are intended to hold request and response data specific to your app as it
