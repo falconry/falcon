@@ -524,6 +524,11 @@ class TestFalconUtils:
 
         assert uri.parse_host(ipv6_addr) == (ipv6_addr, None)
         assert uri.parse_host('[' + ipv6_addr + ']') == (ipv6_addr, None)
+        assert uri.parse_host('[' + ipv6_addr + ']', default_port=80) == (
+            ipv6_addr,
+            80,
+        )
+        assert uri.parse_host('[::1]', default_port=443) == ('::1', 443)
         assert uri.parse_host('[' + ipv6_addr + ']:28080') == (ipv6_addr, 28080)
         assert uri.parse_host('[' + ipv6_addr + ']:8080') == (ipv6_addr, 8080)
         assert uri.parse_host('[' + ipv6_addr + ']:123') == (ipv6_addr, 123)
@@ -543,6 +548,35 @@ class TestFalconUtils:
         assert uri.parse_host('falcon.example.com') == ('falcon.example.com', None)
         assert uri.parse_host('falcon.example.com:9876') == ('falcon.example.com', 9876)
         assert uri.parse_host('falcon.example.com:42') == ('falcon.example.com', 42)
+
+    @pytest.mark.parametrize(
+        'host',
+        [
+            'example.com:abc',
+            'example.com:1_000',
+            'example.com:-1',
+            'example.com:+80',
+            'example.com: 80',
+            'example.com:٨٠',
+            'example.com:²',
+            '[::1]:abc',
+            '[::1]:-1',
+        ],
+    )
+    def test_parse_host_malformed_port(self, host):
+        assert uri.parse_host('example.com:') == ('example.com', None)
+        assert uri.parse_host('example.com:', default_port=443) == (
+            'example.com',
+            443,
+        )
+        assert uri.parse_host('[2001:db8::1]:') == ('2001:db8::1', None)
+        assert uri.parse_host('[2001:db8::1]:', default_port=443) == (
+            '2001:db8::1',
+            443,
+        )
+
+        with pytest.raises(ValueError, match='ASCII digits'):
+            uri.parse_host(host)
 
     @pytest.mark.parametrize(
         'v_in,v_out',
