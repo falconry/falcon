@@ -23,6 +23,8 @@ jobs:
           persist-credentials: false
 
       - name: Run tox
+        # NOTE(vytas): The image no longer provides tox for root, so we run
+        #   plain tox via the base image's uvx.
         uses: docker://ghcr.io/maxking/mailman-ci-runner-falcon:master
         with:
           # NOTE(vytas,maxking): The below hack to sed away ::1 is needed since
@@ -34,5 +36,5 @@ jobs:
             tools/testing/fetch_mailman.sh &&
             sed '/::1/d' /etc/hosts > /tmp/hosts && cat /tmp/hosts > /etc/hosts &&
             python3 --version &&
-            tox --version &&
-            tox -c .ecosystem/mailman/tox.ini -e falcon-nocov"
+            uvx --python 3.12 tox --version &&
+            uvx --python 3.12 tox -c .ecosystem/mailman/tox.ini -e falcon-nocov"
