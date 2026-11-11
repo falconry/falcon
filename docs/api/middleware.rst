@@ -415,3 +415,38 @@ or the routed ``on_*`` responder method itself raises an error, the
 exception will be handled in a similar manner as above. Then,
 the framework will execute any remaining middleware on the
 stack.
+
+.. _max_content_length:
+
+Limiting Request Body Size
+--------------------------
+
+Falcon provides an easy way to limit the size of request bodies via the
+`max_content_length` keyword argument of :class:`falcon.App` or
+:class:`falcon.asgi.App`. When set, an instance of
+:class:`~falcon.MaxContentLengthMiddleware` is placed first in the middleware
+stack, so that requests with a body exceeding the limit are rejected with
+:class:`~falcon.HTTPContentTooLarge` before any other request middleware is
+invoked. By default, no limit is enforced.
+
+.. tab-set::
+
+    .. tab-item:: WSGI
+
+        .. code:: python
+
+            import falcon
+
+            # Reject request bodies larger than 1 MiB
+            app = falcon.App(max_content_length=1024 * 1024)
+
+    .. tab-item:: ASGI
+
+        .. code:: python
+
+            import falcon.asgi
+
+            # Reject request bodies larger than 1 MiB
+            app = falcon.asgi.App(max_content_length=1024 * 1024)
+
+.. autoclass:: falcon.MaxContentLengthMiddleware

@@ -329,6 +329,15 @@ class App(falcon.app.App[_ReqT, _RespT]):
         sink_before_static_route (bool): Indicates if the sinks should be processed
             before (when ``True``) or after (when ``False``) the static routes.
             This has an effect only if no route was matched. (default ``True``)
+
+        max_content_length (int): Maximum size of the request body in bytes
+            (default ``None``, meaning no limit). When set, an instance of
+            :class:`~falcon.MaxContentLengthMiddleware` is placed first in
+            the middleware stack, so that requests with a body exceeding the
+            limit are rejected with :class:`~falcon.HTTPContentTooLarge`
+            before any other request middleware is invoked.
+
+            .. versionadded:: 4.5
     '''
 
     _STATIC_ROUTE_TYPE = routing.StaticRouteAsync
@@ -376,6 +385,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     @overload
@@ -391,6 +401,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     @overload
@@ -406,6 +417,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     @overload
@@ -421,6 +433,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         independent_middleware: bool = ...,
         cors_enable: bool = ...,
         sink_before_static_route: bool = ...,
+        max_content_length: int | None = ...,
     ) -> None: ...
 
     def __init__(
@@ -435,6 +448,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
         independent_middleware: bool = True,
         cors_enable: bool = False,
         sink_before_static_route: bool = True,
+        max_content_length: int | None = None,
     ) -> None:
         super().__init__(
             media_type,
@@ -445,6 +459,7 @@ class App(falcon.app.App[_ReqT, _RespT]):
             independent_middleware,
             cors_enable,
             sink_before_static_route,
+            max_content_length,
         )
 
         self.ws_options = WebSocketOptions()
