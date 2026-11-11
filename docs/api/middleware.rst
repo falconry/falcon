@@ -101,6 +101,12 @@ defined below.
         optional part of the ASGI specification, they may or may not fire depending
         on your ASGI server.
 
+        If your ASGI server supports
+        `lifespan state <https://asgi.readthedocs.io/en/latest/specs/lifespan.html#lifespan-state>`__,
+        ``process_startup()`` can store objects (such as a database connection
+        pool) in the ``scope['state']`` namespace, and responders can then
+        access them via :attr:`req.state <falcon.asgi.Request.state>`.
+
         .. code:: python
 
             from typing import Any
