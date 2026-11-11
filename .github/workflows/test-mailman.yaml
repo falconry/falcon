@@ -7,10 +7,6 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): Remove once demonstrated to pass on a PR.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   run_tox:
