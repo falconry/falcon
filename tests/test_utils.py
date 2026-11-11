@@ -524,6 +524,11 @@ class TestFalconUtils:
 
         assert uri.parse_host(ipv6_addr) == (ipv6_addr, None)
         assert uri.parse_host('[' + ipv6_addr + ']') == (ipv6_addr, None)
+        assert uri.parse_host('[' + ipv6_addr + ']', default_port=80) == (
+            ipv6_addr,
+            80,
+        )
+        assert uri.parse_host('[::1]', default_port=443) == ('::1', 443)
         assert uri.parse_host('[' + ipv6_addr + ']:28080') == (ipv6_addr, 28080)
         assert uri.parse_host('[' + ipv6_addr + ']:8080') == (ipv6_addr, 8080)
         assert uri.parse_host('[' + ipv6_addr + ']:123') == (ipv6_addr, 123)
@@ -565,6 +570,10 @@ class TestFalconUtils:
             443,
         )
         assert uri.parse_host('[2001:db8::1]:') == ('2001:db8::1', None)
+        assert uri.parse_host('[2001:db8::1]:', default_port=443) == (
+            '2001:db8::1',
+            443,
+        )
 
         with pytest.raises(ValueError, match='ASCII digits'):
             uri.parse_host(host)

@@ -1,3 +1,3 @@
-``falcon.uri.parse_host()`` now validates that the port consists of ASCII
-digits only, raising a descriptive ``ValueError`` for malformed ports. An
+:func:`falcon.uri.parse_host` now validates that the port consists of ASCII
+digits only, raising a descriptive :exc:`ValueError` for malformed ports. An
 empty port is now treated as absent and falls back to the default port.

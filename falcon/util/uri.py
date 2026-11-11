@@ -479,27 +479,6 @@ def parse_host(
 ) -> tuple[str, int | None]: ...
 
 
-def _parse_port(port: str, default_port: int | None) -> int | None:
-    """Parse an RFC 3986 port subcomponent.
-
-    Args:
-        port (str): Port subcomponent to parse.
-        default_port (int): Port number to return when `port` is empty.
-
-    Returns:
-        int: The parsed port, or `default_port` when `port` is empty.
-    """
-    if not port:
-        return default_port
-
-    if not port.isascii() or not port.isdigit():
-        raise ValueError(
-            '{!r} is not a valid port (only ASCII digits are allowed)'.format(port)
-        )
-
-    return int(port)
-
-
 def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | None]:
     """Parse a canonical 'host:port' string into parts.
 
@@ -559,6 +538,27 @@ def parse_host(host: str, default_port: int | None = None) -> tuple[str, int | N
     # or a domain name plus a port
     name, _, port = host.partition(':')
     return (name, _parse_port(port, default_port))
+
+
+def _parse_port(port: str, default_port: int | None) -> int | None:
+    """Parse an RFC 3986 port subcomponent.
+
+    Args:
+        port (str): Port subcomponent to parse.
+        default_port (int): Port number to return when `port` is empty.
+
+    Returns:
+        int: The parsed port, or `default_port` when `port` is empty.
+    """
+    if not port:
+        return default_port
+
+    if not port.isascii() or not port.isdigit():
+        raise ValueError(
+            '{!r} is not a valid port (only ASCII digits are allowed)'.format(port)
+        )
+
+    return int(port)
 
 
 def unquote_string(quoted: str) -> str:
