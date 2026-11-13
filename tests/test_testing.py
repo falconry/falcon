@@ -8,11 +8,6 @@ from falcon import status_codes
 from falcon import testing
 from falcon.util.sync import async_to_sync
 
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
 
 class CustomCookies:
     def items(self):
@@ -111,7 +106,6 @@ def test_simulate_request_content_type():
     assert result.text == falcon.MEDIA_JSON
 
 
-@pytest.mark.skipif(msgpack is None, reason='msgpack is not installed')
 @pytest.mark.parametrize(
     'json_doc, msgpack_doc, expected_content_type',
     [
@@ -130,7 +124,7 @@ def test_simulate_request_content_type():
     ],
 )
 def test_simulate_request_msgpack_content_type(
-    json_doc, msgpack_doc, expected_content_type, content_type, headers
+    json_doc, msgpack_doc, expected_content_type, content_type, headers, msgpack
 ):
     class Foo:
         def on_post(self, req, resp):
@@ -150,7 +144,6 @@ def test_simulate_request_msgpack_content_type(
     assert result.text == expected_content_type
 
 
-@pytest.mark.skipif(msgpack is None, reason='msgpack is not installed')
 @pytest.mark.parametrize(
     'media',
     [
@@ -164,7 +157,7 @@ def test_simulate_request_msgpack_content_type(
         {'nested': {'list': [1, 2, 3], 'unicode': 'caf\xe9 \U0001f600'}},
     ],
 )
-def test_simulate_request_msgpack_body(asgi, util, media):
+def test_simulate_request_msgpack_body(asgi, util, media, msgpack):
     captured = {}
 
     if asgi:
@@ -189,8 +182,7 @@ def test_simulate_request_msgpack_body(asgi, util, media):
     assert msgpack.unpackb(captured['body'], raw=False) == media
 
 
-@pytest.mark.skipif(msgpack is None, reason='msgpack is not installed')
-def test_simulate_request_msgpack_overrides_body(asgi, util):
+def test_simulate_request_msgpack_overrides_body(asgi, util, msgpack):
     captured = {}
 
     if asgi:

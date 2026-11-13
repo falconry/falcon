@@ -41,11 +41,6 @@ class Resource(testing.SimpleTestResource):
         pass
 
 
-@pytest.fixture(scope='session')
-def yaml():
-    return pytest.importorskip('yaml')
-
-
 @pytest.fixture
 def resource():
     return Resource()

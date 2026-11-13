@@ -1,4 +1,5 @@
 from functools import partial
+import importlib
 import io
 import json
 import platform
@@ -13,37 +14,26 @@ from falcon.asgi.stream import BoundedStream
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_YAML
 
-msgspec = None
-mujson = None
-orjson = None
-rapidjson = None
-ujson = None
 
-try:
-    import msgspec  # type: ignore
-except ImportError:
-    pass
-
-try:
-    import mujson  # type: ignore
-except ImportError:
-    pass
-
-try:
-    import rapidjson  # type: ignore
-except ImportError:
-    pass
-
-try:
-    import ujson  # type: ignore
-except ImportError:
-    pass
-
-if platform.python_implementation() == 'CPython':
+def _find_json_library(name):
+    # NOTE: Unlike pytest.importorskip(), this does not skip the whole module
+    #   upon a missing library; absent libraries are reported as skipped by
+    #   test_check_json_library() below instead.
     try:
-        import orjson  # type: ignore
+        return importlib.import_module(name)
     except ImportError:
-        pass
+        return None
+
+
+msgspec = _find_json_library('msgspec')
+mujson = _find_json_library('mujson')
+rapidjson = _find_json_library('rapidjson')
+ujson = _find_json_library('ujson')
+orjson = (
+    _find_json_library('orjson')
+    if platform.python_implementation() == 'CPython'
+    else None
+)
 
 YEN = b'\xc2\xa5'
 

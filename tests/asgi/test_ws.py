@@ -2,6 +2,7 @@ import asyncio
 from collections import deque
 from contextlib import nullcontext
 import functools
+import importlib.util
 import os
 
 import pytest
@@ -15,23 +16,6 @@ from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 from falcon.util.deprecation import DeprecatedWarning
-
-try:
-    import cbor2
-except ImportError:
-    cbor2 = None  # type: ignore[assignment]
-
-
-try:
-    import msgpack
-except ImportError:
-    msgpack = None
-
-
-try:
-    import rapidjson
-except ImportError:
-    rapidjson = None  # type: ignore[assignment]
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -410,8 +394,7 @@ async def test_client_disconnect_early(  # noqa: C901
 
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
-@pytest.mark.skipif(msgpack is None, reason='msgpack is required for this test')
-async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
+async def test_media(custom_text, custom_data, conductor, msgpack, util):  # NOQA: C901
     # TODO(kgriffs): Refactor to reduce McCabe score
 
     sample_doc = {
@@ -456,8 +439,8 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
     app.add_route('/', resource)
 
     if custom_text:
-        if rapidjson is None:
-            pytest.skip('rapidjson is required for this test')
+        util.import_optional('rapidjson')
+        import rapidjson
 
         # Let's say we want to use a faster JSON library. You could also use this
         #   pattern to add serialization support for custom types that aren't
@@ -475,8 +458,8 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
         )
 
     if custom_data:
-        if cbor2 is None:
-            pytest.skip('cbor2 is required for this test')
+        util.import_optional('cbor2')
+        import cbor2
 
         class CBORHandler(media.BinaryBaseHandlerWS):
             def serialize(self, media: object) -> bytes:
@@ -1176,7 +1159,10 @@ async def test_ws_responder_never_ready(conductor, monkeypatch):
                 pass
 
 
-@pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
+@pytest.mark.skipif(
+    importlib.util.find_spec('msgpack') is not None,
+    reason='test requires msgpack lib to be missing',
+)
 def test_msgpack_missing():
     options = WebSocketOptions()
     handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]

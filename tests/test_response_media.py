@@ -8,11 +8,6 @@ from falcon import media
 from falcon import testing
 
 
-@pytest.fixture(scope='session')
-def msgpack():
-    return pytest.importorskip('msgpack')
-
-
 @pytest.fixture
 def client():
     return create_client()

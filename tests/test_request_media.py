@@ -10,11 +10,6 @@ from falcon import util
 import falcon.asgi
 
 
-@pytest.fixture(scope='session')
-def msgpack():
-    return pytest.importorskip('msgpack')
-
-
 def create_client(asgi, handlers=None, resource=None):
     if not resource:
         resource = (

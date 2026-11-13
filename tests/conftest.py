@@ -31,6 +31,23 @@ except ImportError:
 HERE = pathlib.Path(__file__).resolve().parent
 FALCON_ROOT = HERE.parent
 
+
+def _parse_min_versions(path):
+    # NOTE: Only simple 'name >= version' lines are taken into account;
+    #   environment markers and comments are stripped. This is meant for the
+    #   handful of optional test deps whose import names match their
+    #   distribution names (e.g., uvicorn, websockets).
+    min_versions = {}
+    for line in path.read_text().splitlines():
+        requirement = line.partition('#')[0].partition(';')[0]
+        name, sep, version = requirement.partition('>=')
+        if sep:
+            min_versions[name.strip()] = version.strip()
+    return min_versions
+
+
+_OPTIONAL_MIN_VERSIONS = _parse_min_versions(FALCON_ROOT / 'requirements' / 'tests')
+
 _FALCON_TEST_ENV = (
     ('FALCON_ASGI_WRAP_NON_COROUTINES', 'Y'),
     ('FALCON_TESTING_SESSION', 'Y'),
@@ -54,6 +71,11 @@ class _SuiteUtils:
     """Assorted utilities that previously resided in the _util.py module."""
 
     HAS_CYTHON = has_cython
+
+    @staticmethod
+    def import_optional(name):
+        """Import an optional test dependency, or skip the current test."""
+        return pytest.importorskip(name, minversion=_OPTIONAL_MIN_VERSIONS.get(name))
 
     @staticmethod
     def create_app(asgi, **app_kwargs):
@@ -134,6 +156,22 @@ def register_module():
 @pytest.fixture(scope='session')
 def util():
     return _SuiteUtils()
+
+
+def _optional_dependency(name):
+    def fixture():
+        return _SuiteUtils.import_optional(name)
+
+    fixture.__name__ = name
+    return pytest.fixture(scope='session')(fixture)
+
+
+aiofiles = _optional_dependency('aiofiles')
+httpx = _optional_dependency('httpx')
+jsonschema = _optional_dependency('jsonschema')
+msgpack = _optional_dependency('msgpack')
+requests = _optional_dependency('requests')
+yaml = _optional_dependency('yaml')
 
 
 class _RequestsLite:

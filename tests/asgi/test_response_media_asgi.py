@@ -9,11 +9,6 @@ from falcon import testing
 import falcon.asgi
 
 
-@pytest.fixture(scope='session')
-def msgpack():
-    return pytest.importorskip('msgpack')
-
-
 def create_client(resource, handlers=None):
     app = falcon.asgi.App()
     app.add_route('/', resource)
