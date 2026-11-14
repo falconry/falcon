@@ -1,0 +1,6 @@
+A new :class:`~falcon.routing.BaseMultiSegmentConverter` base class was added
+for field converters that consume multiple URL path segments. The router joins
+the matched segments with ``/`` before calling ``convert()`` on such
+converters, so that the `value` argument is always a ``str``, in line with the
+signature of :meth:`BaseConverter.convert() <falcon.routing.BaseConverter.convert>`.
+The built-in :class:`~falcon.routing.PathConverter` now derives from this class.

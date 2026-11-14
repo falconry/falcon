@@ -330,6 +330,14 @@ simply a class that implements the ``BaseConverter`` interface:
 .. autoclass:: falcon.routing.BaseConverter
     :members:
 
+A converter that consumes all of the remaining URL path segments (like
+:class:`~falcon.routing.PathConverter`) should subclass
+``BaseMultiSegmentConverter``; its ``convert()`` method then receives the
+segments joined with ``/`` as a single ``str``:
+
+.. autoclass:: falcon.routing.BaseMultiSegmentConverter
+    :members:
+
 .. _routing_custom:
 
 Custom Routers
