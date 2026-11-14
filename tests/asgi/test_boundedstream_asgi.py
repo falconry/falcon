@@ -313,6 +313,31 @@ def test_iteration_already_started():
     falcon.async_to_sync(t)
 
 
+@pytest.mark.parametrize('set_content_length', [True, False])
+def test_tell_with_preloaded_first_event(set_content_length):
+    # NOTE: Regression test -- tell() used to count the preloaded first
+    #   chunk twice: once in __init__ and again when it was read.
+    async def run():
+        events = iter([{'type': 'http.request', 'body': b'defg', 'more_body': False}])
+
+        async def receive():
+            return next(events)
+
+        first = {'type': 'http.request', 'body': b'abc', 'more_body': True}
+        content_length = 7 if set_content_length else None
+        stream = asgi.BoundedStream(
+            receive, first_event=first, content_length=content_length
+        )
+
+        assert stream.tell() == 0
+        assert await stream.read(2) == b'ab'
+        assert stream.tell() == 2
+        assert await stream.readall() == b'cdefg'
+        assert stream.tell() == 7
+
+    falcon.async_to_sync(run)
+
+
 def _stream(body, content_length=None):
     emitter = testing.ASGIRequestEventEmitter(body)
     return asgi.BoundedStream(emitter, content_length=content_length)

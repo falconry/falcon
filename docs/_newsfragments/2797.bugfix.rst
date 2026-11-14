@@ -1,0 +1,1 @@
+Fixed ``BoundedStream.tell()`` counting the preloaded first chunk twice, so it now reports the number of bytes actually read.

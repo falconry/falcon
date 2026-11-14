@@ -156,7 +156,9 @@ class BoundedStream:
 
             self._bytes_remaining = content_length - len(self._buffer)
 
-        self._pos = len(self._buffer)
+        # NOTE: The buffered first chunk has not been read yet, so the
+        #   position starts at 0; it is counted when it is read.
+        self._pos = 0
 
         if first_event and self._bytes_remaining:
             # NOTE(kgriffs): Override if the event says there's no more data
