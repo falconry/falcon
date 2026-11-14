@@ -30,7 +30,6 @@ Quick Links
   `reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_)
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
 * `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
-* `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
 What People are Saying
 ----------------------
