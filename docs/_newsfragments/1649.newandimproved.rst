@@ -1,0 +1,6 @@
+Static routes now accept a ``disallowed_chars`` argument (also exposed as
+``falcon.routing.DEFAULT_DISALLOWED_CHARS``), making the set of characters
+rejected in requested filenames configurable -- for instance, filenames
+containing a tilde, such as the ``default~module.js`` chunks emitted by
+some JavaScript bundlers, can now be served. The default behavior is
+unchanged, and control characters remain always disallowed.

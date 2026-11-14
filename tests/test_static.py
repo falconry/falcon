@@ -159,6 +159,91 @@ def test_bad_path(asgi, util, uri, patch_open):
             sr(req, resp)
 
 
+def test_disallowed_chars_tilde_rejected_by_default(asgi, util, patch_open):
+    patch_open(b'')
+
+    sr = create_sr(asgi, '/static', '/var/www/statics')
+
+    req = util.create_req(asgi, host='test.com', path='/static/default~module.js')
+    resp = util.create_resp(asgi)
+
+    with pytest.raises(falcon.HTTPNotFound):
+        if asgi:
+            falcon.async_to_sync(sr, req, resp)
+        else:
+            sr(req, resp)
+
+
+def test_disallowed_chars_without_tilde_is_served(asgi, util, patch_open):
+    patch_open()
+
+    sr = create_sr(
+        asgi,
+        '/static',
+        '/var/www/statics',
+        disallowed_chars='?<>:*|\'"',
+    )
+
+    req = util.create_req(asgi, host='test.com', path='/static/default~module.js')
+    resp = util.create_resp(asgi)
+
+    if asgi:
+
+        async def run():
+            await sr(req, resp)
+            return await resp.stream.read()
+
+        body = falcon.async_to_sync(run)
+    else:
+        sr(req, resp)
+        body = resp.stream.read()
+
+    assert body.decode() == normalize_path('/var/www/statics/default~module.js')
+
+
+@pytest.mark.parametrize(
+    'uri',
+    [
+        # Still in the configured set.
+        '/static/bad<name.js',
+        '/static/bad|name.js',
+        # Control characters and U+FFFD are always disallowed.
+        '/static/.\x00ssh',
+        '/static/.\x9fssh',
+        '/static/\ufffdname.js',
+    ],
+)
+def test_disallowed_chars_still_rejected(asgi, util, uri, patch_open):
+    patch_open(b'')
+
+    sr = create_sr(
+        asgi,
+        '/static',
+        '/var/www/statics',
+        disallowed_chars='?<>:*|\'"',
+    )
+
+    req = util.create_req(asgi, host='test.com', path=uri)
+    resp = util.create_resp(asgi)
+
+    with pytest.raises(falcon.HTTPNotFound):
+        if asgi:
+            falcon.async_to_sync(sr, req, resp)
+        else:
+            sr(req, resp)
+
+
+def test_disallowed_chars_via_app(client, patch_open):
+    patch_open()
+
+    client.app.add_static_route(
+        '/static', '/var/www/statics', disallowed_chars='?<>:*|\'"'
+    )
+
+    result = client.simulate_get('/static/default~module.js')
+    assert result.status == falcon.HTTP_200
+
+
 @pytest.mark.parametrize(
     'prefix, directory',
     [

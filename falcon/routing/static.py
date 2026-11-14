@@ -19,6 +19,12 @@ if TYPE_CHECKING:
     from falcon import Request
     from falcon import Response
 
+#: Characters that a static route rejects in the requested filename by
+#: default; see the ``disallowed_chars`` argument of
+#: :class:`StaticRoute`. Control characters (and the replacement
+#: character, U+FFFD) are always rejected, regardless of this setting.
+DEFAULT_DISALLOWED_CHARS: str = '~?<>:*|\'"'
+
 
 def _open_file(file_path: str | Path) -> tuple[io.BufferedReader, os.stat_result]:
     """Open a file for a static file request and read file stat.
@@ -161,6 +167,14 @@ class StaticRoute:
         fallback_filename (str): Fallback filename used when the requested file
             is not found. Can be a relative path inside the prefix folder or
             any valid absolute path.
+        disallowed_chars (str): Characters that must not appear in the
+            requested filename; a request whose filename contains any of
+            them is answered with ``404 Not Found``. When not specified,
+            :data:`DEFAULT_DISALLOWED_CHARS` is used. Control characters
+            (and the replacement character, U+FFFD) are always disallowed,
+            regardless of this setting. Pass a string without ``~``, for
+            example, to serve files whose names contain a tilde, such as
+            the ``default~module.js`` chunks emitted by some bundlers.
 
             Note:
                 If the fallback file is served instead of the requested file,
@@ -191,6 +205,7 @@ class StaticRoute:
         directory: str | Path,
         downloadable: bool = False,
         fallback_filename: str | None = None,
+        disallowed_chars: str | None = None,
     ) -> None:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
@@ -217,6 +232,15 @@ class StaticRoute:
         self._prefix = prefix
         self._downloadable = downloadable
 
+        if disallowed_chars is None:
+            self._disallowed_chars_pattern = self._DISALLOWED_CHARS_PATTERN
+        else:
+            # Control characters and U+FFFD stay disallowed either way;
+            # only the printable set is configurable.
+            self._disallowed_chars_pattern = re.compile(
+                '[\\x00-\\x1f\\x80-\\x9f\\ufffd' + re.escape(disallowed_chars) + ']'
+            )
+
     def match(self, path: str) -> bool:
         """Check whether the given path matches this route."""
         if self._fallback_filename is None:
@@ -240,7 +264,7 @@ class StaticRoute:
         if (
             not (without_prefix or self._fallback_filename is not None)
             or without_prefix.strip().rstrip('.') != without_prefix
-            or self._DISALLOWED_CHARS_PATTERN.search(without_prefix)
+            or self._disallowed_chars_pattern.search(without_prefix)
             or '\\' in without_prefix
             or '//' in without_prefix
             or len(without_prefix) > self._MAX_NON_PREFIXED_LEN
