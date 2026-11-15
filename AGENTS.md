@@ -1,6 +1,6 @@
 # Falcon Agent Guide
 
-Read `CONTRIBUTING.md` first. Treat `pyproject.toml` and `tox.ini` as the
+Read `CONTRIBUTING.md` first. Treat `pyproject.toml` and `tox.toml` as the
 executable source of truth when prose and configuration differ. In accordance
 with the "Use of LLMs" policy in `CONTRIBUTING.md`, carefully review and test
 all generated changes.

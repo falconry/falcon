@@ -36,10 +36,10 @@ def extract_sdist(archive, target):
     return content
 
 
-def exec_tox(tox_ini_dir):
-    logging.info(f'Running tox in {tox_ini_dir}...')
+def exec_tox(project_dir):
+    logging.info(f'Running tox in {project_dir}...')
     subprocess.check_call(('tox', '--version'))
-    subprocess.check_call(('tox',), cwd=tox_ini_dir)
+    subprocess.check_call(('tox',), cwd=project_dir)
 
 
 def _cleanup(target):
