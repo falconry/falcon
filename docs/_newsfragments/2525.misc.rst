@@ -1,0 +1,1 @@
+Docstrings in `falcon.errors` and `falcon.redirects` now reference the current HTTP RFCs (9110, 9111) instead of obsolete ones.
