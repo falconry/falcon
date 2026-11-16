@@ -562,23 +562,22 @@ is provided in the form of :attr:`~falcon.Request.bounded_stream`.
 
 .. _faq_app_hang_timeout:
 
-Why does my application hang/time out?
---------------------------------------
+Why does my application hang or time out?
+-----------------------------------------
 
 If a WSGI application is running under :mod:`wsgiref` (or a similar server) and
-attempts to call ``req.stream.read()`` without specifying a size, the read call
-may hang. See :ref:`faq_req_stream_read_hang` above for how to work around this
-using :attr:`~falcon.Request.bounded_stream`.
+attempts to call :attr:`~falcon.Request.stream`\ ``.read()`` without specifying
+a size, the read call may hang. See :ref:`faq_req_stream_read_hang` above for how
+to work around this using :attr:`~falcon.Request.bounded_stream`.
 
 A WSGI application can also time out when all of its workers are blocked, which
 is particularly likely to happen in the case of a single synchronous worker.
 For example, if the application sends an HTTP request to itself from inside a
 responder, the worker will block waiting for its own response and eventually
-time out (see `#998 <https://github.com/falconry/falcon/issues/998>`__). The
-same issue can occur when a client (or a browser used for parallel debugging)
-sends more parallel requests than the number of available workers, or when
-responders contend on a shared :class:`threading.Lock` across requests (see
-`#1786 <https://github.com/falconry/falcon/issues/1786>`__).
+time out. The same issue can occur when a client (or a browser used for 
+parallel debugging) sends more parallel requests than the number of available 
+workers, or when responders contend on a shared :class:`threading.Lock` 
+across requests (see `#1786 <https://github.com/falconry/falcon/issues/1786>`__).
 
 In an ASGI application, all ``async def`` responders and middleware methods on
 a worker share a single event loop. Performing blocking synchronous I/O (such
@@ -586,6 +585,14 @@ as using ``requests``, a synchronous database driver, or :func:`time.sleep`) or
 heavy CPU-bound work directly inside an ``async`` method will block the entire
 event loop. Use async-compatible libraries instead, or offload unavoidable
 blocking calls via :func:`asyncio.to_thread`.
+
+To help pinpoint exactly where an event loop is being blocked, consider running
+your application with asyncio's `debug mode
+<https://docs.python.org/3/library/asyncio-dev.html#debug-mode>`__ enabled,
+e.g., by setting the ``PYTHONASYNCIODEBUG`` environment variable to ``1``.
+This will log a warning whenever a callback blocks the loop for longer than a
+configurable threshold, which can help you catch the culprit before it causes
+a time out.
 
 .. _trailing_slash_in_path:
 
