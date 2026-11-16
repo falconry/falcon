@@ -33,7 +33,7 @@ import inspect
 import os
 import os.path
 import re
-from typing import Any, Callable
+from typing import Any, Callable, cast, TYPE_CHECKING
 import unicodedata
 
 from falcon import status_codes
@@ -43,6 +43,11 @@ from falcon.uri import encode_value
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
 # public Falcon interface.
 from .deprecation import deprecated
+
+if TYPE_CHECKING:
+    from falcon._typing import _CacheArgs
+    from falcon._typing import _CacheResult_co
+    from falcon._typing import _LruCacheWrapper
 
 try:
     from falcon.cyutil.misc import encode_items_to_latin1 as _cy_encode_items_to_latin1
@@ -103,20 +108,25 @@ utcnow: Callable[[], datetime.datetime] = deprecated(
 #   the nocover pragma here.
 def _lru_cache_nop(
     maxsize: int,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:  # pragma: nocover
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+) -> Callable[
+    [Callable[_CacheArgs, _CacheResult_co]],
+    _LruCacheWrapper[_CacheArgs, _CacheResult_co],
+]:  # pragma: nocover
+    def decorator(
+        func: Callable[_CacheArgs, _CacheResult_co],
+    ) -> _LruCacheWrapper[_CacheArgs, _CacheResult_co]:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
-        func.cache_clear = lambda: None  # type: ignore
+        func.cache_clear = lambda: None  # type: ignore[attr-defined]
 
-        return func
+        return cast('_LruCacheWrapper[_CacheArgs, _CacheResult_co]', func)
 
     return decorator
 
 
 # PERF(kgriffs): Using lru_cache is slower on PyPy when the wrapped
 #   function is just doing a few non-IO operations.
-if PYPY:
+if TYPE_CHECKING or PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
     _lru_cache_for_simple_logic = functools.lru_cache

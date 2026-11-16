@@ -45,6 +45,8 @@ else:
     StartResponse = Callable[[str, list[tuple[str, str]]], Callable[[bytes], None]]
 
 if TYPE_CHECKING:
+    from typing import ParamSpec
+
     from falcon.asgi import Request as AsgiRequest
     from falcon.asgi import Response as AsgiResponse
     from falcon.asgi import WebSocket
@@ -53,6 +55,18 @@ if TYPE_CHECKING:
     from falcon.http_error import HTTPError
     from falcon.request import Request
     from falcon.response import Response
+
+    _CacheArgs = ParamSpec('_CacheArgs')
+    _CacheResult_co = TypeVar('_CacheResult_co', covariant=True)
+
+    class _LruCacheWrapper(Protocol[_CacheArgs, _CacheResult_co]):
+        """A cached callable preserving its original signature."""
+
+        def __call__(
+            self, *args: _CacheArgs.args, **kwargs: _CacheArgs.kwargs
+        ) -> _CacheResult_co: ...
+
+        def cache_clear(self) -> None: ...
 
 
 class _Unset(Enum):
