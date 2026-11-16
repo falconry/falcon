@@ -8,6 +8,7 @@ import pytest
 from falcon.routing import compiled
 from falcon.routing import CompiledRouter
 from falcon.routing import CompiledRouterOptions
+from falcon.routing import get_field_names
 
 
 def test_find_src(monkeypatch):
@@ -145,3 +146,41 @@ def test_converter_not_subclass():
 def test_base_classes():
     with pytest.raises(NotImplementedError):
         compiled._CxChild().src(42)
+
+
+@pytest.mark.parametrize(
+    'uri_template,expected',
+    [
+        ('/', []),
+        ('/items', []),
+        ('/items/{item_id}/parts/{part_id}', ['item_id', 'part_id']),
+        ('/items/{id:int}', ['id']),
+        ('/items/{id:int(min=1)}', ['id']),
+        ('/timestamps/{ts:dt("%Y-%m-%d")}', ['ts']),
+        ('/files/{name}.{ext}', ['name', 'ext']),
+        ('/files/{year:int}-{name}.{ext}/{rest:path}', ['year', 'name', 'ext', 'rest']),
+        ('/{x}/{x}', ['x', 'x']),
+    ],
+)
+def test_get_field_names(uri_template, expected):
+    assert get_field_names(uri_template) == expected
+
+
+@pytest.mark.parametrize(
+    'uri_template,error',
+    [
+        # Within a segment, field names are validated before converters.
+        ('/{a:nope}{1b}', 'Field names must be valid identifiers ("1b" is not valid)'),
+        (
+            '/{a:nope}{a}',
+            'Field names may not be duplicated ("a" was used more than once)',
+        ),
+        # Across segments, errors are still reported in order.
+        ('/{a:nope}/{1b}', 'Unknown converter: "nope"'),
+    ],
+)
+def test_validation_error_order(uri_template, error):
+    router = CompiledRouter()
+    with pytest.raises(compiled.UnacceptableRouteError) as exc_info:
+        router.add_route(uri_template, MockResource())
+    assert str(exc_info.value) == error
