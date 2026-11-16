@@ -1,27 +1,11 @@
-from collections.abc import Callable
-from collections.abc import Iterable
-from typing import Any, Optional
-
-
 class CustomHeadersMiddleware:
-    def __init__(
-        self,
-        app: Callable[..., Iterable[bytes]],
-        title_case: bool = True,
-        custom_capitalization: Optional[dict[str, str]] = None,
-    ) -> None:
+    def __init__(self, app, title_case=True, custom_capitalization=None):
         self._app = app
         self._title_case = title_case
         self._capitalization = custom_capitalization or {}
 
-    def __call__(
-        self, environ: dict[str, Any], start_response: Callable[..., Any]
-    ) -> Iterable[bytes]:
-        def start_response_wrapper(
-            status: str,
-            response_headers: list[tuple[str, str]],
-            exc_info: Optional[tuple[Any, Any, Any]] = None,
-        ) -> Any:
+    def __call__(self, environ, start_response):
+        def start_response_wrapper(status, response_headers, exc_info=None):
             if self._title_case:
                 headers = [
                     (self._capitalization.get(name, name.title()), value)

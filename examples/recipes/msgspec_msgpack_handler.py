@@ -1,5 +1,3 @@
-from typing import Optional
-
 from msgspec import msgpack
 
 from falcon import media
@@ -10,8 +8,8 @@ class MsgspecMessagePackHandler(media.BaseHandler):
     def deserialize(
         self,
         stream: ReadableIO,
-        content_type: Optional[str],
-        content_length: Optional[int],
+        content_type: str | None,
+        content_length: int | None,
     ) -> object:
         return msgpack.decode(stream.read())
 
