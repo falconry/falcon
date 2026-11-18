@@ -1,0 +1,13 @@
+A new ASGI :class:`~falcon.asgi.Request` property,
+:attr:`~falcon.asgi.Request.state`, was added for accessing the application
+state shared via the
+`ASGI lifespan protocol <https://asgi.readthedocs.io/en/latest/specs/lifespan.html#lifespan-state>`__.
+For instance, a database connection pool can now be created upon startup in a
+``process_startup()`` middleware method by storing it in ``scope['state']``,
+and then accessed from responders as ``req.state``.
+If the ASGI server does not support lifespan state, the property returns
+``None``.
+
+In addition, the ASGI testing helpers (:class:`~falcon.testing.ASGIConductor`,
+as well as :class:`~falcon.testing.TestClient` and the ``simulate_*()``
+functions when used with an ASGI app) now simulate lifespan state as well.

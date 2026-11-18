@@ -124,6 +124,12 @@ class App(falcon.app.App[_ReqT, _RespT]):
             creating a connection pool and subsequently closing the connection
             pool to release the connections.
 
+            If the ASGI server supports
+            `lifespan state <https://asgi.readthedocs.io/en/latest/specs/lifespan.html#lifespan-state>`__,
+            such shared objects can be stored in the ``scope['state']``
+            namespace upon startup, and then accessed when processing
+            requests via :attr:`Request.state <falcon.asgi.Request.state>`.
+
             Note:
                 In a multi-process environment, lifespan events will be
                 triggered independently for the individual event loop associated

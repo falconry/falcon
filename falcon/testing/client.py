@@ -714,6 +714,7 @@ async def _simulate_request_asgi(
     cookies: CookieArg | None = ...,
     _one_shot: Literal[False] = ...,
     _stream_result: Literal[True] = ...,
+    _lifespan_state: dict[str, Any] | None = ...,
     msgpack: Any | None = ...,
 ) -> StreamedResult: ...
 
@@ -742,6 +743,7 @@ async def _simulate_request_asgi(
     cookies: CookieArg | None = ...,
     _one_shot: Literal[True] = ...,
     _stream_result: bool = ...,
+    _lifespan_state: dict[str, Any] | None = ...,
     msgpack: Any | None = ...,
 ) -> Result: ...
 
@@ -778,6 +780,7 @@ async def _simulate_request_asgi(
     #   don't want these kwargs to be documented.
     _one_shot: bool = True,
     _stream_result: bool = False,
+    _lifespan_state: dict[str, Any] | None = None,
     msgpack: Any | None = None,
 ) -> Result | StreamedResult:
     """Simulate a request to an ASGI application.
@@ -945,6 +948,8 @@ async def _simulate_request_asgi(
     resp_event_collector = helpers.ASGIResponseEventCollector()
 
     if not _one_shot:
+        _set_request_state(http_scope, _lifespan_state)
+
         task_req = asyncio.create_task(
             app(http_scope, req_event_emitter, resp_event_collector)
         )
@@ -981,6 +986,7 @@ async def _simulate_request_asgi(
             'version': '3.0',
             'spec_version': '2.0',
         },
+        'state': {},
     }
 
     shutting_down = asyncio.Condition()
@@ -998,6 +1004,8 @@ async def _simulate_request_asgi(
 
         try:
             await _wait_for_startup(lifespan_event_collector.events)
+
+            _set_request_state(http_scope, lifespan_scope['state'])
 
             task_req = asyncio.create_task(
                 app(http_scope, req_event_emitter, resp_event_collector)
@@ -1044,6 +1052,12 @@ class ASGIConductor:
     :class:`~.ASGIConductor` is implemented as a context manager. Upon
     entering and exiting the context, the appropriate ASGI lifespan events
     will be simulated.
+
+    The conductor also simulates the ASGI lifespan state extension: a fresh
+    ``state`` namespace is provided in the lifespan scope upon entering the
+    context, and a shallow copy of it is passed into the scope of every
+    request or WebSocket connection simulated within the context (see also:
+    :attr:`falcon.asgi.Request.state`).
 
     Within the context, HTTP requests can be simulated using an interface
     that is similar to :class:`~.TestClient`, except that all ``simulate_*()``
@@ -1137,14 +1151,17 @@ class ASGIConductor:
         self._shutting_down = asyncio.Condition()
         self._lifespan_event_collector = helpers.ASGIResponseEventCollector()
         self._lifespan_task: asyncio.Task[Any] | None = None
+        self._lifespan_state: dict[str, Any] | None = None
 
     async def __aenter__(self) -> ASGIConductor:
+        self._lifespan_state = {}
         lifespan_scope: AsgiRequestScope = {
             'type': ScopeType.LIFESPAN,
             'asgi': {
                 'version': '3.0',
                 'spec_version': '2.0',
             },
+            'state': self._lifespan_state,
         }
 
         lifespan_event_emitter = helpers.ASGILifespanEventEmitter(self._shutting_down)
@@ -1264,6 +1281,7 @@ class ASGIConductor:
         """
 
         scope = helpers.create_scope_ws(path=path, **kwargs)
+        _set_request_state(scope, self._lifespan_state)
         ws = helpers.ASGIWebSocketSimulator(timeout)
 
         task_req = asyncio.create_task(self.app(scope, ws._emit, ws._collect))
@@ -1343,6 +1361,7 @@ class ASGIConductor:
 
         # NOTE(kgriffs): The conductor takes care of startup/shutdown
         kwargs['_one_shot'] = False
+        kwargs['_lifespan_state'] = self._lifespan_state
 
         return await _simulate_request_asgi(self.app, *args, **kwargs)  # type: ignore[no-any-return]
 
@@ -2379,6 +2398,19 @@ def _is_asgi_app(app: Callable[..., Any]) -> bool:
     is_asgi = num_app_args == 3
 
     return is_asgi
+
+
+def _set_request_state(
+    scope: AsgiRequestScope, lifespan_state: dict[str, Any] | None
+) -> None:
+    """Pass a shallow copy of the simulated lifespan state into the scope.
+
+    This mimics how ASGI servers implement the Lifespan State extension.
+    The state is left untouched if it was explicitly provided by the caller,
+    or if no lifespan state is available (i.e., lifespan was not simulated).
+    """
+    if lifespan_state is not None and 'state' not in scope:
+        scope['state'] = lifespan_state.copy()
 
 
 async def _cancel_and_drain(task: asyncio.Task[Any]) -> None:
