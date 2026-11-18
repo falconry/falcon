@@ -173,11 +173,16 @@ commands = [
 ]
 
 [env.pyright_tests]
-deps = ["pyright"]
+deps = [
+    "pyright",
+    "uvicorn",
+]
 commands = [
     ["python", "tools/clean.py", "falcon"],
     ["pyright", "e2e-tests/server"],
     ["pyright", "tests/test_typing.py"],
+    ["pyright", "examples/quote.py", "examples/things.py", "examples/things_asgi.py"],
+    ["pyright", "examples/ws_tutorial/ws_tutorial/app.py"],
 ]
 
 # --------------------------------------------------------------------
