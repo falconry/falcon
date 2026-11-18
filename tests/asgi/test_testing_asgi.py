@@ -91,6 +91,10 @@ async def test_invalid_asgi_events():
         # NOTE(kgriffs): Invalid type
         await collect({'type': 'http.response.bod'})
 
+    with pytest.raises(ValueError, match='Bad header name'):
+        headers = [(b'X Bad', b'value')]
+        await collect(make_event(headers))
+
 
 def test_is_asgi_app_cls():
     class Foo:
