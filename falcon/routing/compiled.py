@@ -61,9 +61,9 @@ def get_field_names(uri_template: str) -> list[str]:
     """Return the names of the fields in a URI template.
 
     Field names are returned in the order in which they appear in the
-    template. Any converter specification (e.g., ``{id:int}``) is ignored,
-    and multiple fields in a single path segment (e.g., ``{name}.{ext}``)
-    are all included.
+    template. Any converter specification is ignored (e.g., ``{id:int}``
+    returns ``id``), and multiple fields in a single path segment (e.g.,
+    ``{name}.{ext}``) are all included.
 
     For example::
 
@@ -442,7 +442,9 @@ class CompiledRouter:
            converter exists.
         """
 
-        for name in get_field_names(segment):
+        for field in _FIELD_PATTERN.finditer(segment):
+            name = field.group('fname')
+
             is_identifier = _IDENTIFIER_PATTERN.match(name)
             if not is_identifier or name in keyword.kwlist:
                 msg_template = (
@@ -459,9 +461,6 @@ class CompiledRouter:
                 raise UnacceptableRouteError(msg)
 
             used_names.add(name)
-
-        for field in _FIELD_PATTERN.finditer(segment):
-            name = field.group('fname')
 
             if field.group('cname_sep') == ':':
                 msg = 'Missing converter for field "{0}"'.format(name)

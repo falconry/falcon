@@ -1,4 +1,3 @@
 A new routing utility, :func:`falcon.routing.get_field_names`, was added to
 extract the names of the fields in a URI template. It can be helpful, for
-instance, when implementing custom routers. The default router also uses this
-function to validate field names.
+instance, when implementing custom routers.

@@ -164,23 +164,3 @@ def test_base_classes():
 )
 def test_get_field_names(uri_template, expected):
     assert get_field_names(uri_template) == expected
-
-
-@pytest.mark.parametrize(
-    'uri_template,error',
-    [
-        # Within a segment, field names are validated before converters.
-        ('/{a:nope}{1b}', 'Field names must be valid identifiers ("1b" is not valid)'),
-        (
-            '/{a:nope}{a}',
-            'Field names may not be duplicated ("a" was used more than once)',
-        ),
-        # Across segments, errors are still reported in order.
-        ('/{a:nope}/{1b}', 'Unknown converter: "nope"'),
-    ],
-)
-def test_validation_error_order(uri_template, error):
-    router = CompiledRouter()
-    with pytest.raises(compiled.UnacceptableRouteError) as exc_info:
-        router.add_route(uri_template, MockResource())
-    assert str(exc_info.value) == error
