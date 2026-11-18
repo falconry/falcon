@@ -1,0 +1,8 @@
+When a route is added, the default router now checks that each responder
+accepts all fields of the URI template, so that a mismatch (e.g., after renaming
+a field or a responder parameter) is caught early rather than surfacing as a
+:class:`TypeError` upon request. By default, a
+:class:`~falcon.routing.ResponderParamsWarning` is emitted for every mismatch;
+this behavior can be configured via the new
+:attr:`~falcon.routing.CompiledRouterOptions.check_responder_params` router
+option.

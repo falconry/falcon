@@ -134,6 +134,7 @@ def test_converter_not_subclass():
             return v
 
     router = CompiledRouter()
+    router.options.check_responder_params = 'off'
     router.options.converters['x'] = X
 
     router.add_route('/foo/{bar:x}', MockResource())

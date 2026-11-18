@@ -22,6 +22,7 @@ routers.
 from falcon.routing.compiled import CompiledRouter
 from falcon.routing.compiled import CompiledRouterOptions
 from falcon.routing.compiled import get_field_names
+from falcon.routing.compiled import ResponderParamsWarning
 from falcon.routing.converters import BaseConverter
 from falcon.routing.converters import DateTimeConverter
 from falcon.routing.converters import FloatConverter
@@ -47,6 +48,7 @@ __all__ = (
     'map_http_methods',
     'PathConverter',
     'RegexConverter',
+    'ResponderParamsWarning',
     'set_default_responders',
     'StaticRoute',
     'StaticRouteAsync',
