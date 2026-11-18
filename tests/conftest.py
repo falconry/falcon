@@ -33,7 +33,7 @@ FALCON_ROOT = HERE.parent
 
 
 def _parse_min_versions(path):
-    # NOTE: Only simple 'name >= version' lines are taken into account;
+    # NOTE(danielvjs): Only simple 'name >= version' lines are taken into account;
     #   environment markers and comments are stripped. This is meant for the
     #   handful of optional test deps whose import names match their
     #   distribution names (e.g., uvicorn, websockets).

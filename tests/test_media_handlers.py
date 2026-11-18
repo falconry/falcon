@@ -16,9 +16,9 @@ from falcon.constants import MEDIA_YAML
 
 
 def _find_json_library(name):
-    # NOTE: Unlike pytest.importorskip(), this does not skip the whole module
-    #   upon a missing library; absent libraries are reported as skipped by
-    #   test_check_json_library() below instead.
+    # NOTE(danielvjs): Unlike pytest.importorskip(), this does not skip the
+    #   whole module upon a missing library; absent libraries are reported as
+    #   skipped by test_check_json_library() below instead.
     try:
         return importlib.import_module(name)
     except ImportError:
