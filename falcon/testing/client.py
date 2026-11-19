@@ -49,6 +49,7 @@ from falcon._typing import HeaderArg
 from falcon._typing import HeaderIter
 from falcon._typing import HeaderMapping
 from falcon.asgi_spec import AsgiEvent
+from falcon.asgi_spec import AsgiRequestScope
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
 from falcon.constants import MEDIA_JSON
@@ -924,7 +925,10 @@ async def _simulate_request_asgi(
             'Please use the method parameter.'
         )
 
-    http_scope.update(extras)
+    # NOTE(ogormans-deptstack): extras is an open-ended mapping of caller-
+    #   supplied scope keys (ASGI servers are free to add their own), so it
+    #   cannot be expressed by the AsgiRequestScope TypedDict.
+    http_scope.update(extras)  # type: ignore[typeddict-item]
     # ---------------------------------------------------------------------
 
     if asgi_disconnect_ttl == 0:  # Special case
@@ -971,7 +975,7 @@ async def _simulate_request_asgi(
     # ---------------------------------------------------------------------
     # NOTE(kgriffs): 'lifespan' scope
     # ---------------------------------------------------------------------
-    lifespan_scope = {
+    lifespan_scope: AsgiRequestScope = {
         'type': ScopeType.LIFESPAN,
         'asgi': {
             'version': '3.0',
@@ -1135,7 +1139,7 @@ class ASGIConductor:
         self._lifespan_task: asyncio.Task[Any] | None = None
 
     async def __aenter__(self) -> ASGIConductor:
-        lifespan_scope = {
+        lifespan_scope: AsgiRequestScope = {
             'type': ScopeType.LIFESPAN,
             'asgi': {
                 'version': '3.0',

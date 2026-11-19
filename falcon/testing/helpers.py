@@ -55,6 +55,7 @@ from falcon._typing import HeaderArg
 from falcon._typing import ResponseStatus
 import falcon.asgi
 from falcon.asgi_spec import AsgiEvent
+from falcon.asgi_spec import AsgiRequestScope
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
@@ -984,7 +985,7 @@ def create_scope(
     content_length: int | None = None,
     include_server: bool = True,
     cookies: CookieArg | None = None,
-) -> dict[str, Any]:
+) -> AsgiRequestScope:
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
@@ -1052,7 +1053,7 @@ def create_scope(
     if query_string_bytes and query_string_bytes.startswith(b'?'):
         raise ValueError("query_string should not start with '?'")
 
-    scope: dict[str, Any] = {
+    scope: AsgiRequestScope = {
         'type': ScopeType.HTTP,
         'asgi': {
             'version': '3.0',
@@ -1128,7 +1129,7 @@ def create_scope_ws(
     include_server: bool = True,
     subprotocols: str | None = None,
     spec_version: str = '2.1',
-) -> dict[str, Any]:
+) -> AsgiRequestScope:
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
     Keyword Args:
@@ -1552,7 +1553,7 @@ def _add_headers_to_environ(env: dict[str, Any], headers: HeaderArg | None) -> N
 
 
 def _add_headers_to_scope(
-    scope: dict[str, Any],
+    scope: AsgiRequestScope,
     headers: HeaderArg | None,
     content_length: int | None,
     host: str,

@@ -268,7 +268,7 @@ Or, to run the default set of tests:
 
 .. tip::
 
-    See also the `tox.ini <https://github.com/falconry/falcon/blob/master/tox.ini>`_
+    See also the `tox.toml <https://github.com/falconry/falcon/blob/master/tox.toml>`_
     file for a full list of available environments.
 
 Finally, to build Falcon's docs from source, simply run:

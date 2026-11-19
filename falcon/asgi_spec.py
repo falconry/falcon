@@ -16,8 +16,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, TypedDict
 
 
 class EventType:
@@ -62,6 +63,32 @@ class WSCloseCode:
     FORBIDDEN = 3403
     PATH_NOT_FOUND = 3404
     HANDLER_NOT_FOUND = 3405
+
+
+class AsgiRequestScope(TypedDict, total=False):
+    """ASGI connection scope for an incoming HTTP or WebSocket request.
+
+    The keys are a superset of the ``http`` and ``websocket`` connection
+    scopes defined by the ASGI specification; every key is optional, mirroring
+    the fact that servers are only required to populate a subset of them. See
+    also: https://asgi.readthedocs.io/en/latest/specs/www.html
+    """
+
+    type: str
+    asgi: dict[str, str]
+    http_version: str
+    method: str
+    scheme: str
+    path: str
+    raw_path: bytes
+    query_string: bytes
+    root_path: str
+    headers: Iterable[Iterable[bytes]]
+    client: Iterable[Any]
+    server: Iterable[Any]
+    subprotocols: Iterable[str]
+    state: dict[str, Any]
+    extensions: dict[str, dict[str, Any]]
 
 
 # TODO: use a typed dict for event dicts
