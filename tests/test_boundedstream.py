@@ -27,3 +27,18 @@ def test_exhausted():
     assert bs.eof
     with pytest.warns(DeprecatedWarning, match='Use `eof` instead'):
         assert bs.is_exhausted
+
+
+@pytest.mark.parametrize('method', ['read', 'readline', 'readlines'])
+@pytest.mark.parametrize('size', [-2, -100])
+def test_read_rejects_invalid_negative_size(method, size):
+    raw = io.BytesIO(b'bodytrailing')
+    stream = BoundedStream(raw, 4)
+
+    with pytest.raises(ValueError, match='size must be at least -1'):
+        getattr(stream, method)(size)
+
+    assert raw.tell() == 0
+    assert stream.read() == b'body'
+    assert stream.eof
+    assert raw.read() == b'trailing'
