@@ -16,6 +16,6 @@ class CustomHeadersMiddleware:
                     (self._capitalization.get(name, name), value)
                     for name, value in response_headers
                 ]
-            start_response(status, headers, exc_info)
+            return start_response(status, headers, exc_info)
 
         return self._app(environ, start_response_wrapper)

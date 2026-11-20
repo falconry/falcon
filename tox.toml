@@ -170,6 +170,10 @@ commands = [
     ["mypy", "--strict", "e2e-tests/server"],
     ["mypy", "--strict", "tests/test_typing.py"],
     ["mypy", "tests", "--allow-untyped-calls", "--allow-untyped-defs", "--no-check-untyped-defs"],
+    # header_name_case_app.py intentionally contains a placeholder for
+    # CustomHeadersMiddleware (see the recipe's docs), whereas
+    # header_name_case_mw.py and plain_text_main.py are deliberately untyped.
+    ["mypy", "examples/recipes", "--exclude", "(header_name_case_app|header_name_case_mw|plain_text_main)\\.py"],
 ]
 
 [env.pyright_tests]

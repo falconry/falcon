@@ -115,7 +115,9 @@ module = [
     "meinheld",
     "msgpack",
     "mujson",
+    "my_app.*",
     "pyximport",
+    "structlog",
     "testtools",
     "uvicorn"
 ]
