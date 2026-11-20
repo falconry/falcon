@@ -17,18 +17,22 @@
 from __future__ import annotations
 
 from collections import UserDict
+import inspect
 from inspect import iscoroutinefunction
 import keyword
 import re
 from re import Pattern
+import sys
 from threading import Lock
 from typing import (
     Any,
     Callable,
     cast,
+    Literal,
     TYPE_CHECKING,
     Union,
 )
+import warnings
 
 from falcon._typing import MethodDict
 from falcon.routing import converters
@@ -55,6 +59,40 @@ _FIELD_PATTERN = re.compile(
     r'{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'  # noqa E501
 )
 _IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
+
+_RESPONDER_PARAMS_CHECK_MODES = ('off', 'warn', 'error')
+
+
+def get_field_names(uri_template: str) -> list[str]:
+    """Return the names of the fields in a URI template.
+
+    Field names are returned in the order in which they appear in the
+    template. Any converter specification is ignored (e.g., ``{id:int}``
+    returns ``id``), and multiple fields in a single path segment (e.g.,
+    ``{name}.{ext}``) are all included.
+
+    For example::
+
+        >>> falcon.routing.get_field_names('/items/{item_id}/parts/{part_id:int}')
+        ['item_id', 'part_id']
+        >>> falcon.routing.get_field_names('/files/{name}.{ext}')
+        ['name', 'ext']
+
+    Note:
+        This function does not validate the template or its field names;
+        e.g., duplicate or otherwise invalid names are returned as is.
+        Templates are validated when added to the router (see also:
+        :meth:`CompiledRouter.add_route`).
+
+    .. versionadded:: 4.5
+
+    Args:
+        uri_template (str): The URI template to parse.
+
+    Returns:
+        list: The names of the fields in the URI template.
+    """
+    return [field.group('fname') for field in _FIELD_PATTERN.finditer(uri_template)]
 
 
 class CompiledRouter:
@@ -208,6 +246,11 @@ class CompiledRouter:
 
         method_map = self.map_http_methods(resource, **kwargs)
 
+        # NOTE: Keep a reference to the responders defined on the resource
+        #   before the method map is populated with Falcon's default
+        #   responders, and before any of them could be wrapped below.
+        defined_responders = list(method_map.values())
+
         default_responder = None
 
         if self._options.default_to_on_request:
@@ -218,6 +261,8 @@ class CompiledRouter:
                 responder_name += '_' + suffix
 
             default_responder = getattr(resource, responder_name, None)
+            if default_responder is not None:
+                defined_responders.append(default_responder)
 
         # NOTE(gespyrop): We do not verify whether the default responder is
         # a regular synchronous method or a coroutine since it falls under the
@@ -242,6 +287,9 @@ class CompiledRouter:
         used_names: set[str] = set()
         for segment in path:
             self._validate_template_segment(segment, used_names)
+
+        if self._options.check_responder_params != 'off':
+            self._check_responder_params(uri_template, defined_responders)
 
         def find_cmp_converter(node: CompiledRouterNode) -> tuple[str, str] | None:
             value = [
@@ -359,6 +407,37 @@ class CompiledRouter:
     # -----------------------------------------------------------------
     # Private
     # -----------------------------------------------------------------
+
+    def _check_responder_params(
+        self, uri_template: str, responders: list[Callable[..., Any]]
+    ) -> None:
+        """Check that responders accept all fields of the URI template."""
+        field_names = get_field_names(uri_template)
+        if not field_names:
+            return
+
+        checked: list[Callable[..., Any]] = []
+
+        for responder in responders:
+            # NOTE: The same function may be used for several methods
+            #   (e.g., on_head = on_get), so only check it once.
+            if responder in checked:
+                continue
+            checked.append(responder)
+
+            unaccepted = _get_unaccepted_fields(responder, field_names)
+            if not unaccepted:
+                continue
+
+            name = getattr(responder, '__qualname__', repr(responder))
+            msg = (
+                'Responder {0}() does not accept the field(s) {1} of '
+                'the URI template "{2}".'
+            ).format(name, _quote_names(unaccepted), uri_template)
+            if self._options.check_responder_params == 'error':
+                raise UnacceptableRouteError(msg)
+
+            warnings.warn(msg, ResponderParamsWarning, stacklevel=_user_stacklevel())
 
     def _require_coroutine_responders(self, method_map: MethodDict) -> None:
         for method, responder in method_map.items():
@@ -749,6 +828,69 @@ class UnacceptableRouteError(ValueError):
     """Error raised by ``add_error`` when a route is not acceptable."""
 
 
+class ResponderParamsWarning(UserWarning):
+    """Warning about responder parameters not matching URI template fields.
+
+    This warning is emitted by :meth:`~.CompiledRouter.add_route` when
+    :attr:`~.CompiledRouterOptions.check_responder_params` is set to
+    ``'warn'`` (the default).
+
+    .. versionadded:: 4.5
+    """
+
+
+def _get_unaccepted_fields(
+    responder: Callable[..., Any], field_names: list[str]
+) -> list[str]:
+    """Return the field names that the given responder does not accept.
+
+    Falcon calls responders as ``responder(req, resp, **params)``, so the
+    first two positional parameters are skipped, and the field names are
+    matched against the remaining parameters by keyword.
+    """
+    try:
+        signature = inspect.signature(responder)
+    except (TypeError, ValueError):
+        # NOTE: The signature cannot be introspected (e.g., the responder is
+        #   implemented in C), so we have no way to check it.
+        return []
+
+    accepted: set[str] = set()
+    skipped = 0
+
+    for param in signature.parameters.values():
+        if param.kind is inspect.Parameter.VAR_KEYWORD:
+            return []
+        elif param.kind is inspect.Parameter.VAR_POSITIONAL:
+            # NOTE: *args absorbs req and resp (if not consumed yet), but
+            #   no fields since they are passed by keyword.
+            skipped = 2
+        elif skipped < 2 and param.kind is not inspect.Parameter.KEYWORD_ONLY:
+            skipped += 1
+        elif param.kind is not inspect.Parameter.POSITIONAL_ONLY:
+            accepted.add(param.name)
+
+    return [name for name in field_names if name not in accepted]
+
+
+def _quote_names(names: list[str]) -> str:
+    return ', '.join('"{0}"'.format(name) for name in names)
+
+
+def _user_stacklevel() -> int:
+    """Return the warning stacklevel of the first frame outside of Falcon."""
+    # NOTE: Level 1 refers to the caller of this function (which, in turn,
+    #   calls warnings.warn()), i.e., a frame inside Falcon.
+    frame = sys._getframe(1)
+    level = 1
+    while frame.f_globals.get('__name__', '').partition('.')[0] == 'falcon' and (
+        frame.f_back is not None
+    ):
+        frame = frame.f_back
+        level += 1
+    return level
+
+
 class CompiledRouterNode:
     """Represents a single URI segment in a URI."""
 
@@ -1012,7 +1154,56 @@ class CompiledRouterOptions:
     .. versionadded:: 4.3
     """
 
-    __slots__ = ('converters', 'default_to_on_request')
+    check_responder_params: Literal['off', 'warn', 'error']
+    """Controls whether responders are checked against the URI template fields.
+
+    When a route is added, the router checks that each responder defined on
+    the resource accepts all fields of the URI template. Falcon passes the
+    field values to the responder as keyword arguments, so a mismatch would
+    otherwise only surface as a :class:`TypeError` when a request is routed to
+    the responder.
+
+    For example, the following route would be flagged, because ``on_get()``
+    does not accept the ``item_id`` field::
+
+        class ItemResource:
+            def on_get(self, req: Request, resp: Response, itemid: str) -> None:
+                ...
+
+        app.add_route('/items/{item_id}', ItemResource())
+
+    The following values are supported:
+
+    * ``'warn'`` (default): emit a :class:`~.ResponderParamsWarning`.
+    * ``'error'``: raise ``UnacceptableRouteError`` (a subclass of
+      :class:`ValueError`), and do not add the route.
+    * ``'off'``: do not check responders.
+
+    Responders accepting ``**kwargs`` are assumed to accept any field, and
+    responders whose signature cannot be inspected are not checked. Responder
+    parameters that are not present in the URI template are not reported
+    either, since they may be supplied by a ``before`` hook or by a
+    middleware component's ``process_resource()`` method.
+
+    Note:
+        Only the names of the fields are checked, not their types.
+
+    Note:
+        If a middleware component's ``process_resource()`` method, or a
+        ``before`` hook, removes a field from `params` before the responder
+        is called, the router has no way of knowing that, and may thus report
+        a mismatch for a route that works as intended. In that case, set this
+        option to ``'off'``, or filter out :class:`~.ResponderParamsWarning`
+        using the :mod:`warnings` module.
+
+    Note:
+        In order for this option to take effect, it must be set before
+        calling :meth:`.CompiledRouter.add_route`.
+
+    .. versionadded:: 4.5
+    """
+
+    __slots__ = ('check_responder_params', 'converters', 'default_to_on_request')
 
     def __init__(self) -> None:
         object.__setattr__(
@@ -1022,10 +1213,20 @@ class CompiledRouterOptions:
         )
 
         self.default_to_on_request = False
+        self.check_responder_params = 'warn'
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name == 'converters':
             raise AttributeError('Cannot set "converters", please update it in place.')
+        if (
+            name == 'check_responder_params'
+            and value not in _RESPONDER_PARAMS_CHECK_MODES
+        ):
+            raise ValueError(
+                'check_responder_params must be one of {0}, not {1!r}'.format(
+                    _quote_names(list(_RESPONDER_PARAMS_CHECK_MODES)), value
+                )
+            )
         super().__setattr__(name, value)
 
 

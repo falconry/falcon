@@ -11,9 +11,18 @@ def client(asgi, util):
     return testing.TestClient(util.create_app(asgi))
 
 
+def _create_router():
+    router = DefaultRouter()
+    # NOTE: Most tests in this module only exercise router.find(), and never
+    #   call the responders of ResourceWithId, so do not check whether they
+    #   accept the URI template fields.
+    router.options.check_responder_params = 'off'
+    return router
+
+
 @pytest.fixture
 def router():
-    router = DefaultRouter()
+    router = _create_router()
 
     router.add_route('/repos', ResourceWithId(1))
     router.add_route('/repos/{org}', ResourceWithId(2))
@@ -145,7 +154,7 @@ class SpamConverter:
 
 
 def test_user_regression_versioned_url():
-    router = DefaultRouter()
+    router = _create_router()
     router.add_route('/{version}/messages', ResourceWithId(2))
 
     resource, __, __, __ = router.find('/v2/messages')
@@ -167,7 +176,7 @@ def test_user_regression_versioned_url():
 
 
 def test_user_regression_recipes():
-    router = DefaultRouter()
+    router = _create_router()
     router.add_route('/recipes/{activity}/{type_id}', ResourceWithId(1))
     router.add_route('/recipes/baking', ResourceWithId(2))
 
@@ -254,7 +263,7 @@ def test_user_regression_recipes():
     ],
 )
 def test_user_regression_special_chars(uri_template, path, expected_params):
-    router = DefaultRouter()
+    router = _create_router()
 
     router.add_route(uri_template, ResourceWithId(1))
 
@@ -327,7 +336,7 @@ def test_duplicate_field_names(uri_template):
     ],
 )
 def test_match_entire_path(uri_template, path):
-    router = DefaultRouter()
+    router = _create_router()
 
     router.add_route(uri_template, ResourceWithId(1))
 
@@ -815,7 +824,7 @@ def test_coroutine_in_wsgi():
 
 @pytest.fixture
 def param_router():
-    r = DefaultRouter()
+    r = _create_router()
 
     r.add_route('/c/foo/{bar}/baz', ResourceWithId(1))
     r.add_route('/c/{foo}/bar/other', ResourceWithId(2))
@@ -848,7 +857,7 @@ def test_params_in_non_taken_branches(param_router, route, expected, num):
 
 
 def test_capture_path_no_children():
-    router = DefaultRouter()
+    router = _create_router()
     router.add_route('/foo/{bar:path}', ResourceWithId(1))
     res = router.finder_src
     with pytest.raises(
@@ -876,7 +885,7 @@ def test_capture_path_no_children():
     ),
 )
 def test_capture_path_complex(template):
-    router = DefaultRouter()
+    router = _create_router()
     with pytest.raises(
         ValueError, match='Cannot use converter "path" of variable "bar" in a template '
     ):
@@ -885,7 +894,7 @@ def test_capture_path_complex(template):
 
 @pytest.fixture
 def capture_path_router():
-    router = DefaultRouter()
+    router = _create_router()
 
     router.add_route('/foo/bar/baz', ResourceWithId(1))
     router.add_route('/foo/{bar:path}', ResourceWithId(2))
@@ -928,7 +937,7 @@ def test_capture_path(capture_path_router, route, expected, num):
 
 
 def test_capture_path_no_match():
-    router = DefaultRouter()
+    router = _create_router()
 
     router.add_route('/foo/bar/baz', ResourceWithId(1))
     router.add_route('/foo/{bar:path}', ResourceWithId(2))
