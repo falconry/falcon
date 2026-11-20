@@ -57,6 +57,38 @@ _FIELD_PATTERN = re.compile(
 _IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
 
 
+def get_field_names(uri_template: str) -> list[str]:
+    """Return the names of the fields in a URI template.
+
+    Field names are returned in the order in which they appear in the
+    template. Any converter specification is ignored (e.g., ``{id:int}``
+    returns ``id``), and multiple fields in a single path segment (e.g.,
+    ``{name}.{ext}``) are all included.
+
+    For example::
+
+        >>> falcon.routing.get_field_names('/items/{item_id}/parts/{part_id:int}')
+        ['item_id', 'part_id']
+        >>> falcon.routing.get_field_names('/files/{name}.{ext}')
+        ['name', 'ext']
+
+    Note:
+        This function does not validate the template or its field names;
+        e.g., duplicate or otherwise invalid names are returned as is.
+        Templates are validated when added to the router (see also:
+        :meth:`CompiledRouter.add_route`).
+
+    .. versionadded:: 4.5
+
+    Args:
+        uri_template (str): The URI template to parse.
+
+    Returns:
+        list: The names of the fields in the URI template.
+    """
+    return [field.group('fname') for field in _FIELD_PATTERN.finditer(uri_template)]
+
+
 class CompiledRouter:
     """Fast URI router which compiles its routing logic to Python code.
 
