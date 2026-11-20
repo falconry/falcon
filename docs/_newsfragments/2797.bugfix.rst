@@ -1,0 +1,2 @@
+Fixed :meth:`falcon.asgi.BoundedStream.tell` counting a preloaded request body
+twice. The stream position starts at zero and advances as buffered bytes are read.

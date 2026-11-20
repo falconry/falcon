@@ -156,7 +156,7 @@ class BoundedStream:
 
             self._bytes_remaining = content_length - len(self._buffer)
 
-        self._pos = len(self._buffer)
+        self._pos = 0
 
         if first_event and self._bytes_remaining:
             # NOTE(kgriffs): Override if the event says there's no more data
@@ -238,6 +238,7 @@ class BoundedStream:
                 'This stream is closed; no further operations on it are permitted.'
             )
 
+        self._pos += len(self._buffer)
         self._buffer = b''
 
         while self._bytes_remaining > 0:
