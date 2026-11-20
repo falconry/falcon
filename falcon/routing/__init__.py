@@ -22,6 +22,7 @@ routers.
 from falcon.routing.compiled import CompiledRouter
 from falcon.routing.compiled import CompiledRouterOptions
 from falcon.routing.converters import BaseConverter
+from falcon.routing.converters import BaseMultiSegmentConverter
 from falcon.routing.converters import DateTimeConverter
 from falcon.routing.converters import FloatConverter
 from falcon.routing.converters import IntConverter
@@ -37,6 +38,7 @@ DefaultRouter = CompiledRouter
 
 __all__ = (
     'BaseConverter',
+    'BaseMultiSegmentConverter',
     'CompiledRouter',
     'CompiledRouterOptions',
     'DateTimeConverter',

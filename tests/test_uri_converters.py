@@ -266,3 +266,29 @@ def test_regex_converter_with_group(pattern, group, value, expected):
         assert c.convert(value) is None
     else:
         assert c.convert(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value, expected',
+    [
+        ('', ''),
+        ('foo', 'foo'),
+        ('foo/bar/baz', 'foo/bar/baz'),
+        # Calling convert() directly with a list of segments is still
+        # supported for backwards compatibility.
+        ([], ''),
+        (['foo', 'bar', 'baz'], 'foo/bar/baz'),
+        (('foo', 'bar'), 'foo/bar'),
+    ],
+)
+def test_path_converter(value, expected):
+    c = converters.PathConverter()
+    assert c.convert(value) == expected
+
+
+def test_multi_segment_converter_base():
+    assert issubclass(converters.PathConverter, converters.BaseMultiSegmentConverter)
+    assert converters.BaseMultiSegmentConverter.CONSUME_MULTIPLE_SEGMENTS
+    assert converters._consumes_multiple_segments(converters.PathConverter())
+    assert converters._receives_joined_segments(converters.PathConverter())
+    assert not converters._receives_joined_segments(converters.IntConverter())

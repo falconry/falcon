@@ -14,8 +14,11 @@ import pytest
 
 import falcon
 from falcon import testing
+from falcon.routing.converters import BaseConverter
+from falcon.routing.converters import BaseMultiSegmentConverter
 from falcon.routing.converters import RegexConverter
 from falcon.routing.util import SuffixedMethodNotFoundError
+from falcon.util.deprecation import DeprecatedWarning
 
 _TEST_UUID = uuid.uuid4()
 _TEST_UUID_2 = uuid.uuid4()
@@ -453,14 +456,8 @@ def test_converter_custom(client, resource, uri_template, path, expected):
 
 
 def test_converter_custom_repath(client, resource):
-    class RePathConverter(RegexConverter):
-        CONSUME_MULTIPLE_SEGMENTS = True
-
-        def convert(self, value):
-            if isinstance(value, list):
-                value = '/'.join(value)
-
-            return super().convert(value)
+    class RePathConverter(RegexConverter, BaseMultiSegmentConverter):
+        pass
 
     client.app.router_options.converters['repath'] = RePathConverter
     client.app.add_route('/{spam:repath("spam(\\x2fspam)*")}', resource)
@@ -470,6 +467,83 @@ def test_converter_custom_repath(client, resource):
     assert result.status_code == 200
     assert resource.called
     assert resource.captured_kwargs == {'spam': 'spam/spam/spam/spam'}
+
+    result = client.simulate_get('/spam/eggs')
+    assert result.status_code == 404
+
+
+def test_converter_custom_repath_legacy(client, resource):
+    class RePathConverter(RegexConverter):
+        CONSUME_MULTIPLE_SEGMENTS = True
+
+        def convert(self, value):
+            assert isinstance(value, list)
+            return super().convert('/'.join(value))
+
+    client.app.router_options.converters['repath'] = RePathConverter
+    with pytest.warns(DeprecatedWarning, match='"repath" sets CONSUME_MULTIPLE'):
+        client.app.add_route('/{spam:repath("spam(\\x2fspam)*")}', resource)
+
+    result = client.simulate_get('/spam/spam/spam/spam')
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs == {'spam': 'spam/spam/spam/spam'}
+
+
+@pytest.mark.parametrize(
+    'path, expected',
+    [
+        ('/files/foo', 'FOO'),
+        ('/files/foo/bar/baz', 'FOO/BAR/BAZ'),
+    ],
+)
+def test_converter_multi_segment_receives_str(client, resource, path, expected):
+    received = []
+
+    class UpperPathConverter(BaseMultiSegmentConverter):
+        def convert(self, value: str) -> str:
+            received.append(value)
+            return value.upper()
+
+    client.app.router_options.converters['upperpath'] = UpperPathConverter
+    client.app.add_route('/files/{rest:upperpath}', resource)
+
+    result = client.simulate_get(path)
+
+    assert result.status_code == 200
+    assert resource.captured_kwargs == {'rest': expected}
+    assert received == [expected.lower()]
+    assert all(isinstance(value, str) for value in received)
+
+
+def test_converter_multi_segment_no_warning(client, resource, recwarn):
+    client.app.add_route('/files/{rest:path}', resource)
+
+    class UpperPathConverter(BaseMultiSegmentConverter):
+        def convert(self, value: str) -> str:
+            return value.upper()
+
+    client.app.router_options.converters['upperpath'] = UpperPathConverter
+    client.app.add_route('/upper/{rest:upperpath}', resource)
+
+    assert not [w for w in recwarn if issubclass(w.category, DeprecatedWarning)]
+
+
+def test_converter_legacy_multi_segment_warning_location(resource):
+    class LegacyPathConverter(BaseConverter):
+        CONSUME_MULTIPLE_SEGMENTS = True
+
+        def convert(self, value):
+            return '/'.join(value)
+
+    app = falcon.App()
+    app.router_options.converters['legacy'] = LegacyPathConverter
+
+    with pytest.warns(DeprecatedWarning) as record:
+        app.add_route('/files/{rest:legacy}', resource)
+
+    assert record[0].filename == __file__
 
 
 def test_single_trailing_slash(client):
