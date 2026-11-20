@@ -83,6 +83,8 @@ class BoundedStream(io.IOBase):
         # similarly to the IO streams passed in by non-wsgiref servers.
         if size is None or size == -1 or size > self._bytes_remaining:
             size = self._bytes_remaining
+        elif size < -1:
+            raise ValueError('size must be at least -1')
 
         self._bytes_remaining -= size
         return target(size)
@@ -109,6 +111,9 @@ class BoundedStream(io.IOBase):
         Returns:
             bytes: Data read from the stream.
 
+        Raises:
+            ValueError: A size less than -1 was specified.
+
         """
 
         return self._read(size, self.stream.read)
@@ -123,6 +128,9 @@ class BoundedStream(io.IOBase):
         Returns:
             bytes: Data read from the stream.
 
+        Raises:
+            ValueError: A limit less than -1 was specified.
+
         """
 
         return self._read(limit, self.stream.readline)
@@ -136,6 +144,9 @@ class BoundedStream(io.IOBase):
 
         Returns:
             bytes: Data read from the stream.
+
+        Raises:
+            ValueError: A hint less than -1 was specified.
 
         """
 

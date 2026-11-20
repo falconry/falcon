@@ -1,0 +1,3 @@
+The WSGI :class:`falcon.BoundedStream` methods ``read()``, ``readline()``, and
+``readlines()`` now reject sizes below ``-1`` with :class:`ValueError`, without
+reading from the underlying stream or changing the remaining byte count.
