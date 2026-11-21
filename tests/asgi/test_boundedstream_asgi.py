@@ -316,3 +316,90 @@ def test_iteration_already_started():
 def _stream(body, content_length=None):
     emitter = testing.ASGIRequestEventEmitter(body)
     return asgi.BoundedStream(emitter, content_length=content_length)
+
+
+_READ_MODES = ['read', 'readall', 'read_chunks', 'iteration', 'exhaust']
+
+
+async def _limited_stream(body, max_length, preload_first_event):
+    emitter = testing.ASGIRequestEventEmitter(body, chunk_size=4)
+    first_event = None
+
+    if preload_first_event:
+        # NOTE(ericareg): Make sure the first event actually carries data,
+        #   like it would normally be the case with a real ASGI server.
+        emitter._emit_empty_chunks = False
+        first_event = await emitter.emit()
+
+    return asgi.BoundedStream(emitter, first_event=first_event, max_length=max_length)
+
+
+async def _consume(stream, mode):
+    if mode == 'read':
+        return await stream.read()
+    if mode == 'readall':
+        return await stream.readall()
+    if mode == 'read_chunks':
+        chunks = []
+        while chunk := await stream.read(3):
+            chunks.append(chunk)
+        return b''.join(chunks)
+    if mode == 'iteration':
+        return b''.join([chunk async for chunk in stream])
+
+    await stream.exhaust()
+    return None
+
+
+@pytest.mark.parametrize('mode', _READ_MODES)
+@pytest.mark.parametrize('preload_first_event', [True, False])
+@pytest.mark.parametrize('body_length', [0, 1, 9, 10])
+async def test_max_length_not_exceeded(mode, preload_first_event, body_length):
+    body = os.urandom(body_length)
+    stream = await _limited_stream(body, 10, preload_first_event)
+
+    data = await _consume(stream, mode)
+    if mode != 'exhaust':
+        assert data == body
+    assert stream.eof
+    assert await stream.read() == b''
+
+
+@pytest.mark.parametrize('mode', _READ_MODES)
+@pytest.mark.parametrize('preload_first_event', [True, False])
+@pytest.mark.parametrize('body_length', [11, 12, 1024])
+async def test_max_length_exceeded(mode, preload_first_event, body_length):
+    stream = await _limited_stream(os.urandom(body_length), 10, preload_first_event)
+
+    with pytest.raises(falcon.HTTPContentTooLarge) as exc_info:
+        await _consume(stream, mode)
+
+    assert exc_info.value.description == 'The request body must not exceed 10 bytes.'
+
+    # NOTE(ericareg): The stream is left at EOF, so it is safe to exhaust it.
+    assert stream.eof
+    assert await stream.read() == b''
+    await stream.exhaust()
+
+
+async def test_max_length_ignored_with_content_length():
+    body = os.urandom(30)
+    emitter = testing.ASGIRequestEventEmitter(body, chunk_size=4)
+    stream = asgi.BoundedStream(emitter, content_length=30, max_length=10)
+
+    assert await stream.read() == body
+
+
+async def test_max_length_with_disconnect():
+    events = [
+        {'type': 'http.request', 'body': b'abc', 'more_body': True},
+        {'type': 'http.disconnect'},
+    ]
+
+    async def receive():
+        return events.pop(0)
+
+    stream = asgi.BoundedStream(receive, max_length=10)
+
+    assert await stream.read() == b'abc'
+    assert stream.eof

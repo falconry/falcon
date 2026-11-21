@@ -21,6 +21,7 @@ from typing import NoReturn
 
 from falcon._typing import AsgiReceive
 from falcon.asgi_spec import AsgiEvent
+from falcon.errors import HTTPContentTooLarge
 from falcon.errors import OperationNotAllowed
 
 __all__ = ('BoundedStream',)
@@ -99,6 +100,14 @@ class BoundedStream:
             if one was preloaded (default ``None``).
         content_length (int): Expected content length of the stream, derived
             from the Content-Length header in the request (if available).
+        max_length (int): Maximum number of bytes allowed in a stream of
+            unknown length, that is, when `content_length` is ``None``
+            (default ``None``, meaning no limit). If more data is received,
+            an instance of :class:`~falcon.HTTPContentTooLarge` is raised,
+            and the stream is left at EOF.
+
+            .. versionadded:: 4.5
+                The `max_length` keyword argument.
     """
 
     __slots__ = (
@@ -122,6 +131,7 @@ class BoundedStream:
         receive: AsgiReceive,
         first_event: AsgiEvent | None = None,
         content_length: int | None = None,
+        max_length: int | None = None,
     ) -> None:
         self._closed = False
         self._iteration_started = False
@@ -139,8 +149,6 @@ class BoundedStream:
             first_chunk = b''
 
         if content_length is None:
-            self._buffer = first_chunk
-
             # NOTE(kgriffs): If length is unknown we just set remaining bytes
             #   to a ridiculously high number so that we will keep reading
             #   until we get an event with more_body == False. We do not
@@ -148,6 +156,18 @@ class BoundedStream:
             #   a large enough number (someone may have an API that accepts
             #   multi-GB payloads).
             self._bytes_remaining = 2**63
+
+            if max_length is None:
+                self._buffer = first_chunk
+            else:
+                # NOTE(ericareg): Wrap receive() instead of using max_length
+                #   as the number of remaining bytes, since the latter would
+                #   just silently truncate a body that is too large. The
+                #   wrapper also replays the first event, so that all data is
+                #   counted in one place.
+                self._buffer = b''
+                self._receive = self._limit_receive(receive, max_length, first_event)
+                first_event = None
         else:
             if len(first_chunk) > content_length:
                 self._buffer = first_chunk[:content_length]
@@ -162,6 +182,46 @@ class BoundedStream:
             # NOTE(kgriffs): Override if the event says there's no more data
             if not ('more_body' in first_event and first_event['more_body']):
                 self._bytes_remaining = 0
+
+    def _limit_receive(
+        self,
+        receive: AsgiReceive,
+        max_length: int,
+        first_event: AsgiEvent | None,
+    ) -> AsgiReceive:
+        bytes_received = 0
+
+        async def receive_with_limit() -> AsgiEvent:
+            nonlocal bytes_received, first_event
+
+            if first_event is None:
+                event = await receive()
+            else:
+                event = first_event
+                first_event = None
+
+            # PERF(ericareg): Use try..except because we normally expect the
+            #   'body' key to be present.
+            try:
+                bytes_received += len(event['body'])
+            except KeyError:
+                pass
+
+            if bytes_received > max_length:
+                # NOTE(ericareg): Leave the stream at EOF, so that any
+                #   subsequent attempt to exhaust it (for instance, by
+                #   Request.get_media()) does not try to read past the limit
+                #   again.
+                self._buffer = b''
+                self._bytes_remaining = 0
+
+                raise HTTPContentTooLarge(
+                    description=f'The request body must not exceed {max_length} bytes.'
+                )
+
+            return event
+
+        return receive_with_limit
 
     def __aiter__(self) -> AsyncIterator[bytes]:
         # NOTE(kgriffs): This returns an async generator, but that's OK because
