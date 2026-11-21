@@ -68,7 +68,7 @@ def _handle_validation_error(
     raise falcon.HTTPUnprocessableEntity(description=str(ex))
 
 
-def create_app() -> falcon.App:
+def create_app() -> falcon.App[Request, Response]:
     app = falcon.App(middleware=[MsgspecMiddleware()])
     app.add_error_handler(msgspec.ValidationError, _handle_validation_error)
 

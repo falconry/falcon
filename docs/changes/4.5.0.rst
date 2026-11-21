@@ -23,4 +23,10 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `ajvisuni <https://github.com/ajvisuni>`__
+- `danielvjs <https://github.com/danielvjs>`__
+- `ericareg <https://github.com/ericareg>`__
+- `Lbragaa <https://github.com/Lbragaa>`__
+- `MakroMB <https://github.com/MakroMB>`__
+- `ogormans-deptstack <https://github.com/ogormans-deptstack>`__
 - `vytas7 <https://github.com/vytas7>`__
