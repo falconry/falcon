@@ -118,7 +118,6 @@ module = [
     "my_app.*",
     "pyximport",
     "structlog",
-    "testtools",
     "uvicorn"
 ]
 ignore_missing_imports = true
