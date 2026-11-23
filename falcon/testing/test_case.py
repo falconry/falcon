@@ -21,6 +21,8 @@ utilities for simulating and validating HTTP requests.
 from typing import Any
 
 try:
+    # For backward compatibility: testtools may still be used if installed,
+    # though pytest is now the recommended testing framework for Falcon apps.
     import testtools as unittest
 except ImportError:  # pragma: nocover
     import unittest
@@ -36,32 +38,21 @@ from falcon.testing.client import TestClient
 class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
     """Extends :mod:`unittest` to support WSGI/ASGI functional testing.
 
-    Note:
-        If available, uses :mod:`testtools` in lieu of
-        :mod:`unittest`.
+    For modern projects, we recommend using :mod:`pytest` with
+    :class:`falcon.testing.TestClient` directly, as shown in the
+    `tutorial <testing_tutorial>`_.
 
-    This base class provides some extra plumbing for unittest-style
-    test cases, to help simulate WSGI or ASGI requests without having
-    to spin up an actual web server. Various simulation methods are
-    derived from :class:`falcon.testing.TestClient`.
+    For projects using unittest-style test classes, this base class provides
+    extra plumbing to help simulate WSGI or ASGI requests without having to
+    spin up an actual web server. Various simulation methods are derived from
+    :class:`falcon.testing.TestClient`.
+
+    Note:
+        This class supports :class:`unittest.TestCase`, and for backward
+        compatibility, :class:`testtools.TestCase` (if available).
 
     Simply inherit from this class in your test case classes instead of
-    :class:`unittest.TestCase` or :class:`testtools.TestCase`.
-    """
-
-    # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
-    __test__ = True
-
-    # NOTE(vytas): Parametrize with [Any, Any] because the app under test may
-    #   use custom Request/Response subclasses.
-    # TODO(vytas): A future change could make TestCase generic over the app's
-    #   request/response types (leveraging TypeVar defaults on Python 3.13+).
-    app: falcon.App[Any, Any]
-    """A WSGI or ASGI application to target when simulating
-    requests (defaults to ``falcon.App()``). When testing your
-    application, you will need to set this to your own instance
-    of :class:`falcon.App` or :class:`falcon.asgi.App`. For
-    example::
+    :class:`unittest.TestCase`::
 
         from falcon import testing
         import myapp
@@ -83,6 +74,22 @@ class TestCase(unittest.TestCase, TestClient):  # type: ignore[misc]
 
                 result = self.simulate_get('/messages/42')
                 self.assertEqual(result.json, doc)
+    """
+
+    # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
+    __test__ = True
+
+    # NOTE(vytas): Parametrize with [Any, Any] because the app under test may
+    #   use custom Request/Response subclasses.
+    # TODO(vytas): A future change could make TestCase generic over the app's
+    #   request/response types (leveraging TypeVar defaults on Python 3.13+).
+    app: falcon.App[Any, Any]
+    """A WSGI or ASGI application to target when simulating requests
+    (defaults to ``falcon.App()``).
+
+    When testing your application, you will need to set this to your own
+    instance of :class:`falcon.App` or :class:`falcon.asgi.App`. See the
+    class docstring for an example.
     """
 
     def setUp(self) -> None:
