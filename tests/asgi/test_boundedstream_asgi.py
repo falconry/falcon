@@ -129,6 +129,39 @@ def test_read_all(body, extra_body, set_content_length):
         falcon.async_to_sync(t)
 
 
+@pytest.mark.parametrize('content_length', [None, 0, 2, 3, 7])
+@pytest.mark.parametrize('read_method', ['read', 'readall', 'iterate', 'exhaust'])
+async def test_tell_with_preloaded_body(content_length, read_method):
+    emitter = testing.ASGIRequestEventEmitter(b'defg', chunk_size=2)
+    stream = asgi.BoundedStream(
+        emitter,
+        first_event={'type': 'http.request', 'body': b'abc', 'more_body': True},
+        content_length=content_length,
+    )
+    expected = b'abcdefg'[:content_length]
+
+    assert stream.tell() == 0
+    assert await stream.read(0) == b''
+    assert stream.tell() == 0
+
+    if read_method == 'read':
+        first = await stream.read(1)
+        assert first == expected[:1]
+        assert stream.tell() == len(first)
+        assert first + await stream.read() == expected
+    elif read_method == 'readall':
+        assert await stream.readall() == expected
+    elif read_method == 'iterate':
+        assert b''.join([chunk async for chunk in stream]) == expected
+    else:
+        await stream.exhaust()
+
+    assert stream.tell() == len(expected)
+    assert await stream.read() == b''
+    assert stream.tell() == len(expected)
+    assert stream.eof
+
+
 def test_filelike():
     s = asgi.BoundedStream(testing.ASGIRequestEventEmitter())
 
