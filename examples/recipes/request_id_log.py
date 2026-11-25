@@ -4,7 +4,7 @@ import logging
 from my_app.context import ctx
 
 
-def create_widget_object(name: str):
+def create_widget_object(name: str) -> None:
     request_id = f'request_id={ctx.request_id}'
     logging.debug('%s going to create widget: %s', request_id, name)
 

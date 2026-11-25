@@ -22,8 +22,8 @@ ujson
 python-rapidjson; python_version >= '3.10' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
 
 # wheels are missing some EoL interpreters and non-x86 platforms; build would fail unless rust is available
-# (not available for CPython 3.15 either yet)
-orjson; python_version < '3.15' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
+# (also mark as unavailable on CPython 3.16 until rc1)
+orjson; python_version < '3.16' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
 
-# NOTE(vytas): msgspec is not fully compatible with 3.15 at the time of writing yet.
-msgspec; python_version < '3.15' and platform_python_implementation != 'PyPy' and platform_machine != 's390x' and platform_machine != 'aarch64'
+# NOTE(vytas): mark msgspec as unavailable on 3.16 until rc1; also, it seems the wheel is missing on s390x.
+msgspec; python_version < '3.16' and platform_python_implementation != 'PyPy' and platform_machine != 's390x'

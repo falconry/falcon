@@ -1,3 +1,4 @@
+import sys
 import types
 import unittest.mock
 
@@ -80,6 +81,9 @@ class TestOutputCSV:
         assert result.text.startswith(expected_head)
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason='this recipe uses PEP 604 annotations'
+)
 class TestPrettyJSON:
     class QuoteResource:
         def on_get(self, req, resp):
@@ -164,6 +168,9 @@ class TestTextPlainHandler:
         assert response.text == payload
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason='this recipe uses PEP 604 annotations'
+)
 class TestRequestIDContext:
     @pytest.fixture(params=['middleware', 'structlog'])
     def app(self, request, util, register_module):
@@ -212,6 +219,9 @@ class TestRequestIDContext:
         assert response.headers['X-Request-ID'] == response.json['request_id']
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason='this recipe uses PEP 604 annotations'
+)
 class TestMsgspec:
     @pytest.fixture(autouse=True)
     # TODO(vytas): Make this @classmethod when we drop CPython 3.9 support.
