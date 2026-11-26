@@ -9,12 +9,6 @@ import pytest
 
 from falcon import testing
 
-
-@pytest.fixture(scope='session')
-def requests():
-    return pytest.importorskip('requests')
-
-
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024

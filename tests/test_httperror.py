@@ -15,11 +15,6 @@ import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
 
 
-@pytest.fixture(scope='session')
-def yaml():
-    return pytest.importorskip('yaml')
-
-
 @pytest.fixture
 def client(asgi, util):
     app = util.create_app(asgi)
