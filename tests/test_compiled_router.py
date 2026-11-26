@@ -8,6 +8,7 @@ import pytest
 from falcon.routing import compiled
 from falcon.routing import CompiledRouter
 from falcon.routing import CompiledRouterOptions
+from falcon.routing import get_field_names
 
 
 def test_find_src(monkeypatch):
@@ -133,6 +134,7 @@ def test_converter_not_subclass():
             return v
 
     router = CompiledRouter()
+    router.options.check_responder_params = 'off'
     router.options.converters['x'] = X
 
     router.add_route('/foo/{bar:x}', MockResource())
@@ -145,3 +147,21 @@ def test_converter_not_subclass():
 def test_base_classes():
     with pytest.raises(NotImplementedError):
         compiled._CxChild().src(42)
+
+
+@pytest.mark.parametrize(
+    'uri_template,expected',
+    [
+        ('/', []),
+        ('/items', []),
+        ('/items/{item_id}/parts/{part_id}', ['item_id', 'part_id']),
+        ('/items/{id:int}', ['id']),
+        ('/items/{id:int(min=1)}', ['id']),
+        ('/timestamps/{ts:dt("%Y-%m-%d")}', ['ts']),
+        ('/files/{name}.{ext}', ['name', 'ext']),
+        ('/files/{year:int}-{name}.{ext}/{rest:path}', ['year', 'name', 'ext', 'rest']),
+        ('/{x}/{x}', ['x', 'x']),
+    ],
+)
+def test_get_field_names(uri_template, expected):
+    assert get_field_names(uri_template) == expected

@@ -226,6 +226,13 @@ the ``on_put()`` responder method on the route's resource class, passing
 Because field names correspond to argument names in responder
 methods, they must be valid Python identifiers.
 
+When a route is added, Falcon's default router checks that each responder
+accepts all fields of the URI template, and emits a
+:class:`~falcon.routing.ResponderParamsWarning` otherwise. This behavior can be
+configured via the
+:attr:`~falcon.routing.CompiledRouterOptions.check_responder_params` router
+option.
+
 Individual path segments may contain one or more field
 expressions, and fields need not span the entire path
 segment. For example::
@@ -471,6 +478,8 @@ Default Router
 .. autoclass:: falcon.routing.CompiledRouter
     :members:
 
+.. autoclass:: falcon.routing.ResponderParamsWarning
+
 
 Routing Utilities
 -----------------
@@ -481,6 +490,8 @@ be used by custom routing engines.
 .. autofunction:: falcon.routing.map_http_methods
 
 .. autofunction:: falcon.routing.set_default_responders
+
+.. autofunction:: falcon.routing.get_field_names
 
 .. autofunction:: falcon.app_helpers.prepare_middleware
 

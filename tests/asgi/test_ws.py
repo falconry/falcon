@@ -13,6 +13,7 @@ from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
 from falcon.asgi.ws import WebSocket
 from falcon.asgi.ws import WebSocketOptions
+from falcon.routing import ResponderParamsWarning
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 from falcon.util.deprecation import DeprecatedWarning
 
@@ -731,7 +732,8 @@ async def test_unexpected_param(conductor):
         async def on_websocket(self, req, ws):
             pass
 
-    conductor.app.add_route('/{id}', Resource())
+    with pytest.warns(ResponderParamsWarning):
+        conductor.app.add_route('/{id}', Resource())
 
     async with conductor as c:
         with pytest.raises(falcon.WebSocketServerError):

@@ -6,6 +6,7 @@ import pytest
 
 import falcon
 import falcon.constants
+from falcon.routing import ResponderParamsWarning
 import falcon.testing as testing
 
 # RFC 7231, 5789 methods
@@ -74,7 +75,8 @@ def client(asgi, util):
     app.add_route('/misc', resource_misc)
 
     resource_get_with_faulty_put = GetWithFaultyPutResource()
-    app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
+    with pytest.warns(ResponderParamsWarning):
+        app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
     return testing.TestClient(app)
 
 
@@ -281,7 +283,10 @@ class TestHttpMethodRouting:
     def test_method_not_allowed_with_param(
         self, client, resource_get_with_faulty_put, catch_wsgiref_query_warning
     ):
-        client.app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
+        with pytest.warns(ResponderParamsWarning):
+            client.app.add_route(
+                '/get_with_param/{param}', resource_get_with_faulty_put
+            )
         for method in HTTP_METHODS + WEBDAV_METHODS:
             if method in ('GET', 'PUT', 'OPTIONS'):
                 continue
