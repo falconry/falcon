@@ -1,0 +1,6 @@
+Setting ``CONSUME_MULTIPLE_SEGMENTS = True`` on a field converter that does not
+derive from the new :class:`~falcon.routing.BaseMultiSegmentConverter` class is
+now deprecated, and emits a deprecation warning upon adding a route that uses
+the converter. Such converters keep receiving the matched path segments as a
+``list[str]`` in the 4.x series; please migrate them to the new base class
+which passes the segments joined as a single ``str`` instead.
