@@ -243,12 +243,26 @@ class LifespanHandler:
     async def process_startup(self, scope, event):
         assert scope['type'] == 'lifespan'
         assert event['type'] == 'lifespan.startup'
+
+        # Lifespan state is an optional extension of the ASGI protocol.
+        if 'state' in scope:
+            scope['state']['message'] = 'Hello, lifespan state!'
+
         self.startup_succeeded = True
 
     async def process_shutdown(self, scope, event):
         assert scope['type'] == 'lifespan'
         assert event['type'] == 'lifespan.shutdown'
         self.shutdown_succeeded = True
+
+
+class LifespanState:
+    async def on_get(self, req, resp):
+        resp.media = {'state': req.state}
+
+    async def on_post(self, req, resp):
+        req.state['added'] = 'request-specific'
+        resp.media = {'state': req.state}
 
 
 class TestJar:
@@ -302,6 +316,7 @@ def create_app():
     app.add_route('/events', Events())
     app.add_route('/forms', Multipart())
     app.add_route('/jars', TestJar())
+    app.add_route('/state', LifespanState())
     app.add_route('/feeds/{feed_id}', Feed())
     app.add_route('/wsoptions', WSOptions(app.ws_options))
 

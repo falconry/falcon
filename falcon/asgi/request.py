@@ -339,6 +339,53 @@ class Request(request.Request):
         return self.stream
 
     @property
+    def state(self) -> dict[str, Any] | None:
+        """Application state shared via the ASGI lifespan protocol.
+
+        This property returns the ``scope['state']`` namespace as defined by
+        the `Lifespan State`_ section of the ASGI specification, or ``None``
+        if the ASGI server does not support lifespan state.
+
+        Lifespan event handlers (see also: :ref:`Middleware <middleware>`)
+        may populate the state namespace upon startup, e.g., in order to
+        share a database connection pool with request processing::
+
+            class DatabaseMiddleware:
+                async def process_startup(self, scope, event):
+                    scope['state']['db_pool'] = await create_pool()
+
+                async def process_shutdown(self, scope, event):
+                    await scope['state']['db_pool'].close()
+
+
+            class ThingsResource:
+                async def on_get(self, req, resp):
+                    async with req.state['db_pool'].acquire() as conn:
+                        ...
+
+        The ASGI server passes a *shallow* copy of the lifespan state into
+        each request (or WebSocket connection) scope. Therefore, adding,
+        replacing, or removing keys while processing a request has no effect
+        on other requests, whereas any mutations of the stored objects
+        themselves are visible to them.
+
+        Note:
+            Lifespan state is an optional extension of the ASGI protocol.
+            If it is not supported by your ASGI server, consider
+            storing shared objects as attributes of your resources or
+            middleware components instead.
+
+        Tip:
+            For storing request-specific data, use :attr:`context` instead.
+
+        .. versionadded:: 4.5
+
+        .. _Lifespan State:
+            https://asgi.readthedocs.io/en/latest/specs/lifespan.html#lifespan-state
+        """
+        return self.scope.get('state')
+
+    @property
     def root_path(self) -> str:
         # PERF(kgriffs): try...except is faster than get() assuming that
         #   we normally expect the key to exist. Even though ASGI 3.0
