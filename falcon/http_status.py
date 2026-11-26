@@ -67,5 +67,4 @@ class HTTPStatus(Exception):
     @property
     def status_code(self) -> int:
         """HTTP status code normalized from :attr:`status`."""
-        # TODO(0xMattB): Modify decorator to return proper type (see PR #2629).
-        return http_status_to_code(self.status)  # type: ignore[no-any-return]
+        return http_status_to_code(self.status)
